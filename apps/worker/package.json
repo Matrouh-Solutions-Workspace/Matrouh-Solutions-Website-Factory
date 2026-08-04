@@ -1,0 +1,20 @@
+{
+  "name": "@factory/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsup src/main.ts src/seed-demo.ts --format esm --clean",
+    "start": "node dist/main.js",
+    "seed:demo": "tsx src/seed-demo.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@factory/publication-compiler": "workspace:*",
+    "@factory/template-loader": "workspace:*",
+    "@factory/template-validator": "workspace:*"
+  }
+}

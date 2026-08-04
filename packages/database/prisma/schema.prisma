@@ -1,0 +1,458 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrganizationStatus {
+  active
+  suspended
+  archived
+  deletion_pending
+}
+enum WebsiteStatus {
+  draft
+  published
+  unpublished
+  archived
+}
+enum PublicationStatus {
+  compiling
+  validating
+  ready
+  failed
+  retired
+}
+enum DomainStatus {
+  pending
+  verifying
+  verified
+  connecting
+  active
+  failed
+  disconnected
+}
+enum MediaStatus {
+  pending_upload
+  quarantined
+  scanning
+  processing
+  ready
+  rejected
+  deleted
+}
+enum JobStatus {
+  queued
+  running
+  retryable
+  succeeded
+  failed
+  dead_letter
+}
+enum DeliveryStatus {
+  pending
+  delivering
+  published
+  failed
+}
+
+model Organization {
+  id String @id @db.Uuid
+  slug String @db.VarChar(80)
+  name String @db.VarChar(200)
+  status OrganizationStatus @default(active)
+  defaultLocale String @map("default_locale") @db.VarChar(35)
+  planKey String @map("plan_key") @db.VarChar(80)
+  revision BigInt @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz
+  memberships Membership[]
+  clients Client[]
+  websites Website[]
+  roles Role[]
+  @@map("organizations")
+}
+
+model User {
+  id String @id @db.Uuid
+  displayName String @map("display_name") @db.VarChar(200)
+  primaryEmail String @map("primary_email") @db.VarChar(320)
+  normalizedEmail String @map("normalized_email") @unique @db.VarChar(320)
+  status String @db.VarChar(24)
+  revision BigInt @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  identities AuthIdentity[]
+  memberships Membership[]
+  sessions Session[]
+  @@map("users")
+}
+
+model AuthIdentity {
+  id String @id @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  providerKey String @map("provider_key") @db.VarChar(80)
+  providerSubject String @map("provider_subject") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  @@unique([providerKey, providerSubject])
+  @@map("auth_identities")
+}
+
+model Session {
+  id String @id @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  tokenHash String @map("token_hash") @unique @db.VarChar(128)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  @@index([userId, expiresAt])
+  @@map("sessions")
+}
+
+model Membership {
+  id String @id @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  userId String? @map("user_id") @db.Uuid
+  status String @db.VarChar(24)
+  invitedEmail String? @map("invited_email") @db.VarChar(320)
+  revision BigInt @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user User? @relation(fields: [userId], references: [id], onDelete: Restrict)
+  roles MembershipRole[]
+  @@unique([organizationId, id])
+  @@unique([organizationId, userId])
+  @@map("memberships")
+}
+
+model Role {
+  id String @id @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  key String @db.VarChar(80)
+  name String @db.VarChar(120)
+  isSystem Boolean @default(false) @map("is_system")
+  revision BigInt @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  memberships MembershipRole[]
+  permissions RolePermission[]
+  @@unique([organizationId, id])
+  @@unique([organizationId, key])
+  @@map("roles")
+}
+
+model Permission {
+  id String @id @db.Uuid
+  key String @unique @db.VarChar(120)
+  description String @db.VarChar(300)
+  roles RolePermission[]
+  @@map("permissions")
+}
+
+model RolePermission {
+  organizationId String @map("organization_id") @db.Uuid
+  roleId String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+  role Role @relation(fields: [organizationId, roleId], references: [organizationId, id], onDelete: Restrict)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Restrict)
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model MembershipRole {
+  organizationId String @map("organization_id") @db.Uuid
+  membershipId String @map("membership_id") @db.Uuid
+  roleId String @map("role_id") @db.Uuid
+  membership Membership @relation(fields: [organizationId, membershipId], references: [organizationId, id], onDelete: Restrict)
+  role Role @relation(fields: [organizationId, roleId], references: [organizationId, id], onDelete: Restrict)
+  @@id([membershipId, roleId])
+  @@map("membership_roles")
+}
+
+model Client {
+  id String @id @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  name String @db.VarChar(200)
+  contactName String? @map("contact_name") @db.VarChar(200)
+  contactEmail String? @map("contact_email") @db.VarChar(320)
+  contactPhone String? @map("contact_phone") @db.VarChar(50)
+  notes String? @db.Text
+  revision BigInt @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  websites Website[]
+  @@unique([organizationId, id])
+  @@index([organizationId, archivedAt, name])
+  @@map("clients")
+}
+
+model Website {
+  id String @id @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  clientId String? @map("client_id") @db.Uuid
+  name String @db.VarChar(200)
+  status WebsiteStatus @default(draft)
+  templateId String @map("template_id") @db.VarChar(160)
+  templateVersion String @map("template_version") @db.VarChar(64)
+  defaultLocale String @map("default_locale") @db.VarChar(35)
+  draftRevision BigInt @default(1) @map("draft_revision")
+  activePublicationId String? @map("active_publication_id") @db.Uuid
+  revision BigInt @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  client Client? @relation(fields: [organizationId, clientId], references: [organizationId, id], onDelete: Restrict)
+  locales WebsiteLocale[]
+  pages PageDraft[]
+  domains Domain[]
+  publications Publication[] @relation("WebsitePublications")
+  activePublication Publication? @relation("ActivePublication", fields: [organizationId, id, activePublicationId], references: [organizationId, websiteId, id])
+  @@unique([organizationId, id])
+  @@unique([organizationId, id, activePublicationId])
+  @@index([organizationId, status, updatedAt])
+  @@map("websites")
+}
+
+model WebsiteLocale {
+  organizationId String @map("organization_id") @db.Uuid
+  websiteId String @map("website_id") @db.Uuid
+  locale String @db.VarChar(35)
+  isDefault Boolean @default(false) @map("is_default")
+  fallbackLocale String? @map("fallback_locale") @db.VarChar(35)
+  website Website @relation(fields: [organizationId, websiteId], references: [organizationId, id], onDelete: Restrict)
+  @@id([websiteId, locale])
+  @@map("website_locales")
+}
+
+model PageDraft {
+  id String @id @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  websiteId String @map("website_id") @db.Uuid
+  pageTypeId String @map("page_type_id") @db.VarChar(160)
+  locale String @db.VarChar(35)
+  title String @db.VarChar(200)
+  slug String @db.VarChar(240)
+  orderKey String @map("order_key") @db.VarChar(128)
+  revision BigInt @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  website Website @relation(fields: [organizationId, websiteId], references: [organizationId, id], onDelete: Restrict)
+  sections SectionDraft[]
+  @@unique([organizationId, websiteId, id])
+  @@index([websiteId, locale, orderKey])
+  @@map("page_drafts")
+}
+
+model SectionDraft {
+  id String @id @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  websiteId String @map("website_id") @db.Uuid
+  pageId String @map("page_id") @db.Uuid
+  sectionTypeId String @map("section_type_id") @db.VarChar(160)
+  schemaVersion Int @map("schema_version")
+  contentJson Json @map("content_json") @db.JsonB
+  orderKey String @map("order_key") @db.VarChar(128)
+  revision BigInt @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  page PageDraft @relation(fields: [organizationId, websiteId, pageId], references: [organizationId, websiteId, id], onDelete: Restrict)
+  @@index([pageId, orderKey])
+  @@map("section_drafts")
+}
+
+model TemplateCatalogEntry {
+  id String @id @db.Uuid
+  templateId String @map("template_id") @unique @db.VarChar(160)
+  displayName String @map("display_name") @db.VarChar(200)
+  author String @db.VarChar(200)
+  description String @db.Text
+  category String @db.VarChar(80)
+  lifecycleStatus String @map("lifecycle_status") @db.VarChar(24)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  versions TemplateVersionRecord[]
+  @@map("template_catalog_entries")
+}
+
+model TemplateVersionRecord {
+  id String @id @db.Uuid
+  templateCatalogEntryId String @map("template_catalog_entry_id") @db.Uuid
+  templateId String @map("template_id") @db.VarChar(160)
+  templateVersion String @map("template_version") @db.VarChar(64)
+  artifactUri String @map("artifact_uri") @db.Text
+  artifactHash String @map("artifact_hash") @db.VarChar(128)
+  sdkVersion String @map("sdk_version") @db.VarChar(64)
+  minimumFactoryVersion String @map("minimum_factory_version") @db.VarChar(64)
+  maximumFactoryVersion String? @map("maximum_factory_version") @db.VarChar(64)
+  minimumRendererVersion String @map("minimum_renderer_version") @db.VarChar(64)
+  contentSchemaVersion Int @map("content_schema_version")
+  themeSchemaVersion Int @map("theme_schema_version")
+  publicationSnapshotVersion Int @map("publication_snapshot_version")
+  manifestJson Json @map("manifest_json") @db.JsonB
+  validationReportJson Json @map("validation_report_json") @db.JsonB
+  validationStatus String @map("validation_status") @db.VarChar(24)
+  lifecycleStatus String @map("lifecycle_status") @db.VarChar(24)
+  discoveredAt DateTime @default(now()) @map("discovered_at") @db.Timestamptz
+  validatedAt DateTime? @map("validated_at") @db.Timestamptz
+  catalog TemplateCatalogEntry @relation(fields: [templateCatalogEntryId], references: [id], onDelete: Restrict)
+  @@unique([templateId, templateVersion])
+  @@map("template_versions")
+}
+
+model Publication {
+  id String @id @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  websiteId String @map("website_id") @db.Uuid
+  sequenceNumber BigInt @map("sequence_number")
+  sourceDraftRevision BigInt @map("source_draft_revision")
+  templateId String @map("template_id") @db.VarChar(160)
+  templateVersion String @map("template_version") @db.VarChar(64)
+  templateArtifactHash String @map("template_artifact_hash") @db.VarChar(128)
+  snapshotSchemaVersion Int @map("snapshot_schema_version")
+  status PublicationStatus @default(compiling)
+  failureCode String? @map("failure_code") @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  readyAt DateTime? @map("ready_at") @db.Timestamptz
+  website Website @relation("WebsitePublications", fields: [organizationId, websiteId], references: [organizationId, id], onDelete: Restrict)
+  activeFor Website? @relation("ActivePublication")
+  artifacts PublicationArtifact[]
+  @@unique([organizationId, websiteId, id])
+  @@unique([websiteId, sequenceNumber])
+  @@index([websiteId, status, createdAt])
+  @@map("publications")
+}
+
+model PublicationArtifact {
+  id String @id @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  publicationId String @map("publication_id") @db.Uuid
+  artifactKind String @map("artifact_kind") @db.VarChar(40)
+  storageUri String @map("storage_uri") @db.Text
+  contentHash String @map("content_hash") @db.VarChar(128)
+  byteSize BigInt @map("byte_size")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  publication Publication @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  @@unique([publicationId, artifactKind])
+  @@map("publication_artifacts")
+}
+
+model Domain {
+  id String @id @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  websiteId String @map("website_id") @db.Uuid
+  hostnameNormalized String @map("hostname_normalized") @unique @db.VarChar(253)
+  hostnameDisplay String @map("hostname_display") @db.VarChar(253)
+  kind String @db.VarChar(24)
+  status DomainStatus @default(pending)
+  revision BigInt @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  releasedAt DateTime? @map("released_at") @db.Timestamptz
+  website Website @relation(fields: [organizationId, websiteId], references: [organizationId, id], onDelete: Restrict)
+  @@index([organizationId, websiteId])
+  @@map("domains")
+}
+
+model MediaAsset {
+  id String @id @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  status MediaStatus @default(pending_upload)
+  kind String @db.VarChar(24)
+  originalFilename String @map("original_filename") @db.VarChar(255)
+  storageKey String @map("storage_key") @unique @db.Text
+  contentHash String? @map("content_hash") @db.VarChar(128)
+  detectedContentType String? @map("detected_content_type") @db.VarChar(160)
+  byteSize BigInt @map("byte_size")
+  metadataJson Json @map("metadata_json") @db.JsonB
+  revision BigInt @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@index([organizationId, status, createdAt])
+  @@map("media_assets")
+}
+
+model Job {
+  id String @id @db.Uuid
+  organizationId String? @map("organization_id") @db.Uuid
+  type String @db.VarChar(120)
+  version Int
+  payloadJson Json @map("payload_json") @db.JsonB
+  status JobStatus @default(queued)
+  priority Int @default(0)
+  availableAt DateTime @default(now()) @map("available_at") @db.Timestamptz
+  attemptCount Int @default(0) @map("attempt_count")
+  maxAttempts Int @default(5) @map("max_attempts")
+  lockedAt DateTime? @map("locked_at") @db.Timestamptz
+  lockOwner String? @map("lock_owner") @db.VarChar(160)
+  lockExpiresAt DateTime? @map("lock_expires_at") @db.Timestamptz
+  deduplicationKey String? @map("deduplication_key") @db.VarChar(160)
+  correlationId String @map("correlation_id") @db.VarChar(160)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+  @@index([status, priority, availableAt])
+  @@map("jobs")
+}
+
+model OutboxEvent {
+  id String @id @db.Uuid
+  organizationId String? @map("organization_id") @db.Uuid
+  eventType String @map("event_type") @db.VarChar(160)
+  eventVersion Int @map("event_version")
+  aggregateType String @map("aggregate_type") @db.VarChar(100)
+  aggregateId String @map("aggregate_id") @db.VarChar(160)
+  aggregateRevision BigInt @map("aggregate_revision")
+  payloadJson Json @map("payload_json") @db.JsonB
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz
+  correlationId String @map("correlation_id") @db.VarChar(160)
+  causationId String? @map("causation_id") @db.VarChar(160)
+  status DeliveryStatus @default(pending)
+  availableAt DateTime @default(now()) @map("available_at") @db.Timestamptz
+  attemptCount Int @default(0) @map("attempt_count")
+  publishedAt DateTime? @map("published_at") @db.Timestamptz
+  @@index([status, availableAt])
+  @@index([aggregateType, aggregateId, occurredAt])
+  @@map("outbox_events")
+}
+
+model AuditEvent {
+  id String @id @db.Uuid
+  organizationId String? @map("organization_id") @db.Uuid
+  actorType String @map("actor_type") @db.VarChar(40)
+  actorId String? @map("actor_id") @db.VarChar(160)
+  action String @db.VarChar(160)
+  resourceType String @map("resource_type") @db.VarChar(100)
+  resourceId String? @map("resource_id") @db.VarChar(160)
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz
+  correlationId String @map("correlation_id") @db.VarChar(160)
+  metadataJson Json @map("metadata_json") @db.JsonB
+  retentionClass String @map("retention_class") @db.VarChar(40)
+  @@index([organizationId, occurredAt])
+  @@map("audit_events")
+}
+
+model IdempotencyRecord {
+  id String @id @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  scope String @db.VarChar(100)
+  keyHash String @map("key_hash") @db.VarChar(128)
+  requestHash String @map("request_hash") @db.VarChar(128)
+  status String @db.VarChar(24)
+  responseJson Json? @map("response_json") @db.JsonB
+  resourceId String? @map("resource_id") @db.VarChar(160)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+  @@unique([organizationId, scope, keyHash])
+  @@map("idempotency_records")
+}

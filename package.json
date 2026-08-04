@@ -1,0 +1,37 @@
+{
+  "name": "matrouh-solutions-website-factory",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "db:generate": "pnpm --filter @factory/database generate",
+    "db:validate": "pnpm --filter @factory/database validate",
+    "db:deploy": "pnpm --filter @factory/database exec prisma migrate deploy",
+    "seed:demo": "pnpm --filter @factory/worker seed:demo",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@types/node": "^24.1.0",
+    "eslint": "^9.32.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import-x": "^4.16.1",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.3",
+    "tsup": "^8.5.0",
+    "turbo": "^2.5.5",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.38.0",
+    "vitest": "^3.2.4"
+  }
+}

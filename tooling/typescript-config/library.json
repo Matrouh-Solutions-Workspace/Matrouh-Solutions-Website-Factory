@@ -1,0 +1,10 @@
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "outDir": "../../dist",
+    "rootDir": "../../src",
+    "noEmit": false
+  },
+  "include": ["../../src/**/*.ts", "../../src/**/*.tsx"],
+  "exclude": ["../../tests", "../../dist"]
+}

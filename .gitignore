@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.next/
+coverage/
+.turbo/
+.env
+.env.local
+!.env.example
+*.log
+packages/database/src/generated/
+artifacts/
+.factory/
+*.tsbuildinfo
