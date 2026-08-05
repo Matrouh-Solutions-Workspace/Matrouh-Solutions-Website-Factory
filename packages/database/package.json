@@ -14,7 +14,7 @@
     "validate": "prisma validate",
     "build": "pnpm generate && tsup src/index.ts --format esm --dts --clean",
     "typecheck": "pnpm generate && tsc --noEmit",
-    "lint": "eslint src prisma.config.ts",
+    "lint": "pnpm generate && eslint src prisma.config.ts",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
