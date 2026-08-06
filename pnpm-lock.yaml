@@ -33,7 +33,7 @@ importers:
         specifier: ^4.20.3
         version: 4.23.5
       turbo:
-        specifier: ^2.5.5
+        specifier: ^2.10.8
         version: 2.10.8
       typescript:
         specifier: ^5.8.3

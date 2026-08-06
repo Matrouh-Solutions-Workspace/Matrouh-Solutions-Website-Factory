@@ -74,42 +74,79 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
   const context = await requireDashboardContext("website.read");
   const organization = context.organization;
 
-  const website = await withTenantTransaction(
+  const editorData = await withTenantTransaction(
     client,
     { organizationId: organization.id, actorId: context.actor.id, correlationId: "editor-load" },
-    (transaction) =>
-      transaction.website.findUnique({
+    async (transaction) => {
+      const website = await transaction.website.findUnique({
         where: { organizationId_id: { organizationId: organization.id, id: websiteId } },
-        include: {
-          pages: {
-            where: { deletedAt: null },
-            orderBy: { orderKey: "asc" },
-            include: {
-              sections: {
-                where: { deletedAt: null },
-                orderBy: { orderKey: "asc" },
-              },
-            },
-          },
-          publications: {
-            orderBy: { createdAt: "desc" },
-            take: 20,
-          },
-          domains: { where: { status: "active" }, orderBy: { createdAt: "asc" }, take: 1 },
-          locales: { orderBy: [{ isDefault: "desc" }, { locale: "asc" }] },
-          settingsDrafts: { where: { locale: null }, take: 1 },
-          themeDrafts: { where: { locale: null, deletedAt: null }, take: 1 },
-          navigationDrafts: {
-            where: { deletedAt: null },
-            orderBy: { createdAt: "asc" },
-            include: {
-              nodes: { where: { deletedAt: null }, orderBy: [{ orderKey: "asc" }, { id: "asc" }] },
-            },
-          },
+      });
+      if (!website) return null;
+
+      const pages = await transaction.pageDraft.findMany({
+        where: { organizationId: organization.id, websiteId, deletedAt: null },
+        orderBy: { orderKey: "asc" },
+      });
+      const sections = await transaction.sectionDraft.findMany({
+        where: { organizationId: organization.id, websiteId, deletedAt: null },
+        orderBy: [{ pageId: "asc" }, { orderKey: "asc" }],
+      });
+      const publications = await transaction.publication.findMany({
+        where: { organizationId: organization.id, websiteId },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      });
+      const domains = await transaction.domain.findMany({
+        where: { organizationId: organization.id, websiteId, status: "active" },
+        orderBy: { createdAt: "asc" },
+        take: 1,
+      });
+      const locales = await transaction.websiteLocale.findMany({
+        where: { websiteId },
+        orderBy: [{ isDefault: "desc" }, { locale: "asc" }],
+      });
+      const settingsDrafts = await transaction.websiteSettingsDraft.findMany({
+        where: { organizationId: organization.id, websiteId, locale: null },
+        take: 1,
+      });
+      const themeDrafts = await transaction.themeDraft.findMany({
+        where: { organizationId: organization.id, websiteId, locale: null, deletedAt: null },
+        take: 1,
+      });
+      const navigationDrafts = await transaction.navigationDraft.findMany({
+        where: { organizationId: organization.id, websiteId, deletedAt: null },
+        orderBy: { createdAt: "asc" },
+      });
+      const navigationNodes = await transaction.navigationNodeDraft.findMany({
+        where: {
+          organizationId: organization.id,
+          websiteId,
+          navigationId: { in: navigationDrafts.map((navigation) => navigation.id) },
+          deletedAt: null,
         },
-      }),
+        orderBy: [{ navigationId: "asc" }, { orderKey: "asc" }, { id: "asc" }],
+      });
+
+      return {
+        website,
+        pages: pages.map((page) => ({
+          ...page,
+          sections: sections.filter((section) => section.pageId === page.id),
+        })),
+        publications,
+        domains,
+        locales,
+        settingsDrafts,
+        themeDrafts,
+        navigationDrafts: navigationDrafts.map((navigation) => ({
+          ...navigation,
+          nodes: navigationNodes.filter((node) => node.navigationId === navigation.id),
+        })),
+      };
+    },
   );
-  if (!website) return null;
+  if (!editorData) return null;
+  const website = editorData.website;
 
   const candidate = (await discoverTemplates(templatesRoot)).find(
     (item) =>
@@ -141,26 +178,26 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
       templateId: website.templateId,
       templateVersion: website.templateVersion,
       defaultLocale: website.defaultLocale,
-      locales: website.locales.map((item) => item.locale),
+      locales: editorData.locales.map((item) => item.locale),
       draftRevision: website.draftRevision.toString(),
       activePublicationId: website.activePublicationId,
-      hostname: website.domains[0]?.hostnameNormalized ?? null,
+      hostname: editorData.domains[0]?.hostnameNormalized ?? null,
     },
-    settings: website.settingsDrafts[0]
+    settings: editorData.settingsDrafts[0]
       ? {
-          id: website.settingsDrafts[0].id,
-          content: JSON.stringify(website.settingsDrafts[0].contentJson, null, 2),
-          revision: website.settingsDrafts[0].revision.toString(),
+          id: editorData.settingsDrafts[0].id,
+          content: JSON.stringify(editorData.settingsDrafts[0].contentJson, null, 2),
+          revision: editorData.settingsDrafts[0].revision.toString(),
         }
       : null,
-    theme: website.themeDrafts[0]
+    theme: editorData.themeDrafts[0]
       ? {
-          id: website.themeDrafts[0].id,
-          tokens: JSON.stringify(website.themeDrafts[0].tokensJson, null, 2),
-          revision: website.themeDrafts[0].revision.toString(),
+          id: editorData.themeDrafts[0].id,
+          tokens: JSON.stringify(editorData.themeDrafts[0].tokensJson, null, 2),
+          revision: editorData.themeDrafts[0].revision.toString(),
         }
       : null,
-    navigation: website.navigationDrafts.map((navigation) => ({
+    navigation: editorData.navigationDrafts.map((navigation) => ({
       id: navigation.id,
       title:
         template.navigation.find((definition) => definition.id === navigation.definitionId)
@@ -181,7 +218,7 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
           version.localeCompare(website.templateVersion, undefined, { numeric: true }) > 0,
       )
       .sort((left, right) => right.localeCompare(left, undefined, { numeric: true })),
-    pages: website.pages.map((page) => {
+    pages: editorData.pages.map((page) => {
       const pageDefinition = template.pages.find((item) => item.id === page.pageTypeId);
       const counts = new Map<string, number>();
       page.sections.forEach((section) =>
@@ -228,7 +265,7 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
         }),
       };
     }),
-    publications: website.publications.map((publication) => ({
+    publications: editorData.publications.map((publication) => ({
       id: publication.id,
       sequenceNumber: publication.sequenceNumber.toString(),
       sourceDraftRevision: publication.sourceDraftRevision.toString(),

@@ -6,6 +6,7 @@ import {
   verifyDomainAction,
 } from "@/app/actions";
 import { ConfirmSubmit } from "@/app/confirm-submit";
+import { Icon } from "@/app/icons";
 import { PendingSubmit } from "@/app/pending-submit";
 import { loadDomainsWorkspace } from "@/server/control-data";
 import { dashboardConfig } from "@/server/config";
@@ -54,7 +55,9 @@ export default async function DomainsPage() {
           </div>
           {domains.map((domain) => (
             <article className="dataRow domainRow" key={domain.id}>
-              <div className="templateIcon">DN</div>
+              <div className="templateIcon">
+                <Icon name="domains" />
+              </div>
               <div>
                 {domain.status === "active" ? (
                   <a

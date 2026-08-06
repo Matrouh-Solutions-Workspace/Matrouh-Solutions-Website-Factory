@@ -143,7 +143,7 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
 
       <section className="workspaceGrid editorConfiguration">
         {editor.settings && (
-          <form action={updateWebsiteSettingsDraftAction} className="panel editForm">
+          <form action={updateWebsiteSettingsDraftAction} className="panel editForm codeEditorPanel">
             <div className="panelHead">
               <div>
                 <p className="eyebrow">Global content</p>
@@ -157,13 +157,23 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
             <input name="websiteDraftRevision" type="hidden" value={editor.website.draftRevision} />
             <label>
               Settings JSON
-              <textarea name="contentJson" defaultValue={editor.settings.content} rows={12} />
+              <textarea
+                name="contentJson"
+                autoCapitalize="off"
+                autoComplete="off"
+                autoCorrect="off"
+                defaultValue={editor.settings.content}
+                rows={12}
+                spellCheck={false}
+              />
             </label>
-            <PendingSubmit pendingLabel="Saving settings...">Save settings</PendingSubmit>
+            <div className="formFooter">
+              <PendingSubmit pendingLabel="Saving settings...">Save settings</PendingSubmit>
+            </div>
           </form>
         )}
         {editor.theme && (
-          <form action={updateThemeDraftAction} className="panel editForm">
+          <form action={updateThemeDraftAction} className="panel editForm codeEditorPanel">
             <div className="panelHead">
               <div>
                 <p className="eyebrow">Design system</p>
@@ -177,9 +187,19 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
             <input name="websiteDraftRevision" type="hidden" value={editor.website.draftRevision} />
             <label>
               Theme JSON
-              <textarea name="tokensJson" defaultValue={editor.theme.tokens} rows={12} />
+              <textarea
+                name="tokensJson"
+                autoCapitalize="off"
+                autoComplete="off"
+                autoCorrect="off"
+                defaultValue={editor.theme.tokens}
+                rows={12}
+                spellCheck={false}
+              />
             </label>
-            <PendingSubmit pendingLabel="Saving theme...">Save theme</PendingSubmit>
+            <div className="formFooter">
+              <PendingSubmit pendingLabel="Saving theme...">Save theme</PendingSubmit>
+            </div>
           </form>
         )}
       </section>
@@ -254,7 +274,7 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
                 <span>{page.sections.length} sections</span>
               </div>
 
-              <DraftEditorForm action={updatePageDraftAction} className="editForm">
+              <DraftEditorForm action={updatePageDraftAction} className="editForm pageMetaForm">
                 <input name="websiteId" type="hidden" value={editor.website.id} />
                 <input name="pageId" type="hidden" value={page.id} />
                 <input

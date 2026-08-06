@@ -1,8 +1,10 @@
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { discoverTemplates, loadTemplate } from "@factory/template-loader";
 import { validateTemplate } from "@factory/template-validator";
+
 export default async function Lab() {
-  const candidates = await discoverTemplates(join(process.cwd(), "..", "..", "templates"));
+  const templatesRoot = join(process.cwd(), "..", "..", "templates");
+  const candidates = await discoverTemplates(templatesRoot);
   const reports = await Promise.all(
     candidates.map(async (candidate) => ({
       candidate,
@@ -16,6 +18,7 @@ export default async function Lab() {
       }),
     })),
   );
+
   return (
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 24px" }}>
       <p style={{ color: "#0d806c", fontWeight: 700 }}>TEMPLATE LAB</p>
@@ -31,7 +34,7 @@ export default async function Lab() {
       >
         {reports.map(({ candidate, report }) => (
           <article
-            key={candidate.discovery.templateId}
+            key={`${candidate.discovery.templateId}@${candidate.discovery.templateVersion}:${candidate.root}`}
             style={{
               background: "white",
               border: "1px solid #dfe7e4",
@@ -41,7 +44,9 @@ export default async function Lab() {
           >
             <h2>{candidate.discovery.templateId}</h2>
             <p>
-              {candidate.discovery.templateVersion} · {report.valid ? "Ready" : "Invalid"}
+              {candidate.discovery.templateVersion} |{" "}
+              {relative(templatesRoot, candidate.root).replaceAll("\\", "/")} |{" "}
+              {report.valid ? "Ready" : "Invalid"}
             </p>
             {report.checks.map((check) => (
               <div

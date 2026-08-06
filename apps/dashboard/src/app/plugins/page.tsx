@@ -1,4 +1,5 @@
 import { requireDashboardContext } from "@/server/auth";
+import { Icon } from "@/app/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,9 @@ export default async function PluginsPage() {
           </div>
         </div>
         <div className="pluginHero">
-          <span className="pluginMark">PL</span>
+          <span className="pluginMark">
+            <Icon name="plugins" />
+          </span>
           <div>
             <strong>Extensions are safely paused</strong>
             <p>

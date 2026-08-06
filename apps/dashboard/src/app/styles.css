@@ -665,6 +665,11 @@ button:disabled {
   background: #d9d9d9;
   color: #1e1e1e;
 }
+.templateIcon svg,
+.pluginMark svg {
+  width: 20px;
+  height: 20px;
+}
 .avatar {
   border-radius: 50%;
   background: linear-gradient(145deg, #fff5c2, #d9d9d9);
@@ -918,10 +923,45 @@ input[type="file"] {
   margin: 0.35rem 0 0;
 }
 
-.editorConfiguration textarea {
+.codeEditorPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.codeEditorPanel .panelHead {
+  padding: 18px 20px 14px;
+}
+
+.codeEditorPanel label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 20px 0;
+}
+
+.codeEditorPanel textarea {
   min-height: 18rem;
+  max-height: 18rem;
+  overflow: auto;
+  border-radius: 8px;
+  background: #fbfcfd;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 0.78rem;
+  line-height: 1.65;
+  white-space: pre;
+}
+
+.formFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 14px;
+  padding: 14px 20px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-soft);
 }
 
 .navigationEditor + .navigationEditor {
@@ -969,6 +1009,22 @@ input[type="file"] {
   color: var(--ink-soft);
   box-shadow: none;
   font-size: 0.72rem;
+}
+
+.pageMetaForm {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 12px;
+  padding: 18px 0 20px;
+}
+
+.pageMetaForm .draftCommandBar {
+  margin-bottom: 2px;
+}
+
+.pageMetaForm button[type="submit"] {
+  justify-self: start;
+  margin-top: 4px;
 }
 
 .saveState {
@@ -1059,6 +1115,12 @@ input[type="file"] {
   align-items: end;
   padding: 18px 0;
   border-bottom: 1px solid var(--line);
+}
+.editForm.codeEditorPanel {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  padding: 0;
+  border-bottom: 0;
 }
 .sectionEditor {
   overflow: hidden;
@@ -1513,8 +1575,6 @@ input[type="file"] {
   border-radius: 11px;
   background: var(--primary-soft);
   color: var(--primary-dark);
-  font-size: 10px;
-  font-weight: 800;
 }
 .pluginHero strong {
   color: var(--ink);

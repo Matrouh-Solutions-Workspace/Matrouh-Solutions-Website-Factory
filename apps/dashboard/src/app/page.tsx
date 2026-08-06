@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { discoverTemplates } from "@factory/template-loader";
 import { createWebsiteAction, previewWebsiteAction, publishWebsiteAction } from "@/app/actions";
+import { Icon } from "@/app/icons";
 import { PendingSubmit } from "@/app/pending-submit";
 import { loadDashboardOverview } from "@/server/overview";
 
@@ -131,7 +132,9 @@ export default async function Dashboard() {
           </div>
           {catalog.map((template) => (
             <div className="template" key={template.templateId}>
-              <div className="templateIcon">TM</div>
+              <div className="templateIcon">
+                <Icon name="templates" />
+              </div>
               <div>
                 <strong>{template.displayName}</strong>
                 <p>
