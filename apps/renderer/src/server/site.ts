@@ -160,6 +160,28 @@ export async function loadPreviewSite(token: string | undefined): Promise<Loaded
   });
 }
 
+export async function loadCatalogTemplateArtifact(
+  templateId: string,
+  templateVersion: string,
+): Promise<LoadedTemplateArtifact | null> {
+  const versions = await database().$queryRaw<{ artifact_uri: string; artifact_hash: string }[]>`
+    SELECT artifact_uri, artifact_hash
+    FROM template_versions
+    WHERE template_id = ${templateId}
+      AND template_version = ${templateVersion}
+      AND validation_status = 'valid'
+      AND lifecycle_status IN ('ready', 'deprecated')
+    LIMIT 1
+  `;
+  const version = versions[0];
+  if (!version) return null;
+  const artifact = await loadCatalogedTemplateArtifact(templatesRoot(), version.artifact_uri, {
+    templateId,
+    templateVersion,
+  });
+  return artifact.artifactHash === version.artifact_hash ? artifact : null;
+}
+
 export async function listPublicRoutes(hostname: string): Promise<string[]> {
   const site = await loadSite(hostname);
   if (!site) return [];

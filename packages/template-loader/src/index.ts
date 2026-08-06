@@ -159,9 +159,16 @@ export async function loadTemplateArtifact(
     ),
   ]);
   throwIfAborted(signal);
+  const executableHash = createHash("sha256").update(entryBytes).digest("hex");
+  const artifactHash = createHash("sha256")
+    .update(manifestBytes)
+    .update(entryBytes)
+    .digest("hex");
+  const executableUrl = pathToFileURL(entry);
+  executableUrl.searchParams.set("factoryArtifact", executableHash);
   let imported: { template?: TemplateDefinition };
   try {
-    imported = (await import(/* webpackIgnore: true */ pathToFileURL(entry).href)) as {
+    imported = (await import(/* webpackIgnore: true */ executableUrl.href)) as {
       template?: TemplateDefinition;
     };
   } catch (error) {
@@ -192,7 +199,7 @@ export async function loadTemplateArtifact(
     candidate,
     definition: imported.template,
     manifest,
-    artifactHash: createHash("sha256").update(manifestBytes).update(entryBytes).digest("hex"),
+    artifactHash,
     byteSize: manifestBytes.byteLength + entryBytes.byteLength,
   });
 }

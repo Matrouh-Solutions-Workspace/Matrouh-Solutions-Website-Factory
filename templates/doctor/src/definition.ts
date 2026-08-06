@@ -29,12 +29,12 @@ const websiteSchema = contentSchema<JsonValue>({
 export const template = defineTemplate({
   manifest: {
     id: ids.template("com.matrouh.doctor"),
-    version: ids.version("1.1.0"),
+    version: ids.version("1.3.0"),
     displayName: "Doctor Practice",
     author: "Matrouh Solutions",
-    description: "Calm, trustworthy personal medical practice template",
+    description: "Editorial personal medical practice with appointments and a live location map",
     category: "healthcare",
-    features: ["localized-content", "semantic-theme", "seo", "contact-page"],
+    features: ["localized-content", "semantic-theme", "seo", "contact-page", "google-maps"],
   },
   compatibility: {
     sdkVersion: "1.0.0",

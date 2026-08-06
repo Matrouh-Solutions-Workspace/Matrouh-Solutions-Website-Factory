@@ -34,12 +34,12 @@ const websiteSchema = contentSchema<JsonValue>({
 export const template = defineTemplate({
   manifest: {
     id: ids.template("com.matrouh.clinic"),
-    version: ids.version("1.1.0"),
+    version: ids.version("1.3.0"),
     displayName: "Multi-specialty Clinic",
     author: "Matrouh Solutions",
-    description: "Structured multi-location clinic template",
+    description: "Interactive multi-location clinic with coordinated care and live maps",
     category: "healthcare",
-    features: ["localized-content", "multi-location", "semantic-theme", "seo"],
+    features: ["localized-content", "multi-location", "semantic-theme", "seo", "google-maps"],
   },
   compatibility: {
     sdkVersion: "1.0.0",

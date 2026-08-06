@@ -2,16 +2,17 @@
   "manifestFormatVersion": 1,
   "manifest": {
     "id": "com.matrouh.clinic",
-    "version": "1.1.0",
+    "version": "1.3.0",
     "displayName": "Multi-specialty Clinic",
     "author": "Matrouh Solutions",
-    "description": "Structured multi-location clinic template",
+    "description": "Interactive multi-location clinic with coordinated care and live maps",
     "category": "healthcare",
     "features": [
       "localized-content",
       "multi-location",
       "semantic-theme",
-      "seo"
+      "seo",
+      "google-maps"
     ]
   },
   "compatibility": {
@@ -443,6 +444,33 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 500
+                  },
+                  "address": {
+                    "default": "Matrouh, Egypt",
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "phone": {
+                    "default": "+20 100 000 0000",
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "hours": {
+                    "default": "Saturday–Thursday · 9:00–18:00",
+                    "type": "string",
+                    "maxLength": 160
+                  },
+                  "latitude": {
+                    "default": 31.3543,
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
+                  },
+                  "longitude": {
+                    "default": 27.2373,
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
                   }
                 },
                 "required": [
@@ -461,7 +489,7 @@
           ],
           "additionalProperties": false
         },
-        "schemaHash": "bfcbd45a21c1c779a3515a3535375b68",
+        "schemaHash": "3110b2c79cf19321ece2a96cd35ad262",
         "fields": {
           "/title": {
             "label": "Section title",
@@ -801,5 +829,5 @@
     }
   },
   "migrations": [],
-  "manifestHash": "bb452b476bc4fd816f77abebc3c0014c"
+  "manifestHash": "c4fa6bdb2093380ba3e23f11100d427e"
 }

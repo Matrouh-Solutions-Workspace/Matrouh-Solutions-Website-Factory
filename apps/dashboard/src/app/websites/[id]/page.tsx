@@ -20,7 +20,8 @@ import { ConfirmSubmit } from "@/app/confirm-submit";
 import { DraftEditorForm } from "@/app/draft-editor-form";
 import { DraggableSection } from "@/app/draggable-section";
 import { PendingSubmit } from "@/app/pending-submit";
-import { StructuredListField } from "@/app/structured-list-field";
+import { CoordinatePickerFields, StructuredListField } from "@/app/structured-list-field";
+import { ThemeLiveEditor } from "@/app/theme-live-editor";
 import { loadWebsiteEditor } from "@/server/editor";
 import { dashboardConfig } from "@/server/config";
 
@@ -143,7 +144,10 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
 
       <section className="workspaceGrid editorConfiguration">
         {editor.settings && (
-          <form action={updateWebsiteSettingsDraftAction} className="panel editForm codeEditorPanel">
+          <form
+            action={updateWebsiteSettingsDraftAction}
+            className="panel editForm codeEditorPanel"
+          >
             <div className="panelHead">
               <div>
                 <p className="eyebrow">Global content</p>
@@ -173,34 +177,16 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
           </form>
         )}
         {editor.theme && (
-          <form action={updateThemeDraftAction} className="panel editForm codeEditorPanel">
-            <div className="panelHead">
-              <div>
-                <p className="eyebrow">Design system</p>
-                <h2>Theme tokens</h2>
-              </div>
-              <span>Colors, type, layout</span>
-            </div>
-            <input name="websiteId" type="hidden" value={editor.website.id} />
-            <input name="themeId" type="hidden" value={editor.theme.id} />
-            <input name="expectedRevision" type="hidden" value={editor.theme.revision} />
-            <input name="websiteDraftRevision" type="hidden" value={editor.website.draftRevision} />
-            <label>
-              Theme JSON
-              <textarea
-                name="tokensJson"
-                autoCapitalize="off"
-                autoComplete="off"
-                autoCorrect="off"
-                defaultValue={editor.theme.tokens}
-                rows={12}
-                spellCheck={false}
-              />
-            </label>
-            <div className="formFooter">
-              <PendingSubmit pendingLabel="Saving theme...">Save theme</PendingSubmit>
-            </div>
-          </form>
+          <ThemeLiveEditor
+            action={updateThemeDraftAction}
+            expectedRevision={editor.theme.revision}
+            initialTokens={editor.theme.tokens}
+            templateId={editor.website.templateId}
+            templateVersion={editor.website.templateVersion}
+            themeId={editor.theme.id}
+            websiteDraftRevision={editor.website.draftRevision}
+            websiteId={editor.website.id}
+          />
         )}
       </section>
 
@@ -327,12 +313,25 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
                         </div>
                         {section.fields.length > 0 ? (
                           section.fields.map((field) =>
-                            field.control === "list" ? (
+                            field.name === "longitude" ? null : field.name === "latitude" ? (
+                              <CoordinatePickerFields
+                                address={
+                                  section.fields.find((item) => item.name === "address")?.value
+                                }
+                                key="location-coordinates"
+                                latitude={field.value}
+                                longitude={
+                                  section.fields.find((item) => item.name === "longitude")?.value ??
+                                  "0"
+                                }
+                              />
+                            ) : field.control === "list" ? (
                               <StructuredListField
                                 fieldName={field.name}
                                 initialJson={field.value}
                                 key={field.name}
                                 label={field.label}
+                                locationMode={field.label === "Locations"}
                               />
                             ) : field.control === "textarea" ? (
                               <label key={field.name}>

@@ -50,6 +50,9 @@ importers:
       '@factory/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@factory/component-registry':
+        specifier: workspace:*
+        version: link:../../packages/component-registry
       '@factory/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -80,6 +83,9 @@ importers:
       '@factory/template-sdk':
         specifier: workspace:*
         version: link:../../packages/template-sdk
+      '@factory/template-validator':
+        specifier: workspace:*
+        version: link:../../packages/template-validator
       next:
         specifier: ^16.3.0
         version: 16.3.0(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -108,6 +114,9 @@ importers:
       '@factory/domains':
         specifier: workspace:*
         version: link:../../packages/domains
+      '@factory/publication-compiler':
+        specifier: workspace:*
+        version: link:../../packages/publication-compiler
       '@factory/publication-contract':
         specifier: workspace:*
         version: link:../../packages/publication-contract
@@ -447,6 +456,38 @@ importers:
         specifier: ^19.1.9
         version: 19.2.18
 
+  templates/clinic-1.1.0:
+    dependencies:
+      '@factory/template-sdk':
+        specifier: workspace:*
+        version: link:../../packages/template-sdk
+      '@templates/shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^19.1.1
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.9
+        version: 19.2.18
+
+  templates/clinic-1.2.0:
+    dependencies:
+      '@factory/template-sdk':
+        specifier: workspace:*
+        version: link:../../packages/template-sdk
+      '@templates/shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^19.1.1
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.9
+        version: 19.2.18
+
   templates/doctor:
     dependencies:
       '@factory/template-sdk':
@@ -464,6 +505,38 @@ importers:
         version: 19.2.18
 
   templates/doctor-1.0.0:
+    dependencies:
+      '@factory/template-sdk':
+        specifier: workspace:*
+        version: link:../../packages/template-sdk
+      '@templates/shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^19.1.1
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.9
+        version: 19.2.18
+
+  templates/doctor-1.1.0:
+    dependencies:
+      '@factory/template-sdk':
+        specifier: workspace:*
+        version: link:../../packages/template-sdk
+      '@templates/shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^19.1.1
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.9
+        version: 19.2.18
+
+  templates/doctor-1.2.0:
     dependencies:
       '@factory/template-sdk':
         specifier: workspace:*

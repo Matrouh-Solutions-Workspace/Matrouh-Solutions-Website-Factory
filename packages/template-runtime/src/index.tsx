@@ -24,6 +24,7 @@ export interface RuntimeArtifact {
   readonly artifactHash: string;
   readonly manifestHash: string;
   readonly capabilities?: CapabilityGateway;
+  readonly linkResolver?: (path: string) => string;
 }
 
 export interface TemplateRuntime {
@@ -69,6 +70,7 @@ export function instantiateTemplateRuntime(
         snapshot,
         normalizePathname(pathname),
         artifact.capabilities,
+        artifact.linkResolver,
       ),
   });
 }
@@ -78,6 +80,7 @@ export function renderSnapshotPage(
   snapshot: PublicationSnapshot,
   pathname: string,
   capabilities: CapabilityGateway = unavailableCapabilities,
+  linkResolver: (path: string) => string = safeLink,
 ): RenderedPage {
   verifySnapshotIntegrity(snapshot);
   if (
@@ -133,7 +136,7 @@ export function renderSnapshotPage(
         return variant === undefined ? item.url : (item.variants[variant] ?? item.url);
       },
     }),
-    links: Object.freeze({ url: safeLink }),
+    links: Object.freeze({ url: linkResolver }),
     features: capabilities,
   });
   const children = page.sections.map((section) => {

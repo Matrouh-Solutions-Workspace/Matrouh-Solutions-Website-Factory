@@ -8,7 +8,7 @@ export default async function LoginPage({
 }) {
   const invalid = (await searchParams).error === "invalid";
   return (
-    <main className="loginShell">
+    <main className="loginShell" dir="rtl">
       <LoginForm authMode={dashboardConfig.FACTORY_AUTH_MODE} invalid={invalid} />
     </main>
   );

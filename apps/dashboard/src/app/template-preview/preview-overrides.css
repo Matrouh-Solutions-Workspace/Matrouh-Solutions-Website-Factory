@@ -1,0 +1,21 @@
+.catalogPreviewDocument {
+  min-height: 100vh;
+  background: var(--background, #fff);
+  color: var(--text, #17221f);
+  font-family: var(--theme-typography-font-families-body, Arial, sans-serif);
+}
+.catalogPreviewDocument > div > .siteHeader {
+  margin: 0;
+}
+.catalogPreviewDocument main {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.catalogPreviewDocument h1,
+.catalogPreviewDocument h2,
+.catalogPreviewDocument h3,
+.catalogPreviewDocument p {
+  overflow-wrap: normal;
+}

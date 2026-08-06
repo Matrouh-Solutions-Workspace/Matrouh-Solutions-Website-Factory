@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@factory/auth": "workspace:*",
+    "@factory/component-registry": "workspace:*",
     "@factory/config": "workspace:*",
     "@factory/database": "workspace:*",
     "@factory/domains": "workspace:*",
@@ -22,6 +23,7 @@
     "@factory/template-loader": "workspace:*",
     "@factory/template-runtime": "workspace:*",
     "@factory/template-sdk": "workspace:*",
+    "@factory/template-validator": "workspace:*",
     "next": "^16.3.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"

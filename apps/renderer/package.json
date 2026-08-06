@@ -14,6 +14,7 @@
     "@factory/config": "workspace:*",
     "@factory/database": "workspace:*",
     "@factory/domains": "workspace:*",
+    "@factory/publication-compiler": "workspace:*",
     "@factory/publication-contract": "workspace:*",
     "@factory/publishing": "workspace:*",
     "@factory/template-loader": "workspace:*",

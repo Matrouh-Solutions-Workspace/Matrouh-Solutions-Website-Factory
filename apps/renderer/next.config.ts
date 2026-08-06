@@ -25,7 +25,18 @@ const config: NextConfig = {
         ],
       },
       {
-        source: "/((?!preview(?:/|$)|api(?:/|$)).*)",
+        source: "/template-preview/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          {
+            key: "Content-Security-Policy",
+            value: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; ${scriptSrc}; frame-src https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; frame-ancestors *`,
+          },
+        ],
+      },
+      {
+        source: "/((?!preview(?:/|$)|template-preview(?:/|$)|api(?:/|$)).*)",
         headers: [
           {
             key: "Cache-Control",
@@ -33,8 +44,7 @@ const config: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value:
-              `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; ${scriptSrc}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`,
+            value: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; ${scriptSrc}; frame-src https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`,
           },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Content-Type-Options", value: "nosniff" },

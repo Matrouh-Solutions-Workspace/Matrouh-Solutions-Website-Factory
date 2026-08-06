@@ -19,11 +19,11 @@ const titles: Record<string, string> = {
 export function DashboardShell({ children }: { readonly children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  if (pathname === "/login") return <>{children}</>;
+  if (pathname === "/login" || pathname.startsWith("/template-preview/")) return <>{children}</>;
   const segment = pathname.split("/").filter(Boolean)[0];
   const title = segment ? (titles[segment] ?? "Website Factory") : "Overview";
   return (
-    <div className="appShell">
+    <div className="appShell" dir="rtl">
       <a className="skipLink" href="#dashboard-content">
         Skip to content
       </a>

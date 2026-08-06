@@ -157,4 +157,41 @@ Each template must pass:
 6. Confirm no Factory source edit is required for discovery.
 7. Confirm the prior artifact remains available while publications reference it.
 
+## Catalog preview, customization, and import
+
+The dashboard template catalog previews every ready/deprecated exact version through the renderer.
+The preview is compiled from the template's website, page, section, navigation, and theme defaults,
+then rendered through the same publication compiler and template runtime used by real websites. An
+artifact cannot be imported as ready when those defaults fail compilation.
+
+Released template versions remain immutable. The catalog's **Create & edit website** action creates
+an editable website draft pinned to the selected exact version; users then customize content, pages,
+sections, navigation, theme, and SEO in the website editor. Changing template source requires a new
+semantic version and rebuilt artifact.
+
+Local deployments can import a trusted compiled artifact from the catalog using these build outputs:
+
+- `matrouh.template.json`;
+- `generated/matrouh.template.manifest.json`;
+- the bundled ESM entry at `dist/index.js`.
+
+Import verifies identity, exact-version uniqueness, executable/portable manifest consistency,
+compatibility, schema defaults, artifact integrity, and default-draft compilation before atomically
+cataloging components. Because the executable runs server-side, dashboard upload is intentionally
+limited to local deployments and requires an explicit trust confirmation. Production artifacts must
+be installed through reviewed, signed deployment tooling in accordance with the trust model.
+
+### Live theme and location editing
+
+The website editor exposes common semantic color tokens as accessible color controls and applies
+them immediately to a same-origin template preview. Saving still validates and persists the complete
+theme token object; advanced JSON remains available for layout, type, and motion tokens. Preview-only
+changes never mutate a publication.
+
+Location-aware templates store an address plus bounded latitude/longitude values in structured
+content. The editor may populate coordinates from browser geolocation and opens the resulting point
+with the official Google Maps URL format. Maps URLs do not require an API key. A future embedded map
+must use the official Maps Embed API with a deployment-managed, referrer-restricted key; templates
+must never contain or request that secret themselves.
+
 For exact contracts, read [Specification 03](../docs/specifications/03-template-sdk-implementation.md), [rendering](../docs/specifications/04-rendering-pipeline.md), and [publication](../docs/specifications/05-publication-pipeline.md).

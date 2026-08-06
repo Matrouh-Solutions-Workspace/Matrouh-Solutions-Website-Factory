@@ -21,6 +21,22 @@ const items = (value: Readonly<JsonValue>): readonly Record<string, JsonValue>[]
     : [];
 };
 
+const numericField = (value: Readonly<JsonValue>, key: string): number => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return 0;
+  const candidate = (value as Readonly<Record<string, JsonValue>>)[key];
+  return typeof candidate === "number" && Number.isFinite(candidate) ? candidate : 0;
+};
+
+const mapsUrl = (latitude: number, longitude: number, address: string): string => {
+  const query = latitude !== 0 || longitude !== 0 ? `${latitude},${longitude}` : address;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+};
+
+const mapsEmbedUrl = (latitude: number, longitude: number, address: string): string => {
+  const query = latitude !== 0 || longitude !== 0 ? `${latitude},${longitude}` : address;
+  return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`;
+};
+
 const heroSchema = contentSchema<JsonValue>({
   version: 1,
   description: "Patient-focused introduction and primary action.",
@@ -82,6 +98,8 @@ const contactSchema = contentSchema<JsonValue>({
     email: z.string().email().max(320),
     address: z.string().min(1).max(300),
     hours: z.string().min(1).max(240),
+    latitude: z.number().min(-90).max(90).default(31.3543),
+    longitude: z.number().min(-180).max(180).default(27.2373),
   }),
   fields: {
     "/eyebrow": { label: "Eyebrow", control: "text", order: 1 },
@@ -91,6 +109,8 @@ const contactSchema = contentSchema<JsonValue>({
     "/email": { label: "Email", control: "text", order: 5 },
     "/address": { label: "Address", control: "textarea", order: 6, localization: "value" },
     "/hours": { label: "Opening hours", control: "text", order: 7, localization: "value" },
+    "/latitude": { label: "Map latitude", control: "number", order: 8 },
+    "/longitude": { label: "Map longitude", control: "number", order: 9 },
   },
 });
 
@@ -125,10 +145,28 @@ export const doctorSections: readonly SectionDefinition[] = [
               </a>
               <span className="trustNote">Private · Personal · Unhurried</span>
             </div>
+            <div className="heroProof" aria-label="Practice highlights">
+              <span>
+                <strong>20+</strong> years of care
+              </span>
+              <span>
+                <strong>30 min</strong> unrushed visits
+              </span>
+              <span>
+                <strong>1:1</strong> continuity
+              </span>
+            </div>
           </div>
           <div aria-hidden className="heroVisual">
-            <span>Care</span>
-            <strong>01</strong>
+            <span className="doctorPortraitMark">MS</span>
+            <div className="doctorAvailability">
+              <i /> Accepting appointments
+            </div>
+            <strong>
+              Care,
+              <br />
+              clearly.
+            </strong>
             <small>One patient at a time</small>
           </div>
         </div>
@@ -163,7 +201,7 @@ export const doctorSections: readonly SectionDefinition[] = [
     },
     composedOf: [sharedInfoCardId],
     render: ({ value }) => (
-      <section className="contentSection">
+      <section className="contentSection doctorServices">
         <div className="sectionHeading">
           <span className="sectionEyebrow">Services</span>
           <h2>{field(value, "title")}</h2>
@@ -195,31 +233,74 @@ export const doctorSections: readonly SectionDefinition[] = [
       email: "doctor@example.com",
       address: "Matrouh, Egypt",
       hours: "Saturday–Thursday · 9:00–18:00",
+      latitude: 31.3543,
+      longitude: 27.2373,
     },
     composedOf: [sharedInfoCardId, sharedButtonId],
-    render: ({ value }) => (
-      <section className="contactSection">
+    render: ({ value, context }) => (
+      <section className="contactSection doctorContact">
         <div className="sectionHeading">
           <span className="sectionEyebrow">{field(value, "eyebrow")}</span>
           <h1>{field(value, "title")}</h1>
           <p>{field(value, "body")}</p>
         </div>
-        <div className="contactGrid">
-          <a className="contactCard" href={`tel:${field(value, "phone").replace(/\s/g, "")}`}>
-            <small>Call the practice</small>
-            <strong>{field(value, "phone")}</strong>
-          </a>
-          <a className="contactCard" href={`mailto:${field(value, "email")}`}>
-            <small>Send an email</small>
-            <strong>{field(value, "email")}</strong>
-          </a>
-          <div className="contactCard">
-            <small>Visit us</small>
-            <strong>{field(value, "address")}</strong>
+        <div className="contactLayout">
+          <div className="contactGrid">
+            <a className="contactCard" href={`tel:${field(value, "phone").replace(/\s/g, "")}`}>
+              <small>Call the practice</small>
+              <strong>{field(value, "phone")}</strong>
+            </a>
+            <a className="contactCard" href={`mailto:${field(value, "email")}`}>
+              <small>Send an email</small>
+              <strong>{field(value, "email")}</strong>
+            </a>
+            <div className="contactCard">
+              <small>Visit us</small>
+              <strong>{field(value, "address")}</strong>
+            </div>
+            <div className="contactCard">
+              <small>Opening hours</small>
+              <strong>{field(value, "hours")}</strong>
+            </div>
           </div>
-          <div className="contactCard">
-            <small>Opening hours</small>
-            <strong>{field(value, "hours")}</strong>
+          <div className="doctorMapPanel">
+            <iframe
+              allowFullScreen
+              loading="eager"
+              referrerPolicy="strict-origin-when-cross-origin"
+              src={context.links.url(
+                mapsEmbedUrl(
+                  numericField(value, "latitude"),
+                  numericField(value, "longitude"),
+                  field(value, "address"),
+                ),
+              )}
+              title="Practice location map"
+            />
+            <a
+              className="doctorMapCard"
+              href={context.links.url(
+                mapsUrl(
+                  numericField(value, "latitude"),
+                  numericField(value, "longitude"),
+                  field(value, "address"),
+                ),
+              )}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <span className="mapPin" aria-hidden>
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z" />
+                  <circle cx="12" cy="9" r="2.3" />
+                </svg>
+              </span>
+              <span>
+                <small>Find the practice</small>
+                <strong>{field(value, "address")}</strong>
+                <em>Open full map →</em>
+              </span>
+            </a>
           </div>
         </div>
       </section>

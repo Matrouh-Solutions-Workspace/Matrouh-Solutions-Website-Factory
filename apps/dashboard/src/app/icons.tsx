@@ -19,10 +19,10 @@ export type IconName =
 const paths: Record<IconName, React.ReactNode> = {
   overview: (
     <>
-      <rect x="3" y="3" width="7" height="7" rx="2" />
-      <rect x="14" y="3" width="7" height="7" rx="2" />
-      <rect x="3" y="14" width="7" height="7" rx="2" />
-      <rect x="14" y="14" width="7" height="7" rx="2" />
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
     </>
   ),
   clients: (
@@ -34,7 +34,7 @@ const paths: Record<IconName, React.ReactNode> = {
   ),
   websites: (
     <>
-      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <rect x="3" y="4" width="18" height="16" />
       <path d="M3 9h18M8 4v5" />
     </>
   ),
@@ -45,7 +45,7 @@ const paths: Record<IconName, React.ReactNode> = {
   ),
   media: (
     <>
-      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <rect x="3" y="3" width="18" height="18" />
       <circle cx="8.5" cy="8.5" r="1.5" />
       <path d="m21 15-5-5L5 21" />
     </>

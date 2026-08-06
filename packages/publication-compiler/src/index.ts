@@ -64,6 +64,74 @@ export type CompilationResult =
   | { readonly success: true; readonly snapshot: PublicationSnapshot; readonly hash: string }
   | { readonly success: false; readonly diagnostics: readonly CompilationDiagnostic[] };
 
+export function createDefaultTemplateDraft(
+  template: TemplateDefinition,
+  artifactHash: string,
+  locale = "en",
+): DraftProjection {
+  const identity = artifactHash.slice(0, 16);
+  const pageIds = new Map(
+    template.pages.map((page, index) => [page.id as string, `page-${identity}-${index}`]),
+  );
+  return {
+    organizationId: `catalog-${identity}`,
+    websiteId: `website-${identity}`,
+    publicationId: `preview-${identity}`,
+    revision: 1n,
+    name: template.manifest.displayName,
+    defaultLocale: locale,
+    settingsSchemaVersion: template.websiteSchema.version,
+    settings: template.websiteSchema.parse({}),
+    locales: [{ locale, fallbackLocale: null }],
+    pages: template.pages.map((page, pageIndex) => ({
+      id: pageIds.get(page.id)!,
+      pageTypeId: page.id,
+      locale,
+      title: page.title,
+      slug: page.slug.defaultValue ?? (pageIndex === 0 ? "/" : defaultSlug(page.title)),
+      seo: { title: page.title, description: template.manifest.description },
+      sections: page.defaultSections.flatMap((section, sectionIndex) => {
+        const definition = template.sections.find((item) => item.id === section.sectionTypeId);
+        return definition
+          ? [
+              {
+                id: `section-${identity}-${pageIndex}-${sectionIndex}`,
+                sectionTypeId: definition.id,
+                schemaVersion: definition.schema.version,
+                content: section.content ?? definition.defaults,
+                orderKey: String(sectionIndex).padStart(4, "0"),
+              },
+            ]
+          : [];
+      }),
+    })),
+    navigation: template.navigation.map((definition) => ({
+      definitionId: definition.id,
+      locale: definition.localization === "localized-tree" ? locale : null,
+      schemaVersion: definition.visibilitySchema.version,
+      nodes: template.pages.flatMap((page, index) => {
+        const pageId = pageIds.get(page.id);
+        const allowed =
+          definition.allowedPageTypes === "all" || definition.allowedPageTypes.includes(page.id);
+        return pageId && allowed
+          ? [
+              {
+                id: `nav-${identity}-${String(definition.id).replace(/[^a-z0-9]/gi, "-")}-${index}`,
+                kind: "page",
+                pageId,
+                label: { [locale]: page.title },
+                visibility: definition.visibilitySchema.parse({}),
+                children: [],
+              },
+            ]
+          : [];
+      }),
+    })),
+    theme: template.theme.defaults,
+    media: [],
+  };
+}
+
 export function compilePublication(
   draft: DraftProjection,
   template: TemplateDefinition,
@@ -583,6 +651,15 @@ function validateMediaReferences(
     page.sections.forEach((section, sectionIndex) =>
       walk(section.content, `/pages/${pageIndex}/sections/${sectionIndex}/content`),
     ),
+  );
+}
+
+function defaultSlug(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "page"
   );
 }
 
