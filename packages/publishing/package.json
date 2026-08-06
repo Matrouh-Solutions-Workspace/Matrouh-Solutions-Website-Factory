@@ -16,7 +16,12 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.864.0",
     "@factory/publication-compiler": "workspace:*",
-    "@factory/publication-contract": "workspace:*"
+    "@factory/publication-contract": "workspace:*",
+    "@factory/template-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1"
   }
 }

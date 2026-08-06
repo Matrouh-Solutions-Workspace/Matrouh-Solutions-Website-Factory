@@ -1,6 +1,6 @@
 {
   "name": "@templates/clinic",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -10,13 +10,14 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.tsx --format esm --dts --clean",
+    "build": "tsup && node ../../tooling/scripts/generate-template-manifest.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@factory/template-sdk": "workspace:*",
+    "@templates/shared": "workspace:*",
     "react": "^19.1.1"
   },
   "devDependencies": {

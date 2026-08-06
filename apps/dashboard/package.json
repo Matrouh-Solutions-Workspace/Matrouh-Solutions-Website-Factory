@@ -11,7 +11,17 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@factory/auth": "workspace:*",
+    "@factory/config": "workspace:*",
+    "@factory/database": "workspace:*",
+    "@factory/domains": "workspace:*",
+    "@factory/media": "workspace:*",
+    "@factory/publication-compiler": "workspace:*",
+    "@factory/publication-contract": "workspace:*",
+    "@factory/publishing": "workspace:*",
     "@factory/template-loader": "workspace:*",
+    "@factory/template-runtime": "workspace:*",
+    "@factory/template-sdk": "workspace:*",
     "next": "^16.3.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"

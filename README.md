@@ -17,21 +17,33 @@ Read [ARCHITECTURE.md](./ARCHITECTURE.md), the [engineering specifications](./do
 
 ```bash
 pnpm install
-docker compose up -d
-pnpm db:generate
 pnpm db:deploy
 pnpm seed:demo
-pnpm check
 pnpm dev
 ```
 
-Copy `.env.example` to `.env.local` and provide development infrastructure before running persistence-backed flows.
+`pnpm seed:demo` generates the database client, builds the worker and all retained template versions, installs the template catalog, and prints the local dashboard session credential. No separate build step is required for this development workflow.
+
+For non-demo deployments, build template packages and run `pnpm templates:sync` with the deployment
+migrator/catalog credential. The command validates immutable hashes, quarantines invalid artifacts,
+and rebuilds the derived component index. Run `pnpm db:verify` after every migration deployment.
+
+Copy `.env.example` to `.env.local` and point `DATABASE_URL` at a running PostgreSQL database before running persistence-backed flows. The default local development connection is:
+
+```env
+DATABASE_URL="postgresql://factory:factory@localhost:5432/factory"
+```
+
+Create the `factory` database and user in your local PostgreSQL installation, then run `pnpm db:deploy` to apply the Prisma migrations.
 
 The development services are available at:
 
 - Dashboard: `http://localhost:3000`
 - Public renderer: `http://doctor.localhost:3001` and `http://clinic.localhost:3001`
 - Template Lab: `http://localhost:3002`
+
+The local credential flow is disabled when `FACTORY_DEPLOYMENT_MODE=production`; production uses
+OIDC with PKCE and short-lived, revocable opaque Factory sessions.
 
 `pnpm seed:demo` compiles immutable Doctor and Clinic publication artifacts. The renderer resolves the host to an artifact and loads its exact template through the generic Template SDK pipeline; application code does not import a concrete template.
 

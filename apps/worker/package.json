@@ -4,17 +4,33 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx src/main.ts",
     "build": "tsup src/main.ts src/seed-demo.ts --format esm --clean",
     "start": "node dist/main.js",
     "seed:demo": "tsx src/seed-demo.ts",
+    "templates:sync": "tsx src/sync-templates.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@factory/component-registry": "workspace:*",
+    "@factory/config": "workspace:*",
+    "@factory/database": "workspace:*",
+    "@factory/domains": "workspace:*",
+    "@factory/media": "workspace:*",
     "@factory/publication-compiler": "workspace:*",
+    "@factory/publication-contract": "workspace:*",
+    "@factory/publishing": "workspace:*",
     "@factory/template-loader": "workspace:*",
-    "@factory/template-validator": "workspace:*"
+    "@factory/template-runtime": "workspace:*",
+    "@factory/template-sdk": "workspace:*",
+    "@factory/template-validator": "workspace:*",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7"
   }
 }

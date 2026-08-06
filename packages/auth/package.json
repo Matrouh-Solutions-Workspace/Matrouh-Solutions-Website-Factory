@@ -16,6 +16,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@factory/application": "workspace:*"
+    "@factory/application": "workspace:*",
+    "jose": "^6.1.0"
   }
 }

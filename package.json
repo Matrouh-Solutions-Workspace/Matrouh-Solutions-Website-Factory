@@ -7,18 +7,20 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev --parallel",
-    "typecheck": "turbo run typecheck",
+    "build": "pnpm db:generate && turbo run build --concurrency=1",
+    "dev": "turbo run dev",
+    "typecheck": "pnpm db:generate && turbo run typecheck",
     "test": "turbo run test",
-    "lint": "turbo run lint",
+    "lint": "pnpm db:generate && turbo run lint",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "db:generate": "pnpm --filter @factory/database generate",
     "db:validate": "pnpm --filter @factory/database validate",
     "db:deploy": "pnpm --filter @factory/database exec prisma migrate deploy",
-    "seed:demo": "pnpm --filter @factory/worker seed:demo",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "db:verify": "pnpm --filter @factory/database verify:production",
+    "seed:demo": "pnpm db:generate && turbo run build --filter=@factory/worker --filter=@templates/doctor --filter=@templates/clinic --filter=@templates/doctor-v1 --filter=@templates/clinic-v1 --concurrency=1 && pnpm --filter @factory/worker seed:demo",
+    "templates:sync": "pnpm db:generate && pnpm --filter @factory/worker templates:sync",
+    "check": "pnpm db:generate && turbo run lint && turbo run typecheck && pnpm test && turbo run build --concurrency=1"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
