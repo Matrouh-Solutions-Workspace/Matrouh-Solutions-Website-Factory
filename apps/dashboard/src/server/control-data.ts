@@ -46,46 +46,44 @@ export async function loadBillingWorkspace(query = "") {
     dashboardDatabase(),
     tenantContext(context, "billing-workspace"),
     async (transaction) => {
-      const [websites, clients] = await Promise.all([
-        transaction.website.findMany({
-          where: {
-            organizationId: context.organization.id,
-            archivedAt: null,
-            ...(query
-              ? {
-                  OR: [
-                    { name: { contains: query, mode: "insensitive" as const } },
-                    { client: { name: { contains: query, mode: "insensitive" as const } } },
-                    { client: { contactEmail: { contains: query, mode: "insensitive" as const } } },
-                    {
-                      domains: {
-                        some: {
-                          hostnameNormalized: { contains: query, mode: "insensitive" as const },
-                        },
+      const websites = await transaction.website.findMany({
+        where: {
+          organizationId: context.organization.id,
+          archivedAt: null,
+          ...(query
+            ? {
+                OR: [
+                  { name: { contains: query, mode: "insensitive" as const } },
+                  { client: { name: { contains: query, mode: "insensitive" as const } } },
+                  { client: { contactEmail: { contains: query, mode: "insensitive" as const } } },
+                  {
+                    domains: {
+                      some: {
+                        hostnameNormalized: { contains: query, mode: "insensitive" as const },
                       },
                     },
-                  ],
-                }
-              : {}),
+                  },
+                ],
+              }
+            : {}),
+        },
+        orderBy: { name: "asc" },
+        include: {
+          client: { select: { id: true, name: true } },
+          subscription: true,
+          domains: {
+            where: { releasedAt: null },
+            orderBy: { createdAt: "asc" },
+            take: 1,
+            select: { hostnameNormalized: true },
           },
-          orderBy: { name: "asc" },
-          include: {
-            client: { select: { id: true, name: true } },
-            subscription: true,
-            domains: {
-              where: { releasedAt: null },
-              orderBy: { createdAt: "asc" },
-              take: 1,
-              select: { hostnameNormalized: true },
-            },
-          },
-        }),
-        transaction.client.findMany({
-          where: { organizationId: context.organization.id, archivedAt: null },
-          orderBy: { name: "asc" },
-          select: { id: true, name: true },
-        }),
-      ]);
+        },
+      });
+      const clients = await transaction.client.findMany({
+        where: { organizationId: context.organization.id, archivedAt: null },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      });
       return { websites, clients };
     },
   );
@@ -97,32 +95,30 @@ export async function loadMailWorkspace() {
     dashboardDatabase(),
     tenantContext(context, "mail-workspace"),
     async (transaction) => {
-      const [clients, messages] = await Promise.all([
-        transaction.client.findMany({
-          where: {
-            organizationId: context.organization.id,
-            archivedAt: null,
-            contactEmail: { not: null },
-          },
-          orderBy: { name: "asc" },
-          select: { id: true, name: true, contactEmail: true },
-        }),
-        transaction.outboundMessage.findMany({
-          where: { organizationId: context.organization.id },
-          orderBy: { createdAt: "desc" },
-          take: 50,
-          select: {
-            id: true,
-            recipientEmail: true,
-            subject: true,
-            kind: true,
-            status: true,
-            createdAt: true,
-            sentAt: true,
-            failureReason: true,
-          },
-        }),
-      ]);
+      const clients = await transaction.client.findMany({
+        where: {
+          organizationId: context.organization.id,
+          archivedAt: null,
+          contactEmail: { not: null },
+        },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, contactEmail: true },
+      });
+      const messages = await transaction.outboundMessage.findMany({
+        where: { organizationId: context.organization.id },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: {
+          id: true,
+          recipientEmail: true,
+          subject: true,
+          kind: true,
+          status: true,
+          createdAt: true,
+          sentAt: true,
+          failureReason: true,
+        },
+      });
       return { clients, messages };
     },
   );
@@ -208,16 +204,14 @@ export async function loadHostingDomainChoices() {
     dashboardDatabase(),
     tenantContext(context, "hosting-domain-choices"),
     async (transaction) => {
-      const [domains, mappings] = await Promise.all([
-        transaction.hostingDomain.findMany({
-          where: { organizationId: context.organization.id },
-          orderBy: [{ isDefault: "desc" }, { hostnameNormalized: "asc" }],
-        }),
-        transaction.domain.findMany({
-          where: { organizationId: context.organization.id, releasedAt: null },
-          select: { hostnameNormalized: true },
-        }),
-      ]);
+      const domains = await transaction.hostingDomain.findMany({
+        where: { organizationId: context.organization.id },
+        orderBy: [{ isDefault: "desc" }, { hostnameNormalized: "asc" }],
+      });
+      const mappings = await transaction.domain.findMany({
+        where: { organizationId: context.organization.id, releasedAt: null },
+        select: { hostnameNormalized: true },
+      });
       return domains.map((domain) => ({
         ...domain,
         hostedWebsiteCount: mappings.filter(
