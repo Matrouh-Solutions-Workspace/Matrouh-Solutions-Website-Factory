@@ -14,11 +14,11 @@ export function databaseUrlFromEnv(environment: Record<string, string | undefine
 }
 export function createDatabaseClient(options: DatabaseOptions): PrismaClient {
   return new PrismaClient({
-    // The dashboard uses interactive tenant transactions. A single connection prevents a
-    // transaction-pooler from interleaving bind/execute messages across prepared queries.
+    // Dashboard rendering and server actions run concurrently; keep a real pool so one
+    // request never attempts to issue another query over an in-flight connection.
     adapter: new PrismaPg({
       connectionString: directPostgresUrl(options.connectionString),
-      max: 1,
+      max: 10,
       connectionTimeoutMillis: 10_000,
       idleTimeoutMillis: 10_000,
     }),

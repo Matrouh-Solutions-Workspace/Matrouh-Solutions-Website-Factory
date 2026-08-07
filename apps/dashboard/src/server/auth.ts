@@ -50,7 +50,13 @@ export async function authenticateDashboardCredential(
     return client.session.findUnique({ where: { tokenHash } });
   });
   if (!session || session.revokedAt || session.expiresAt <= new Date()) return null;
-  const user = await client.user.findUnique({ where: { id: session.userId } });
+  const user = await client.user
+    .findUnique({ where: { id: session.userId } })
+    .catch(async (error) => {
+      if (!isRecoverableDatabaseConnectionError(error)) throw error;
+      client = await resetDashboardDatabase();
+      return client.user.findUnique({ where: { id: session.userId } });
+    });
   if (!user || user.status !== "active") return null;
   const membership = await withTenantTransaction(
     client,
