@@ -9,10 +9,12 @@ const items = [
   { label: "Overview", href: "/", icon: "overview", group: "Workspace" },
   { label: "Websites", href: "/websites", icon: "websites", group: "Workspace" },
   { label: "Clients", href: "/clients", icon: "clients", group: "Workspace" },
+  { label: "Billing", href: "/billing", icon: "settings", group: "Workspace" },
+  { label: "Mail", href: "/mail", icon: "mail", group: "Workspace" },
   { label: "Templates", href: "/templates", icon: "templates", group: "Library" },
   { label: "Media", href: "/media", icon: "media", group: "Library" },
   { label: "Domains", href: "/domains", icon: "domains", group: "Optimize" },
-  { label: "Search & social", href: "/seo", icon: "seo", group: "Optimize" },
+  { label: "Monitoring", href: "/monitoring", icon: "monitoring", group: "System" },
   { label: "Plugins", href: "/plugins", icon: "plugins", group: "System" },
   { label: "Settings", href: "/settings", icon: "settings", group: "System" },
 ] satisfies readonly { label: string; href: string; icon: IconName; group: string }[];

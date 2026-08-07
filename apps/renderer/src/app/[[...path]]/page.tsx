@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
 import { instantiateTemplateRuntime } from "@factory/template-runtime";
+import { localeLinks, localizedPageRoute, textDirection } from "@/server/locale-navigation";
+import { rendererConfig } from "@/server/config";
 import { loadSite } from "@/server/site";
 
 interface PageProperties {
@@ -18,10 +20,17 @@ export async function generateMetadata({ params }: PageProperties): Promise<Meta
   try {
     const rendered = runtime(site).render(`/${path.join("/")}`);
     const canonicalPath = rendered.seo?.canonicalPath ?? `/${path.join("/")}`;
+    const localizedRoutes = localeLinks(site.snapshot, `/${path.join("/")}`);
     return {
       title: rendered.title,
+      icons: site.branding.faviconUrl ? { icon: site.branding.faviconUrl } : undefined,
       ...(rendered.description === undefined ? {} : { description: rendered.description }),
-      alternates: { canonical: absoluteUrl(host, canonicalPath) },
+      alternates: {
+        canonical: absoluteUrl(host, canonicalPath),
+        languages: Object.fromEntries(
+          localizedRoutes.map((item) => [item.locale, absoluteUrl(host, item.href)]),
+        ),
+      },
       robots:
         rendered.indexingPolicy === "noindex"
           ? { index: false, follow: false }
@@ -51,11 +60,28 @@ export default async function SitePage({ params }: PageProperties) {
   }
   const structuredData = rendered.seo?.structuredData ?? [];
   const navigation = navigationLinks(site.snapshot, rendered.locale);
+  const localizedRoutes = localeLinks(site.snapshot, `/${path.join("/")}`);
+  const appearance = websiteSetting(site.snapshot, "colorMode") === "dark" ? "dark" : "light";
+  const customLogo = websiteSetting(site.snapshot, "logoMediaId");
+  const logoUrl =
+    typeof customLogo === "string"
+      ? site.snapshot.media.find((item) => item.id === customLogo)?.url
+      : undefined;
   return (
-    <div style={themeVariables(site.snapshot.theme)}>
+    <div
+      className="siteRoot"
+      data-color-scheme={appearance}
+      dir={textDirection(rendered.locale)}
+      lang={rendered.locale}
+      style={themeVariables(site.snapshot.theme)}
+    >
       <header className="siteHeader">
         <a className="siteBrand" href="/">
-          <img alt="" className="siteBrandMark" src="/matrouh-logo.png" />
+          <img
+            alt=""
+            className="siteBrandMark"
+            src={logoUrl ?? site.branding.faviconUrl ?? "/matrouh-logo.png"}
+          />
           <strong>{site.snapshot.website.name}</strong>
         </a>
         <nav aria-label="Main navigation">
@@ -64,6 +90,21 @@ export default async function SitePage({ params }: PageProperties) {
               {item.label}
             </a>
           ))}
+          {localizedRoutes.length > 1 && (
+            <span aria-label="Language" className="localeSwitcher" role="group">
+              {localizedRoutes.map((item) => (
+                <a
+                  aria-current={item.current ? "page" : undefined}
+                  dir={textDirection(item.locale)}
+                  href={item.href}
+                  key={item.locale}
+                  lang={item.locale}
+                >
+                  {localeLabel(item.locale)}
+                </a>
+              ))}
+            </span>
+          )}
         </nav>
       </header>
       <main>{rendered.node}</main>
@@ -78,7 +119,6 @@ export default async function SitePage({ params }: PageProperties) {
       <footer className="siteFooter">
         <div>
           <strong>{site.snapshot.website.name}</strong>
-          <p>Thoughtful care, clearly communicated.</p>
         </div>
         <nav aria-label="Footer navigation">
           {navigation.map((item) => (
@@ -87,9 +127,38 @@ export default async function SitePage({ params }: PageProperties) {
             </a>
           ))}
         </nav>
+        {!site.branding.whiteLabelEnabled && (
+          <a
+            className="factoryWatermark"
+            href={matrouhSolutionsUrl(rendered.locale)}
+            rel="author"
+          >
+            {rendered.locale === "ar" ? "موقع من مطروح سوليوشنز" : "Website by Matrouh Solutions"}
+          </a>
+        )}
       </footer>
     </div>
   );
+}
+
+function matrouhSolutionsUrl(locale: string): string {
+  const path = locale === "ar" ? "/matrouh-solutions" : "/en/matrouh-solutions";
+  return new URL(path, `${rendererConfig.FACTORY_RENDERER_PUBLIC_URL.replace(/\/$/, "")}/`).toString();
+}
+
+function websiteSetting(snapshot: PublicationSnapshot, key: string): unknown {
+  const settings = snapshot.website.settings;
+  return settings && typeof settings === "object" && !Array.isArray(settings)
+    ? (settings as Record<string, unknown>)[key]
+    : undefined;
+}
+
+function localeLabel(locale: string): string {
+  try {
+    return new Intl.DisplayNames([locale], { type: "language" }).of(locale) ?? locale;
+  } catch {
+    return locale;
+  }
 }
 
 function runtime(site: NonNullable<Awaited<ReturnType<typeof loadSite>>>) {
@@ -104,10 +173,7 @@ function runtime(site: NonNullable<Awaited<ReturnType<typeof loadSite>>>) {
 }
 
 function routeForPage(snapshot: PublicationSnapshot, pageId: string, locale: string) {
-  return (
-    snapshot.routes.find((route) => route.pageId === pageId && route.locale === locale)?.pathname ??
-    "#"
-  );
+  return localizedPageRoute(snapshot, pageId, locale) ?? "#";
 }
 
 function navigationLinks(

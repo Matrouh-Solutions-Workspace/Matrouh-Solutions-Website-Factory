@@ -6,9 +6,11 @@ import { loginAction } from "./actions";
 export function LoginForm({
   invalid,
   authMode,
+  next,
 }: {
   readonly invalid: boolean;
   readonly authMode: "demo" | "oidc";
+  readonly next?: string | undefined;
 }) {
   if (authMode === "oidc") {
     return (
@@ -30,22 +32,29 @@ export function LoginForm({
       <p className="eyebrow">Matrouh Factory</p>
       <h1>Welcome back</h1>
       <p>Sign in to manage websites, content, domains, and publications for your workspace.</p>
-      <label htmlFor="credential">Session credential</label>
+      {next ? <input name="next" type="hidden" value={next} /> : null}
+      <label htmlFor="email">Email</label>
       <input
         aria-invalid={invalid}
-        autoComplete="current-password"
+        autoComplete="email"
         autoFocus
-        id="credential"
-        name="credential"
-        placeholder="Paste your secure credential"
+        id="email"
+        name="email"
+        placeholder="you@example.com"
+        required
+        type="email"
+      />
+      <label htmlFor="password">Password</label>
+      <input
+        autoComplete="current-password"
+        id="password"
+        name="password"
         required
         type="password"
       />
-      {invalid ? <p role="alert">The credential is invalid or expired.</p> : null}
+      {invalid ? <p role="alert">The email or password is incorrect.</p> : null}
       <SubmitButton />
-      <small className="loginHint">
-        Credentials stay in an HTTP-only session cookie and are never displayed after sign-in.
-      </small>
+      <small className="loginHint">Local demo: owner@matrouh.local / MatrouhDemo2026!</small>
     </form>
   );
 }

@@ -1,6 +1,8 @@
 import { withTenantTransaction } from "@factory/database";
 import { requireDashboardContext } from "./auth";
 import { dashboardDatabase } from "./database";
+import { workerStatusFromHeartbeat, type WorkerStatus } from "./worker-status";
+import { dashboardConfig } from "./config";
 export { dashboardDatabase } from "./database";
 
 export interface DashboardWebsite {
@@ -41,6 +43,8 @@ export interface DashboardOverview {
   };
   websites: readonly DashboardWebsite[];
   publishJobs: readonly DashboardPublishJob[];
+  worker: WorkerStatus;
+  workerRestartAvailable: boolean;
   templates: readonly {
     templateId: string;
     displayName: string;
@@ -48,6 +52,7 @@ export interface DashboardOverview {
     lifecycleStatus: string;
     latestVersion: string | null;
   }[];
+  clients: readonly { id: string; name: string }[];
 }
 
 interface TemplateCatalogOverviewRow {
@@ -62,12 +67,18 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
   const client = dashboardDatabase();
   const context = await requireDashboardContext("website.read");
   const organization = context.organization;
+  // The pg adapter uses one connection and cannot safely overlap prepared queries.
   const templates = await client.templateCatalogEntry.findMany({
     orderBy: { displayName: "asc" },
     include: { versions: { orderBy: { discoveredAt: "desc" }, take: 1 } },
   });
+  const workerHeartbeat = await client.serviceHeartbeat.findFirst({
+    where: { service: "worker" },
+    orderBy: { heartbeatAt: "desc" },
+    select: { status: true, heartbeatAt: true },
+  });
 
-  const [websites, publishJobsRaw, websiteStatusCounts, activeDomains, mediaAssets] =
+  const [websites, publishJobsRaw, websiteStatusCounts, activeDomains, mediaAssets, clients] =
     await withTenantTransaction(
       client,
       {
@@ -105,7 +116,12 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
           where: { status: "active", releasedAt: null },
         });
         const media = await transaction.mediaAsset.count({ where: { status: "ready" } });
-        return [websites, publishJobs, websiteStatuses, domains, media] as const;
+        const clients = await transaction.client.findMany({
+          where: { organizationId: organization.id, archivedAt: null },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true },
+        });
+        return [websites, publishJobs, websiteStatuses, domains, media, clients] as const;
       },
     );
   const publishJobs = publishJobsRaw.flatMap(mapPublishJob);
@@ -148,7 +164,10 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
       latestPublishJob: latestJobByWebsite.get(website.id) ?? null,
     })),
     publishJobs,
+    worker: workerStatusFromHeartbeat(workerHeartbeat),
+    workerRestartAvailable: dashboardConfig.FACTORY_DEPLOYMENT_MODE === "local",
     templates: mapTemplates(templates),
+    clients,
   };
 }
 

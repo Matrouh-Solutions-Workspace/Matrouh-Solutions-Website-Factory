@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
 import { loadCatalogPreview } from "@/server/catalog-preview";
+import { localizedPageRoute } from "@/server/locale-navigation";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -30,8 +31,20 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
   const preview = await safePreview(templateId, version, `/${path.join("/")}`);
   if (!preview) notFound();
   const navigation = navigationLinks(preview.snapshot, preview.rendered.locale);
+  const settings = preview.snapshot.website.settings;
+  const appearance =
+    settings &&
+    typeof settings === "object" &&
+    !Array.isArray(settings) &&
+    (settings as Record<string, unknown>).colorMode === "dark"
+      ? "dark"
+      : "light";
   return (
-    <div style={themeVariables(preview.snapshot.theme)}>
+    <div
+      className="siteRoot"
+      data-color-scheme={appearance}
+      style={themeVariables(preview.snapshot.theme)}
+    >
       <aside className="previewBanner">Template preview · default content</aside>
       <header className="siteHeader">
         <a className="siteBrand" href={`${preview.prefix}/`}>
@@ -107,10 +120,7 @@ function navigationNodeLink(value: unknown, snapshot: PublicationSnapshot, local
 }
 
 function routeForPage(snapshot: PublicationSnapshot, pageId: string, locale: string): string {
-  return (
-    snapshot.routes.find((route) => route.pageId === pageId && route.locale === locale)?.pathname ??
-    "/"
-  );
+  return localizedPageRoute(snapshot, pageId, locale) ?? "/";
 }
 
 function themeVariables(theme: ThemeTokens): React.CSSProperties {

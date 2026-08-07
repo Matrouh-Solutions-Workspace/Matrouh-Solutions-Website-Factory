@@ -1,21 +1,34 @@
 import {
-  createWebsiteAction,
   deleteWebsiteAction,
   previewWebsiteAction,
-  publishWebsiteAction,
+  restartWorkerAction,
+  retryPublicationJobAction,
+  setWebsiteAvailabilityAction,
+  toggleWebsitePublicationAction,
 } from "@/app/actions";
 import { ConfirmSubmit } from "@/app/confirm-submit";
 import { PendingSubmit } from "@/app/pending-submit";
 import { loadDashboardOverview } from "@/server/overview";
+import { WebsiteCreateWizard } from "@/app/website-create-wizard";
+import { canRetryPublicationJob, isActivePublicationJob } from "@/server/publication-jobs";
+import { PublicationStatusRefresh } from "@/app/publication-status-refresh";
+import { loadHostingDomainChoices } from "@/server/control-data";
 
 export const dynamic = "force-dynamic";
 
 export default async function WebsitesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    status?: string;
+    createError?: string;
+    hostname?: string;
+    workerRestart?: string;
+    template?: string;
+  }>;
 }) {
-  const overview = await loadDashboardOverview();
+  const [overview, hostingDomains] = await Promise.all([loadDashboardOverview(), loadHostingDomainChoices()]);
   const filters = await searchParams;
   const query = filters.q?.trim().toLowerCase() ?? "";
   const status = filters.status ?? "all";
@@ -26,8 +39,12 @@ export default async function WebsitesPage({
         website.domains.some((domain) => domain.hostname.toLowerCase().includes(query))) &&
       (status === "all" || website.status === status),
   );
+  const hasActivePublication = overview.websites.some((website) =>
+    isActivePublicationJob(website.latestPublishJob?.status),
+  );
   return (
     <>
+      <PublicationStatusRefresh active={hasActivePublication} />
       <header>
         <div>
           <p className="eyebrow">Factory output</p>
@@ -104,12 +121,36 @@ export default async function WebsitesPage({
                     Open
                   </a>
                 )}
-                <form action={publishWebsiteAction}>
+                <form action={toggleWebsitePublicationAction}>
                   <input name="websiteId" type="hidden" value={website.id} />
-                  <PendingSubmit className="inlineButton" pendingLabel="Publishing…">
-                    Publish
+                  <PendingSubmit
+                    className="inlineButton"
+                    disabled={
+                      website.status !== "published" &&
+                      isActivePublicationJob(website.latestPublishJob?.status)
+                    }
+                    pendingLabel={website.status === "published" ? "Unpublishing…" : "Publishing…"}
+                  >
+                    {website.status === "published"
+                      ? "Unpublish"
+                      : isActivePublicationJob(website.latestPublishJob?.status)
+                        ? "Publish queued"
+                        : "Publish"}
                   </PendingSubmit>
                 </form>
+                {website.status !== "disabled" && (
+                  <form action={setWebsiteAvailabilityAction}>
+                    <input name="websiteId" type="hidden" value={website.id} />
+                    <input name="status" type="hidden" value="disabled" />
+                    <ConfirmSubmit
+                      className="inlineButton dangerButton"
+                      confirmation={`Disable “${website.name}”? It will be removed from public traffic immediately.`}
+                      pendingLabel="Disabling…"
+                    >
+                      Disable
+                    </ConfirmSubmit>
+                  </form>
+                )}
                 <form action={previewWebsiteAction}>
                   <input name="websiteId" type="hidden" value={website.id} />
                   <PendingSubmit className="inlineButton" pendingLabel="Preparing…">
@@ -142,61 +183,90 @@ export default async function WebsitesPage({
             </div>
           )}
         </div>
-        <div className="panel">
+        <div className="panel" id="publish-jobs">
           <div className="panelHead">
             <div>
               <p className="eyebrow">Background work</p>
               <h2>Publish jobs</h2>
             </div>
-            <span>{overview.stats.activePublishJobs} active</span>
+            <div className={`workerHealth ${overview.worker.state}`}>
+              <strong>Worker {workerStateLabel(overview.worker.state)}</strong>
+              <span title={overview.worker.heartbeatAt?.toISOString()}>
+                {overview.worker.heartbeatAt
+                  ? `Heartbeat ${relativeDate(overview.worker.heartbeatAt)}`
+                  : "No heartbeat recorded"}
+              </span>
+            </div>
           </div>
+          {filters.workerRestart && (
+            <p
+              className={`formNotice ${filters.workerRestart === "started" || filters.workerRestart === "already-online" ? "formNotice--success" : "formNotice--error"}`}
+              role="status"
+            >
+              {workerRestartMessage(filters.workerRestart)}
+            </p>
+          )}
+          {overview.worker.state !== "online" && overview.stats.activePublishJobs > 0 && (
+            <p className="formNotice formNotice--error" role="status">
+              {overview.stats.activePublishJobs} publication job
+              {overview.stats.activePublishJobs === 1 ? " is" : "s are"} waiting because the worker
+              is {workerStateLabel(overview.worker.state)}.
+            </p>
+          )}
+          {!["online", "starting"].includes(overview.worker.state) &&
+            overview.workerRestartAvailable && (
+              <form action={restartWorkerAction} className="workerRestartAction">
+                <PendingSubmit pendingLabel="Starting worker…">Restart worker</PendingSubmit>
+                <span>The control starts a fresh local worker process.</span>
+              </form>
+            )}
           {overview.publishJobs.map((job) => (
             <div className="jobRow" key={job.id}>
               <div>
-                <strong>{job.status}</strong>
+                <strong>
+                  {job.status === "queued" && overview.worker.state !== "online"
+                    ? `Queued — worker ${workerStateLabel(overview.worker.state)}`
+                    : job.status}
+                </strong>
                 <p>
                   website {shortId(job.websiteId)} | draft {job.requestedDraftRevision ?? "current"}{" "}
                   | attempt {job.attemptCount}/{job.maxAttempts}
                 </p>
               </div>
               <small>{relativeDate(job.completedAt ?? job.createdAt)}</small>
+              {canRetryPublicationJob(job.status) && (
+                <form action={retryPublicationJobAction}>
+                  <input name="jobId" type="hidden" value={job.id} />
+                  <PendingSubmit className="inlineButton" pendingLabel="Queueing...">
+                    Retry
+                  </PendingSubmit>
+                </form>
+              )}
             </div>
           ))}
           {overview.publishJobs.length === 0 && (
             <p className="empty">Publish jobs appear here after you press Publish.</p>
           )}
         </div>
-        <form action={createWebsiteAction} className="panel createPanel" id="create-website">
-          <div className="panelHead">
-            <div>
-              <p className="eyebrow">New website</p>
-              <h2>Create draft</h2>
-            </div>
-          </div>
-          <label>
-            Website name
-            <input name="name" placeholder="North Coast Clinic" required />
-          </label>
-          <label>
-            Local hostname
-            <span className="fieldHint">A unique suffix is added automatically.</span>
-            <input name="hostname" placeholder="north-coast-clinic" />
-          </label>
-          <label>
-            Template
-            <select name="template" required>
-              {overview.templates.map((template) => (
-                <option
-                  key={template.templateId}
-                  value={`${template.templateId}@${template.latestVersion ?? "1.0.0"}`}
-                >
-                  {template.displayName} {template.latestVersion ?? ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <PendingSubmit pendingLabel="Creating draft…">Create draft</PendingSubmit>
-        </form>
+        <WebsiteCreateWizard
+          creationError={
+            filters.createError === "subdomain-taken"
+              ? `${filters.hostname ?? "That subdomain"} is already in use. Choose another subdomain.`
+              : undefined
+          }
+          clients={overview.clients.map((client) => ({
+            id: client.id,
+            label: client.name,
+            value: client.id,
+          }))}
+          initialTemplate={filters.template}
+          hostingDomains={hostingDomains.map((domain) => ({ id: domain.id, hostname: domain.hostnameDisplay, isDefault: domain.isDefault, hostedWebsiteCount: domain.hostedWebsiteCount }))}
+          templates={overview.templates.map((template) => ({
+            id: template.templateId,
+            label: `${template.displayName} ${template.latestVersion ?? ""}`,
+            value: `${template.templateId}@${template.latestVersion ?? "1.0.0"}`,
+          }))}
+        />
       </section>
     </>
   );
@@ -204,6 +274,29 @@ export default async function WebsitesPage({
 
 function shortId(value: string): string {
   return value.slice(0, 8);
+}
+
+function workerStateLabel(state: string): string {
+  return state === "online"
+    ? "online"
+    : state === "starting"
+      ? "starting"
+      : state === "stopping"
+        ? "stopping"
+        : state === "unhealthy"
+          ? "unhealthy"
+          : "offline";
+}
+
+function workerRestartMessage(outcome: string): string {
+  if (outcome === "started")
+    return "Worker restart requested. Its status will turn online after the first heartbeat.";
+  if (outcome === "already-online") return "The worker is already online.";
+  if (outcome === "already-starting") return "The worker is already starting.";
+  if (outcome === "still-running")
+    return "The previous worker process is still running but not reporting heartbeats. Stop it before starting another instance.";
+  if (outcome === "unavailable") return "Worker restart is managed by the production platform.";
+  return "The worker could not be started. Check the worker restart log for details.";
 }
 
 function relativeDate(value: Date): string {

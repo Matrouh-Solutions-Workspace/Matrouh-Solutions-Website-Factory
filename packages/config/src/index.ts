@@ -13,6 +13,7 @@ const environmentSchema = z
     DATABASE_URL: z.url(),
     DATABASE_RENDERER_URL: optionalUrl,
     FACTORY_BASE_DOMAIN: z.string().trim().min(1).default("localhost"),
+    FACTORY_DASHBOARD_PUBLIC_URL: z.url().default("http://localhost:3000"),
     FACTORY_RENDERER_PUBLIC_URL: z.url().default("http://localhost:3001"),
     FACTORY_ARTIFACT_DRIVER: z.enum(["local", "s3"]).default("local"),
     FACTORY_ARTIFACT_DIRECTORY: z.string().trim().min(1).default("artifacts"),
@@ -32,7 +33,6 @@ const environmentSchema = z
     FACTORY_OIDC_CLIENT_ID: optionalText(3),
     FACTORY_OIDC_CLIENT_SECRET: optionalText(8),
     FACTORY_OIDC_REDIRECT_URI: optionalUrl,
-    FACTORY_DEMO_SESSION_TOKEN: optionalText(32),
     FACTORY_CACHE_INVALIDATION_URL: optionalUrl,
     FACTORY_CACHE_INVALIDATION_SECRET: optionalText(32),
     FACTORY_DOMAIN_CHALLENGE_SECRET: optionalText(32),
@@ -41,6 +41,9 @@ const environmentSchema = z
     FACTORY_MEDIA_PROVIDER_URL: optionalUrl,
     FACTORY_MEDIA_PROVIDER_SECRET: optionalText(32),
     FACTORY_MEDIA_PUBLIC_BASE_URL: optionalUrl,
+    FACTORY_MAIL_PROVIDER_URL: optionalUrl,
+    FACTORY_MAIL_PROVIDER_SECRET: optionalText(32),
+    FACTORY_MAIL_FROM: z.string().email().optional(),
     FACTORY_MAX_UPLOAD_BYTES: z.coerce
       .number()
       .int()
@@ -67,13 +70,6 @@ const environmentSchema = z
         message: "Production requires a complete OIDC configuration",
       });
     }
-    if (value.FACTORY_DEMO_SESSION_TOKEN) {
-      context.addIssue({
-        code: "custom",
-        path: ["FACTORY_DEMO_SESSION_TOKEN"],
-        message: "Demo session credentials are forbidden in production",
-      });
-    }
     if (!value.FACTORY_METRICS_SECRET) {
       context.addIssue({
         code: "custom",
@@ -93,6 +89,13 @@ const environmentSchema = z
         code: "custom",
         path: ["FACTORY_RENDERER_PUBLIC_URL"],
         message: "Production renderer public URL must use HTTPS",
+      });
+    }
+    if (!value.FACTORY_DASHBOARD_PUBLIC_URL.startsWith("https://")) {
+      context.addIssue({
+        code: "custom",
+        path: ["FACTORY_DASHBOARD_PUBLIC_URL"],
+        message: "Production dashboard public URL must use HTTPS",
       });
     }
     if (value.FACTORY_ARTIFACT_DRIVER === "local") {
@@ -143,6 +146,17 @@ const environmentSchema = z
         code: "custom",
         path: ["FACTORY_MEDIA_PROVIDER_URL"],
         message: "Production requires media storage, scanning, variants, and a public CDN adapter",
+      });
+    }
+    if (
+      !value.FACTORY_MAIL_PROVIDER_URL ||
+      !value.FACTORY_MAIL_PROVIDER_SECRET ||
+      !value.FACTORY_MAIL_FROM
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["FACTORY_MAIL_PROVIDER_URL"],
+        message: "Production requires a signed transactional mail provider adapter",
       });
     }
   });

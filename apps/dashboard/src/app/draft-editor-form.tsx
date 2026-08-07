@@ -27,6 +27,7 @@ export function DraftEditorForm({
   const applyingRef = useRef(false);
   const [historyRevision, setHistoryRevision] = useState(0);
   const [status, setStatus] = useState<"saved" | "unsaved" | "saving" | "conflict">("saved");
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(
     () => () => {
@@ -34,6 +35,16 @@ export function DraftEditorForm({
     },
     [],
   );
+
+  useEffect(() => {
+    if (status === "saving") {
+      setShowToast(true);
+      return;
+    }
+    if (status !== "saved") return;
+    const timer = setTimeout(() => setShowToast(false), 1_600);
+    return () => clearTimeout(timer);
+  }, [status]);
 
   async function submit(formData: FormData): Promise<void> {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -118,7 +129,12 @@ export function DraftEditorForm({
       onInput={changed}
       ref={formRef}
     >
-      <div className="draftCommandBar" aria-live="polite">
+      {showToast ? (
+        <div className={`saveToast saveToast--${status}`} aria-live="polite" role="status">
+          {status === "saving" ? "Saving changes…" : "Saved successfully"}
+        </div>
+      ) : null}
+      <div className="draftCommandBar" aria-label="Edit history">
         <span className={`saveState saveState--${status}`}>
           {status === "saving"
             ? "Saving..."
@@ -143,7 +159,11 @@ export function DraftEditorForm({
 function editableField(
   value: EventTarget,
 ): HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null {
-  if (value instanceof HTMLInputElement && value.type !== "hidden" && value.type !== "submit")
+  if (
+    value instanceof HTMLInputElement &&
+    value.type !== "submit" &&
+    (value.type !== "hidden" || value.dataset.autosave !== undefined)
+  )
     return value;
   if (value instanceof HTMLTextAreaElement || value instanceof HTMLSelectElement) return value;
   return null;

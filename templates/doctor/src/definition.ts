@@ -17,19 +17,31 @@ const websiteSchema = contentSchema<JsonValue>({
       .string()
       .regex(/^\/(?:[a-z0-9/_-]*)$/i)
       .default("/contact"),
+    colorMode: z.enum(["light", "dark"]).default("light"),
+    logoMediaId: z.string().uuid().nullable().default(null),
   }),
   fields: {
     "/phone": { label: "Phone", control: "text", order: 1 },
     "/email": { label: "Email", control: "text", order: 2, sensitive: true },
     "/address": { label: "Address", control: "textarea", order: 3, localization: "value" },
     "/appointmentPath": { label: "Appointment path", control: "url", order: 4 },
+    "/colorMode": {
+      label: "Template appearance",
+      control: "select",
+      order: 5,
+      options: [
+        { label: "Light", value: "light" },
+        { label: "Dark", value: "dark" },
+      ],
+    },
+    "/logoMediaId": { label: "Custom logo", control: "media", order: 6, mediaKinds: ["image"] },
   },
 });
 
 export const template = defineTemplate({
   manifest: {
     id: ids.template("com.matrouh.doctor"),
-    version: ids.version("1.3.0"),
+    version: ids.version("1.4.0"),
     displayName: "Doctor Practice",
     author: "Matrouh Solutions",
     description: "Editorial personal medical practice with appointments and a live location map",

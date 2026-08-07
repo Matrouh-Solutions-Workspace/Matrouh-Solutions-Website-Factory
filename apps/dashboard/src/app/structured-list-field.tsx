@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { MediaPicker, type MediaPickerAsset } from "@/app/media-picker";
 
 type ListItem = Record<string, string | number | boolean>;
 
@@ -88,11 +89,15 @@ export function StructuredListField({
   initialJson,
   label,
   locationMode = false,
+  mediaAssets = [],
+  websiteId,
 }: {
   readonly fieldName: string;
   readonly initialJson: string;
   readonly label: string;
   readonly locationMode?: boolean;
+  readonly mediaAssets?: readonly MediaPickerAsset[];
+  readonly websiteId: string;
 }) {
   const initialItems = useMemo(
     () => parseItems(initialJson).map((item) => (locationMode ? locationItem(item) : item)),
@@ -170,10 +175,20 @@ export function StructuredListField({
               </div>
             </div>
             <div className="structuredListFields">
-              {editableKeys.map((key) => (
-                <label key={key}>
-                  {humanize(key)}
-                  {key === "body" || String(item[key] ?? "").length > 100 ? (
+              {editableKeys.map((key) =>
+                key.endsWith("MediaId") ? (
+                  <MediaPicker
+                    assets={mediaAssets}
+                    key={key}
+                    label={mediaFieldLabel(key)}
+                    onChange={(nextValue) => update(index, key, nextValue)}
+                    value={String(item[key] ?? "")}
+                    websiteId={websiteId}
+                  />
+                ) : (
+                  <label key={key}>
+                    {humanize(key)}
+                    {key === "body" || String(item[key] ?? "").length > 100 ? (
                     <textarea
                       onChange={(event) => update(index, key, event.target.value)}
                       required
@@ -184,14 +199,17 @@ export function StructuredListField({
                     <input
                       inputMode={key === "latitude" || key === "longitude" ? "decimal" : undefined}
                       onChange={(event) => update(index, key, event.target.value)}
-                      required={key !== "latitude" && key !== "longitude"}
+                      required={
+                        key !== "latitude" && key !== "longitude" && !key.endsWith("MediaId")
+                      }
                       step={key === "latitude" || key === "longitude" ? "any" : undefined}
                       type={key === "latitude" || key === "longitude" ? "number" : "text"}
                       value={String(item[key] ?? "")}
                     />
                   )}
-                </label>
-              ))}
+                  </label>
+                ),
+              )}
             </div>
             {locationMode && (
               <LocationTools
@@ -264,6 +282,11 @@ function LocationTools({
       </div>
     </div>
   );
+}
+
+function mediaFieldLabel(key: string): string {
+  const withoutInternalSuffix = key.replace(/MediaId$/, "");
+  return humanize(withoutInternalSuffix) || "Image";
 }
 
 function parseItems(value: string): ListItem[] {

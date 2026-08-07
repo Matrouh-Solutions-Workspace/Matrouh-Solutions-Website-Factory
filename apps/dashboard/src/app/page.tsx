@@ -1,9 +1,11 @@
 import { join } from "node:path";
 import { discoverTemplates } from "@factory/template-loader";
-import { createWebsiteAction, previewWebsiteAction, publishWebsiteAction } from "@/app/actions";
+import { previewWebsiteAction, toggleWebsitePublicationAction } from "@/app/actions";
 import { Icon } from "@/app/icons";
 import { PendingSubmit } from "@/app/pending-submit";
+import { PublicationStatusRefresh } from "@/app/publication-status-refresh";
 import { loadDashboardOverview } from "@/server/overview";
+import { isActivePublicationJob } from "@/server/publication-jobs";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +20,9 @@ async function templateCatalog() {
 export default async function Dashboard() {
   const [templates, overview] = await Promise.all([templateCatalog(), loadDashboardOverview()]);
   const websites = overview.websites;
+  const hasActivePublication = websites.some((website) =>
+    isActivePublicationJob(website.latestPublishJob?.status),
+  );
   const catalog = overview.templates.length
     ? overview.templates
     : templates.map(({ discovery }) => ({
@@ -30,6 +35,7 @@ export default async function Dashboard() {
 
   return (
     <>
+      <PublicationStatusRefresh active={hasActivePublication} />
       <header>
         <div>
           <p className="eyebrow">{headerDate()}</p>
@@ -100,10 +106,21 @@ export default async function Dashboard() {
                     Open
                   </a>
                 )}
-                <form action={publishWebsiteAction}>
+                <form action={toggleWebsitePublicationAction}>
                   <input name="websiteId" type="hidden" value={website.id} />
-                  <PendingSubmit className="inlineButton" pendingLabel="Publishing…">
-                    Publish
+                  <PendingSubmit
+                    className="inlineButton"
+                    disabled={
+                      website.status !== "published" &&
+                      isActivePublicationJob(website.latestPublishJob?.status)
+                    }
+                    pendingLabel={website.status === "published" ? "Unpublishing…" : "Publishing…"}
+                  >
+                    {website.status === "published"
+                      ? "Unpublish"
+                      : isActivePublicationJob(website.latestPublishJob?.status)
+                        ? "Publish queued"
+                        : "Publish"}
                   </PendingSubmit>
                 </form>
                 <form action={previewWebsiteAction}>
@@ -171,37 +188,21 @@ export default async function Dashboard() {
             <p className="empty">Publish jobs appear here after you press Publish.</p>
           )}
         </div>
-        <form action={createWebsiteAction} className="panel createPanel" id="create-website">
+        <section className="panel createPanel" id="create-website">
           <div className="panelHead">
             <div>
               <p className="eyebrow">New website</p>
               <h2>Create from template</h2>
             </div>
           </div>
-          <label>
-            Website name
-            <input name="name" placeholder="North Coast Clinic" required />
-          </label>
-          <label>
-            Local hostname
-            <span className="fieldHint">A short unique suffix is added automatically</span>
-            <input name="hostname" placeholder="north-coast-clinic" />
-          </label>
-          <label>
-            Template
-            <select name="template" required>
-              {catalog.map((template) => (
-                <option
-                  key={template.templateId}
-                  value={`${template.templateId}@${template.latestVersion ?? "1.0.0"}`}
-                >
-                  {template.displayName} {template.latestVersion ?? ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <PendingSubmit pendingLabel="Creating draft…">Create draft</PendingSubmit>
-        </form>
+          <p>
+            Use the guided setup to choose a template, verify the exact subdomain, select
+            languages, and configure billing.
+          </p>
+          <a className="buttonLink" href="/websites#create-website">
+            Open website setup
+          </a>
+        </section>
       </section>
     </>
   );

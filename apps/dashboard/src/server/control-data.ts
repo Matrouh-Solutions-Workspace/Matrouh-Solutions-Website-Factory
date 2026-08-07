@@ -1,18 +1,164 @@
 import { withTenantTransaction } from "@factory/database";
-import { requireDashboardContext } from "./auth";
+import { requireClientAccountContext, requireDashboardContext } from "./auth";
 import { dashboardDatabase } from "./database";
 
-export async function loadClients() {
+export async function loadClients(query = "") {
   const context = await requireDashboardContext("client.read");
   return withTenantTransaction(
     dashboardDatabase(),
     tenantContext(context, "clients-list"),
     (transaction) =>
       transaction.client.findMany({
-        where: { organizationId: context.organization.id, archivedAt: null },
+        where: {
+          organizationId: context.organization.id,
+          archivedAt: null,
+          ...(query
+            ? {
+                OR: [
+                  { name: { contains: query, mode: "insensitive" as const } },
+                  { contactName: { contains: query, mode: "insensitive" as const } },
+                  { contactEmail: { contains: query, mode: "insensitive" as const } },
+                  { contactPhone: { contains: query, mode: "insensitive" as const } },
+                  {
+                    websites: {
+                      some: {
+                        domains: {
+                          some: {
+                            hostnameNormalized: { contains: query, mode: "insensitive" as const },
+                          },
+                        },
+                      },
+                    },
+                  },
+                ],
+              }
+            : {}),
+        },
         orderBy: [{ name: "asc" }, { createdAt: "asc" }],
         include: { _count: { select: { websites: true } } },
       }),
+  );
+}
+
+export async function loadBillingWorkspace(query = "") {
+  const context = await requireDashboardContext("website.read");
+  return withTenantTransaction(
+    dashboardDatabase(),
+    tenantContext(context, "billing-workspace"),
+    async (transaction) => {
+      const [websites, clients] = await Promise.all([
+        transaction.website.findMany({
+          where: {
+            organizationId: context.organization.id,
+            archivedAt: null,
+            ...(query
+              ? {
+                  OR: [
+                    { name: { contains: query, mode: "insensitive" as const } },
+                    { client: { name: { contains: query, mode: "insensitive" as const } } },
+                    { client: { contactEmail: { contains: query, mode: "insensitive" as const } } },
+                    {
+                      domains: {
+                        some: {
+                          hostnameNormalized: { contains: query, mode: "insensitive" as const },
+                        },
+                      },
+                    },
+                  ],
+                }
+              : {}),
+          },
+          orderBy: { name: "asc" },
+          include: {
+            client: { select: { id: true, name: true } },
+            subscription: true,
+            domains: {
+              where: { releasedAt: null },
+              orderBy: { createdAt: "asc" },
+              take: 1,
+              select: { hostnameNormalized: true },
+            },
+          },
+        }),
+        transaction.client.findMany({
+          where: { organizationId: context.organization.id, archivedAt: null },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true },
+        }),
+      ]);
+      return { websites, clients };
+    },
+  );
+}
+
+export async function loadMailWorkspace() {
+  const context = await requireDashboardContext("client.read");
+  return withTenantTransaction(
+    dashboardDatabase(),
+    tenantContext(context, "mail-workspace"),
+    async (transaction) => {
+      const [clients, messages] = await Promise.all([
+        transaction.client.findMany({
+          where: {
+            organizationId: context.organization.id,
+            archivedAt: null,
+            contactEmail: { not: null },
+          },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true, contactEmail: true },
+        }),
+        transaction.outboundMessage.findMany({
+          where: { organizationId: context.organization.id },
+          orderBy: { createdAt: "desc" },
+          take: 50,
+          select: {
+            id: true,
+            recipientEmail: true,
+            subject: true,
+            kind: true,
+            status: true,
+            createdAt: true,
+            sentAt: true,
+            failureReason: true,
+          },
+        }),
+      ]);
+      return { clients, messages };
+    },
+  );
+}
+
+export async function loadClientAccount() {
+  const context = await requireClientAccountContext();
+  return withTenantTransaction(
+    dashboardDatabase(),
+    tenantContext(context, "client-account"),
+    async (transaction) => {
+      const clients = await transaction.client.findMany({
+        where: {
+          organizationId: context.organization.id,
+          archivedAt: null,
+          contactEmail: { equals: context.actor.email, mode: "insensitive" },
+        },
+        orderBy: { createdAt: "asc" },
+        include: {
+          websites: {
+            where: { archivedAt: null },
+            orderBy: { name: "asc" },
+            include: {
+              subscription: true,
+              domains: {
+                where: { releasedAt: null },
+                orderBy: { createdAt: "asc" },
+                take: 1,
+                select: { hostnameNormalized: true, status: true },
+              },
+            },
+          },
+        },
+      });
+      return { clients, actor: context.actor, organization: context.organization };
+    },
   );
 }
 
@@ -36,9 +182,35 @@ export async function loadDomainsWorkspace() {
           certificateBindings: { orderBy: { createdAt: "desc" }, take: 1 },
         },
       });
-      return { websites, domains };
+      const hostingDomains = await transaction.hostingDomain.findMany({
+        where: { organizationId: context.organization.id },
+        orderBy: [{ isDefault: "desc" }, { hostnameNormalized: "asc" }],
+      });
+      return {
+        websites,
+        domains,
+        hostingDomains: hostingDomains.map((domain) => ({
+          ...domain,
+          hostedWebsiteCount: domains.filter(
+            (mapping) =>
+              mapping.hostnameNormalized === domain.hostnameNormalized ||
+              mapping.hostnameNormalized.endsWith(`.${domain.hostnameNormalized}`),
+          ).length,
+        })),
+      };
     },
   );
+}
+
+export async function loadHostingDomainChoices() {
+  const context = await requireDashboardContext("website.create");
+  return withTenantTransaction(dashboardDatabase(), tenantContext(context, "hosting-domain-choices"), async (transaction) => {
+    const [domains, mappings] = await Promise.all([
+      transaction.hostingDomain.findMany({ where: { organizationId: context.organization.id }, orderBy: [{ isDefault: "desc" }, { hostnameNormalized: "asc" }] }),
+      transaction.domain.findMany({ where: { organizationId: context.organization.id, releasedAt: null }, select: { hostnameNormalized: true } }),
+    ]);
+    return domains.map((domain) => ({ ...domain, hostedWebsiteCount: mappings.filter((mapping) => mapping.hostnameNormalized === domain.hostnameNormalized || mapping.hostnameNormalized.endsWith(`.${domain.hostnameNormalized}`)).length }));
+  });
 }
 
 export async function loadMediaLibrary(filters: { query?: string; folderId?: string } = {}) {

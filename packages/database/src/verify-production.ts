@@ -29,21 +29,37 @@ try {
         previews: boolean;
         templateVersions: boolean;
         drafts: boolean;
+        appSessionWrites: boolean;
+        appIdentityWrites: boolean;
+        clientInviteClaim: boolean;
       }[]
     >`
       SELECT
         has_table_privilege('factory_renderer', 'renderer_active_sites', 'SELECT') AS "activeSites",
         has_table_privilege('factory_renderer', 'renderer_preview_snapshots', 'SELECT') AS previews,
         has_table_privilege('factory_renderer', 'template_versions', 'SELECT') AS "templateVersions",
-        has_table_privilege('factory_renderer', 'section_drafts', 'SELECT') AS drafts
+        has_table_privilege('factory_renderer', 'section_drafts', 'SELECT') AS drafts,
+        has_table_privilege('factory_app', 'sessions', 'INSERT')
+          AND has_table_privilege('factory_app', 'sessions', 'UPDATE') AS "appSessionWrites",
+        has_table_privilege('factory_app', 'users', 'INSERT')
+          AND has_table_privilege('factory_app', 'auth_identities', 'INSERT') AS "appIdentityWrites",
+        has_function_privilege('factory_app', 'find_client_membership_invite(varchar)', 'EXECUTE')
+          AS "clientInviteClaim"
     `,
     database.$queryRaw<
-      { activeView: string | null; previewView: string | null; claimJob: string | null }[]
+      {
+        activeView: string | null;
+        previewView: string | null;
+        claimJob: string | null;
+        inviteClaim: string | null;
+      }[]
     >`
       SELECT
         to_regclass('public.renderer_active_sites')::text AS "activeView",
         to_regclass('public.renderer_preview_snapshots')::text AS "previewView",
-        to_regprocedure('public.claim_factory_job(text)')::text AS "claimJob"
+        to_regprocedure('public.claim_factory_job(text)')::text AS "claimJob",
+        to_regprocedure('public.find_client_membership_invite(character varying)')::text
+          AS "inviteClaim"
     `,
     database.$queryRaw<{ migrationName: string; finishedAt: Date | null }[]>`
       SELECT migration_name AS "migrationName", finished_at AS "finishedAt"
@@ -61,7 +77,11 @@ try {
       ? ["RENDERER_REQUIRED_READS"]
       : []),
     ...(privileges?.drafts ? ["RENDERER_DRAFT_ACCESS"] : []),
-    ...(!objects?.activeView || !objects.previewView || !objects.claimJob
+    ...(!privileges?.appSessionWrites || !privileges.appIdentityWrites
+      ? ["DASHBOARD_AUTH_WRITE_ACCESS"]
+      : []),
+    ...(!privileges?.clientInviteClaim ? ["CLIENT_INVITE_CLAIM_ACCESS"] : []),
+    ...(!objects?.activeView || !objects.previewView || !objects.claimJob || !objects.inviteClaim
       ? ["REQUIRED_DATABASE_OBJECTS"]
       : []),
     ...(unfinished.length ? [`UNFINISHED_MIGRATIONS:${unfinished.length}`] : []),

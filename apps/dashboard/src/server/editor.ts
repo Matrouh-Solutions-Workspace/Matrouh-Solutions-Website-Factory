@@ -4,6 +4,7 @@ import type { JsonValue } from "@factory/template-sdk";
 import { discoverTemplates, loadTemplate } from "@factory/template-loader";
 import { dashboardDatabase } from "@/server/overview";
 import { requireDashboardContext } from "@/server/auth";
+import { dashboardConfig } from "@/server/config";
 
 const templatesRoot = join(process.cwd(), "..", "..", "templates");
 
@@ -19,14 +20,18 @@ export interface WebsiteEditor {
     draftRevision: string;
     activePublicationId: string | null;
     hostname: string | null;
+    clientId: string | null;
+    faviconAssetId: string | null;
+    whiteLabelEnabled: boolean;
   };
+  mediaAssets: { id: string; name: string; url: string }[];
   settings: { id: string; content: string; revision: string } | null;
   theme: { id: string; tokens: string; revision: string } | null;
   navigation: {
     id: string;
     title: string;
     revision: string;
-    nodes: { id: string; label: string; kind: string; revision: string }[];
+    nodes: { id: string; labels: Record<string, string>; kind: string; revision: string }[];
   }[];
   availableTemplateVersions: string[];
   pages: {
@@ -35,6 +40,13 @@ export interface WebsiteEditor {
     slug: string;
     locale: string;
     revision: string;
+    seo: {
+      title: string;
+      description: string;
+      keywords: string[];
+      index: boolean;
+      follow: boolean;
+    };
     allowedSections: {
       id: string;
       title: string;
@@ -67,6 +79,13 @@ export interface WebsiteEditor {
     createdAt: Date;
     readyAt: Date | null;
   }[];
+  latestPublishJob: {
+    id: string;
+    status: string;
+    attemptCount: number;
+    maxAttempts: number;
+    createdAt: Date;
+  } | null;
 }
 
 export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEditor | null> {
@@ -91,6 +110,10 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
         where: { organizationId: organization.id, websiteId, deletedAt: null },
         orderBy: [{ pageId: "asc" }, { orderKey: "asc" }],
       });
+      const seoDrafts = await transaction.seoDraft.findMany({
+        where: { organizationId: organization.id, websiteId, deletedAt: null },
+        orderBy: { updatedAt: "desc" },
+      });
       const publications = await transaction.publication.findMany({
         where: { organizationId: organization.id, websiteId },
         orderBy: { createdAt: "desc" },
@@ -100,6 +123,11 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
         where: { organizationId: organization.id, websiteId, status: "active" },
         orderBy: { createdAt: "asc" },
         take: 1,
+      });
+      const mediaDomain = await transaction.domain.findFirst({
+        where: { organizationId: organization.id, websiteId },
+        orderBy: { createdAt: "asc" },
+        select: { hostnameNormalized: true },
       });
       const locales = await transaction.websiteLocale.findMany({
         where: { websiteId },
@@ -126,12 +154,51 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
         },
         orderBy: [{ navigationId: "asc" }, { orderKey: "asc" }, { id: "asc" }],
       });
+      const websiteFolder = await transaction.mediaFolder.findFirst({
+        where: {
+          organizationId: organization.id,
+          parentFolderId: null,
+          archivedAt: null,
+          name: mediaDomain?.hostnameNormalized ?? website.name,
+        },
+        select: { id: true },
+      });
+      const mediaAssets = websiteFolder
+        ? await transaction.mediaAsset.findMany({
+            where: {
+              organizationId: organization.id,
+              folderId: websiteFolder.id,
+              status: "ready",
+              kind: "image",
+            },
+            orderBy: { createdAt: "desc" },
+            select: { id: true, originalFilename: true, storageKey: true },
+            take: 100,
+          })
+        : [];
+      const latestPublishJob = await transaction.job.findFirst({
+        where: {
+          organizationId: organization.id,
+          type: "publication.requested",
+          version: 1,
+          payloadJson: { path: ["websiteId"], equals: websiteId },
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          status: true,
+          attemptCount: true,
+          maxAttempts: true,
+          createdAt: true,
+        },
+      });
 
       return {
         website,
         pages: pages.map((page) => ({
           ...page,
           sections: sections.filter((section) => section.pageId === page.id),
+          seoDrafts: seoDrafts.filter((seo) => seo.pageId === page.id),
         })),
         publications,
         domains,
@@ -142,6 +209,8 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
           ...navigation,
           nodes: navigationNodes.filter((node) => node.navigationId === navigation.id),
         })),
+        mediaAssets,
+        latestPublishJob,
       };
     },
   );
@@ -182,7 +251,16 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
       draftRevision: website.draftRevision.toString(),
       activePublicationId: website.activePublicationId,
       hostname: editorData.domains[0]?.hostnameNormalized ?? null,
+      clientId: website.clientId,
+      faviconAssetId: website.faviconAssetId,
+      whiteLabelEnabled: website.whiteLabelEnabled,
     },
+    mediaAssets: editorData.mediaAssets.map((asset) => ({
+      id: asset.id,
+      name: asset.originalFilename,
+      url: mediaUrl(asset.storageKey, editorData.domains[0]?.hostnameNormalized),
+    })),
+    latestPublishJob: editorData.latestPublishJob,
     settings: editorData.settingsDrafts[0]
       ? {
           id: editorData.settingsDrafts[0].id,
@@ -205,7 +283,12 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
       revision: navigation.revision.toString(),
       nodes: navigation.nodes.map((node) => ({
         id: node.id,
-        label: localizedLabel(node.labelJson, website.defaultLocale),
+        labels: Object.fromEntries(
+          editorData.locales.map(({ locale }) => [
+            locale,
+            localizedLabel(node.labelJson, locale),
+          ]),
+        ),
         kind: node.nodeKind,
         revision: node.revision.toString(),
       })),
@@ -236,6 +319,7 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
         slug: page.slug,
         locale: page.locale,
         revision: page.revision.toString(),
+        seo: seoValues(page.seoDrafts[0]?.metadataJson),
         allowedSections: (pageDefinition?.allowedSections ?? []).flatMap((sectionTypeId) => {
           const definition = template.sections.find((item) => item.id === sectionTypeId);
           if (!definition) return [];
@@ -275,6 +359,35 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
       createdAt: publication.createdAt,
       readyAt: publication.readyAt,
     })),
+  };
+}
+
+function mediaUrl(storageKey: string, hostname: string | undefined): string {
+  const filename = storageKey.split("/").at(-1) ?? "";
+  if (!hostname || !filename) return "";
+  const dashboardUrl = new URL(dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL);
+  const localPort = hostname.endsWith(".localhost") ? dashboardUrl.port : "";
+  const scheme = hostname.endsWith(".localhost") ? dashboardUrl.protocol : "https:";
+  return `${scheme}//${hostname}${localPort ? `:${localPort}` : ""}/media/${encodeURIComponent(filename)}`;
+}
+
+function seoValues(value: unknown): WebsiteEditor["pages"][number]["seo"] {
+  const record =
+    value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  const robots =
+    record.robots && typeof record.robots === "object" && !Array.isArray(record.robots)
+      ? (record.robots as Record<string, unknown>)
+      : {};
+  return {
+    title: typeof record.title === "string" ? record.title : "",
+    description: typeof record.description === "string" ? record.description : "",
+    keywords: Array.isArray(record.keywords)
+      ? record.keywords.filter((item): item is string => typeof item === "string")
+      : [],
+    index: typeof robots.index === "boolean" ? robots.index : true,
+    follow: typeof robots.follow === "boolean" ? robots.follow : true,
   };
 }
 

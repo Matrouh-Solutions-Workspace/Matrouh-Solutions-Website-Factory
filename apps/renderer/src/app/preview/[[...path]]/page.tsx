@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import type { PublicationSnapshot } from "@factory/publication-contract";
 import { instantiateTemplateRuntime } from "@factory/template-runtime";
+import { textDirection } from "@/server/locale-navigation";
 import { loadPreviewSite } from "@/server/site";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +25,7 @@ export async function generateMetadata({
     const rendered = runtime(site).render(`/${path.join("/")}`);
     return {
       title: `Preview: ${rendered.title}`,
+      icons: site.branding.faviconUrl ? { icon: site.branding.faviconUrl } : undefined,
       ...(rendered.description === undefined ? {} : { description: rendered.description }),
       robots: { index: false, follow: false, noarchive: true, noimageindex: true },
     };
@@ -41,8 +44,18 @@ export default async function PreviewPage({ params, searchParams }: PreviewPrope
   } catch {
     notFound();
   }
+  const appearance = websiteSetting(site.snapshot, "colorMode") === "dark" ? "dark" : "light";
+  const logoId = websiteSetting(site.snapshot, "logoMediaId");
+  const logoUrl =
+    typeof logoId === "string"
+      ? site.snapshot.media.find((item) => item.id === logoId)?.url
+      : undefined;
   return (
     <div
+      className="siteRoot"
+      data-color-scheme={appearance}
+      dir={textDirection(rendered.locale)}
+      lang={rendered.locale}
       style={
         {
           "--background": site.snapshot.theme.colors.background,
@@ -54,13 +67,24 @@ export default async function PreviewPage({ params, searchParams }: PreviewPrope
       <aside className="previewBanner">Private preview · expires automatically</aside>
       <header className="siteHeader">
         <a className="siteBrand" href="/">
-          <img alt="" className="siteBrandMark" src="/matrouh-logo.png" />
+          <img
+            alt=""
+            className="siteBrandMark"
+            src={logoUrl ?? site.branding.faviconUrl ?? "/matrouh-logo.png"}
+          />
           <strong>{site.snapshot.website.name}</strong>
         </a>
       </header>
       <main>{rendered.node}</main>
     </div>
   );
+}
+
+function websiteSetting(snapshot: PublicationSnapshot, key: string): unknown {
+  const settings = snapshot.website.settings;
+  return settings && typeof settings === "object" && !Array.isArray(settings)
+    ? (settings as Record<string, unknown>)[key]
+    : undefined;
 }
 
 function runtime(site: NonNullable<Awaited<ReturnType<typeof loadPreviewSite>>>) {

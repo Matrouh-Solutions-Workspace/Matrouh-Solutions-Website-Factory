@@ -18,7 +18,7 @@
     "db:validate": "pnpm --filter @factory/database validate",
     "db:deploy": "pnpm --filter @factory/database exec prisma migrate deploy",
     "db:verify": "pnpm --filter @factory/database verify:production",
-    "seed:demo": "pnpm db:generate && turbo run build --filter=@factory/worker --filter=@templates/doctor --filter=@templates/clinic --filter=@templates/doctor-v1 --filter=@templates/clinic-v1 --filter=@templates/doctor-v1-1 --filter=@templates/clinic-v1-1 --filter=@templates/doctor-v1-2 --filter=@templates/clinic-v1-2 --concurrency=1 && pnpm --filter @factory/worker seed:demo",
+    "seed:demo": "pnpm db:generate && turbo run build --filter=@factory/worker --filter=@templates/doctor --filter=@templates/clinic --filter=@templates/engineer --filter=@templates/doctor-v1 --filter=@templates/clinic-v1 --filter=@templates/doctor-v1-1 --filter=@templates/clinic-v1-1 --filter=@templates/doctor-v1-2 --filter=@templates/clinic-v1-2 --filter=@templates/doctor-v1-3 --filter=@templates/clinic-v1-3 --concurrency=1 && pnpm --filter @factory/worker seed:demo",
     "templates:sync": "pnpm db:generate && pnpm --filter @factory/worker templates:sync",
     "check": "pnpm db:generate && turbo run lint && turbo run typecheck && pnpm test && turbo run build --concurrency=1"
   },

@@ -9,6 +9,8 @@ const field = (value: Readonly<JsonValue>, key: string): string =>
   typeof (value as Readonly<Record<string, JsonValue>>)[key] === "string"
     ? ((value as Readonly<Record<string, JsonValue>>)[key] as string)
     : "";
+const localeText = (locale: string, english: string, arabic: string) =>
+  locale === "ar" ? arabic : english;
 
 const items = (value: Readonly<JsonValue>): readonly Record<string, JsonValue>[] => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return [];
@@ -50,6 +52,7 @@ const heroSchema = contentSchema<JsonValue>({
       .min(1)
       .max(240)
       .regex(/^\/(?:[a-z0-9/_-]*)$/i),
+    heroMediaId: z.string().uuid().nullable().default(null),
   }),
   fields: {
     "/eyebrow": { label: "Eyebrow", control: "text", order: 1, localization: "value" },
@@ -63,6 +66,13 @@ const heroSchema = contentSchema<JsonValue>({
     "/body": { label: "Introduction", control: "textarea", order: 3, localization: "value" },
     "/ctaLabel": { label: "Action label", control: "text", order: 4, localization: "value" },
     "/ctaHref": { label: "Action destination", control: "url", order: 5 },
+    "/heroMediaId": {
+      label: "Doctor portrait",
+      control: "media",
+      order: 6,
+      mediaKinds: ["image"],
+      aiHint: "Recommended 1200 × 1500 px portrait image",
+    },
   },
 });
 
@@ -77,6 +87,7 @@ const servicesSchema = contentSchema<JsonValue>({
           id: z.string().uuid(),
           title: z.string().min(1).max(100),
           body: z.string().min(1).max(500),
+          imageMediaId: z.string().uuid().nullable().default(null),
         }),
       )
       .max(12),
@@ -127,6 +138,7 @@ export const doctorSections: readonly SectionDefinition[] = [
       body: "Thoughtful medical care with time to listen.",
       ctaLabel: "Book an appointment",
       ctaHref: "/contact",
+      heroMediaId: null,
     },
     composedOf: [sharedButtonId],
     render: ({ value, context }) => (
@@ -143,32 +155,46 @@ export const doctorSections: readonly SectionDefinition[] = [
               >
                 {field(value, "ctaLabel")}
               </a>
-              <span className="trustNote">Private · Personal · Unhurried</span>
+              <span className="trustNote">
+                {localeText(
+                  context.locale,
+                  "Private · Personal · Unhurried",
+                  "خصوصية · اهتمام · وقت كافٍ",
+                )}
+              </span>
             </div>
             <div className="heroProof" aria-label="Practice highlights">
               <span>
-                <strong>20+</strong> years of care
+                <strong>20+</strong>{" "}
+                {localeText(context.locale, "years of care", "عامًا من الرعاية")}
               </span>
               <span>
-                <strong>30 min</strong> unrushed visits
+                <strong>30 {localeText(context.locale, "min", "دقيقة")}</strong>{" "}
+                {localeText(context.locale, "unrushed visits", "لكل زيارة")}
               </span>
               <span>
-                <strong>1:1</strong> continuity
+                <strong>1:1</strong> {localeText(context.locale, "continuity", "متابعة شخصية")}
               </span>
             </div>
           </div>
-          <div aria-hidden className="heroVisual">
-            <span className="doctorPortraitMark">MS</span>
-            <div className="doctorAvailability">
-              <i /> Accepting appointments
+          {field(value, "heroMediaId") ? (
+            <div className="heroVisual">
+              <img alt="Doctor portrait" src={context.media.url(field(value, "heroMediaId"))} />
             </div>
-            <strong>
-              Care,
-              <br />
-              clearly.
-            </strong>
-            <small>One patient at a time</small>
-          </div>
+          ) : (
+            <div aria-hidden className="heroVisual">
+              <span className="doctorPortraitMark">MS</span>
+              <div className="doctorAvailability">
+                <i /> Accepting appointments
+              </div>
+              <strong>
+                Care,
+                <br />
+                clearly.
+              </strong>
+              <small>One patient at a time</small>
+            </div>
+          )}
         </div>
       </section>
     ),
@@ -186,30 +212,48 @@ export const doctorSections: readonly SectionDefinition[] = [
           id: "10000000-0000-4000-8000-000000000001",
           title: "General consultation",
           body: "A careful assessment, clear explanation, and a practical plan tailored to you.",
+          imageMediaId: null,
         },
         {
           id: "10000000-0000-4000-8000-000000000002",
           title: "Preventive care",
           body: "Evidence-led screening and everyday guidance that helps you stay well.",
+          imageMediaId: null,
         },
         {
           id: "10000000-0000-4000-8000-000000000003",
           title: "Follow-up care",
           body: "Continuity and thoughtful adjustments as your health needs change.",
+          imageMediaId: null,
         },
       ],
     },
     composedOf: [sharedInfoCardId],
-    render: ({ value }) => (
+    render: ({ value, context }) => (
       <section className="contentSection doctorServices">
         <div className="sectionHeading">
-          <span className="sectionEyebrow">Services</span>
+          <span className="sectionEyebrow">
+            {localeText(context.locale, "Services", "الخدمات")}
+          </span>
           <h2>{field(value, "title")}</h2>
-          <p>Clear guidance and thoughtful care for the moments that matter.</p>
+          <p>
+            {localeText(
+              context.locale,
+              "Clear guidance and thoughtful care for the moments that matter.",
+              "إرشاد واضح ورعاية متأنية في الأوقات التي تهمك.",
+            )}
+          </p>
         </div>
         <div className="cardGrid">
           {items(value).map((item, index) => (
             <article className="infoCard" key={typeof item.id === "string" ? item.id : index}>
+              {typeof item.imageMediaId === "string" && item.imageMediaId ? (
+                <img className="infoCardMedia" alt="" src={context.media.url(item.imageMediaId)} />
+              ) : (
+                <div aria-hidden className="infoCardMedia infoCardMedia--placeholder">
+                  <span>+</span>
+                </div>
+              )}
               <span className="cardNumber">{String(index + 1).padStart(2, "0")}</span>
               <h3>{typeof item.title === "string" ? item.title : "Service"}</h3>
               <p>{typeof item.body === "string" ? item.body : ""}</p>

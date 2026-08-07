@@ -107,10 +107,20 @@ function navigationNodeLink(value: unknown, snapshot: PublicationSnapshot, local
 }
 
 function routeForPage(snapshot: PublicationSnapshot, pageId: string, locale: string): string {
-  return (
-    snapshot.routes.find((route) => route.pageId === pageId && route.locale === locale)?.pathname ??
-    "/"
+  const direct = snapshot.routes.find(
+    (route) => route.pageId === pageId && route.locale === locale,
   );
+  if (direct) return direct.pathname;
+  const sourcePage = snapshot.pages.find((page) => page.id === pageId);
+  const localizedPage = sourcePage
+    ? snapshot.pages.find(
+        (page) => page.locale === locale && page.pageTypeId === sourcePage.pageTypeId,
+      )
+    : null;
+  return localizedPage
+    ? (snapshot.routes.find((route) => route.pageId === localizedPage.id && route.locale === locale)
+        ?.pathname ?? "/")
+    : "/";
 }
 
 function themeVariables(theme: ThemeTokens): React.CSSProperties {

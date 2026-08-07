@@ -18,7 +18,27 @@ enum WebsiteStatus {
   draft
   published
   unpublished
+  disabled
   archived
+}
+
+enum SubscriptionCadence {
+  trial
+  monthly
+  yearly
+}
+
+enum SubscriptionStatus {
+  active
+  expired
+  cancelled
+}
+
+enum OutboundMessageStatus {
+  queued
+  delivering
+  sent
+  failed
 }
 
 enum PublicationStatus {
@@ -66,21 +86,25 @@ enum DeliveryStatus {
 }
 
 model Organization {
-  id                  String               @id @db.Uuid
-  slug                String               @db.VarChar(80)
-  name                String               @db.VarChar(200)
-  status              OrganizationStatus   @default(active)
-  defaultLocale       String               @map("default_locale") @db.VarChar(35)
-  planKey             String               @map("plan_key") @db.VarChar(80)
-  revision            BigInt               @default(1)
-  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz
-  archivedAt          DateTime?            @map("archived_at") @db.Timestamptz
+  id                  String                @id @db.Uuid
+  slug                String                @db.VarChar(80)
+  name                String                @db.VarChar(200)
+  status              OrganizationStatus    @default(active)
+  defaultLocale       String                @map("default_locale") @db.VarChar(35)
+  planKey             String                @map("plan_key") @db.VarChar(80)
+  revision            BigInt                @default(1)
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+  archivedAt          DateTime?             @map("archived_at") @db.Timestamptz
   memberships         Membership[]
   clients             Client[]
   websites            Website[]
+  subscriptions       WebsiteSubscription[]
+  outboundMessages    OutboundMessage[]
+  websiteClaims       WebsiteClaim[]
   roles               Role[]
   pluginInstallations PluginInstallation[]
+  hostingDomains     HostingDomain[]
 
   @@map("organizations")
 }
@@ -90,6 +114,7 @@ model User {
   displayName     String         @map("display_name") @db.VarChar(200)
   primaryEmail    String         @map("primary_email") @db.VarChar(320)
   normalizedEmail String         @unique @map("normalized_email") @db.VarChar(320)
+  passwordHash    String?        @map("password_hash") @db.VarChar(255)
   status          String         @db.VarChar(24)
   revision        BigInt         @default(1)
   createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
@@ -97,6 +122,7 @@ model User {
   identities      AuthIdentity[]
   memberships     Membership[]
   sessions        Session[]
+  claimedWebsites WebsiteClaim[] @relation("ClaimedWebsiteOwner")
 
   @@map("users")
 }
@@ -192,19 +218,21 @@ model MembershipRole {
 }
 
 model Client {
-  id             String       @id @db.Uuid
-  organizationId String       @map("organization_id") @db.Uuid
-  name           String       @db.VarChar(200)
-  contactName    String?      @map("contact_name") @db.VarChar(200)
-  contactEmail   String?      @map("contact_email") @db.VarChar(320)
-  contactPhone   String?      @map("contact_phone") @db.VarChar(50)
-  notes          String?      @db.Text
-  revision       BigInt       @default(1)
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz
-  archivedAt     DateTime?    @map("archived_at") @db.Timestamptz
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  websites       Website[]
+  id               String                @id @db.Uuid
+  organizationId   String                @map("organization_id") @db.Uuid
+  name             String                @db.VarChar(200)
+  contactName      String?               @map("contact_name") @db.VarChar(200)
+  contactEmail     String?               @map("contact_email") @db.VarChar(320)
+  contactPhone     String?               @map("contact_phone") @db.VarChar(50)
+  notes            String?               @db.Text
+  revision         BigInt                @default(1)
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+  archivedAt       DateTime?             @map("archived_at") @db.Timestamptz
+  organization     Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  websites         Website[]
+  subscriptions    WebsiteSubscription[]
+  outboundMessages OutboundMessage[]
 
   @@unique([organizationId, id])
   @@index([organizationId, archivedAt, name])
@@ -220,6 +248,8 @@ model Website {
   templateId          String                 @map("template_id") @db.VarChar(160)
   templateVersion     String                 @map("template_version") @db.VarChar(64)
   defaultLocale       String                 @map("default_locale") @db.VarChar(35)
+  faviconAssetId      String?                @map("favicon_asset_id") @db.Uuid
+  whiteLabelEnabled   Boolean                @default(false) @map("white_label_enabled")
   draftRevision       BigInt                 @default(1) @map("draft_revision")
   activePublicationId String?                @map("active_publication_id") @db.Uuid
   revision            BigInt                 @default(1)
@@ -228,6 +258,7 @@ model Website {
   archivedAt          DateTime?              @map("archived_at") @db.Timestamptz
   organization        Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   client              Client?                @relation(fields: [organizationId, clientId], references: [organizationId, id], onDelete: Restrict)
+  faviconAsset        MediaAsset?            @relation("WebsiteFavicon", fields: [organizationId, faviconAssetId], references: [organizationId, id], onDelete: Restrict)
   locales             WebsiteLocale[]
   settingsDrafts      WebsiteSettingsDraft[]
   pages               PageDraft[]
@@ -237,12 +268,87 @@ model Website {
   domains             Domain[]
   publications        Publication[]          @relation("WebsitePublications")
   previewSnapshots    PreviewSnapshot[]
+  subscription        WebsiteSubscription?
+  outboundMessages    OutboundMessage[]
+  claims              WebsiteClaim[]
   activePublication   Publication?           @relation("ActivePublication", fields: [organizationId, id, activePublicationId], references: [organizationId, websiteId, id])
 
   @@unique([organizationId, id])
   @@unique([organizationId, id, activePublicationId])
   @@index([organizationId, status, updatedAt])
   @@map("websites")
+}
+
+model WebsiteSubscription {
+  id             String              @id @db.Uuid
+  organizationId String              @map("organization_id") @db.Uuid
+  websiteId      String              @unique @map("website_id") @db.Uuid
+  clientId       String?             @map("client_id") @db.Uuid
+  cadence        SubscriptionCadence
+  status         SubscriptionStatus  @default(active)
+  startsAt       DateTime            @map("starts_at") @db.Timestamptz
+  expiresAt      DateTime            @map("expires_at") @db.Timestamptz
+  lastNotifiedAt DateTime?           @map("last_notified_at") @db.Timestamptz
+  disabledAt     DateTime?           @map("disabled_at") @db.Timestamptz
+  disabledReason String?             @map("disabled_reason") @db.VarChar(80)
+  resumeStatus   WebsiteStatus?      @map("resume_status")
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  website        Website             @relation(fields: [organizationId, websiteId], references: [organizationId, id], onDelete: Restrict)
+  client         Client?             @relation(fields: [organizationId, clientId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, websiteId])
+  @@index([organizationId, status, expiresAt])
+  @@map("website_subscriptions")
+}
+
+model WebsiteClaim {
+  id              String    @id @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
+  websiteId       String    @map("website_id") @db.Uuid
+  tokenHash       String    @unique @map("token_hash") @db.VarChar(128)
+  intendedEmail   String?   @map("intended_email") @db.VarChar(320)
+  status          String    @default("pending") @db.VarChar(24)
+  expiresAt       DateTime  @map("expires_at") @db.Timestamptz
+  claimedByUserId String?   @map("claimed_by_user_id") @db.Uuid
+  claimedAt       DateTime? @map("claimed_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  website         Website   @relation(fields: [organizationId, websiteId], references: [organizationId, id], onDelete: Restrict)
+  claimedByUser   User?     @relation("ClaimedWebsiteOwner", fields: [claimedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, id])
+  @@index([organizationId, websiteId, status])
+  @@map("website_claims")
+}
+
+model OutboundMessage {
+  id             String                @id @db.Uuid
+  organizationId String                @map("organization_id") @db.Uuid
+  websiteId      String?               @map("website_id") @db.Uuid
+  clientId       String?               @map("client_id") @db.Uuid
+  recipientEmail String                @map("recipient_email") @db.VarChar(320)
+  subject        String                @db.VarChar(240)
+  bodyText       String                @map("body_text") @db.Text
+  kind           String                @db.VarChar(80)
+  status         OutboundMessageStatus @default(queued)
+  scheduledFor   DateTime              @default(now()) @map("scheduled_for") @db.Timestamptz
+  availableAt    DateTime              @default(now()) @map("available_at") @db.Timestamptz
+  attemptCount   Int                   @default(0) @map("attempt_count")
+  maxAttempts    Int                   @default(5) @map("max_attempts")
+  sentAt         DateTime?             @map("sent_at") @db.Timestamptz
+  failureReason  String?               @map("failure_reason") @db.Text
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  website        Website?              @relation(fields: [organizationId, websiteId], references: [organizationId, id], onDelete: Restrict)
+  client         Client?               @relation(fields: [organizationId, clientId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([websiteId, kind])
+  @@index([organizationId, status, availableAt])
+  @@index([websiteId, createdAt])
+  @@map("outbound_messages")
 }
 
 model WebsiteLocale {
@@ -632,6 +738,21 @@ model Domain {
   @@map("domains")
 }
 
+model HostingDomain {
+  id                String       @id @db.Uuid
+  organizationId    String       @map("organization_id") @db.Uuid
+  hostnameNormalized String      @map("hostname_normalized") @db.VarChar(253)
+  hostnameDisplay   String       @map("hostname_display") @db.VarChar(253)
+  isDefault         Boolean      @default(false) @map("is_default")
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, hostnameNormalized])
+  @@index([organizationId, isDefault])
+  @@map("hosting_domains")
+}
+
 model DomainVerificationAttempt {
   id                 String    @id @db.Uuid
   organizationId     String    @map("organization_id") @db.Uuid
@@ -685,6 +806,7 @@ model MediaAsset {
   folder              MediaFolder?     @relation(fields: [organizationId, folderId], references: [organizationId, id], onDelete: Restrict)
   variants            MediaVariant[]
   references          MediaReference[]
+  faviconFor          Website[]        @relation("WebsiteFavicon")
 
   @@unique([organizationId, id])
   @@index([organizationId, status, createdAt])
@@ -785,12 +907,12 @@ model RateLimitBucket {
 }
 
 model ServiceHeartbeat {
-  instanceId String   @id @map("instance_id") @db.VarChar(200)
-  service    String   @db.VarChar(80)
-  status     String   @db.VarChar(24)
-  metadataJson Json   @map("metadata_json") @db.JsonB
-  startedAt  DateTime @map("started_at") @db.Timestamptz
-  heartbeatAt DateTime @map("heartbeat_at") @db.Timestamptz
+  instanceId   String   @id @map("instance_id") @db.VarChar(200)
+  service      String   @db.VarChar(80)
+  status       String   @db.VarChar(24)
+  metadataJson Json     @map("metadata_json") @db.JsonB
+  startedAt    DateTime @map("started_at") @db.Timestamptz
+  heartbeatAt  DateTime @map("heartbeat_at") @db.Timestamptz
 
   @@index([service, heartbeatAt])
   @@map("service_heartbeats")

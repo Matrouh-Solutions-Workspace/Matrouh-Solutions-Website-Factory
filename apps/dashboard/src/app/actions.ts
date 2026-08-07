@@ -2,7 +2,7 @@
 
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -11,12 +11,13 @@ import {
   withTenantTransaction,
   type DatabaseTransaction,
 } from "@factory/database";
+import { localizeTemplateDefault, localizedTemplateTitle } from "@factory/content";
 import {
   domainChallengeHash,
   domainOwnershipChallenge,
   normalizeHostname as normalizeDomainHostname,
 } from "@factory/domains";
-import { RemoteMediaProvider } from "@factory/media";
+import { RemoteMediaProvider, type ProcessedMedia } from "@factory/media";
 import { compilePublication, type DraftProjection } from "@factory/publication-compiler";
 import {
   createPreviewToken,
@@ -32,7 +33,15 @@ import { requestPublication } from "@factory/publishing";
 import { dashboardArtifactStore as artifactStore } from "@/server/artifact-store";
 import { dashboardDatabase } from "@/server/overview";
 import { requireDashboardContext } from "@/server/auth";
+import { isHostnameConflict, localHostname } from "@/server/local-hostnames";
 import { dashboardConfig, workspaceRoot } from "@/server/config";
+import { heartbeatProcessId, processIsRunning, startLocalWorker } from "@/server/worker-control";
+import { workerStatusFromHeartbeat } from "@/server/worker-status";
+import { renewalResumeStatus } from "@/server/subscriptions";
+import { defaultSubscriptionExpiry } from "@/server/subscription-dates";
+import { isSupportedWebsiteLocale, websiteLanguageSelection } from "@/server/website-languages";
+import { mediaStorageKey } from "@/server/media-storage";
+import { canReuseActivePublication } from "@/server/publication-toggle";
 
 const templatesRoot = resolve(workspaceRoot, dashboardConfig.FACTORY_TEMPLATE_DIRECTORY);
 
@@ -93,7 +102,18 @@ export async function createWebsiteAction(formData: FormData): Promise<void> {
   const name = cleanText(formData.get("name"), 120);
   const templateKey = cleanText(formData.get("template"), 260);
   const hostnameInput = cleanText(formData.get("hostname"), 80);
-  if (!name || !templateKey) return;
+  const clientId = cleanText(formData.get("clientId"), 80) || null;
+  const cadenceInput = cleanText(formData.get("subscriptionCadence"), 20);
+  const cadence =
+    cadenceInput === "trial" || cadenceInput === "monthly" || cadenceInput === "yearly"
+      ? cadenceInput
+      : null;
+  const expiresOn = cleanText(formData.get("subscriptionExpiresAt"), 32);
+  const languages = websiteLanguageSelection(
+    cleanText(formData.get("languageMode"), 10),
+    cleanText(formData.get("defaultLanguage"), 10),
+  );
+  if (!name || !templateKey || !languages) return;
 
   const [templateId, templateVersion] = templateKey.split("@");
   if (!templateId || !templateVersion) return;
@@ -102,6 +122,14 @@ export async function createWebsiteAction(formData: FormData): Promise<void> {
   const context = await requireDashboardContext("website.create");
   const organization = context.organization;
   const actorId = context.actor.id;
+  const hostingDomainId = cleanText(formData.get("hostingDomainId"), 80);
+  const hostingDomain = hostingDomainId
+    ? await client.hostingDomain.findFirst({ where: { id: hostingDomainId, organizationId: organization.id } })
+    : null;
+  const hostname = hostingDomain
+    ? `${(hostnameInput || name).trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "")}.${hostingDomain.hostnameNormalized}`
+    : localHostname(hostnameInput || name);
+  if (!hostname) return;
 
   const candidate = (await discoverTemplates(templatesRoot)).find(
     (item) =>
@@ -124,161 +152,237 @@ export async function createWebsiteAction(formData: FormData): Promise<void> {
     throw new Error("TEMPLATE_NOT_READY");
   }
   const websiteId = randomUUID();
-  const hostname = `${normalizeHostname(hostnameInput || name)}-${websiteId.slice(0, 8)}.localhost`;
+  const expiresAt = expiresOn
+    ? parseSubscriptionExpiry(expiresOn)
+    : cadence
+      ? defaultSubscriptionExpiry(cadence)
+      : null;
+  if (cadenceInput && !cadence) return;
+  if (expiresAt && Number.isNaN(expiresAt.getTime())) return;
+  if (!cadence && expiresAt) return;
+  if (expiresAt && expiresAt.getTime() <= Date.now()) return;
 
-  await withTenantTransaction(
+  const hostnameExists = await withTenantTransaction(
     client,
-    { organizationId: organization.id, actorId, correlationId: `create-website:${websiteId}` },
-    async (transaction) => {
-      await transaction.website.create({
-        data: {
-          id: websiteId,
-          organizationId: organization.id,
-          name,
-          status: "draft",
-          templateId,
-          templateVersion,
-          defaultLocale: organization.defaultLocale,
-        },
-      });
-      await transaction.websiteLocale.create({
-        data: {
-          organizationId: organization.id,
-          websiteId,
-          locale: organization.defaultLocale,
-          isDefault: true,
-          fallbackLocale: null,
-        },
-      });
-      const settings = template.websiteSchema.parse({});
-      await transaction.websiteSettingsDraft.create({
-        data: {
-          id: randomUUID(),
-          organizationId: organization.id,
-          websiteId,
-          locale: null,
-          schemaVersion: template.websiteSchema.version,
-          contentJson: jsonInput(settings),
-          contentSizeBytes: Buffer.byteLength(JSON.stringify(settings)),
-        },
-      });
-      await transaction.themeDraft.create({
-        data: {
-          id: randomUUID(),
-          organizationId: organization.id,
-          websiteId,
-          locale: null,
-          themeDefinitionId: template.theme.id,
-          schemaVersion: template.theme.schemaVersion,
-          tokensJson: jsonInput(template.theme.defaults),
-          contentSizeBytes: Buffer.byteLength(JSON.stringify(template.theme.defaults)),
-        },
-      });
-      await transaction.domain.create({
-        data: {
-          id: randomUUID(),
-          organizationId: organization.id,
-          websiteId,
-          hostnameNormalized: hostname,
-          hostnameDisplay: hostname,
-          kind: "subdomain",
-          status: "active",
-        },
-      });
+    {
+      organizationId: organization.id,
+      actorId,
+      correlationId: `check-subdomain:${hostname}`,
+    },
+    (transaction) =>
+      transaction.domain.findFirst({
+        where: { hostnameNormalized: hostname, releasedAt: null },
+        select: { id: true },
+      }),
+  );
+  if (hostnameExists) redirect(subdomainUnavailableUrl(hostname));
 
-      await transaction.auditEvent.create({
-        data: {
-          id: randomUUID(),
-          organizationId: organization.id,
-          actorType: "system",
-          actorId,
-          action: "website.created",
-          resourceType: "website",
-          resourceId: websiteId,
-          correlationId: `create-website:${websiteId}`,
-          metadataJson: jsonInput({ templateId, templateVersion, hostname }),
-          retentionClass: "standard",
-        },
-      });
-
-      const createdPages: { id: string; pageTypeId: string; title: string }[] = [];
-      for (const [pageIndex, page] of template.pages.entries()) {
-        const pageId = randomUUID();
-        createdPages.push({ id: pageId, pageTypeId: page.id, title: page.title });
-        await transaction.pageDraft.create({
-          data: {
-            id: pageId,
-            organizationId: organization.id,
-            websiteId,
-            pageTypeId: page.id,
-            locale: organization.defaultLocale,
-            title: page.title,
-            slug: page.slug.defaultValue ?? slugFromTitle(page.title),
-            orderKey: String(pageIndex).padStart(4, "0"),
-          },
-        });
-        const sections = page.defaultSections.flatMap((sectionSpec, sectionIndex) => {
-          const definition = template.sections.find(
-            (item) => item.id === sectionSpec.sectionTypeId,
-          );
-          return definition
-            ? [
-                {
-                  id: randomUUID(),
-                  organizationId: organization.id,
-                  websiteId,
-                  pageId,
-                  sectionTypeId: definition.id,
-                  schemaVersion: definition.schema.version,
-                  contentJson: jsonInput(sectionSpec.content ?? definition.defaults),
-                  orderKey: String(sectionIndex).padStart(4, "0"),
-                },
-              ]
-            : [];
-        });
-        if (sections.length > 0) {
-          await transaction.sectionDraft.createMany({ data: sections });
+  try {
+    await withTenantTransaction(
+      client,
+      { organizationId: organization.id, actorId, correlationId: `create-website:${websiteId}` },
+      async (transaction) => {
+        if (clientId) {
+          const assignedClient = await transaction.client.findUnique({
+            where: { organizationId_id: { organizationId: organization.id, id: clientId } },
+            select: { id: true },
+          });
+          if (!assignedClient) throw new Error("CLIENT_NOT_FOUND");
         }
-      }
-
-      for (const definition of template.navigation) {
-        const navigationId = randomUUID();
-        await transaction.navigationDraft.create({
+        await transaction.website.create({
           data: {
-            id: navigationId,
+            id: websiteId,
             organizationId: organization.id,
-            websiteId,
-            definitionId: definition.id,
-            locale:
-              definition.localization === "localized-tree" ? organization.defaultLocale : null,
-            visibilitySchemaVersion: definition.visibilitySchema.version,
+            clientId,
+            name,
+            status: "draft",
+            templateId,
+            templateVersion,
+            defaultLocale: languages.defaultLocale,
           },
         });
-        const eligiblePages = createdPages.filter(
-          (page) =>
-            definition.allowedPageTypes === "all" ||
-            definition.allowedPageTypes.includes(page.pageTypeId as never),
-        );
-        if (eligiblePages.length > 0) {
-          await transaction.navigationNodeDraft.createMany({
-            data: eligiblePages.map((page, index) => ({
+        if (cadence && expiresAt) {
+          await transaction.websiteSubscription.create({
+            data: {
               id: randomUUID(),
               organizationId: organization.id,
               websiteId,
-              navigationId,
-              parentNodeId: null,
-              nodeKind: "page",
-              pageId: page.id,
-              labelJson: jsonInput({ [organization.defaultLocale]: page.title }),
-              targetJson: jsonInput({ pageId: page.id }),
-              visibilityJson: jsonInput(definition.visibilitySchema.parse({})),
-              orderKey: String(index).padStart(4, "0"),
-            })),
+              clientId,
+              cadence,
+              startsAt: new Date(),
+              expiresAt,
+            },
           });
         }
-      }
-    },
-  );
+        await transaction.websiteLocale.createMany({
+          data: languages.locales.map((locale) => ({
+            organizationId: organization.id,
+            websiteId,
+            locale,
+            isDefault: locale === languages.defaultLocale,
+            fallbackLocale: locale === languages.defaultLocale ? null : languages.defaultLocale,
+          })),
+        });
+        const settings = template.websiteSchema.parse({});
+        await transaction.websiteSettingsDraft.create({
+          data: {
+            id: randomUUID(),
+            organizationId: organization.id,
+            websiteId,
+            locale: null,
+            schemaVersion: template.websiteSchema.version,
+            contentJson: jsonInput(settings),
+            contentSizeBytes: Buffer.byteLength(JSON.stringify(settings)),
+          },
+        });
+        await transaction.themeDraft.create({
+          data: {
+            id: randomUUID(),
+            organizationId: organization.id,
+            websiteId,
+            locale: null,
+            themeDefinitionId: template.theme.id,
+            schemaVersion: template.theme.schemaVersion,
+            tokensJson: jsonInput(template.theme.defaults),
+            contentSizeBytes: Buffer.byteLength(JSON.stringify(template.theme.defaults)),
+          },
+        });
+        await transaction.domain.create({
+          data: {
+            id: randomUUID(),
+            organizationId: organization.id,
+            websiteId,
+            hostnameNormalized: hostname,
+            hostnameDisplay: hostname,
+            kind: "subdomain",
+            status: "active",
+          },
+        });
+
+        await transaction.auditEvent.create({
+          data: {
+            id: randomUUID(),
+            organizationId: organization.id,
+            actorType: "system",
+            actorId,
+            action: "website.created",
+            resourceType: "website",
+            resourceId: websiteId,
+            correlationId: `create-website:${websiteId}`,
+            metadataJson: jsonInput({
+              templateId,
+              templateVersion,
+              hostname,
+              locales: [...languages.locales],
+              defaultLocale: languages.defaultLocale,
+            }),
+            retentionClass: "standard",
+          },
+        });
+
+        const createdPages: {
+          id: string;
+          pageTypeId: string;
+          title: string;
+          locale: string;
+        }[] = [];
+        for (const locale of languages.locales) {
+          for (const [pageIndex, page] of template.pages.entries()) {
+            const pageId = randomUUID();
+            const localizedTitle = localizedTemplateTitle(page.title, locale);
+            createdPages.push({ id: pageId, pageTypeId: page.id, title: localizedTitle, locale });
+            await transaction.pageDraft.create({
+              data: {
+                id: pageId,
+                organizationId: organization.id,
+                websiteId,
+                pageTypeId: page.id,
+                locale,
+                title: localizedTitle,
+                slug: page.slug.defaultValue ?? slugFromTitle(page.title),
+                orderKey: String(pageIndex).padStart(4, "0"),
+              },
+            });
+            const sections = page.defaultSections.flatMap((sectionSpec, sectionIndex) => {
+              const definition = template.sections.find(
+                (item) => item.id === sectionSpec.sectionTypeId,
+              );
+              return definition
+                ? [
+                    {
+                      id: randomUUID(),
+                      organizationId: organization.id,
+                      websiteId,
+                      pageId,
+                      sectionTypeId: definition.id,
+                      schemaVersion: definition.schema.version,
+                      contentJson: jsonInput(
+                        localizeTemplateDefault(sectionSpec.content ?? definition.defaults, locale),
+                      ),
+                      orderKey: String(sectionIndex).padStart(4, "0"),
+                    },
+                  ]
+                : [];
+            });
+            if (sections.length > 0) {
+              await transaction.sectionDraft.createMany({ data: sections });
+            }
+          }
+        }
+
+        for (const definition of template.navigation) {
+          const navigationLocales =
+            definition.localization === "localized-tree" ? languages.locales : [null];
+          for (const navigationLocale of navigationLocales) {
+            const navigationId = randomUUID();
+            await transaction.navigationDraft.create({
+              data: {
+                id: navigationId,
+                organizationId: organization.id,
+                websiteId,
+                definitionId: definition.id,
+                locale: navigationLocale,
+                visibilitySchemaVersion: definition.visibilitySchema.version,
+              },
+            });
+            const pageLocale = navigationLocale ?? languages.defaultLocale;
+            const eligiblePages = createdPages.filter(
+              (page) =>
+                page.locale === pageLocale &&
+                (definition.allowedPageTypes === "all" ||
+                  definition.allowedPageTypes.includes(page.pageTypeId as never)),
+            );
+            if (eligiblePages.length === 0) continue;
+            await transaction.navigationNodeDraft.createMany({
+              data: eligiblePages.map((page, index) => ({
+                id: randomUUID(),
+                organizationId: organization.id,
+                websiteId,
+                navigationId,
+                parentNodeId: null,
+                nodeKind: "page",
+                pageId: page.id,
+                labelJson: jsonInput(
+                  Object.fromEntries(
+                    languages.locales.map((locale) => [
+                      locale,
+                      localizedTemplateTitle(page.title, locale),
+                    ]),
+                  ),
+                ),
+                targetJson: jsonInput({ pageId: page.id }),
+                visibilityJson: jsonInput(definition.visibilitySchema.parse({})),
+                orderKey: String(index).padStart(4, "0"),
+              })),
+            });
+          }
+        }
+      },
+    );
+  } catch (error) {
+    if (isHostnameConflict(error)) redirect(subdomainUnavailableUrl(hostname));
+    throw error;
+  }
 
   revalidatePath("/");
   revalidatePath("/websites");
@@ -336,6 +440,15 @@ export async function deleteWebsiteAction(formData: FormData): Promise<void> {
       });
 
       await transaction.pluginInstallation.deleteMany({
+        where: { organizationId: organization.id, websiteId },
+      });
+      await transaction.websiteClaim.deleteMany({
+        where: { organizationId: organization.id, websiteId },
+      });
+      await transaction.outboundMessage.deleteMany({
+        where: { organizationId: organization.id, websiteId },
+      });
+      await transaction.websiteSubscription.deleteMany({
         where: { organizationId: organization.id, websiteId },
       });
       if (jobIds.length > 0) {
@@ -457,11 +570,107 @@ export async function deleteWebsiteAction(formData: FormData): Promise<void> {
   redirect("/websites");
 }
 
+export async function restartWorkerAction(): Promise<void> {
+  const context = await requireDashboardContext("operations.manage");
+  if (dashboardConfig.FACTORY_DEPLOYMENT_MODE !== "local") {
+    redirect("/websites?workerRestart=unavailable#publish-jobs");
+  }
+
+  const client = dashboardDatabase();
+  const heartbeat = await client.serviceHeartbeat.findFirst({
+    where: { service: "worker" },
+    orderBy: { heartbeatAt: "desc" },
+    select: { status: true, heartbeatAt: true, metadataJson: true },
+  });
+  const workerState = workerStatusFromHeartbeat(heartbeat).state;
+  if (workerState === "online") {
+    redirect("/websites?workerRestart=already-online#publish-jobs");
+  }
+  if (workerState === "starting") {
+    redirect("/websites?workerRestart=already-starting#publish-jobs");
+  }
+
+  let outcome = "failed";
+  const previousPid = heartbeatProcessId(heartbeat?.metadataJson);
+  try {
+    if (previousPid && processIsRunning(previousPid)) {
+      process.kill(previousPid);
+    }
+    const startedAt = new Date();
+    await client.serviceHeartbeat.upsert({
+      where: { instanceId: "dashboard-local-worker-restart" },
+      update: { status: "starting", heartbeatAt: startedAt, metadataJson: { previousPid } },
+      create: {
+        instanceId: "dashboard-local-worker-restart",
+        service: "worker",
+        status: "starting",
+        metadataJson: { previousPid },
+        startedAt,
+        heartbeatAt: startedAt,
+      },
+    });
+    const newPid = await startLocalWorker(workspaceRoot);
+    await client.serviceHeartbeat.update({
+      where: { instanceId: "dashboard-local-worker-restart" },
+      data: { metadataJson: { previousPid, pid: newPid }, heartbeatAt: new Date() },
+    });
+    await withTenantTransaction(
+      client,
+      {
+        organizationId: context.organization.id,
+        actorId: context.actor.id,
+        correlationId: `worker-restart:${newPid}:${randomUUID()}`,
+      },
+      (transaction) =>
+        transaction.auditEvent.create({
+          data: {
+            id: randomUUID(),
+            organizationId: context.organization.id,
+            actorType: "user",
+            actorId: context.actor.id,
+            action: "worker.restart_requested",
+            resourceType: "worker",
+            resourceId: String(newPid),
+            correlationId: `worker-restart:${newPid}`,
+            metadataJson: jsonInput({ previousPid, newPid }),
+            retentionClass: "security",
+          },
+        }),
+    );
+    outcome = "started";
+  } catch {
+    await client.serviceHeartbeat.updateMany({
+      where: { instanceId: "dashboard-local-worker-restart" },
+      data: { status: "error", heartbeatAt: new Date() },
+    });
+    outcome = "failed";
+  }
+
+  revalidatePath("/websites");
+  redirect(`/websites?workerRestart=${outcome}#publish-jobs`);
+}
+
 export async function publishWebsiteAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   if (!websiteId) return;
   const client = dashboardDatabase();
   const context = await requireDashboardContext("website.publish");
+  const subscriptionAllowed = await withTenantTransaction(
+    client,
+    tenantActionContext(context, `publish-subscription-check:${websiteId}`),
+    async (transaction) => {
+      const subscription = await transaction.websiteSubscription.findUnique({
+        where: {
+          organizationId_websiteId: { organizationId: context.organization.id, websiteId },
+        },
+        select: { status: true, expiresAt: true },
+      });
+      return (
+        !subscription || (subscription.status === "active" && subscription.expiresAt > new Date())
+      );
+    },
+  );
+  if (!subscriptionAllowed) throw new Error("SUBSCRIPTION_EXPIRED");
   const data = await requestPublication(
     new PrismaPublicationCommandRepository(client),
     {
@@ -474,6 +683,504 @@ export async function publishWebsiteAction(formData: FormData): Promise<void> {
   if (!data) return;
 
   revalidatePath("/");
+}
+
+export async function toggleWebsitePublicationAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  if (!websiteId) return;
+  const client = dashboardDatabase();
+  const context = await requireDashboardContext("website.publish");
+  const result = await withTenantTransaction(
+    client,
+    tenantActionContext(context, `toggle-publication:${websiteId}`),
+    async (transaction) => {
+      const website = await transaction.website.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        include: {
+          subscription: true,
+          activePublication: { select: { status: true, sourceDraftRevision: true } },
+        },
+      });
+      if (!website) return "missing" as const;
+      if (website.status === "published") {
+        await transaction.website.update({
+          where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+          data: { status: "unpublished", revision: { increment: 1 } },
+        });
+        return "unpublished" as const;
+      }
+      if (
+        website.subscription &&
+        (website.subscription.status !== "active" || website.subscription.expiresAt <= new Date())
+      ) {
+        throw new Error("SUBSCRIPTION_EXPIRED");
+      }
+      const activeJob = await transaction.job.findFirst({
+        where: {
+          organizationId: context.organization.id,
+          type: "publication.requested",
+          status: { in: ["queued", "running", "retryable"] },
+          payloadJson: { path: ["websiteId"], equals: websiteId },
+        },
+        select: { id: true },
+      });
+      if (activeJob) return "pending" as const;
+      if (
+        canReuseActivePublication({
+          activeStatus: website.activePublication?.status ?? null,
+          activeDraftRevision: website.activePublication?.sourceDraftRevision ?? null,
+          websiteDraftRevision: website.draftRevision,
+        })
+      ) {
+        await transaction.website.update({
+          where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+          data: { status: "published", revision: { increment: 1 } },
+        });
+        return "published" as const;
+      }
+      return "queue" as const;
+    },
+  );
+  if (result === "queue") {
+    await requestPublication(
+      new PrismaPublicationCommandRepository(client),
+      {
+        organizationId: context.organization.id,
+        actorId: context.actor.id,
+        correlationId: `toggle-publish:${websiteId}`,
+      },
+      { websiteId },
+    );
+  }
+  revalidateWebsiteEditor(websiteId);
+}
+
+export async function retryPublicationJobAction(formData: FormData): Promise<void> {
+  const jobId = cleanText(formData.get("jobId"), 80);
+  if (!jobId) return;
+  const client = dashboardDatabase();
+  const context = await requireDashboardContext("website.publish");
+  const result = await withTenantTransaction(
+    client,
+    tenantActionContext(context, `retry-publication:${jobId}`),
+    async (transaction) => {
+      const job = await transaction.job.findUnique({ where: { id: jobId } });
+      if (
+        !job ||
+        job.organizationId !== context.organization.id ||
+        job.type !== "publication.requested" ||
+        !["failed", "dead_letter"].includes(job.status)
+      ) {
+        return null;
+      }
+      const payload = job.payloadJson as Record<string, unknown>;
+      const websiteId = typeof payload.websiteId === "string" ? payload.websiteId : null;
+      if (!websiteId) return null;
+      const website = await transaction.website.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        select: { draftRevision: true },
+      });
+      if (!website) return null;
+      const requestedRevision =
+        typeof payload.requestedDraftRevision === "string" ? payload.requestedDraftRevision : null;
+      await transaction.job.update({
+        where: { id: job.id },
+        data: {
+          status: "queued",
+          payloadJson: jsonInput({
+            ...payload,
+            requestedDraftRevision: website.draftRevision.toString(),
+          }),
+          availableAt: new Date(),
+          completedAt: null,
+          lockedAt: null,
+          lockOwner: null,
+          lockExpiresAt: null,
+          maxAttempts: { increment: 5 },
+        },
+      });
+      await transaction.auditEvent.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          actorType: "user",
+          actorId: context.actor.id,
+          action: "publication.retry_requested",
+          resourceType: "job",
+          resourceId: job.id,
+          correlationId: `retry-publication:${job.id}`,
+          metadataJson: jsonInput({
+            websiteId,
+            previousRequestedDraftRevision: requestedRevision,
+            requestedDraftRevision: website.draftRevision.toString(),
+          }),
+          retentionClass: "standard",
+        },
+      });
+      return websiteId;
+    },
+  );
+  if (!result) return;
+  revalidateWebsiteEditor(result);
+}
+
+export async function setWebsiteAvailabilityAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const requestedStatus = cleanText(formData.get("status"), 20);
+  if (!websiteId || !["unpublished", "disabled"].includes(requestedStatus)) return;
+  const context = await requireDashboardContext("website.publish");
+  const status = requestedStatus as "unpublished" | "disabled";
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `website-availability:${websiteId}:${status}`),
+    async (transaction) => {
+      const result = await transaction.website.updateMany({
+        where: { id: websiteId, organizationId: context.organization.id, archivedAt: null },
+        data: { status, revision: { increment: 1 } },
+      });
+      if (result.count !== 1) return;
+      if (status === "disabled") {
+        // A deliberate staff disable after automatic expiry must survive a later renewal.
+        await transaction.websiteSubscription.updateMany({
+          where: {
+            organizationId: context.organization.id,
+            websiteId,
+            disabledReason: "subscription_expired",
+          },
+          data: { resumeStatus: "disabled" },
+        });
+      }
+      await transaction.auditEvent.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          actorType: "user",
+          actorId: context.actor.id,
+          action: `website.${status}`,
+          resourceType: "website",
+          resourceId: websiteId,
+          correlationId: `website-availability:${websiteId}:${status}`,
+          metadataJson: jsonInput({ status }),
+          retentionClass: "standard",
+        },
+      });
+    },
+  );
+  revalidatePath("/websites");
+  revalidatePath(`/websites/${websiteId}`);
+}
+
+export async function updateWebsiteIdentityAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const name = cleanText(formData.get("name"), 200);
+  if (!websiteId || !name) return;
+  const context = await requireDashboardContext("website.edit");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `website-identity:${websiteId}`),
+    async (transaction) => {
+      const result = await transaction.website.updateMany({
+        where: { id: websiteId, organizationId: context.organization.id, archivedAt: null },
+        data: {
+          name,
+          draftRevision: { increment: 1 },
+          revision: { increment: 1 },
+        },
+      });
+      if (result.count !== 1) return;
+      await transaction.auditEvent.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          actorType: "user",
+          actorId: context.actor.id,
+          action: "website.identity_updated",
+          resourceType: "website",
+          resourceId: websiteId,
+          correlationId: `website-identity:${websiteId}`,
+          metadataJson: jsonInput({ name }),
+          retentionClass: "standard",
+        },
+      });
+    },
+  );
+  revalidatePath("/websites");
+  revalidatePath(`/websites/${websiteId}`);
+}
+
+export async function createWebsiteClaimLinkAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const intendedEmail = cleanText(formData.get("intendedEmail"), 320).toLowerCase() || null;
+  if (!websiteId) return;
+  const context = await requireDashboardContext("website.edit");
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `website-claim:${websiteId}`),
+    async (transaction) => {
+      const website = await transaction.website.findFirst({
+        where: {
+          id: websiteId,
+          organizationId: context.organization.id,
+          clientId: null,
+          archivedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!website) throw new Error("WEBSITE_ALREADY_HAS_OWNER");
+      await transaction.websiteClaim.updateMany({
+        where: { organizationId: context.organization.id, websiteId, status: "pending" },
+        data: { status: "revoked" },
+      });
+      await transaction.websiteClaim.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          websiteId,
+          tokenHash,
+          intendedEmail,
+          expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1_000),
+        },
+      });
+    },
+  );
+  redirect(`/websites/${websiteId}?claimLink=${encodeURIComponent(`/claim/${token}`)}`);
+}
+
+export async function updateWebsiteBrandingAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const faviconAssetId = cleanText(formData.get("faviconAssetId"), 80) || null;
+  const whiteLabelEnabled = formData.get("whiteLabelEnabled") === "on";
+  if (!websiteId) return;
+  const context = await requireDashboardContext("website.edit");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `website-branding:${websiteId}`),
+    async (transaction) => {
+      if (faviconAssetId) {
+        const favicon = await transaction.mediaAsset.findFirst({
+          where: {
+            id: faviconAssetId,
+            organizationId: context.organization.id,
+            status: "ready",
+            kind: "image",
+          },
+          select: { id: true },
+        });
+        if (!favicon) throw new Error("FAVICON_ASSET_NOT_READY");
+      }
+      const result = await transaction.website.updateMany({
+        where: { id: websiteId, organizationId: context.organization.id, archivedAt: null },
+        data: {
+          faviconAssetId,
+          whiteLabelEnabled,
+          draftRevision: { increment: 1 },
+          revision: { increment: 1 },
+        },
+      });
+      if (result.count !== 1) throw new Error("WEBSITE_NOT_FOUND");
+      await transaction.mediaReference.deleteMany({
+        where: { organizationId: context.organization.id, websiteId, referenceKind: "favicon" },
+      });
+      if (faviconAssetId) {
+        await transaction.mediaReference.create({
+          data: {
+            id: randomUUID(),
+            organizationId: context.organization.id,
+            mediaAssetId: faviconAssetId,
+            websiteId,
+            referenceKind: "favicon",
+            jsonPointer: "/website/favicon",
+          },
+        });
+      }
+    },
+  );
+  revalidatePath(`/websites/${websiteId}`);
+}
+
+export async function updateWebsiteLogoAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const logoMediaId = cleanText(formData.get("logoMediaId"), 80) || null;
+  if (!websiteId) return;
+  const context = await requireDashboardContext("website.edit");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `website-logo:${websiteId}`),
+    async (transaction) => {
+      if (logoMediaId) {
+        const logo = await transaction.mediaAsset.findFirst({
+          where: {
+            id: logoMediaId,
+            organizationId: context.organization.id,
+            status: "ready",
+            kind: "image",
+          },
+          select: { id: true },
+        });
+        if (!logo) throw new Error("LOGO_ASSET_NOT_READY");
+      }
+      const settings = await transaction.websiteSettingsDraft.findFirst({
+        where: { organizationId: context.organization.id, websiteId, locale: null },
+        orderBy: { createdAt: "asc" },
+      });
+      if (!settings) throw new Error("WEBSITE_SETTINGS_NOT_FOUND");
+      const current =
+        settings.contentJson &&
+        typeof settings.contentJson === "object" &&
+        !Array.isArray(settings.contentJson)
+          ? settings.contentJson
+          : {};
+      const content = { ...current, logoMediaId };
+      await transaction.websiteSettingsDraft.update({
+        where: { id: settings.id },
+        data: {
+          contentJson: jsonInput(content),
+          contentSizeBytes: Buffer.byteLength(JSON.stringify(content)),
+          revision: { increment: 1 },
+        },
+      });
+      await transaction.website.update({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        data: { draftRevision: { increment: 1 }, revision: { increment: 1 } },
+      });
+      await transaction.mediaReference.deleteMany({
+        where: {
+          organizationId: context.organization.id,
+          websiteId,
+          referenceKind: "website_logo",
+        },
+      });
+      if (logoMediaId) {
+        await transaction.mediaReference.create({
+          data: {
+            id: randomUUID(),
+            organizationId: context.organization.id,
+            mediaAssetId: logoMediaId,
+            websiteId,
+            referenceKind: "website_logo",
+            jsonPointer: "/settings/logoMediaId",
+          },
+        });
+      }
+    },
+  );
+  revalidatePath(`/websites/${websiteId}`);
+}
+
+export async function updateWebsiteAppearanceAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const colorMode = cleanText(formData.get("colorMode"), 12);
+  if (!websiteId || (colorMode !== "light" && colorMode !== "dark")) return;
+  const context = await requireDashboardContext("website.edit");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `website-appearance:${websiteId}`),
+    async (transaction) => {
+      const settings = await transaction.websiteSettingsDraft.findFirst({
+        where: { organizationId: context.organization.id, websiteId, locale: null },
+        orderBy: { createdAt: "asc" },
+      });
+      if (!settings) throw new Error("WEBSITE_SETTINGS_NOT_FOUND");
+      const current =
+        settings.contentJson &&
+        typeof settings.contentJson === "object" &&
+        !Array.isArray(settings.contentJson)
+          ? settings.contentJson
+          : {};
+      const content = { ...current, colorMode };
+      await transaction.websiteSettingsDraft.update({
+        where: { id: settings.id },
+        data: {
+          contentJson: jsonInput(content),
+          contentSizeBytes: Buffer.byteLength(JSON.stringify(content)),
+          revision: { increment: 1 },
+        },
+      });
+      await transaction.website.update({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        data: { draftRevision: { increment: 1 }, revision: { increment: 1 } },
+      });
+    },
+  );
+  revalidatePath(`/websites/${websiteId}`);
+}
+
+export async function saveWebsiteSubscriptionAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const clientId = cleanText(formData.get("clientId"), 80) || null;
+  const cadenceInput = cleanText(formData.get("cadence"), 20);
+  const expiresOn = cleanText(formData.get("expiresAt"), 32);
+  const cadence =
+    cadenceInput === "trial" || cadenceInput === "monthly" || cadenceInput === "yearly"
+      ? cadenceInput
+      : null;
+  const expiresAt = parseSubscriptionExpiry(expiresOn);
+  if (!websiteId || !cadence || !expiresAt || Number.isNaN(expiresAt.getTime())) return;
+  if (expiresAt.getTime() <= Date.now()) throw new Error("SUBSCRIPTION_EXPIRY_MUST_BE_FUTURE");
+  const context = await requireDashboardContext("website.edit");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `website-subscription:${websiteId}`),
+    async (transaction) => {
+      const website = await transaction.website.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        select: { id: true },
+      });
+      if (!website) throw new Error("WEBSITE_NOT_FOUND");
+      if (clientId) {
+        const assignedClient = await transaction.client.findUnique({
+          where: { organizationId_id: { organizationId: context.organization.id, id: clientId } },
+          select: { id: true },
+        });
+        if (!assignedClient) throw new Error("CLIENT_NOT_FOUND");
+      }
+      await transaction.website.update({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        data: { clientId, revision: { increment: 1 } },
+      });
+      const existingSubscription = await transaction.websiteSubscription.findUnique({
+        where: { organizationId_websiteId: { organizationId: context.organization.id, websiteId } },
+        select: { disabledReason: true, resumeStatus: true },
+      });
+      await transaction.websiteSubscription.upsert({
+        where: { organizationId_websiteId: { organizationId: context.organization.id, websiteId } },
+        create: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          websiteId,
+          clientId,
+          cadence,
+          startsAt: new Date(),
+          expiresAt,
+        },
+        update: {
+          clientId,
+          cadence,
+          status: "active",
+          startsAt: new Date(),
+          expiresAt,
+          disabledAt: null,
+          disabledReason: null,
+          resumeStatus: null,
+        },
+      });
+      if (existingSubscription?.disabledReason === "subscription_expired") {
+        await transaction.website.updateMany({
+          where: { id: websiteId, organizationId: context.organization.id, status: "disabled" },
+          data: {
+            status: renewalResumeStatus(existingSubscription.resumeStatus),
+            revision: { increment: 1 },
+          },
+        });
+      }
+    },
+  );
+  revalidatePath("/billing");
+  revalidatePath("/clients");
+  revalidatePath("/websites");
+  revalidatePath(`/websites/${websiteId}`);
 }
 
 export async function previewWebsiteAction(formData: FormData): Promise<void> {
@@ -769,52 +1476,197 @@ export async function rollbackPublicationAction(formData: FormData): Promise<voi
   revalidatePath(`/websites/${websiteId}`);
 }
 
-export async function createClientAction(formData: FormData): Promise<void> {
-  const name = cleanText(formData.get("name"), 200);
-  const contactName = cleanText(formData.get("contactName"), 200);
-  const contactEmail = cleanText(formData.get("contactEmail"), 320).toLowerCase();
-  const contactPhone = cleanText(formData.get("contactPhone"), 50);
-  const notes = cleanText(formData.get("notes"), 4_000);
-  if (!name || (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail))) return;
-
+export async function prepareClientPortalAction(formData: FormData): Promise<void> {
+  const clientId = cleanText(formData.get("clientId"), 80);
+  if (!clientId) return;
   const context = await requireDashboardContext("client.create");
-  const clientId = randomUUID();
   await withTenantTransaction(
     dashboardDatabase(),
-    {
-      organizationId: context.organization.id,
-      actorId: context.actor.id,
-      correlationId: `create-client:${clientId}`,
-    },
+    tenantActionContext(context, `prepare-client-portal:${clientId}`),
     async (transaction) => {
-      await transaction.client.create({
-        data: {
-          id: clientId,
-          organizationId: context.organization.id,
-          name,
-          contactName: contactName || null,
-          contactEmail: contactEmail || null,
-          contactPhone: contactPhone || null,
-          notes: notes || null,
-        },
+      const client = await transaction.client.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: clientId } },
+        select: { contactEmail: true, archivedAt: true },
       });
-      await transaction.auditEvent.create({
+      if (!client || client.archivedAt || !client.contactEmail) {
+        throw new Error("CLIENT_EMAIL_REQUIRED");
+      }
+      const membership = await ensureClientPortalMembership(
+        transaction,
+        context.organization.id,
+        context.actor.id,
+        client.contactEmail,
+      );
+      await transaction.outboundMessage.create({
         data: {
           id: randomUUID(),
           organizationId: context.organization.id,
-          actorType: "user",
-          actorId: context.actor.id,
-          action: "client.created",
-          resourceType: "client",
-          resourceId: clientId,
-          correlationId: `create-client:${clientId}`,
-          metadataJson: jsonInput({ name }),
-          retentionClass: "standard",
+          clientId,
+          recipientEmail: client.contactEmail,
+          subject: `Your ${context.organization.name} client portal`,
+          bodyText: `${membership.active ? "Your client portal access is ready." : "You have been invited to the client portal."} Sign in with ${client.contactEmail} at ${dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL}/api/auth/start to view your websites and billing information.`,
+          kind: "client.portal_invitation",
         },
       });
     },
   );
   revalidatePath("/clients");
+  revalidatePath("/mail");
+}
+
+async function ensureClientPortalMembership(
+  transaction: DatabaseTransaction,
+  organizationId: string,
+  actorId: string,
+  email: string,
+): Promise<{ readonly id: string; readonly active: boolean }> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await transaction.user.findUnique({
+    where: { normalizedEmail },
+    select: { id: true },
+  });
+  const role = await transaction.role.upsert({
+    where: { organizationId_key: { organizationId, key: "client" } },
+    create: {
+      id: randomUUID(),
+      organizationId,
+      key: "client",
+      name: "Client portal",
+      isSystem: true,
+    },
+    update: { name: "Client portal", isSystem: true },
+    select: { id: true },
+  });
+  let membership = user
+    ? await transaction.membership.findUnique({
+        where: { organizationId_userId: { organizationId, userId: user.id } },
+        select: { id: true, status: true },
+      })
+    : await transaction.membership.findFirst({
+        where: {
+          organizationId,
+          userId: null,
+          status: "invited",
+          invitedEmail: { equals: normalizedEmail, mode: "insensitive" },
+        },
+        select: { id: true, status: true },
+      });
+  membership ??= await transaction.membership.create({
+    data: {
+      id: randomUUID(),
+      organizationId,
+      userId: user?.id ?? null,
+      status: user ? "active" : "invited",
+      invitedEmail: user ? null : normalizedEmail,
+    },
+    select: { id: true, status: true },
+  });
+  await transaction.membershipRole.upsert({
+    where: { membershipId_roleId: { membershipId: membership.id, roleId: role.id } },
+    create: {
+      organizationId,
+      membershipId: membership.id,
+      roleId: role.id,
+    },
+    update: {},
+  });
+  await transaction.auditEvent.create({
+    data: {
+      id: randomUUID(),
+      organizationId,
+      actorType: "user",
+      actorId,
+      action: "client.portal_access_prepared",
+      resourceType: "membership",
+      resourceId: membership.id,
+      correlationId: `client-portal:${membership.id}`,
+      metadataJson: jsonInput({ email: normalizedEmail, active: membership.status === "active" }),
+      retentionClass: "security",
+    },
+  });
+  return { id: membership.id, active: membership.status === "active" };
+}
+
+export async function queueClientMessageAction(formData: FormData): Promise<void> {
+  const clientId = cleanText(formData.get("clientId"), 80);
+  const subject = cleanText(formData.get("subject"), 240);
+  const bodyText = cleanText(formData.get("bodyText"), 20_000);
+  const kindInput = cleanText(formData.get("kind"), 40);
+  const kind = kindInput === "support" || kindInput === "update" ? kindInput : "general";
+  if (!clientId || !subject || !bodyText) return;
+  const context = await requireDashboardContext("client.create");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `client-message:${clientId}`),
+    async (transaction) => {
+      const client = await transaction.client.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: clientId } },
+        select: { contactEmail: true },
+      });
+      if (!client?.contactEmail) throw new Error("CLIENT_EMAIL_REQUIRED");
+      await transaction.outboundMessage.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          clientId,
+          recipientEmail: client.contactEmail,
+          subject,
+          bodyText,
+          kind: `client.${kind}`,
+        },
+      });
+    },
+  );
+  revalidatePath("/mail");
+}
+
+export async function createHostingDomainAction(formData: FormData): Promise<void> {
+  const input = cleanText(formData.get("hostname"), 253);
+  if (!input) return;
+  let hostname: string;
+  try {
+    hostname = normalizeDomainHostname(input);
+  } catch {
+    return;
+  }
+  const context = await requireDashboardContext("domain.create");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `hosting-domain-create:${hostname}`),
+    async (transaction) => {
+      const existingDefault = await transaction.hostingDomain.findFirst({
+        where: { organizationId: context.organization.id, isDefault: true },
+        select: { id: true },
+      });
+      await transaction.hostingDomain.upsert({
+        where: { organizationId_hostnameNormalized: { organizationId: context.organization.id, hostnameNormalized: hostname } },
+        create: {
+          id: randomUUID(), organizationId: context.organization.id, hostnameNormalized: hostname,
+          hostnameDisplay: input, isDefault: !existingDefault,
+        },
+        update: { hostnameDisplay: input },
+      });
+    },
+  );
+  revalidatePath("/domains");
+  revalidatePath("/websites");
+}
+
+export async function setDefaultHostingDomainAction(formData: FormData): Promise<void> {
+  const domainId = cleanText(formData.get("domainId"), 80);
+  if (!domainId) return;
+  const context = await requireDashboardContext("domain.create");
+  await withTenantTransaction(
+    dashboardDatabase(), tenantActionContext(context, `hosting-domain-default:${domainId}`),
+    async (transaction) => {
+      const domain = await transaction.hostingDomain.findFirst({ where: { id: domainId, organizationId: context.organization.id } });
+      if (!domain) return;
+      await transaction.hostingDomain.updateMany({ where: { organizationId: context.organization.id }, data: { isDefault: false } });
+      await transaction.hostingDomain.update({ where: { id: domain.id }, data: { isDefault: true } });
+    },
+  );
+  revalidatePath("/domains");
+  revalidatePath("/websites");
 }
 
 export async function createDomainAction(formData: FormData): Promise<void> {
@@ -1165,8 +2017,22 @@ export async function createMediaFolderAction(formData: FormData): Promise<void>
 }
 
 export async function uploadMediaAction(formData: FormData): Promise<void> {
+  await uploadMedia(formData);
+}
+
+export async function uploadMediaForPickerAction(
+  formData: FormData,
+): Promise<{ assetId: string } | null> {
+  const assetId = await uploadMedia(formData);
+  return assetId ? { assetId } : null;
+}
+
+async function uploadMedia(formData: FormData): Promise<string | undefined> {
   const upload = formData.get("file");
-  const folderId = cleanText(formData.get("folderId"), 80);
+  let folderId = cleanText(formData.get("folderId"), 80);
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const purposeInput = cleanText(formData.get("purpose"), 24);
+  const purpose = purposeInput === "favicon" || purposeInput === "logo" ? purposeInput : null;
   if (
     !(upload instanceof File) ||
     upload.size < 1 ||
@@ -1182,6 +2048,7 @@ export async function uploadMediaAction(formData: FormData): Promise<void> {
   );
   const allowed = mediaType(upload.type);
   if (!allowed) return;
+  if (purpose && allowed.kind !== "image") return;
   const bytes = Buffer.from(await upload.arrayBuffer());
   if (!hasExpectedSignature(bytes, upload.type)) return;
 
@@ -1203,6 +2070,40 @@ export async function uploadMediaAction(formData: FormData): Promise<void> {
     BigInt(dashboardConfig.FACTORY_MAX_ORGANIZATION_MEDIA_BYTES)
   )
     throw new Error("MEDIA_QUOTA_EXCEEDED");
+  if (websiteId && !folderId) {
+    folderId = await withTenantTransaction(
+      dashboardDatabase(),
+      tenantActionContext(context, `website-media-folder:${websiteId}`),
+      async (transaction) => {
+        const website = await transaction.website.findFirst({
+          where: { id: websiteId, organizationId: context.organization.id, archivedAt: null },
+          include: { domains: { orderBy: { createdAt: "asc" }, take: 1 } },
+        });
+        if (!website) throw new Error("WEBSITE_NOT_FOUND");
+        const folderName = website.domains[0]?.hostnameNormalized ?? website.name;
+        const existing = await transaction.mediaFolder.findFirst({
+          where: {
+            organizationId: context.organization.id,
+            parentFolderId: null,
+            archivedAt: null,
+            name: folderName,
+          },
+          select: { id: true },
+        });
+        if (existing) return existing.id;
+        const folder = await transaction.mediaFolder.create({
+          data: {
+            id: randomUUID(),
+            organizationId: context.organization.id,
+            name: folderName,
+            orderKey: Date.now().toString(36).padStart(12, "0"),
+          },
+          select: { id: true },
+        });
+        return folder.id;
+      },
+    );
+  }
   if (folderId) {
     const folderExists = await withTenantTransaction(
       dashboardDatabase(),
@@ -1220,7 +2121,12 @@ export async function uploadMediaAction(formData: FormData): Promise<void> {
   }
   const assetId = randomUUID();
   const contentHash = createHash("sha256").update(bytes).digest("hex");
-  const relativeKey = join("media", context.organization.id, `${contentHash}.${allowed.extension}`);
+  const relativeKey = mediaStorageKey({
+    organizationId: context.organization.id,
+    assetId,
+    contentHash,
+    extension: allowed.extension,
+  });
   const absoluteKey = resolve(workspaceRoot, relativeKey);
   const storageKey = relativeKey.replaceAll("\\", "/");
   const remoteProvider =
@@ -1245,6 +2151,16 @@ export async function uploadMediaAction(formData: FormData): Promise<void> {
   }
 
   try {
+    const processed = remoteProvider
+      ? await remoteProvider.process({
+          assetId,
+          organizationId: context.organization.id,
+          storageKey,
+          contentHash,
+          contentType: upload.type,
+        })
+      : localProcessedMedia(storageKey, contentHash, upload.type, bytes.byteLength);
+    assertHealthyProcessedMedia(processed, context.organization.id);
     await withTenantTransaction(
       dashboardDatabase(),
       {
@@ -1257,31 +2173,89 @@ export async function uploadMediaAction(formData: FormData): Promise<void> {
           data: {
             id: assetId,
             organizationId: context.organization.id,
-            status: "quarantined",
+            status: "ready",
             kind: allowed.kind,
             originalFilename: upload.name.slice(0, 255) || `upload.${allowed.extension}`,
             storageKey,
             contentHash,
             detectedContentType: upload.type,
             byteSize: BigInt(bytes.byteLength),
-            metadataJson: jsonInput({ signatureChecked: true, processing: "queued" }),
+            metadataJson: jsonInput({ ...processed.metadata, signatureChecked: true, processing: "ready" }),
             folderId: folderId || null,
           },
         });
-        await transaction.job.create({
-          data: {
+        await transaction.mediaVariant.createMany({
+          data: processed.variants.map((variant) => ({
             id: randomUUID(),
             organizationId: context.organization.id,
-            type: "media.process",
-            version: 1,
-            payloadJson: jsonInput({ assetId }),
-            status: "queued",
-            priority: 4,
-            maxAttempts: 8,
-            deduplicationKey: `media.process:${assetId}`,
-            correlationId: `process-media:${assetId}`,
-          },
+            mediaAssetId: assetId,
+            variantKey: variant.key,
+            storageKey: variant.storageKey,
+            contentHash: variant.contentHash ?? null,
+            contentType: variant.contentType,
+            byteSize: BigInt(variant.byteSize),
+            width: variant.width ?? null,
+            height: variant.height ?? null,
+          })),
         });
+        if (websiteId && purpose) {
+          await transaction.mediaReference.deleteMany({
+            where: {
+              organizationId: context.organization.id,
+              websiteId,
+              referenceKind: purpose === "favicon" ? "favicon" : "website_logo",
+            },
+          });
+          await transaction.mediaReference.create({
+            data: {
+              id: randomUUID(),
+              organizationId: context.organization.id,
+              mediaAssetId: assetId,
+              websiteId,
+              referenceKind: purpose === "favicon" ? "favicon" : "website_logo",
+              jsonPointer: purpose === "favicon" ? "/website/favicon" : "/settings/logoMediaId",
+            },
+          });
+          if (purpose === "favicon") {
+            await transaction.website.update({
+              where: {
+                organizationId_id: { organizationId: context.organization.id, id: websiteId },
+              },
+              data: {
+                faviconAssetId: assetId,
+                draftRevision: { increment: 1 },
+                revision: { increment: 1 },
+              },
+            });
+          } else {
+            const settings = await transaction.websiteSettingsDraft.findFirst({
+              where: { organizationId: context.organization.id, websiteId, locale: null },
+              orderBy: { createdAt: "asc" },
+            });
+            if (!settings) throw new Error("WEBSITE_SETTINGS_NOT_FOUND");
+            const current =
+              settings.contentJson &&
+              typeof settings.contentJson === "object" &&
+              !Array.isArray(settings.contentJson)
+                ? settings.contentJson
+                : {};
+            const content = { ...current, logoMediaId: assetId };
+            await transaction.websiteSettingsDraft.update({
+              where: { id: settings.id },
+              data: {
+                contentJson: jsonInput(content),
+                contentSizeBytes: Buffer.byteLength(JSON.stringify(content)),
+                revision: { increment: 1 },
+              },
+            });
+            await transaction.website.update({
+              where: {
+                organizationId_id: { organizationId: context.organization.id, id: websiteId },
+              },
+              data: { draftRevision: { increment: 1 }, revision: { increment: 1 } },
+            });
+          }
+        }
         await transaction.auditEvent.create({
           data: {
             id: randomUUID(),
@@ -1310,6 +2284,53 @@ export async function uploadMediaAction(formData: FormData): Promise<void> {
     throw error;
   }
   revalidatePath("/media");
+  if (websiteId) revalidatePath(`/websites/${websiteId}`);
+  return assetId;
+}
+
+function localProcessedMedia(
+  storageKey: string,
+  contentHash: string,
+  contentType: string,
+  byteSize: number,
+): ProcessedMedia {
+  return {
+    safe: true,
+    detectedContentType: contentType,
+    metadata: { scanner: "local-signature-validation", signatureChecked: true },
+    variants: [
+      {
+        key: "original",
+        storageKey,
+        contentHash,
+        contentType,
+        byteSize,
+      },
+    ],
+  };
+}
+
+function assertHealthyProcessedMedia(media: ProcessedMedia, organizationId: string): void {
+  const prefix = `media/${organizationId}/`;
+  if (!media.safe) throw new Error("MEDIA_REJECTED");
+  if (!media.detectedContentType || media.variants.length < 1 || media.variants.length > 20) {
+    throw new Error("MEDIA_PROCESSING_INVALID");
+  }
+  const keys = new Set<string>();
+  for (const variant of media.variants) {
+    if (
+      !/^[a-z0-9][a-z0-9_-]{0,79}$/.test(variant.key) ||
+      keys.has(variant.key) ||
+      !variant.storageKey.startsWith(prefix) ||
+      variant.storageKey.slice(prefix.length).includes("/") ||
+      !Number.isSafeInteger(variant.byteSize) ||
+      variant.byteSize < 1 ||
+      !variant.contentType
+    ) {
+      throw new Error("MEDIA_PROCESSING_INVALID");
+    }
+    keys.add(variant.key);
+  }
 }
 
 export async function deleteMediaAction(formData: FormData): Promise<void> {
@@ -1453,7 +2474,7 @@ export async function updateSeoDraftAction(formData: FormData): Promise<void> {
           id: websiteId,
           draftRevision: expectedWebsiteRevision,
         },
-        data: { status: "draft", draftRevision: { increment: 1 } },
+        data: { draftRevision: { increment: 1 } },
       });
       if (updatedWebsite.count !== 1) throw new Error("WEBSITE_DRAFT_REVISION_CONFLICT");
       await transaction.auditEvent.create({
@@ -1642,10 +2663,9 @@ export async function updateThemeDraftAction(formData: FormData): Promise<void> 
 export async function updateNavigationNodeAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const nodeId = cleanText(formData.get("nodeId"), 80);
-  const label = cleanText(formData.get("label"), 160);
   const expectedRevision = parseRevision(formData.get("expectedRevision"));
   const websiteDraftRevision = parseRevision(formData.get("websiteDraftRevision"));
-  if (!websiteId || !nodeId || !label || !expectedRevision || !websiteDraftRevision) return;
+  if (!websiteId || !nodeId || !expectedRevision || !websiteDraftRevision) return;
   const context = await requireDashboardContext("website.edit");
   await withTenantTransaction(
     dashboardDatabase(),
@@ -1663,14 +2683,23 @@ export async function updateNavigationNodeAction(formData: FormData): Promise<vo
       if (!node) throw new Error("DRAFT_REVISION_CONFLICT");
       const website = await transaction.website.findUnique({
         where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
-        select: { defaultLocale: true },
+        select: {
+          defaultLocale: true,
+          locales: { orderBy: [{ isDefault: "desc" }, { locale: "asc" }], select: { locale: true } },
+        },
       });
       if (!website) return;
       const labels = jsonRecord(node.labelJson);
+      const updatedLabels = Object.fromEntries(
+        website.locales.map(({ locale }) => {
+          const label = cleanText(formData.get(`label:${locale}`), 160);
+          return [locale, label || localizedJsonLabel(node.labelJson, website.defaultLocale)];
+        }),
+      );
       await transaction.navigationNodeDraft.update({
         where: { id: node.id },
         data: {
-          labelJson: jsonInput({ ...labels, [website.defaultLocale]: label }),
+          labelJson: jsonInput({ ...labels, ...updatedLabels }),
           revision: { increment: 1 },
         },
       });
@@ -1795,7 +2824,6 @@ export async function upgradeWebsiteTemplateAction(formData: FormData): Promise<
         },
         data: {
           templateVersion: targetVersion,
-          status: "draft",
           draftRevision: { increment: 1 },
           revision: { increment: 1 },
         },
@@ -1820,7 +2848,7 @@ export async function addWebsiteLocaleAction(formData: FormData): Promise<void> 
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const locale = canonicalLocale(cleanText(formData.get("locale"), 35));
   const websiteDraftRevision = parseRevision(formData.get("websiteDraftRevision"));
-  if (!websiteId || !locale || !websiteDraftRevision) return;
+  if (!websiteId || !locale || !isSupportedWebsiteLocale(locale) || !websiteDraftRevision) return;
   const context = await requireDashboardContext("website.edit");
   const client = dashboardDatabase();
   const website = await withTenantTransaction(
@@ -1874,7 +2902,7 @@ export async function addWebsiteLocaleAction(formData: FormData): Promise<void> 
             websiteId,
             pageTypeId: page.pageTypeId,
             locale,
-            title: page.title,
+            title: localizedTemplateTitle(page.title, locale),
             slug: page.slug,
             status: page.status,
             schemaVersion: page.schemaVersion,
@@ -1884,18 +2912,24 @@ export async function addWebsiteLocaleAction(formData: FormData): Promise<void> 
         });
         if (page.sections.length > 0) {
           await transaction.sectionDraft.createMany({
-            data: page.sections.map((section) => ({
-              id: randomUUID(),
-              organizationId: context.organization.id,
-              websiteId,
-              pageId,
-              sectionTypeId: section.sectionTypeId,
-              schemaVersion: section.schemaVersion,
-              contentJson: jsonInput(section.contentJson),
-              contentSizeBytes: section.contentSizeBytes,
-              visibilityJson: jsonInput(section.visibilityJson),
-              orderKey: section.orderKey,
-            })),
+            data: page.sections.map((section) => {
+              const localizedContent = localizeTemplateDefault(
+                section.contentJson as JsonValue,
+                locale,
+              );
+              return {
+                id: randomUUID(),
+                organizationId: context.organization.id,
+                websiteId,
+                pageId,
+                sectionTypeId: section.sectionTypeId,
+                schemaVersion: section.schemaVersion,
+                contentJson: jsonInput(localizedContent),
+                contentSizeBytes: Buffer.byteLength(JSON.stringify(localizedContent)),
+                visibilityJson: jsonInput(section.visibilityJson),
+                orderKey: section.orderKey,
+              };
+            }),
           });
         }
         const sourceSeo = page.seoDrafts.find(
@@ -2010,6 +3044,69 @@ export async function addWebsiteLocaleAction(formData: FormData): Promise<void> 
   revalidateWebsiteEditor(websiteId);
 }
 
+export async function updateWebsiteDefaultLocaleAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const defaultLocale = canonicalLocale(cleanText(formData.get("defaultLocale"), 35));
+  const websiteDraftRevision = parseRevision(formData.get("websiteDraftRevision"));
+  if (
+    !websiteId ||
+    !defaultLocale ||
+    !isSupportedWebsiteLocale(defaultLocale) ||
+    !websiteDraftRevision
+  )
+    return;
+
+  const context = await requireDashboardContext("website.edit");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `set-default-locale:${websiteId}:${defaultLocale}`),
+    async (transaction) => {
+      const website = await transaction.website.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        include: { locales: true },
+      });
+      if (!website || !website.locales.some((locale) => locale.locale === defaultLocale)) {
+        throw new Error("WEBSITE_LOCALE_NOT_FOUND");
+      }
+      if (website.defaultLocale === defaultLocale) return;
+
+      for (const locale of website.locales) {
+        await transaction.websiteLocale.update({
+          where: { websiteId_locale: { websiteId, locale: locale.locale } },
+          data: {
+            isDefault: locale.locale === defaultLocale,
+            fallbackLocale: locale.locale === defaultLocale ? null : defaultLocale,
+          },
+        });
+      }
+      const updated = await transaction.website.updateMany({
+        where: {
+          organizationId: context.organization.id,
+          id: websiteId,
+          draftRevision: websiteDraftRevision,
+        },
+        data: {
+          defaultLocale,
+          draftRevision: { increment: 1 },
+          revision: { increment: 1 },
+        },
+      });
+      if (updated.count !== 1) throw new Error("WEBSITE_DRAFT_REVISION_CONFLICT");
+      await writeDraftAudit(
+        transaction,
+        context.organization.id,
+        context.actor.id,
+        "website.default_locale_updated",
+        "website",
+        websiteId,
+        websiteId,
+        { fromLocale: website.defaultLocale, toLocale: defaultLocale },
+      );
+    },
+  );
+  revalidateWebsiteEditor(websiteId);
+}
+
 export async function updatePageDraftAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const pageId = cleanText(formData.get("pageId"), 80);
@@ -2047,7 +3144,7 @@ export async function updatePageDraftAction(formData: FormData): Promise<void> {
           id: websiteId,
           draftRevision: websiteDraftRevision,
         },
-        data: { status: "draft", draftRevision: { increment: 1 } },
+        data: { draftRevision: { increment: 1 } },
       });
       if (websiteUpdate.count !== 1) throw new Error("WEBSITE_DRAFT_REVISION_CONFLICT");
       await transaction.auditEvent.create({
@@ -2511,13 +3608,49 @@ export async function updateSectionDraftAction(formData: FormData): Promise<void
       });
       if (sectionUpdate.count !== 1) throw new Error("DRAFT_REVISION_CONFLICT");
 
+      const referencedMediaIds = collectMediaIds(validated.value);
+      if (referencedMediaIds.length > 0) {
+        const readyAssets = await transaction.mediaAsset.findMany({
+          where: {
+            organizationId: organization.id,
+            id: { in: [...new Set(referencedMediaIds)] },
+            kind: "image",
+            status: "ready",
+          },
+          select: { id: true },
+        });
+        if (readyAssets.length !== new Set(referencedMediaIds).size) {
+          throw new Error("SECTION_MEDIA_NOT_READY");
+        }
+      }
+      await transaction.mediaReference.deleteMany({
+        where: {
+          organizationId: organization.id,
+          sectionId,
+          referenceKind: "section_content",
+        },
+      });
+      for (const mediaAssetId of new Set(referencedMediaIds)) {
+        await transaction.mediaReference.create({
+          data: {
+            id: randomUUID(),
+            organizationId: organization.id,
+            mediaAssetId,
+            websiteId,
+            pageId: sectionContext.pageId,
+            sectionId,
+            referenceKind: "section_content",
+          },
+        });
+      }
+
       const websiteUpdate = await transaction.website.updateMany({
         where: {
           organizationId: organization.id,
           id: websiteId,
           draftRevision: websiteDraftRevision,
         },
-        data: { status: "draft", draftRevision: { increment: 1 } },
+        data: { draftRevision: { increment: 1 } },
       });
       if (websiteUpdate.count !== 1) throw new Error("WEBSITE_DRAFT_REVISION_CONFLICT");
       await transaction.auditEvent.create({
@@ -2594,12 +3727,12 @@ function toDraftProjection(
     media: [...new Map(website.mediaReferences.map(({ asset }) => [asset.id, asset])).values()].map(
       (asset) => ({
         id: asset.id,
-        url: mediaPublicUrl(asset.storageKey, website.organizationId),
+        url: websiteMediaUrl(asset.storageKey, website.domains[0]?.hostnameNormalized),
         contentHash: asset.contentHash,
         variants: Object.fromEntries(
           asset.variants.map((variant) => [
             variant.variantKey,
-            mediaPublicUrl(variant.storageKey, website.organizationId),
+            websiteMediaUrl(variant.storageKey, website.domains[0]?.hostnameNormalized),
           ]),
         ),
       }),
@@ -2637,15 +3770,20 @@ function buildNavigationTree(
   return visit(null, new Set());
 }
 
-function mediaPublicUrl(storageKey: string, organizationId: string): string {
+function websiteMediaUrl(storageKey: string, hostname: string | undefined): string {
+  if (!hostname) throw new Error("WEBSITE_MEDIA_HOSTNAME_REQUIRED");
+  const filename = storageFilename(storageKey);
+  const dashboardUrl = new URL(dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL);
+  const localPort = hostname.endsWith(".localhost") ? dashboardUrl.port : "";
+  const scheme = hostname.endsWith(".localhost") ? dashboardUrl.protocol : "https:";
+  return `${scheme}//${hostname}${localPort ? `:${localPort}` : ""}/media/${encodeURIComponent(filename)}`;
+}
+
+function storageFilename(storageKey: string): string {
   const normalized = storageKey.replaceAll("\\", "/");
-  const prefix = `media/${organizationId}/`;
-  if (!normalized.startsWith(prefix)) throw new Error("MEDIA_STORAGE_KEY_INVALID");
-  const relative = normalized.slice(prefix.length);
-  if (!relative || relative.includes("..") || relative.includes("/")) {
-    throw new Error("MEDIA_STORAGE_KEY_INVALID");
-  }
-  return `/factory-media/${organizationId}/${encodeURIComponent(relative)}`;
+  const filename = normalized.split("/").at(-1);
+  if (!filename || filename.includes("..")) throw new Error("MEDIA_STORAGE_KEY_INVALID");
+  return filename;
 }
 
 function jsonRecord(value: unknown): Record<string, unknown> {
@@ -2719,7 +3857,7 @@ async function advanceWebsiteDraft(
 ): Promise<void> {
   const updated = await transaction.website.updateMany({
     where: { organizationId, id: websiteId, draftRevision: expectedRevision },
-    data: { status: "draft", draftRevision: { increment: 1 } },
+    data: { draftRevision: { increment: 1 } },
   });
   if (updated.count !== 1) throw new Error("WEBSITE_DRAFT_REVISION_CONFLICT");
 }
@@ -2758,6 +3896,21 @@ function revalidateWebsiteEditor(websiteId: string): void {
 
 function cleanText(value: FormDataEntryValue | null, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
+function subdomainUnavailableUrl(hostname: string): string {
+  return `/websites?createError=subdomain-taken&hostname=${encodeURIComponent(hostname)}#create-website`;
+}
+
+function parseSubscriptionExpiry(value: string): Date | null {
+  if (!value) return null;
+  const isoValue = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? `${value}T23:59:59.999Z`
+    : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(value)
+      ? `${value.length === 16 ? `${value}:00` : value}Z`
+      : value;
+  const parsed = new Date(isoValue);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function parseRevision(value: FormDataEntryValue | null): bigint | null {
@@ -2837,7 +3990,8 @@ function mergeSectionContent(current: unknown, formData: FormData): unknown {
       : {};
   for (const [key, value] of formData.entries()) {
     if (key.startsWith("field:")) {
-      base[key.slice("field:".length)] = typeof value === "string" ? value : "";
+      const fieldName = key.slice("field:".length);
+      base[fieldName] = fieldName.endsWith("MediaId") && value === "" ? null : value;
       continue;
     }
     if (key.startsWith("jsonField:") && typeof value === "string") {
@@ -2849,6 +4003,15 @@ function mergeSectionContent(current: unknown, formData: FormData): unknown {
     }
   }
   return base;
+}
+
+function collectMediaIds(value: unknown): string[] {
+  if (Array.isArray(value)) return value.flatMap(collectMediaIds);
+  if (!value || typeof value !== "object") return [];
+  return Object.entries(value).flatMap(([key, child]) => [
+    ...(key.endsWith("MediaId") && typeof child === "string" && child ? [child] : []),
+    ...collectMediaIds(child),
+  ]);
 }
 
 function jsonInput(value: unknown): Exclude<JsonValue, null> {

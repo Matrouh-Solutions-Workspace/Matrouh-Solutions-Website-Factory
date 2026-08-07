@@ -154,11 +154,14 @@ export function validateTemplate(
     );
   }
 
+  const widgets = template.widgets ?? [];
+  const blocks = template.blocks ?? [];
+  const sections = template.sections ?? [];
   const requiredCapabilities = [
     ...(template.capabilities ?? []),
-    ...template.widgets.flatMap((component) => component.capabilities ?? []),
-    ...template.blocks.flatMap((component) => component.capabilities ?? []),
-    ...template.sections.flatMap((component) => component.capabilities ?? []),
+    ...widgets.flatMap((component) => component.capabilities ?? []),
+    ...blocks.flatMap((component) => component.capabilities ?? []),
+    ...sections.flatMap((component) => component.capabilities ?? []),
   ];
   const capabilityEnvironment = environment.supportedCapabilities ?? {};
   for (const capability of requiredCapabilities) {
@@ -179,9 +182,10 @@ export function validateTemplate(
 
   add(
     "DEFAULTS_EXECUTABLE_VALID",
-    [...template.widgets, ...template.blocks, ...template.sections].every(
+    [...widgets, ...blocks, ...sections].every(
       (component) => component.schema.safeParse(component.defaults).success,
-    ) && template.theme.schema.safeParse(template.theme.defaults).success,
+    ) &&
+      (template.theme?.schema.safeParse(template.theme.defaults).success ?? false),
     "Component and theme defaults validate",
   );
   add(
@@ -208,7 +212,7 @@ export function validateTemplate(
     valid: sortedChecks.every((check) => check.valid),
     checks: Object.freeze(sortedChecks),
     manifest,
-    artifactIdentity: `${template.manifest.id}@${template.manifest.version}`,
+    artifactIdentity: `${template.manifest?.id ?? "unknown"}@${template.manifest?.version ?? "unknown"}`,
     artifactHash: artifact?.artifactHash ?? null,
     manifestHash: manifest?.manifestHash ?? null,
     validatorVersion: "1.0.0" as const,
@@ -217,7 +221,7 @@ export function validateTemplate(
 
 function hasUnambiguousMigrationGraph(template: TemplateDefinition): boolean {
   const edges = new Set<string>();
-  return template.migrations.every((migration) => {
+  return (template.migrations ?? []).every((migration) => {
     const key = `${migration.kind}:${migration.fromVersion}:${migration.toVersion}`;
     if (migration.toVersion <= migration.fromVersion || edges.has(key)) return false;
     edges.add(key);

@@ -4,12 +4,13 @@ import { dashboardConfig } from "@/server/config";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const invalid = (await searchParams).error === "invalid";
+  const query = await searchParams;
+  const invalid = query.error === "invalid";
   return (
     <main className="loginShell" dir="rtl">
-      <LoginForm authMode={dashboardConfig.FACTORY_AUTH_MODE} invalid={invalid} />
+      <LoginForm authMode={dashboardConfig.FACTORY_AUTH_MODE} invalid={invalid} next={query.next} />
     </main>
   );
 }

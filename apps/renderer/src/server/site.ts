@@ -17,15 +17,20 @@ import { rendererConfig, workspaceRoot } from "./config";
 import { rendererArtifactStore as artifactStore } from "./artifact-store";
 
 const maximumArtifactBytes = 2_000_000;
-const domainCacheTtlMs = 15_000;
+const domainCacheTtlMs = 1_000;
 const negativeCacheTtlMs = 3_000;
 
 export interface LoadedSite {
+  readonly organizationId: string;
   readonly snapshot: PublicationSnapshot;
   readonly template: LoadedTemplateArtifact["definition"];
   readonly artifact: LoadedTemplateArtifact;
   readonly mappingVersion: string;
   readonly preview: boolean;
+  readonly branding: {
+    readonly faviconUrl: string | null;
+    readonly whiteLabelEnabled: boolean;
+  };
 }
 
 interface ActiveSiteRow {
@@ -41,6 +46,9 @@ interface ActiveSiteRow {
   content_hash: string;
   byte_size: bigint;
   mapping_version: bigint;
+  favicon_storage_key: string | null;
+  white_label_enabled: boolean;
+  subscription_expires_at: Date | null;
 }
 
 interface PreviewRow {
@@ -52,6 +60,8 @@ interface PreviewRow {
   snapshot_schema_version: number;
   expires_at: Date;
   token_hash: string;
+  favicon_storage_key: string | null;
+  white_label_enabled: boolean;
 }
 
 interface CacheEntry {
@@ -103,7 +113,8 @@ export const loadSite = cache(async (hostname: string): Promise<LoadedSite | nul
   const rows = await database().$queryRaw<ActiveSiteRow[]>`
     SELECT hostname_normalized, organization_id, website_id, publication_id,
            template_id, template_version, template_artifact_hash,
-           snapshot_schema_version, storage_uri, content_hash, byte_size, mapping_version
+           snapshot_schema_version, storage_uri, content_hash, byte_size, mapping_version,
+           favicon_storage_key, white_label_enabled, subscription_expires_at
     FROM renderer_active_sites
     WHERE hostname_normalized = ${normalized}
     LIMIT 1
@@ -114,7 +125,13 @@ export const loadSite = cache(async (hostname: string): Promise<LoadedSite | nul
     return null;
   }
   const site = await loadResolvedSite(row, false);
-  domainCache().set(normalized, { expiresAt: Date.now() + domainCacheTtlMs, value: site });
+  domainCache().set(normalized, {
+    expiresAt: Math.min(
+      Date.now() + domainCacheTtlMs,
+      row.subscription_expires_at?.getTime() ?? Number.POSITIVE_INFINITY,
+    ),
+    value: site,
+  });
   return site;
 });
 
@@ -130,7 +147,8 @@ export async function loadPreviewSite(token: string | undefined): Promise<Loaded
   const tokenDigest = previewTokenHash(token);
   const rows = await database().$queryRaw<PreviewRow[]>`
     SELECT preview_id, organization_id, website_id, storage_uri, content_hash,
-           snapshot_schema_version, expires_at, token_hash
+           snapshot_schema_version, expires_at, token_hash, favicon_storage_key,
+           white_label_enabled
     FROM renderer_preview_snapshots
     WHERE preview_id = ${claims.previewId}
       AND organization_id = ${claims.organizationId}::uuid
@@ -152,11 +170,13 @@ export async function loadPreviewSite(token: string | undefined): Promise<Loaded
   }
   const artifact = await loadExactTemplate(snapshot);
   return Object.freeze({
+    organizationId: row.organization_id,
     snapshot,
     template: artifact.definition,
     artifact,
     mappingVersion: `preview:${claims.nonce}`,
     preview: true,
+    branding: branding(row.favicon_storage_key, row.white_label_enabled),
   });
 }
 
@@ -223,11 +243,25 @@ async function loadResolvedSite(row: ActiveSiteRow, preview: boolean): Promise<L
   }
   const artifact = await loadExactTemplate(snapshot);
   return Object.freeze({
+    organizationId: row.organization_id,
     snapshot,
     template: artifact.definition,
     artifact,
     mappingVersion: row.mapping_version.toString(),
     preview,
+    branding: branding(row.favicon_storage_key, row.white_label_enabled),
+  });
+}
+
+function branding(
+  faviconStorageKey: string | null,
+  whiteLabelEnabled: boolean,
+): LoadedSite["branding"] {
+  const filename = faviconStorageKey?.split("/").at(-1);
+  const localUrl = filename ? `/media/${encodeURIComponent(filename)}` : null;
+  return Object.freeze({
+    faviconUrl: localUrl,
+    whiteLabelEnabled,
   });
 }
 

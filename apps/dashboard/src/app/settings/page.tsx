@@ -12,7 +12,7 @@ export default async function SettingsPage() {
     <>
       <header>
         <div>
-          <p className="eyebrow">Control plane</p>
+          <p className="eyebrow">Control panel</p>
           <h1>Organization settings</h1>
           <p className="sub">Identity, locale, plan, and access context.</p>
         </div>

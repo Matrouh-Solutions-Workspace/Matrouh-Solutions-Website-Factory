@@ -14,8 +14,35 @@ export function databaseUrlFromEnv(environment: Record<string, string | undefine
 }
 export function createDatabaseClient(options: DatabaseOptions): PrismaClient {
   return new PrismaClient({
-    adapter: new PrismaPg({ connectionString: options.connectionString }),
+    // The dashboard uses interactive tenant transactions. A single connection prevents a
+    // transaction-pooler from interleaving bind/execute messages across prepared queries.
+    adapter: new PrismaPg({
+      connectionString: directPostgresUrl(options.connectionString),
+      max: 1,
+      connectionTimeoutMillis: 10_000,
+      idleTimeoutMillis: 10_000,
+    }),
   });
+}
+
+export function directPostgresUrl(connectionString: string): string {
+  if (!connectionString.startsWith("prisma+postgres://")) return connectionString;
+  try {
+    const apiKey = new URL(connectionString).searchParams.get("api_key");
+    if (!apiKey) throw new Error("MISSING_API_KEY");
+    const payload = JSON.parse(Buffer.from(apiKey, "base64url").toString("utf8")) as {
+      databaseUrl?: unknown;
+    };
+    if (
+      typeof payload.databaseUrl !== "string" ||
+      !/^postgres(?:ql)?:\/\//.test(payload.databaseUrl)
+    ) {
+      throw new Error("MISSING_DIRECT_URL");
+    }
+    return payload.databaseUrl;
+  } catch (error) {
+    throw new Error("PRISMA_PG_REQUIRES_DIRECT_DATABASE_URL", { cause: error });
+  }
 }
 export type DatabaseClient = PrismaClient;
 export type DatabaseTransaction = Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0];
@@ -47,8 +74,27 @@ export async function withTenantTransaction<T>(
   context: { organizationId: string; actorId: string; correlationId: string },
   work: (transaction: DatabaseTransaction) => Promise<T>,
 ): Promise<T> {
-  return client.$transaction(async (transaction) => {
-    await transaction.$executeRaw`SELECT set_config('app.organization_id', ${context.organizationId}, true), set_config('app.actor_id', ${context.actorId}, true), set_config('app.correlation_id', ${context.correlationId}, true)`;
-    return work(transaction);
-  });
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await client.$transaction(async (transaction) => {
+        await transaction.$executeRaw`SELECT set_config('app.organization_id', ${context.organizationId}, true), set_config('app.actor_id', ${context.actorId}, true), set_config('app.correlation_id', ${context.correlationId}, true)`;
+        return work(transaction);
+      });
+    } catch (error) {
+      if (attempt === 0 && isRecoverableTransactionError(error)) continue;
+      throw error;
+    }
+  }
+  throw new Error("TENANT_TRANSACTION_RETRY_EXHAUSTED");
+}
+
+function isRecoverableTransactionError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("bind message supplies") ||
+    message.includes("prepared statement") ||
+    message.includes("Transaction not found") ||
+    message.includes("Connection terminated unexpectedly") ||
+    message.includes("Server has closed the connection")
+  );
 }

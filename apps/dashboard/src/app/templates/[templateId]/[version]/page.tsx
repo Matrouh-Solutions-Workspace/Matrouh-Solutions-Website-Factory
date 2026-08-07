@@ -1,6 +1,4 @@
 import { notFound } from "next/navigation";
-import { createWebsiteAction } from "@/app/actions";
-import { PendingSubmit } from "@/app/pending-submit";
 import { loadExactCatalogTemplate, loadTemplateCatalog } from "@/server/template-catalog";
 
 export const dynamic = "force-dynamic";
@@ -83,26 +81,12 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPrope
             version, then edit its pages, sections, content, theme, navigation, and SEO in the
             website editor.
           </p>
-          <form action={createWebsiteAction} className="templateCustomizeForm">
-            <input name="template" type="hidden" value={`${templateId}@${version}`} />
-            <label>
-              Website name
-              <input
-                defaultValue={`My ${template.manifest.displayName}`}
-                maxLength={120}
-                name="name"
-                required
-              />
-            </label>
-            <label>
-              Local hostname
-              <input maxLength={50} name="hostname" placeholder="my-website" />
-              <small>A unique suffix and .localhost are added automatically.</small>
-            </label>
-            <PendingSubmit pendingLabel="Creating editable draft…">
-              Create &amp; edit website
-            </PendingSubmit>
-          </form>
+          <a
+            className="buttonLink"
+            href={`/websites?template=${encodeURIComponent(`${templateId}@${version}`)}#create-website`}
+          >
+            Start guided setup
+          </a>
         </section>
 
         <section className="panel templateContractPanel">

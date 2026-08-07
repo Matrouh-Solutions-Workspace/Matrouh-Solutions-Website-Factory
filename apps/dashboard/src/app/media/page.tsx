@@ -157,7 +157,8 @@ export default async function MediaPage({
               </select>
             </label>
             <p className="formNotice">
-              Files are checked by content signature and stored by SHA-256 hash.
+              Files are checked by content signature and stored by SHA-256 hash. Recommended:
+              favicon 512 × 512, hero 1920 × 1080, cards 1200 × 800, and portraits 800 × 1000 px.
             </p>
             <PendingSubmit pendingLabel="Uploading…">Upload asset</PendingSubmit>
           </form>

@@ -17,6 +17,8 @@ const websiteSchema = contentSchema<JsonValue>({
       .regex(/^\/(?:[a-z0-9/_-]*)$/i)
       .default("/book"),
     emergencyNotice: z.string().max(300).default(""),
+    colorMode: z.enum(["light", "dark"]).default("light"),
+    logoMediaId: z.string().uuid().nullable().default(null),
   }),
   fields: {
     "/centralPhone": { label: "Central phone", control: "text", order: 1 },
@@ -28,13 +30,23 @@ const websiteSchema = contentSchema<JsonValue>({
       order: 4,
       localization: "value",
     },
+    "/colorMode": {
+      label: "Template appearance",
+      control: "select",
+      order: 5,
+      options: [
+        { label: "Light", value: "light" },
+        { label: "Dark", value: "dark" },
+      ],
+    },
+    "/logoMediaId": { label: "Custom logo", control: "media", order: 6, mediaKinds: ["image"] },
   },
 });
 
 export const template = defineTemplate({
   manifest: {
     id: ids.template("com.matrouh.clinic"),
-    version: ids.version("1.3.0"),
+    version: ids.version("1.4.0"),
     displayName: "Multi-specialty Clinic",
     author: "Matrouh Solutions",
     description: "Interactive multi-location clinic with coordinated care and live maps",

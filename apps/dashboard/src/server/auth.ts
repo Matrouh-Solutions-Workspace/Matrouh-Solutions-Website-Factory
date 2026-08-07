@@ -3,7 +3,11 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { withTenantTransaction } from "@factory/database";
-import { dashboardDatabase } from "./database";
+import {
+  dashboardDatabase,
+  isRecoverableDatabaseConnectionError,
+  resetDashboardDatabase,
+} from "./database";
 
 export const DASHBOARD_SESSION_COOKIE = "factory_dashboard_session";
 
@@ -39,37 +43,54 @@ export async function authenticateDashboardCredential(
   )
     return null;
   const tokenHash = createHash("sha256").update(token).digest("hex");
-  const session = await dashboardDatabase().session.findUnique({
-    where: { tokenHash },
-    include: { user: true },
+  let client = dashboardDatabase();
+  const session = await client.session.findUnique({ where: { tokenHash } }).catch(async (error) => {
+    if (!isRecoverableDatabaseConnectionError(error)) throw error;
+    client = await resetDashboardDatabase();
+    return client.session.findUnique({ where: { tokenHash } });
   });
+  if (!session || session.revokedAt || session.expiresAt <= new Date()) return null;
+  const user = await client.user.findUnique({ where: { id: session.userId } });
+  if (!user || user.status !== "active") return null;
+  const membership = await withTenantTransaction(
+    client,
+    { organizationId, actorId: user.id, correlationId: `authenticate:${session.id}` },
+    async (transaction) => {
+      const membership = await transaction.membership.findUnique({
+        where: { organizationId_userId: { organizationId, userId: session.userId } },
+      });
+      if (!membership) return null;
+      const organization = await transaction.organization.findUnique({
+        where: { id: organizationId },
+      });
+      const membershipRoles = await transaction.membershipRole.findMany({
+        where: { organizationId, membershipId: membership.id },
+        select: { roleId: true },
+      });
+      const roleIds = membershipRoles.map((item) => item.roleId);
+      const roles = await transaction.role.findMany({
+        where: { organizationId, id: { in: roleIds } },
+        select: { id: true, key: true },
+      });
+      const rolePermissions = await transaction.rolePermission.findMany({
+        where: { organizationId, roleId: { in: roleIds } },
+        select: { permissionId: true },
+      });
+      const permissions = await transaction.permission.findMany({
+        where: { id: { in: rolePermissions.map((item) => item.permissionId) } },
+        select: { key: true },
+      });
+      return { membership, organization, roles, permissions };
+    },
+  );
   if (
-    !session ||
-    session.revokedAt ||
-    session.expiresAt <= new Date() ||
-    session.user.status !== "active"
+    !membership ||
+    membership.membership.status !== "active" ||
+    membership.organization?.status !== "active"
   )
     return null;
-  const membership = await withTenantTransaction(
-    dashboardDatabase(),
-    { organizationId, actorId: session.userId, correlationId: `authenticate:${session.id}` },
-    (transaction) =>
-      transaction.membership.findUnique({
-        where: { organizationId_userId: { organizationId, userId: session.userId } },
-        include: {
-          organization: true,
-          roles: {
-            include: { role: { include: { permissions: { include: { permission: true } } } } },
-          },
-        },
-      }),
-  );
-  if (!membership || membership.status !== "active" || membership.organization.status !== "active")
-    return null;
-  const roleKeys = membership.roles.map((item) => item.role.key).sort();
-  const permissions = new Set(
-    membership.roles.flatMap((item) => item.role.permissions.map((grant) => grant.permission.key)),
-  );
+  const roleKeys = membership.roles.map((role) => role.key).sort();
+  const permissions = new Set(membership.permissions.map((permission) => permission.key));
   return Object.freeze({
     organization: Object.freeze({
       id: membership.organization.id,
@@ -78,11 +99,11 @@ export async function authenticateDashboardCredential(
       defaultLocale: membership.organization.defaultLocale,
     }),
     actor: Object.freeze({
-      id: session.user.id,
-      email: session.user.primaryEmail,
-      displayName: session.user.displayName,
+      id: user.id,
+      email: user.primaryEmail,
+      displayName: user.displayName,
     }),
-    membershipId: membership.id,
+    membershipId: membership.membership.id,
     roleKeys: Object.freeze(roleKeys),
     permissions,
   });
@@ -92,8 +113,16 @@ export async function requireDashboardContext(permission?: string): Promise<Dash
   const context = await getDashboardContext();
   if (!context) redirect("/login");
   const privileged = context.roleKeys.some((role) => role === "owner" || role === "admin");
-  if (permission && !privileged && !context.permissions.has(permission))
+  if (permission && !privileged && !context.permissions.has(permission)) {
+    if (context.roleKeys.includes("client")) redirect("/account");
     throw new DashboardAuthorizationError(permission);
+  }
+  return context;
+}
+
+export async function requireClientAccountContext(): Promise<DashboardContext> {
+  const context = await requireDashboardContext();
+  if (!context.roleKeys.includes("client")) throw new DashboardAuthorizationError("client.account");
   return context;
 }
 

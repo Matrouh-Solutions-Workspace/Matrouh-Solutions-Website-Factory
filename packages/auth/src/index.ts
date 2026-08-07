@@ -1,4 +1,5 @@
 import type { Actor } from "@factory/application";
+import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 export interface SessionIdentity {
   userId: string;
@@ -10,6 +11,28 @@ export interface SessionProvider {
 }
 export function authorize(actor: Actor, permission: string): void {
   if (!actor.permissions.includes(permission)) throw new Error("AUTHORIZATION_DENIED");
+}
+
+const PASSWORD_KEY_LENGTH = 64;
+
+export function hashPassword(password: string): string {
+  if (password.length < 10 || password.length > 256) throw new Error("PASSWORD_LENGTH_INVALID");
+  const salt = randomBytes(16);
+  const digest = scryptSync(password, salt, PASSWORD_KEY_LENGTH);
+  return `scrypt$${salt.toString("base64url")}$${digest.toString("base64url")}`;
+}
+
+export function verifyPassword(password: string, storedHash: string | null | undefined): boolean {
+  if (!storedHash || password.length > 256) return false;
+  const [scheme, encodedSalt, encodedDigest] = storedHash.split("$");
+  if (scheme !== "scrypt" || !encodedSalt || !encodedDigest) return false;
+  try {
+    const expected = Buffer.from(encodedDigest, "base64url");
+    const actual = scryptSync(password, Buffer.from(encodedSalt, "base64url"), expected.length);
+    return expected.length === actual.length && timingSafeEqual(expected, actual);
+  } catch {
+    return false;
+  }
 }
 
 export interface OidcClientOptions {
@@ -30,6 +53,7 @@ export interface OidcIdentity {
   readonly issuer: string;
   readonly subject: string;
   readonly email?: string;
+  readonly emailVerified?: boolean;
   readonly name?: string;
 }
 
@@ -99,6 +123,9 @@ export class OidcClient {
       issuer: discovery.issuer,
       subject: verified.payload.sub,
       ...(typeof verified.payload.email === "string" ? { email: verified.payload.email } : {}),
+      ...(typeof verified.payload.email_verified === "boolean"
+        ? { emailVerified: verified.payload.email_verified }
+        : {}),
       ...(typeof verified.payload.name === "string" ? { name: verified.payload.name } : {}),
     };
   }

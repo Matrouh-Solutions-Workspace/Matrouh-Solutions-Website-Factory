@@ -15,6 +15,15 @@ Read [ARCHITECTURE.md](./ARCHITECTURE.md), the [engineering specifications](./do
 
 ## Development
 
+Copy the example environment and start PostgreSQL. On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+docker compose up -d database
+```
+
+Then install, migrate, seed, and start the four applications:
+
 ```bash
 pnpm install
 pnpm db:deploy
@@ -22,7 +31,12 @@ pnpm seed:demo
 pnpm dev
 ```
 
-`pnpm seed:demo` generates the database client, builds the worker and all retained template versions, installs the template catalog, and prints the local dashboard session credential. No separate build step is required for this development workflow.
+`pnpm seed:demo` generates the database client, builds the worker and all retained template versions, installs the template catalog, and prints local staff and client email/password accounts. Use `owner@matrouh.local` for staff workflows and `client@matrouh.local` for `/account`; both use the password printed by the seed. No separate build step is required for this development workflow.
+
+In OIDC deployments, adding a client email prepares a least-privilege client membership and queues a
+portal invitation. The identity provider must return a verified email claim matching the invitation;
+the client can then view only the websites and billing records connected to that email under
+`/account`. Existing clients can be invited or sent access again from the Clients screen.
 
 For non-demo deployments, build template packages and run `pnpm templates:sync` with the deployment
 migrator/catalog credential. The command validates immutable hashes, quarantines invalid artifacts,
@@ -34,18 +48,21 @@ Copy `.env.example` to `.env.local` and point `DATABASE_URL` at a running Postgr
 DATABASE_URL="postgresql://factory:factory@localhost:5432/factory"
 ```
 
-Create the `factory` database and user in your local PostgreSQL installation, then run `pnpm db:deploy` to apply the Prisma migrations.
+The included Compose service creates the `factory` database and user. If you use an existing PostgreSQL installation instead, create them manually before running `pnpm db:deploy`.
 
 The development services are available at:
 
 - Dashboard: `http://localhost:3000`
-- Public renderer: `http://doctor.localhost:3001` and `http://clinic.localhost:3001`
+- Client portal: `http://localhost:3000/account` (sign in with the client account printed by the seed)
+- Public renderer: `http://doctor.localhost:3001`, `http://clinic.localhost:3001`, and `http://engineer.localhost:3001`
 - Template Lab: `http://localhost:3002`
 
-The local credential flow is disabled when `FACTORY_DEPLOYMENT_MODE=production`; production uses
+Local password sign-in is disabled when `FACTORY_DEPLOYMENT_MODE=production`; production uses
 OIDC with PKCE and short-lived, revocable opaque Factory sessions.
 
-`pnpm seed:demo` compiles immutable Doctor and Clinic publication artifacts. The renderer resolves the host to an artifact and loads its exact template through the generic Template SDK pipeline; application code does not import a concrete template.
+`pnpm seed:demo` compiles immutable Doctor, Clinic, and Engineer publication artifacts. The renderer resolves the host to an artifact and loads its exact template through the generic Template SDK pipeline; application code does not import a concrete template.
+
+To stop the local database without deleting its data, run `docker compose stop database`. To start it again, run `docker compose start database`.
 
 ## Quality gate
 

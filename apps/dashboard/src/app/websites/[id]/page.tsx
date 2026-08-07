@@ -2,17 +2,26 @@ import { notFound } from "next/navigation";
 import {
   addSectionDraftAction,
   addWebsiteLocaleAction,
+  createWebsiteClaimLinkAction,
   deleteWebsiteAction,
   deleteSectionDraftAction,
   duplicateSectionDraftAction,
   moveSectionDraftAction,
   previewWebsiteAction,
-  publishWebsiteAction,
+  retryPublicationJobAction,
+  toggleWebsitePublicationAction,
+  uploadMediaAction,
   rollbackPublicationAction,
   updatePageDraftAction,
   updateNavigationNodeAction,
   updateSectionDraftAction,
+  updateSeoDraftAction,
   updateThemeDraftAction,
+  updateWebsiteIdentityAction,
+  updateWebsiteBrandingAction,
+  updateWebsiteLogoAction,
+  updateWebsiteAppearanceAction,
+  updateWebsiteDefaultLocaleAction,
   updateWebsiteSettingsDraftAction,
   upgradeWebsiteTemplateAction,
 } from "@/app/actions";
@@ -20,20 +29,34 @@ import { ConfirmSubmit } from "@/app/confirm-submit";
 import { DraftEditorForm } from "@/app/draft-editor-form";
 import { DraggableSection } from "@/app/draggable-section";
 import { PendingSubmit } from "@/app/pending-submit";
+import { PublicationStatusRefresh } from "@/app/publication-status-refresh";
+import { DraftSetupSteps, draftSetupStep } from "@/app/draft-setup-steps";
 import { CoordinatePickerFields, StructuredListField } from "@/app/structured-list-field";
 import { ThemeLiveEditor } from "@/app/theme-live-editor";
+import { MediaPicker } from "@/app/media-picker";
 import { loadWebsiteEditor } from "@/server/editor";
 import { dashboardConfig } from "@/server/config";
+import { canRetryPublicationJob, isActivePublicationJob } from "@/server/publication-jobs";
 
 export const dynamic = "force-dynamic";
 
-export default async function WebsiteEditorPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function WebsiteEditorPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ claimLink?: string; setupStep?: string }>;
+}) {
   const { id } = await params;
+  const { claimLink, setupStep: requestedSetupStep } = await searchParams;
   const editor = await loadWebsiteEditor(id);
   if (!editor) notFound();
+  const setupStep = draftSetupStep(requestedSetupStep);
+  const publishPending = isActivePublicationJob(editor.latestPublishJob?.status);
 
   return (
     <>
+      <PublicationStatusRefresh active={publishPending && setupStep === "review"} />
       <header>
         <div>
           <p className="eyebrow">Draft editor</p>
@@ -60,9 +83,18 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
               Preview
             </PendingSubmit>
           </form>
-          <form action={publishWebsiteAction}>
+          <form action={toggleWebsitePublicationAction}>
             <input name="websiteId" type="hidden" value={editor.website.id} />
-            <PendingSubmit pendingLabel="Queueing…">Publish</PendingSubmit>
+            <PendingSubmit
+              disabled={editor.website.status !== "published" && publishPending}
+              pendingLabel={editor.website.status === "published" ? "Unpublishing…" : "Publishing…"}
+            >
+              {editor.website.status === "published"
+                ? "Unpublish"
+                : publishPending
+                  ? "Publish queued"
+                  : "Publish"}
+            </PendingSubmit>
           </form>
           <form action={deleteWebsiteAction}>
             <input name="websiteId" type="hidden" value={editor.website.id} />
@@ -99,7 +131,204 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
         </div>
       </section>
 
-      <form action={addWebsiteLocaleAction} className="panel localeManager">
+      {editor.latestPublishJob && (
+        <section className={`publishJobNotice ${editor.latestPublishJob.status}`} role="status">
+          <div>
+            <strong>Publish job: {editor.latestPublishJob.status.replace("_", " ")}</strong>
+            <span>
+              Attempt {editor.latestPublishJob.attemptCount}/{editor.latestPublishJob.maxAttempts}
+            </span>
+          </div>
+          {canRetryPublicationJob(editor.latestPublishJob.status) && (
+            <form action={retryPublicationJobAction}>
+              <input name="jobId" type="hidden" value={editor.latestPublishJob.id} />
+              <PendingSubmit pendingLabel="Queueing retry...">Retry publish</PendingSubmit>
+            </form>
+          )}
+        </section>
+      )}
+
+      <DraftSetupSteps current={setupStep} websiteId={editor.website.id} />
+
+      <form
+        action={updateWebsiteIdentityAction}
+        className="panel editForm"
+        hidden={setupStep !== "identity"}
+      >
+        <div className="panelHead">
+          <div>
+            <p className="eyebrow">Website identity</p>
+            <h2>Website title</h2>
+          </div>
+        </div>
+        <input name="websiteId" type="hidden" value={editor.website.id} />
+        <label>
+          Dashboard title
+          <input defaultValue={editor.website.name} maxLength={200} name="name" required />
+        </label>
+        <div className="formFooter">
+          <PendingSubmit pendingLabel="Saving…">Save title</PendingSubmit>
+        </div>
+      </form>
+
+      {!editor.website.clientId && (
+        <form
+          action={createWebsiteClaimLinkAction}
+          className="panel localeManager"
+          hidden={setupStep !== "identity"}
+        >
+          <div>
+            <p className="eyebrow">Ownership</p>
+            <h2>Send a claim link</h2>
+            <p>The owner can register or sign in, review the website, and claim it.</p>
+            {claimLink ? <output className="claimLink">{claimLink}</output> : null}
+          </div>
+          <input name="websiteId" type="hidden" value={editor.website.id} />
+          <label>
+            Owner email (optional)
+            <input name="intendedEmail" type="email" />
+          </label>
+          <PendingSubmit pendingLabel="Creating…">Create claim link</PendingSubmit>
+        </form>
+      )}
+
+      <form
+        action={updateWebsiteBrandingAction}
+        className="panel editForm"
+        hidden={setupStep !== "identity"}
+      >
+        <div className="panelHead">
+          <div>
+            <p className="eyebrow">Branding</p>
+            <h2>Favicon and white label</h2>
+          </div>
+        </div>
+        <input name="websiteId" type="hidden" value={editor.website.id} />
+        <MediaPicker
+          assets={editor.mediaAssets}
+          defaultValue={editor.website.faviconAssetId ?? ""}
+          label="Favicon image"
+          name="faviconAssetId"
+          noneLabel="Use the Factory default"
+          purpose="favicon"
+          websiteId={editor.website.id}
+        />
+        <p className="formNotice">
+          Recommended: square PNG or WebP, 512 × 512 px, with a transparent background.
+        </p>
+        <label className="checkboxLine">
+          <input
+            defaultChecked={editor.website.whiteLabelEnabled}
+            name="whiteLabelEnabled"
+            type="checkbox"
+          />
+          White label this website (hide the Matrouh Solutions watermark)
+        </label>
+        <div className="formFooter">
+          <PendingSubmit pendingLabel="Saving…">Save branding</PendingSubmit>
+        </div>
+      </form>
+
+      <div className="panel editForm" hidden={setupStep !== "design"}>
+        <div className="panelHead">
+          <div>
+            <p className="eyebrow">Direct uploads</p>
+            <h2>Favicon and custom logo</h2>
+          </div>
+        </div>
+        <p className="formNotice">
+          Choose visually from this website&apos;s media folder or upload a new image in the picker.
+        </p>
+        <div className="inlineUploadGrid">
+          <form action={updateWebsiteBrandingAction}>
+            <input name="websiteId" type="hidden" value={editor.website.id} />
+            <input
+              name="whiteLabelEnabled"
+              type="hidden"
+              value={editor.website.whiteLabelEnabled ? "on" : ""}
+            />
+            <MediaPicker
+              assets={editor.mediaAssets}
+              defaultValue={editor.website.faviconAssetId ?? ""}
+              label="Favicon"
+              name="faviconAssetId"
+              noneLabel="Use the Factory default"
+              purpose="favicon"
+              websiteId={editor.website.id}
+            />
+            <PendingSubmit pendingLabel="Saving…">Save favicon</PendingSubmit>
+          </form>
+          <form action={updateWebsiteLogoAction}>
+            <input name="websiteId" type="hidden" value={editor.website.id} />
+            <MediaPicker
+              assets={editor.mediaAssets}
+              defaultValue={settingsValue(editor.settings?.content, "logoMediaId") ?? ""}
+              label="Custom logo"
+              name="logoMediaId"
+              noneLabel="Use the template logo"
+              purpose="logo"
+              websiteId={editor.website.id}
+            />
+            <PendingSubmit pendingLabel="Saving…">Save logo</PendingSubmit>
+          </form>
+        </div>
+      </div>
+
+      <form
+        action={updateWebsiteAppearanceAction}
+        className="panel localeManager"
+        hidden={setupStep !== "design"}
+      >
+        <div>
+          <p className="eyebrow">Template appearance</p>
+          <h2>Light or dark</h2>
+          <p>This choice is published with this website only.</p>
+        </div>
+        <input name="websiteId" type="hidden" value={editor.website.id} />
+        <label>
+          Color mode
+          <select
+            defaultValue={settingsValue(editor.settings?.content, "colorMode") ?? "light"}
+            name="colorMode"
+          >
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+        <PendingSubmit pendingLabel="Saving…">Save appearance</PendingSubmit>
+      </form>
+
+      <form
+        action={uploadMediaAction}
+        className="panel localeManager"
+        hidden={setupStep !== "design"}
+      >
+        <div>
+          <p className="eyebrow">Content media</p>
+          <h2>Upload an image</h2>
+          <p>
+            It will appear in image selectors after processing and is filed under this domain
+            automatically.
+          </p>
+        </div>
+        <input name="websiteId" type="hidden" value={editor.website.id} />
+        <label>
+          Image
+          <input
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            name="file"
+            required
+            type="file"
+          />
+        </label>
+        <PendingSubmit pendingLabel="Uploading…">Upload image</PendingSubmit>
+      </form>
+
+      <form
+        action={addWebsiteLocaleAction}
+        className="panel localeManager"
+        hidden={setupStep !== "identity"}
+      >
         <div>
           <p className="eyebrow">Languages</p>
           <h2>Website locales</h2>
@@ -111,13 +340,48 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
         <input name="websiteDraftRevision" type="hidden" value={editor.website.draftRevision} />
         <label>
           Add locale
-          <input name="locale" placeholder="ar-EG" maxLength={35} required />
+          <select name="locale" required>
+            <option value="">Choose language</option>
+            {!editor.website.locales.includes("en") && <option value="en">English</option>}
+            {!editor.website.locales.includes("ar") && <option value="ar">Arabic</option>}
+          </select>
         </label>
         <PendingSubmit pendingLabel="Creating locale...">Add language</PendingSubmit>
       </form>
 
+      {editor.website.locales.length > 1 && (
+        <form
+          action={updateWebsiteDefaultLocaleAction}
+          className="panel localeManager"
+          hidden={setupStep !== "identity"}
+        >
+          <div>
+            <p className="eyebrow">Primary language</p>
+            <h2>Default locale</h2>
+            <p>Changing this updates public URL prefixes after the next publish.</p>
+          </div>
+          <input name="websiteId" type="hidden" value={editor.website.id} />
+          <input name="websiteDraftRevision" type="hidden" value={editor.website.draftRevision} />
+          <label>
+            Default language
+            <select defaultValue={editor.website.defaultLocale} name="defaultLocale" required>
+              {editor.website.locales.map((locale) => (
+                <option key={locale} value={locale}>
+                  {locale === "ar" ? "Arabic" : locale === "en" ? "English" : locale}
+                </option>
+              ))}
+            </select>
+          </label>
+          <PendingSubmit pendingLabel="Updating default...">Set default</PendingSubmit>
+        </form>
+      )}
+
       {editor.availableTemplateVersions.length > 0 && (
-        <form action={upgradeWebsiteTemplateAction} className="panel upgradeNotice">
+        <form
+          action={upgradeWebsiteTemplateAction}
+          className="panel upgradeNotice"
+          hidden={setupStep !== "identity"}
+        >
           <div>
             <p className="eyebrow">Template lifecycle</p>
             <h2>Compatible artifact available</h2>
@@ -142,7 +406,7 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
         </form>
       )}
 
-      <section className="workspaceGrid editorConfiguration">
+      <section className="workspaceGrid editorConfiguration" hidden={setupStep !== "design"}>
         {editor.settings && (
           <form
             action={updateWebsiteSettingsDraftAction}
@@ -191,7 +455,7 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
       </section>
 
       {editor.navigation.length > 0 && (
-        <section className="panel followPanel">
+        <section className="panel followPanel" hidden={setupStep !== "content"}>
           <div className="panelHead">
             <div>
               <p className="eyebrow">Menus</p>
@@ -217,10 +481,21 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
                       type="hidden"
                       value={editor.website.draftRevision}
                     />
-                    <label>
-                      {node.kind} label
-                      <input name="label" defaultValue={node.label} required />
-                    </label>
+                    <fieldset className="localizedNavigationLabels">
+                      <legend>{node.kind} labels</legend>
+                      {editor.website.locales.map((locale) => (
+                        <label key={locale}>
+                          {localeName(locale)}
+                          <input
+                            defaultValue={node.labels[locale] ?? ""}
+                            dir={locale === "ar" ? "rtl" : "ltr"}
+                            lang={locale}
+                            name={`label:${locale}`}
+                            required
+                          />
+                        </label>
+                      ))}
+                    </fieldset>
                     <PendingSubmit className="inlineButton" pendingLabel="Saving...">
                       Save
                     </PendingSubmit>
@@ -232,7 +507,7 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
         </section>
       )}
 
-      <section className="editorShell">
+      <section className="editorShell" hidden={setupStep !== "content"}>
         <div className="panel pageListPanel">
           <div className="panelHead">
             <div>
@@ -277,8 +552,62 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
                   Slug
                   <input name="slug" defaultValue={page.slug} required />
                 </label>
-                <PendingSubmit pendingLabel="Saving page…">Save page</PendingSubmit>
               </DraftEditorForm>
+
+              <details className="pageSeoEditor">
+                <summary>Search and social settings</summary>
+                <form action={updateSeoDraftAction} className="seoEditor">
+                  <input name="websiteId" type="hidden" value={editor.website.id} />
+                  <input name="pageId" type="hidden" value={page.id} />
+                  <input
+                    name="websiteDraftRevision"
+                    type="hidden"
+                    value={editor.website.draftRevision}
+                  />
+                  <div className="seoGrid">
+                    <div className="editFormFields">
+                      <label>
+                        Search title
+                        <input defaultValue={page.seo.title} maxLength={200} name="title" />
+                      </label>
+                      <label>
+                        Description
+                        <textarea
+                          defaultValue={page.seo.description}
+                          maxLength={500}
+                          name="description"
+                          rows={4}
+                        />
+                      </label>
+                      <label>
+                        Keywords
+                        <span className="fieldHint">Comma-separated, up to 30</span>
+                        <input defaultValue={page.seo.keywords.join(", ")} name="keywords" />
+                      </label>
+                      <div className="checkRow">
+                        <label>
+                          <input defaultChecked={page.seo.index} name="index" type="checkbox" />{" "}
+                          Allow indexing
+                        </label>
+                        <label>
+                          <input defaultChecked={page.seo.follow} name="follow" type="checkbox" />{" "}
+                          Follow links
+                        </label>
+                      </div>
+                      <PendingSubmit pendingLabel="Saving SEO…">Save page SEO</PendingSubmit>
+                    </div>
+                    <div className="searchPreview">
+                      <small>Search preview</small>
+                      <strong>{page.seo.title || page.title}</strong>
+                      <span>
+                        {editor.website.hostname ?? "example.com"}/
+                        {page.slug === "/" ? "" : page.slug}
+                      </span>
+                      <p>{page.seo.description || `${editor.website.name} — ${page.title}`}</p>
+                    </div>
+                  </div>
+                </form>
+              </details>
 
               <div className="sectionStack">
                 {page.sections.map((section, sectionIndex) => (
@@ -307,9 +636,6 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
                             <strong>{section.title}</strong>
                             <p>{section.sectionTypeId}</p>
                           </div>
-                          <PendingSubmit className="inlineButton" pendingLabel="Saving…">
-                            Save changes
-                          </PendingSubmit>
                         </div>
                         {section.fields.length > 0 ? (
                           section.fields.map((field) =>
@@ -332,6 +658,17 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
                                 key={field.name}
                                 label={field.label}
                                 locationMode={field.label === "Locations"}
+                                mediaAssets={editor.mediaAssets}
+                                websiteId={editor.website.id}
+                              />
+                            ) : field.control === "media" ? (
+                              <MediaPicker
+                                assets={editor.mediaAssets}
+                                defaultValue={field.value === "null" ? "" : field.value}
+                                key={field.name}
+                                label={field.label}
+                                name={`field:${field.name}`}
+                                websiteId={editor.website.id}
                               />
                             ) : field.control === "textarea" ? (
                               <label key={field.name}>
@@ -466,7 +803,7 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
         </div>
       </section>
 
-      <section className="panel followPanel">
+      <section className="panel followPanel" hidden={setupStep !== "review"}>
         <div className="panelHead">
           <div>
             <p className="eyebrow">Delivery history</p>
@@ -508,6 +845,24 @@ export default async function WebsiteEditorPage({ params }: { params: Promise<{ 
       </section>
     </>
   );
+}
+
+function settingsValue(content: string | undefined, key: string): string | undefined {
+  if (!content) return undefined;
+  try {
+    const value = JSON.parse(content) as unknown;
+    if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+    const selected = (value as Record<string, unknown>)[key];
+    return typeof selected === "string" ? selected : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function localeName(locale: string): string {
+  if (locale === "ar") return "العربية";
+  if (locale === "en") return "English";
+  return locale;
 }
 
 function SectionCommand({

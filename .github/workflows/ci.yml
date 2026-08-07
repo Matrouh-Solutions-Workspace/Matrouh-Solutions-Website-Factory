@@ -12,6 +12,9 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://factory:factory@127.0.0.1:5432/factory_ci
+      PREVIEW_SIGNING_SECRET: ci-build-only-preview-secret-at-least-32-characters
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

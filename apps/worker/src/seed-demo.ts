@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { relative, resolve } from "node:path";
 import { createDatabaseClient, withTenantTransaction } from "@factory/database";
+import { hashPassword } from "@factory/auth";
+import { localizeTemplateDefault, localizedTemplateTitle } from "@factory/content";
 import { compilePublication } from "@factory/publication-compiler";
 import type { JsonValue } from "@factory/template-sdk";
 import { discoverTemplates, loadTemplateArtifact } from "@factory/template-loader";
@@ -16,8 +18,11 @@ const organizationId = stableUuid("organization:matrouh-solutions-demo");
 const actorId = stableUuid("user:demo-owner");
 const membershipId = stableUuid("membership:demo-owner");
 const roleId = stableUuid("role:demo-admin");
-const demoSessionToken =
-  workerConfig.FACTORY_DEMO_SESSION_TOKEN ?? "local-demo-session-token-change-before-sharing-2026";
+const demoClientUserId = stableUuid("user:demo-client");
+const demoClientMembershipId = stableUuid("membership:demo-client");
+const demoClientRoleId = stableUuid("role:demo-client");
+const demoClientId = stableUuid("client:north-coast-health-group");
+const demoPassword = "MatrouhDemo2026!";
 await artifactStore.ready();
 
 const database = createDatabaseClient({
@@ -50,6 +55,7 @@ try {
     update: {
       displayName: "Demo Owner",
       primaryEmail: "owner@matrouh.local",
+      passwordHash: hashPassword(demoPassword),
       status: "active",
     },
     create: {
@@ -57,7 +63,32 @@ try {
       displayName: "Demo Owner",
       primaryEmail: "owner@matrouh.local",
       normalizedEmail: "owner@matrouh.local",
+      passwordHash: hashPassword(demoPassword),
       status: "active",
+    },
+  });
+
+  await database.user.upsert({
+    where: { normalizedEmail: "client@matrouh.local" },
+    update: {
+      displayName: "Demo Client",
+      primaryEmail: "client@matrouh.local",
+      passwordHash: hashPassword(demoPassword),
+      status: "active",
+    },
+    create: {
+      id: demoClientUserId,
+      displayName: "Demo Client",
+      primaryEmail: "client@matrouh.local",
+      normalizedEmail: "client@matrouh.local",
+      passwordHash: hashPassword(demoPassword),
+      status: "active",
+    },
+  });
+
+  await database.session.deleteMany({
+    where: {
+      id: { in: [stableUuid("session:demo-owner"), stableUuid("session:demo-client")] },
     },
   });
 
@@ -90,18 +121,67 @@ try {
         update: {},
         create: { organizationId, membershipId, roleId },
       });
+      await transaction.membership.upsert({
+        where: {
+          organizationId_userId: {
+            organizationId,
+            userId: demoClientUserId,
+          },
+        },
+        update: { status: "active" },
+        create: {
+          id: demoClientMembershipId,
+          organizationId,
+          userId: demoClientUserId,
+          status: "active",
+        },
+      });
+      await transaction.role.upsert({
+        where: { organizationId_key: { organizationId, key: "client" } },
+        update: { name: "Client", isSystem: true },
+        create: {
+          id: demoClientRoleId,
+          organizationId,
+          key: "client",
+          name: "Client",
+          isSystem: true,
+        },
+      });
+      await transaction.membershipRole.upsert({
+        where: {
+          membershipId_roleId: {
+            membershipId: demoClientMembershipId,
+            roleId: demoClientRoleId,
+          },
+        },
+        update: {},
+        create: {
+          organizationId,
+          membershipId: demoClientMembershipId,
+          roleId: demoClientRoleId,
+        },
+      });
+      await transaction.client.upsert({
+        where: { organizationId_id: { organizationId, id: demoClientId } },
+        update: {
+          name: "North Coast Health Group",
+          contactName: "Demo Client",
+          contactEmail: "client@matrouh.local",
+          contactPhone: "+20 100 000 0000",
+          archivedAt: null,
+        },
+        create: {
+          id: demoClientId,
+          organizationId,
+          name: "North Coast Health Group",
+          contactName: "Demo Client",
+          contactEmail: "client@matrouh.local",
+          contactPhone: "+20 100 000 0000",
+          notes: "Demo account for exercising client billing and communication flows.",
+        },
+      });
     },
   );
-  await database.session.upsert({
-    where: { tokenHash: createHash("sha256").update(demoSessionToken).digest("hex") },
-    update: { expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), revokedAt: null },
-    create: {
-      id: stableUuid("session:demo-owner"),
-      userId: actorId,
-      tokenHash: createHash("sha256").update(demoSessionToken).digest("hex"),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    },
-  });
 
   const candidates = (await discoverTemplates(templatesRoot)).sort(
     (left, right) =>
@@ -130,59 +210,83 @@ try {
     const templateLabel = templateId.split(".").at(-1) ?? templateId;
     const websiteId = stableUuid(`website:${templateId}`);
     const publicationId = stableUuid(
-      `publication:${templateId}:${templateVersion}:${artifact.artifactHash}:demo-v3`,
+      `publication:${templateId}:${templateVersion}:${artifact.artifactHash}:demo-v6-language-defaults`,
     );
     const hostname = `${templateLabel}.localhost`;
     const artifactHash = artifact.artifactHash;
+    const subscriptionCadence = templateId.includes("engineer")
+      ? "trial"
+      : templateId.includes("clinic")
+        ? "yearly"
+        : "monthly";
+    const subscriptionDurationDays =
+      subscriptionCadence === "trial" ? 1 : subscriptionCadence === "yearly" ? 365 : 30;
+    const subscriptionStartsAt = new Date();
+    const subscriptionExpiresAt = new Date(
+      subscriptionStartsAt.getTime() + subscriptionDurationDays * 24 * 60 * 60 * 1_000,
+    );
     if (template.pages.length === 0) continue;
-    const pages = template.pages.map((page, pageIndex) => ({
-      id: stableUuid(`page:${templateId}:${page.id}:en`),
-      pageTypeId: page.id,
-      locale: "en",
-      title: page.title,
-      slug: page.slug.defaultValue ?? (pageIndex === 0 ? "/" : page.title.toLowerCase()),
-      seo: {
-        title: `${page.title} | ${template.manifest.displayName}`,
-        description: template.manifest.description,
-      },
-      sections: page.defaultSections.map((item, sectionIndex) => {
-        const definition = template.sections.find((section) => section.id === item.sectionTypeId);
-        if (!definition) throw new Error("Default section missing");
+    const demoDefaultLocale = templateId.includes("clinic") ? "ar" : "en";
+    const demoLocales = [demoDefaultLocale, demoDefaultLocale === "en" ? "ar" : "en"] as const;
+    const pages = demoLocales.flatMap((locale) =>
+      template.pages.map((page, pageIndex) => ({
+        id: stableUuid(`page:${templateId}:${page.id}:${locale}`),
+        pageTypeId: page.id,
+        locale,
+        title: localizedTemplateTitle(page.title, locale),
+        slug: page.slug.defaultValue ?? (pageIndex === 0 ? "/" : page.title.toLowerCase()),
+        seo: {
+          title: `${page.title} | ${template.manifest.displayName}`,
+          description: template.manifest.description,
+        },
+        sections: page.defaultSections.map((item, sectionIndex) => {
+          const definition = template.sections.find((section) => section.id === item.sectionTypeId);
+          if (!definition) throw new Error("Default section missing");
+          return {
+            id: stableUuid(
+              locale === "en"
+                ? pageIndex === 0
+                  ? `section:${templateId}:${definition.id}:${sectionIndex}`
+                  : `section:${templateId}:${page.id}:${definition.id}:${sectionIndex}`
+                : `section:${templateId}:${page.id}:${definition.id}:${sectionIndex}:${locale}`,
+            ),
+            sectionTypeId: definition.id,
+            schemaVersion: definition.schema.version,
+            content: localizeTemplateDefault(item.content ?? definition.defaults, locale),
+            orderKey: String(sectionIndex).padStart(4, "0"),
+          };
+        }),
+      })),
+    );
+    const navigation = template.navigation.flatMap((definition) => {
+      const navigationLocales = definition.localization === "localized-tree" ? demoLocales : [null];
+      return navigationLocales.map((navigationLocale) => {
+        const pageLocale = navigationLocale ?? demoDefaultLocale;
         return {
-          id: stableUuid(
-            pageIndex === 0
-              ? `section:${templateId}:${definition.id}:${sectionIndex}`
-              : `section:${templateId}:${page.id}:${definition.id}:${sectionIndex}`,
+          definitionId: definition.id,
+          locale: navigationLocale,
+          schemaVersion: definition.visibilitySchema.version,
+          nodes: pages.flatMap((page) =>
+            page.locale === pageLocale &&
+            (definition.allowedPageTypes === "all" ||
+              definition.allowedPageTypes.includes(page.pageTypeId))
+              ? [
+                  {
+                    id: stableUuid(
+                      `navigation-node:${templateId}:${definition.id}:${page.pageTypeId}:${navigationLocale ?? "shared"}`,
+                    ),
+                    kind: "page" as const,
+                    pageId: page.id,
+                    label: { en: page.title, ar: localizedTemplateTitle(page.title, "ar") },
+                    visibility: definition.visibilitySchema.parse({}),
+                    children: [],
+                  },
+                ]
+              : [],
           ),
-          sectionTypeId: definition.id,
-          schemaVersion: definition.schema.version,
-          content: item.content ?? definition.defaults,
-          orderKey: String(sectionIndex).padStart(4, "0"),
         };
-      }),
-    }));
-    const navigation = template.navigation.map((definition) => ({
-      definitionId: definition.id,
-      locale: definition.localization === "localized-tree" ? "en" : null,
-      schemaVersion: definition.visibilitySchema.version,
-      nodes: pages.flatMap((page) =>
-        definition.allowedPageTypes === "all" ||
-        definition.allowedPageTypes.includes(page.pageTypeId)
-          ? [
-              {
-                id: stableUuid(
-                  `navigation-node:${templateId}:${definition.id}:${page.pageTypeId}:en`,
-                ),
-                kind: "page" as const,
-                pageId: page.id,
-                label: { en: page.title },
-                visibility: definition.visibilitySchema.parse({}),
-                children: [],
-              },
-            ]
-          : [],
-      ),
-    }));
+      });
+    });
     const result = compilePublication(
       {
         organizationId,
@@ -190,10 +294,13 @@ try {
         publicationId,
         revision: 1n,
         name: template.manifest.displayName,
-        defaultLocale: "en",
+        defaultLocale: demoDefaultLocale,
         settingsSchemaVersion: template.websiteSchema.version,
         settings: template.websiteSchema.parse({}),
-        locales: [{ locale: "en", fallbackLocale: null }],
+        locales: demoLocales.map((locale) => ({
+          locale,
+          fallbackLocale: locale === demoDefaultLocale ? null : demoDefaultLocale,
+        })),
         pages,
         navigation,
         theme: template.theme.defaults,
@@ -286,30 +393,73 @@ try {
           update: {
             name: template.manifest.displayName,
             status: "published",
+            clientId: demoClientId,
             templateId,
             templateVersion,
-            defaultLocale: "en",
+            defaultLocale: demoDefaultLocale,
           },
           create: {
             id: websiteId,
             organizationId,
+            clientId: demoClientId,
             name: template.manifest.displayName,
             status: "published",
             templateId,
             templateVersion,
-            defaultLocale: "en",
+            defaultLocale: demoDefaultLocale,
+          },
+        });
+
+        await transaction.websiteSubscription.upsert({
+          where: { websiteId },
+          update: {
+            clientId: demoClientId,
+            cadence: subscriptionCadence,
+            status: "active",
+            startsAt: subscriptionStartsAt,
+            expiresAt: subscriptionExpiresAt,
+            disabledAt: null,
+            disabledReason: null,
+            resumeStatus: null,
+          },
+          create: {
+            id: stableUuid(`subscription:${templateId}`),
+            organizationId,
+            websiteId,
+            clientId: demoClientId,
+            cadence: subscriptionCadence,
+            status: "active",
+            startsAt: subscriptionStartsAt,
+            expiresAt: subscriptionExpiresAt,
           },
         });
 
         await transaction.websiteLocale.upsert({
           where: { websiteId_locale: { websiteId, locale: "en" } },
-          update: { isDefault: true, fallbackLocale: null },
+          update: {
+            isDefault: demoDefaultLocale === "en",
+            fallbackLocale: demoDefaultLocale === "en" ? null : demoDefaultLocale,
+          },
           create: {
             organizationId,
             websiteId,
             locale: "en",
-            isDefault: true,
-            fallbackLocale: null,
+            isDefault: demoDefaultLocale === "en",
+            fallbackLocale: demoDefaultLocale === "en" ? null : demoDefaultLocale,
+          },
+        });
+        await transaction.websiteLocale.upsert({
+          where: { websiteId_locale: { websiteId, locale: "ar" } },
+          update: {
+            isDefault: demoDefaultLocale === "ar",
+            fallbackLocale: demoDefaultLocale === "ar" ? null : demoDefaultLocale,
+          },
+          create: {
+            organizationId,
+            websiteId,
+            locale: "ar",
+            isDefault: demoDefaultLocale === "ar",
+            fallbackLocale: demoDefaultLocale === "ar" ? null : demoDefaultLocale,
           },
         });
 
@@ -557,7 +707,8 @@ try {
   console.log(
     `Seeded ${seeded} demo websites, publications, domains, and artifacts for organization ${organizationId}`,
   );
-  console.log(`Dashboard credential: ${organizationId}.${demoSessionToken}`);
+  console.log(`Staff account: owner@matrouh.local / ${demoPassword}`);
+  console.log(`Client account: client@matrouh.local / ${demoPassword}`);
 } finally {
   await database.$disconnect();
 }

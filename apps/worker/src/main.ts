@@ -17,10 +17,12 @@ import { validateTemplate } from "@factory/template-validator";
 import { renderToStaticMarkup } from "react-dom/server";
 import { workerArtifactStore as artifactStore } from "./artifact-store";
 import { workerConfig, workspaceRoot } from "./config";
+import { subscriptionExpiredMessage, subscriptionNotice } from "./subscription-lifecycle";
 
 const templatesRoot = resolve(workspaceRoot, workerConfig.FACTORY_TEMPLATE_DIRECTORY);
 const actorId = "publication-worker";
 const workerId = `${actorId}:${process.pid}:${Date.now()}`;
+if (!/^[a-z0-9:.-]{1,200}$/i.test(workerId)) throw new Error("WORKER_ID_INVALID");
 
 interface PublishPayload {
   websiteId: string;
@@ -62,6 +64,32 @@ interface ExpiredPreviewArtifact {
   readonly storageUri: string;
 }
 
+interface SubscriptionLifecycleRow {
+  subscription_id: string;
+  organization_id: string;
+  website_id: string;
+  client_id: string | null;
+  cadence: "trial" | "monthly" | "yearly";
+  expires_at: Date;
+  website_name: string;
+  recipient_email: string | null;
+  subscription_status: "active" | "expired" | "cancelled";
+  website_status: "draft" | "published" | "unpublished" | "disabled" | "archived";
+}
+
+interface ClaimedOutboundMessage {
+  id: string;
+  organization_id: string;
+  website_id: string | null;
+  client_id: string | null;
+  recipient_email: string;
+  subject: string;
+  body_text: string;
+  kind: string;
+  attempt_count: number;
+  max_attempts: number;
+}
+
 interface WebsiteForPublish {
   id: string;
   organizationId: string;
@@ -72,6 +100,7 @@ interface WebsiteForPublish {
   draftRevision: bigint;
   revision: bigint;
   activePublicationId: string | null;
+  subscription: { status: "active" | "expired" | "cancelled"; expiresAt: Date } | null;
   locales: { locale: string; fallbackLocale: string | null }[];
   domains: { hostnameNormalized: string }[];
   settingsDrafts: { schemaVersion: number; contentJson: unknown; locale: string | null }[];
@@ -141,33 +170,230 @@ let nextMaintenanceAt = Date.now();
 let nextHeartbeatAt = 0;
 try {
   while (!abort.signal.aborted) {
-    if (Date.now() >= nextHeartbeatAt) {
-      await recordHeartbeat("ready");
-      nextHeartbeatAt = Date.now() + 15_000;
-    }
-    const job = await claimJob();
-    if (job) {
-      await runJob(job, abort.signal);
-      continue;
-    }
+    try {
+      if (Date.now() >= nextHeartbeatAt) {
+        await recordHeartbeat("ready");
+        nextHeartbeatAt = Date.now() + 15_000;
+      }
+      if (Date.now() >= nextMaintenanceAt) {
+        await cleanupExpiredPreviews();
+        await cleanupOperationalRecords();
+        await processSubscriptionLifecycle();
+        nextMaintenanceAt = Date.now() + 60_000;
+      }
 
-    const event = await claimOutboxEvent();
-    if (event) {
-      await deliverOutboxEvent(event);
-      continue;
-    }
+      const job = await claimJob();
+      if (job) {
+        await runJob(job, abort.signal);
+        continue;
+      }
 
-    if (Date.now() >= nextMaintenanceAt) {
-      await cleanupExpiredPreviews();
-      await cleanupOperationalRecords();
-      nextMaintenanceAt = Date.now() + 60_000;
-    }
+      const event = await claimOutboxEvent();
+      if (event) {
+        await deliverOutboxEvent(event);
+        continue;
+      }
 
-    await sleep(2_000, abort.signal);
+      const message = await claimOutboundMessage();
+      if (message) {
+        await deliverOutboundMessage(message);
+        continue;
+      }
+
+      await sleep(2_000, abort.signal);
+    } catch (error) {
+      console.error(
+        JSON.stringify({ service: "worker", event: "loop.retrying", ...errorDetails(error) }),
+      );
+      await sleep(2_000, abort.signal);
+    }
   }
 } finally {
   await recordHeartbeat("stopping").catch(() => undefined);
   await database.$disconnect();
+}
+
+async function claimOutboundMessage(): Promise<ClaimedOutboundMessage | null> {
+  const messages = await database.$queryRaw<ClaimedOutboundMessage[]>`
+    SELECT * FROM claim_outbound_message()
+  `;
+  return messages[0] ?? null;
+}
+
+async function deliverOutboundMessage(message: ClaimedOutboundMessage): Promise<void> {
+  try {
+    const endpoint = workerConfig.FACTORY_MAIL_PROVIDER_URL;
+    const secret = workerConfig.FACTORY_MAIL_PROVIDER_SECRET;
+    const from = workerConfig.FACTORY_MAIL_FROM;
+    if (endpoint && secret && from) {
+      const body = JSON.stringify({
+        messageId: message.id,
+        from,
+        to: message.recipient_email,
+        subject: message.subject,
+        text: message.body_text,
+      });
+      const timestamp = String(Date.now());
+      const signature = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-factory-signature": signature,
+          "x-factory-timestamp": timestamp,
+        },
+        body,
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) throw new Error(`MAIL_PROVIDER_FAILED_${response.status}`);
+    } else if (workerConfig.FACTORY_DEPLOYMENT_MODE === "production") {
+      throw new Error("MAIL_PROVIDER_NOT_CONFIGURED");
+    } else {
+      console.log(
+        JSON.stringify({
+          service: "worker",
+          event: "mail.local_delivery",
+          messageId: message.id,
+          recipient: message.recipient_email,
+          subject: message.subject,
+        }),
+      );
+    }
+    await withTenantTransaction(
+      database,
+      {
+        organizationId: message.organization_id,
+        actorId,
+        correlationId: `mail-delivered:${message.id}`,
+      },
+      (transaction) =>
+        transaction.outboundMessage.update({
+          where: { id: message.id },
+          data: { status: "sent", sentAt: new Date(), failureReason: null },
+        }),
+    );
+  } catch (error) {
+    const exhausted = message.attempt_count >= message.max_attempts;
+    await withTenantTransaction(
+      database,
+      {
+        organizationId: message.organization_id,
+        actorId,
+        correlationId: `mail-failed:${message.id}`,
+      },
+      (transaction) =>
+        transaction.outboundMessage.update({
+          where: { id: message.id },
+          data: {
+            status: exhausted ? "failed" : "queued",
+            availableAt: new Date(Date.now() + retryDelay(message.attempt_count)),
+            failureReason: error instanceof Error ? error.message.slice(0, 2_000) : "MAIL_FAILED",
+          },
+        }),
+    );
+  }
+}
+
+async function processSubscriptionLifecycle(): Promise<void> {
+  const subscriptions = await database.$queryRaw<SubscriptionLifecycleRow[]>`
+    SELECT * FROM list_subscription_lifecycle()
+  `;
+  const now = new Date();
+  for (const subscription of subscriptions) {
+    const millisecondsRemaining = subscription.expires_at.getTime() - now.getTime();
+    if (millisecondsRemaining <= 0) {
+      const expirationMessage = subscriptionExpiredMessage({
+        cadence: subscription.cadence,
+        expiresAt: subscription.expires_at,
+        recipientEmail: subscription.recipient_email,
+        websiteName: subscription.website_name,
+      });
+      await withTenantTransaction(
+        database,
+        {
+          organizationId: subscription.organization_id,
+          actorId,
+          correlationId: `subscription-expired:${subscription.subscription_id}`,
+        },
+        async (transaction) => {
+          const expired = await transaction.websiteSubscription.updateMany({
+            where: { id: subscription.subscription_id, status: "active", expiresAt: { lte: now } },
+            data: {
+              status: "expired",
+              disabledAt: now,
+              disabledReason: "subscription_expired",
+              resumeStatus: subscription.website_status,
+            },
+          });
+          if (expired.count !== 1) return;
+          await transaction.website.updateMany({
+            where: {
+              id: subscription.website_id,
+              organizationId: subscription.organization_id,
+              status: { not: "archived" },
+            },
+            data: { status: "disabled", revision: { increment: 1 } },
+          });
+          if (expirationMessage) {
+            await transaction.outboundMessage.upsert({
+              where: {
+                websiteId_kind: {
+                  websiteId: subscription.website_id,
+                  kind: expirationMessage.kind,
+                },
+              },
+              create: {
+                id: randomUUID(),
+                organizationId: subscription.organization_id,
+                websiteId: subscription.website_id,
+                clientId: subscription.client_id,
+                recipientEmail: expirationMessage.recipientEmail,
+                kind: expirationMessage.kind,
+                subject: expirationMessage.subject,
+                bodyText: expirationMessage.bodyText,
+              },
+              update: {},
+            });
+          }
+        },
+      );
+      continue;
+    }
+    const notice = subscriptionNotice(subscription.cadence, millisecondsRemaining);
+    const recipientEmail = subscription.recipient_email?.trim().toLowerCase();
+    if (!notice || !recipientEmail) continue;
+    await withTenantTransaction(
+      database,
+      {
+        organizationId: subscription.organization_id,
+        actorId,
+        correlationId: `subscription-notice:${subscription.subscription_id}:${notice.key}`,
+      },
+      async (transaction) => {
+        const messageKind = `subscription.expiry.${subscription.expires_at.getTime()}.${notice.key}`;
+        await transaction.outboundMessage.upsert({
+          where: {
+            websiteId_kind: { websiteId: subscription.website_id, kind: messageKind },
+          },
+          create: {
+            id: randomUUID(),
+            organizationId: subscription.organization_id,
+            websiteId: subscription.website_id,
+            clientId: subscription.client_id,
+            recipientEmail,
+            kind: messageKind,
+            subject: `${subscription.website_name} expires ${notice.label}`,
+            bodyText: `Your website subscription for ${subscription.website_name} expires ${notice.label}. Please contact Matrouh Solutions to renew service.`,
+          },
+          update: {},
+        });
+        await transaction.websiteSubscription.update({
+          where: { id: subscription.subscription_id },
+          data: { lastNotifiedAt: new Date() },
+        });
+      },
+    );
+  }
 }
 
 async function recordHeartbeat(status: string): Promise<void> {
@@ -306,13 +532,16 @@ async function runJob(job: ClaimedJob, signal: AbortSignal): Promise<void> {
 }
 
 async function claimJob() {
-  const rows = await database.$queryRaw<ClaimedJob[]>`
+  // workerId is process-generated and validated above. Keeping this as a literal also supports
+  // Prisma's local development database, whose proxy cannot alternate unnamed statements with
+  // different bind counts on the same connection.
+  const rows = await database.$queryRawUnsafe<ClaimedJob[]>(`
     SELECT id, organization_id AS "organizationId", job_type AS "type", job_version AS "version",
       payload_json AS "payloadJson",
       attempt_count AS "attemptCount", max_attempts AS "maxAttempts",
       available_at AS "availableAt", correlation_id AS "correlationId"
-    FROM claim_factory_job(${workerId})
-  `;
+    FROM claim_factory_job('${workerId}')
+  `);
   return rows[0] ?? null;
 }
 
@@ -987,29 +1216,36 @@ async function cleanupOperationalRecords(): Promise<void> {
     now.getTime() - workerConfig.FACTORY_SECURITY_AUDIT_RETENTION_DAYS * 86_400_000,
   );
   const staleHeartbeatCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1_000);
-  const [rateLimits, idempotency, sessions, audit, heartbeats] = await database.$transaction([
-    database.rateLimitBucket.deleteMany({ where: { expiresAt: { lt: now } } }),
-    database.idempotencyRecord.deleteMany({ where: { expiresAt: { lt: now } } }),
-    database.session.deleteMany({
-      where: {
-        OR: [
-          { expiresAt: { lt: new Date(now.getTime() - 30 * 86_400_000) } },
-          { revokedAt: { lt: new Date(now.getTime() - 30 * 86_400_000) } },
-        ],
-      },
-    }),
-    database.auditEvent.deleteMany({
-      where: {
-        OR: [
-          { retentionClass: "standard", occurredAt: { lt: standardCutoff } },
-          { retentionClass: "security", occurredAt: { lt: securityCutoff } },
-        ],
-      },
-    }),
-    database.serviceHeartbeat.deleteMany({
-      where: { heartbeatAt: { lt: staleHeartbeatCutoff } },
-    }),
-  ]);
+  const [rateLimits, idempotency, sessions, audit, heartbeats] = await database.$transaction(
+    async (transaction) => {
+      const rateLimits = await transaction.rateLimitBucket.deleteMany({
+        where: { expiresAt: { lt: now } },
+      });
+      const idempotency = await transaction.idempotencyRecord.deleteMany({
+        where: { expiresAt: { lt: now } },
+      });
+      const sessions = await transaction.session.deleteMany({
+        where: {
+          OR: [
+            { expiresAt: { lt: new Date(now.getTime() - 30 * 86_400_000) } },
+            { revokedAt: { lt: new Date(now.getTime() - 30 * 86_400_000) } },
+          ],
+        },
+      });
+      const audit = await transaction.auditEvent.deleteMany({
+        where: {
+          OR: [
+            { retentionClass: "standard", occurredAt: { lt: standardCutoff } },
+            { retentionClass: "security", occurredAt: { lt: securityCutoff } },
+          ],
+        },
+      });
+      const heartbeats = await transaction.serviceHeartbeat.deleteMany({
+        where: { heartbeatAt: { lt: staleHeartbeatCutoff } },
+      });
+      return [rateLimits, idempotency, sessions, audit, heartbeats] as const;
+    },
+  );
   const removed =
     rateLimits.count + idempotency.count + sessions.count + audit.count + heartbeats.count;
   if (removed > 0) {
@@ -1042,6 +1278,7 @@ async function processPublishJob(job: ClaimedJob, signal: AbortSignal): Promise<
           organizationId_id: { organizationId: job.organizationId, id: payload.websiteId },
         },
         include: {
+          subscription: true,
           locales: true,
           domains: true,
           settingsDrafts: { orderBy: { updatedAt: "desc" } },
@@ -1072,6 +1309,12 @@ async function processPublishJob(job: ClaimedJob, signal: AbortSignal): Promise<
     },
   );
   if (!website) throw new PermanentJobError("Website was not found", "WEBSITE_NOT_FOUND");
+  if (
+    website.subscription &&
+    (website.subscription.status !== "active" || website.subscription.expiresAt <= new Date())
+  ) {
+    throw new PermanentJobError("Website subscription has expired", "SUBSCRIPTION_EXPIRED");
+  }
   if (
     payload.requestedDraftRevision !== undefined &&
     website.draftRevision.toString() !== payload.requestedDraftRevision
@@ -1361,12 +1604,12 @@ function toDraftProjection(
     media: [...new Map(website.mediaReferences.map(({ asset }) => [asset.id, asset])).values()].map(
       (asset) => ({
         id: asset.id,
-        url: mediaPublicUrl(asset.storageKey, website.organizationId),
+        url: websiteMediaUrl(asset.storageKey, website.domains[0]?.hostnameNormalized),
         contentHash: asset.contentHash,
         variants: Object.fromEntries(
           asset.variants.map((variant) => [
             variant.variantKey,
-            mediaPublicUrl(variant.storageKey, website.organizationId),
+            websiteMediaUrl(variant.storageKey, website.domains[0]?.hostnameNormalized),
           ]),
         ),
       }),
@@ -1404,18 +1647,22 @@ function buildNavigationTree(
   return visit(null, new Set());
 }
 
-function mediaPublicUrl(storageKey: string, organizationId: string): string {
+function websiteMediaUrl(storageKey: string, hostname: string | undefined): string {
+  if (!hostname) throw new PermanentJobError("Website media hostname is missing", "MEDIA_HOSTNAME_MISSING");
+  const filename = storageFilename(storageKey);
+  const dashboardUrl = new URL(workerConfig.FACTORY_DASHBOARD_PUBLIC_URL);
+  const localPort = hostname.endsWith(".localhost") ? dashboardUrl.port : "";
+  const scheme = hostname.endsWith(".localhost") ? dashboardUrl.protocol : "https:";
+  return `${scheme}//${hostname}${localPort ? `:${localPort}` : ""}/media/${encodeURIComponent(filename)}`;
+}
+
+function storageFilename(storageKey: string): string {
   const normalized = storageKey.replaceAll("\\", "/");
-  const prefix = `media/${organizationId}/`;
-  if (!normalized.startsWith(prefix))
-    throw new PermanentJobError("Invalid media key", "MEDIA_KEY_INVALID");
-  const relative = normalized.slice(prefix.length);
-  if (!relative || relative.includes("..") || relative.includes("/")) {
+  const filename = normalized.split("/").at(-1);
+  if (!filename || filename.includes("..")) {
     throw new PermanentJobError("Invalid media key", "MEDIA_KEY_INVALID");
   }
-  const localPath = `/factory-media/${organizationId}/${encodeURIComponent(relative)}`;
-  const publicBase = workerConfig.FACTORY_MEDIA_PUBLIC_BASE_URL?.replace(/\/$/, "");
-  return publicBase ? `${publicBase}${localPath}` : localPath;
+  return filename;
 }
 
 function jsonRecord(value: unknown): Record<string, unknown> {

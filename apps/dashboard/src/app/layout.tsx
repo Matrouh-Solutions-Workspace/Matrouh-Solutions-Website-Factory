@@ -11,12 +11,12 @@ const cairo = Cairo({
 
 export const metadata: Metadata = {
   title: { default: "Website Factory", template: "%s · Website Factory" },
-  description: "Matrouh Solutions multi-tenant website control plane",
+  description: "Matrouh Solutions multi-tenant website control panel",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={cairo.variable}>
         <DashboardShell>{children}</DashboardShell>
       </body>

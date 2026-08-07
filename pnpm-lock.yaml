@@ -56,6 +56,9 @@ importers:
       '@factory/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@factory/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@factory/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -176,12 +179,18 @@ importers:
 
   apps/worker:
     dependencies:
+      '@factory/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@factory/component-registry':
         specifier: workspace:*
         version: link:../../packages/component-registry
       '@factory/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@factory/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@factory/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -488,6 +497,22 @@ importers:
         specifier: ^19.1.9
         version: 19.2.18
 
+  templates/clinic-1.3.0:
+    dependencies:
+      '@factory/template-sdk':
+        specifier: workspace:*
+        version: link:../../packages/template-sdk
+      '@templates/shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^19.1.1
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.9
+        version: 19.2.18
+
   templates/doctor:
     dependencies:
       '@factory/template-sdk':
@@ -537,6 +562,38 @@ importers:
         version: 19.2.18
 
   templates/doctor-1.2.0:
+    dependencies:
+      '@factory/template-sdk':
+        specifier: workspace:*
+        version: link:../../packages/template-sdk
+      '@templates/shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^19.1.1
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.9
+        version: 19.2.18
+
+  templates/doctor-1.3.0:
+    dependencies:
+      '@factory/template-sdk':
+        specifier: workspace:*
+        version: link:../../packages/template-sdk
+      '@templates/shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^19.1.1
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.9
+        version: 19.2.18
+
+  templates/engineer:
     dependencies:
       '@factory/template-sdk':
         specifier: workspace:*

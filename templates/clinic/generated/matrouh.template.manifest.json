@@ -2,7 +2,7 @@
   "manifestFormatVersion": 1,
   "manifest": {
     "id": "com.matrouh.clinic",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "displayName": "Multi-specialty Clinic",
     "author": "Matrouh Solutions",
     "description": "Interactive multi-location clinic with coordinated care and live maps",
@@ -53,11 +53,32 @@
           "default": "",
           "type": "string",
           "maxLength": 300
+        },
+        "colorMode": {
+          "default": "light",
+          "type": "string",
+          "enum": [
+            "light",
+            "dark"
+          ]
+        },
+        "logoMediaId": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
     },
-    "schemaHash": "aa9f969233e7aa8ec11d80a46a6bc34c",
+    "schemaHash": "8bb8b8d7e5b5382748bd118aa3ebb2ad",
     "fields": {
       "/centralPhone": {
         "label": "Central phone",
@@ -80,6 +101,29 @@
         "control": "textarea",
         "order": 4,
         "localization": "value"
+      },
+      "/colorMode": {
+        "label": "Template appearance",
+        "control": "select",
+        "order": 5,
+        "options": [
+          {
+            "label": "Light",
+            "value": "light"
+          },
+          {
+            "label": "Dark",
+            "value": "dark"
+          }
+        ]
+      },
+      "/logoMediaId": {
+        "label": "Custom logo",
+        "control": "media",
+        "order": 6,
+        "mediaKinds": [
+          "image"
+        ]
       }
     }
   },
@@ -358,6 +402,19 @@
               "minLength": 1,
               "maxLength": 240,
               "pattern": "^\\/(?:[a-z0-9/_-]*)$"
+            },
+            "heroMediaId": {
+              "default": null,
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           },
           "required": [
@@ -368,7 +425,7 @@
           ],
           "additionalProperties": false
         },
-        "schemaHash": "c851960ec3bd02c528bd220b06c6fb6c",
+        "schemaHash": "d1872575d32dc8cee57573864bac3e17",
         "fields": {
           "/title": {
             "label": "Headline",
@@ -392,6 +449,15 @@
             "label": "Action destination",
             "control": "url",
             "order": 4
+          },
+          "/heroMediaId": {
+            "label": "Clinic hero image",
+            "control": "media",
+            "order": 5,
+            "mediaKinds": [
+              "image"
+            ],
+            "aiHint": "Recommended 1600 × 1200 px landscape image"
           }
         }
       },
@@ -471,6 +537,19 @@
                     "type": "number",
                     "minimum": -180,
                     "maximum": 180
+                  },
+                  "imageMediaId": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 },
                 "required": [
@@ -489,7 +568,7 @@
           ],
           "additionalProperties": false
         },
-        "schemaHash": "3110b2c79cf19321ece2a96cd35ad262",
+        "schemaHash": "384ef1338c471b2505b414f5227ac7b3",
         "fields": {
           "/title": {
             "label": "Section title",
@@ -829,5 +908,5 @@
     }
   },
   "migrations": [],
-  "manifestHash": "c4fa6bdb2093380ba3e23f11100d427e"
+  "manifestHash": "227a01e042efbedc8d93cb73efe8179b"
 }
