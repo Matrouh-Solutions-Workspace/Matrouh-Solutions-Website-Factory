@@ -1692,6 +1692,36 @@ export async function setDefaultHostingDomainAction(formData: FormData): Promise
   revalidatePath("/websites");
 }
 
+export async function deleteHostingDomainAction(formData: FormData): Promise<void> {
+  const domainId = cleanText(formData.get("domainId"), 80);
+  if (!domainId) return;
+  const context = await requireDashboardContext("domain.create");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `hosting-domain-delete:${domainId}`),
+    async (transaction) => {
+      const domain = await transaction.hostingDomain.findFirst({
+        where: { id: domainId, organizationId: context.organization.id },
+      });
+      if (!domain) return;
+      await transaction.hostingDomain.delete({ where: { id: domain.id } });
+      if (!domain.isDefault) return;
+      const replacement = await transaction.hostingDomain.findFirst({
+        where: { organizationId: context.organization.id },
+        orderBy: { createdAt: "asc" },
+      });
+      if (replacement) {
+        await transaction.hostingDomain.update({
+          where: { id: replacement.id },
+          data: { isDefault: true },
+        });
+      }
+    },
+  );
+  revalidatePath("/domains");
+  revalidatePath("/websites");
+}
+
 export async function createDomainAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const requestedHostname = cleanText(formData.get("hostname"), 253);

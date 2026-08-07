@@ -2,6 +2,7 @@ import { domainChallengeHash, domainOwnershipChallenge } from "@factory/domains"
 import {
   createDomainAction,
   createHostingDomainAction,
+  deleteHostingDomainAction,
   releaseDomainAction,
   setDefaultHostingDomainAction,
   rotateDomainChallengeAction,
@@ -73,6 +74,16 @@ export default async function DomainsPage() {
                   </button>
                 </form>
               )}
+              <form action={deleteHostingDomainAction}>
+                <input name="domainId" type="hidden" value={domain.id} />
+                <ConfirmSubmit
+                  className="inlineButton dangerButton"
+                  confirmation={`Remove ${domain.hostnameDisplay} from the available website base domains? Existing websites keep their current hostname.`}
+                  pendingLabel="Removing…"
+                >
+                  Remove
+                </ConfirmSubmit>
+              </form>
             </article>
           ))}
           <form action={createHostingDomainAction} className="inlineForm">
