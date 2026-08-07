@@ -5,6 +5,7 @@ import {
   engineerExpertiseId,
   engineerHeroId,
   engineerHomePageId,
+  engineerProcessId,
   engineerProjectsId,
   engineerProjectsPageId,
 } from "../ids";
@@ -14,12 +15,16 @@ export const engineerPages: readonly PageDefinition[] = [
     id: engineerHomePageId,
     title: "Home",
     slug: { kind: "fixed", defaultValue: "/", maximumLength: 1 },
-    allowedSections: [engineerHeroId, engineerExpertiseId],
+    allowedSections: [engineerHeroId, engineerExpertiseId, engineerProcessId],
     requiredSections: [
       { sectionTypeId: engineerHeroId, minimum: 1, maximum: 1 },
       { sectionTypeId: engineerExpertiseId, minimum: 1, maximum: 1 },
     ],
-    defaultSections: [{ sectionTypeId: engineerHeroId }, { sectionTypeId: engineerExpertiseId }],
+    defaultSections: [
+      { sectionTypeId: engineerHeroId },
+      { sectionTypeId: engineerExpertiseId },
+      { sectionTypeId: engineerProcessId },
+    ],
     supportsSEO: true,
     supportsNavigation: true,
     supportsIndexing: true,

@@ -73,6 +73,11 @@ export default async function SitePage({ params }: PageProperties) {
     <div
       className="siteRoot"
       data-color-scheme={appearance}
+      data-template-artifact-id={site.snapshot.template.id}
+      data-template-id={premiumTemplateId(
+        site.snapshot.template.id,
+        site.snapshot.template.version,
+      )}
       dir={textDirection(rendered.locale)}
       lang={rendered.locale}
       style={themeVariables(site.snapshot.theme)}
@@ -137,6 +142,15 @@ export default async function SitePage({ params }: PageProperties) {
       </footer>
     </div>
   );
+}
+
+function premiumTemplateId(templateId: string, version: string): string | undefined {
+  const premiumVersions: Readonly<Record<string, string>> = {
+    "com.matrouh.engineer": "2.0.0",
+    "com.matrouh.doctor": "2.0.0",
+    "com.matrouh.clinic": "2.0.0",
+  };
+  return premiumVersions[templateId] === version ? templateId : undefined;
 }
 
 function matrouhSolutionsUrl(locale: string): string {

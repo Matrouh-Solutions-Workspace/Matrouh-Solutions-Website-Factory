@@ -1,17 +1,29 @@
 import type { PageDefinition } from "@factory/template-sdk";
-import { clinicHeroId, clinicHomePageId, clinicLocationsId, clinicLocationsPageId } from "../ids";
+import {
+  clinicCarePathId,
+  clinicHeroId,
+  clinicHomePageId,
+  clinicLocationsId,
+  clinicLocationsPageId,
+  clinicSpecialtiesId,
+} from "../ids";
 
 export const clinicPages: readonly PageDefinition[] = [
   {
     id: clinicHomePageId,
     title: "Home",
     slug: { kind: "fixed", defaultValue: "/", maximumLength: 1 },
-    allowedSections: [clinicHeroId, clinicLocationsId],
+    allowedSections: [clinicHeroId, clinicSpecialtiesId, clinicCarePathId, clinicLocationsId],
     requiredSections: [
       { sectionTypeId: clinicHeroId, minimum: 1, maximum: 1 },
       { sectionTypeId: clinicLocationsId, minimum: 0, maximum: 1 },
     ],
-    defaultSections: [{ sectionTypeId: clinicHeroId }, { sectionTypeId: clinicLocationsId }],
+    defaultSections: [
+      { sectionTypeId: clinicHeroId },
+      { sectionTypeId: clinicSpecialtiesId },
+      { sectionTypeId: clinicCarePathId },
+      { sectionTypeId: clinicLocationsId },
+    ],
     supportsSEO: true,
     supportsNavigation: true,
     supportsIndexing: true,

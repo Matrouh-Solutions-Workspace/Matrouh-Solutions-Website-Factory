@@ -21,7 +21,7 @@ export default function ErrorPage({
         <button onClick={reset} type="button">
           Try again
         </button>
-        <a className="buttonLink secondaryButton" href="/">
+        <a className="buttonLink secondaryButton" href="/dashboard">
           Back to overview
         </a>
       </div>

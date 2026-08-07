@@ -1,7 +1,16 @@
+import { Tajawal } from "next/font/google";
 import "./styles.css";
+
+const tajawal = Tajawal({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "700", "800", "900"],
+  variable: "--font-tajawal",
+  display: "swap",
+});
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="und">
+    <html className={`${tajawal.variable} ${tajawal.className}`} lang="und">
       <body>{children}</body>
     </html>
   );

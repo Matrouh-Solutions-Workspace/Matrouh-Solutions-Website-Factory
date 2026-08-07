@@ -54,6 +54,11 @@ export default async function PreviewPage({ params, searchParams }: PreviewPrope
     <div
       className="siteRoot"
       data-color-scheme={appearance}
+      data-template-artifact-id={site.snapshot.template.id}
+      data-template-id={premiumTemplateId(
+        site.snapshot.template.id,
+        site.snapshot.template.version,
+      )}
       dir={textDirection(rendered.locale)}
       lang={rendered.locale}
       style={
@@ -78,6 +83,15 @@ export default async function PreviewPage({ params, searchParams }: PreviewPrope
       <main>{rendered.node}</main>
     </div>
   );
+}
+
+function premiumTemplateId(templateId: string, version: string): string | undefined {
+  const premiumVersions: Readonly<Record<string, string>> = {
+    "com.matrouh.engineer": "2.0.0",
+    "com.matrouh.doctor": "2.0.0",
+    "com.matrouh.clinic": "2.0.0",
+  };
+  return premiumVersions[templateId] === version ? templateId : undefined;
 }
 
 function websiteSetting(snapshot: PublicationSnapshot, key: string): unknown {

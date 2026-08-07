@@ -2,14 +2,16 @@
   "manifestFormatVersion": 1,
   "manifest": {
     "id": "com.matrouh.clinic",
-    "version": "1.4.0",
+    "version": "2.0.0",
     "displayName": "Multi-specialty Clinic",
     "author": "Matrouh Solutions",
-    "description": "Interactive multi-location clinic with coordinated care and live maps",
+    "description": "Connected multi-specialty clinic with care pathways, specialty discovery, booking, and live maps",
     "category": "healthcare",
     "features": [
       "localized-content",
       "multi-location",
+      "specialty-directory",
+      "care-pathways",
       "semantic-theme",
       "seo",
       "google-maps"
@@ -152,6 +154,8 @@
       },
       "allowedSections": [
         "com.matrouh.clinic/section/hero",
+        "com.matrouh.clinic/section/specialties",
+        "com.matrouh.clinic/section/care-path",
         "com.matrouh.clinic/section/locations"
       ],
       "requiredSections": [
@@ -169,6 +173,12 @@
       "defaultSections": [
         {
           "sectionTypeId": "com.matrouh.clinic/section/hero"
+        },
+        {
+          "sectionTypeId": "com.matrouh.clinic/section/specialties"
+        },
+        {
+          "sectionTypeId": "com.matrouh.clinic/section/care-path"
         },
         {
           "sectionTypeId": "com.matrouh.clinic/section/locations"
@@ -463,6 +473,218 @@
       },
       "composedOf": [
         "com.matrouh.shared/widget/action-button"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.clinic/section/specialties",
+      "kind": "section",
+      "title": "Specialties",
+      "description": "A patient-friendly directory of connected clinical specialties.",
+      "category": "content",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "A domain-specific list of specialties or coordinated care stages.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "eyebrow": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 140
+            },
+            "body": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            },
+            "items": {
+              "minItems": 1,
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "meta": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "body",
+                  "meta"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "eyebrow",
+            "title",
+            "body",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "09397c8b9e7c3789b6ef94ab5d73b97e",
+        "fields": {
+          "/eyebrow": {
+            "label": "Eyebrow",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/title": {
+            "label": "Section title",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Introduction",
+            "control": "textarea",
+            "order": 3,
+            "localization": "value"
+          },
+          "/items": {
+            "label": "Items",
+            "control": "list",
+            "order": 4,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/block/info-card"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.clinic/section/care-path",
+      "kind": "section",
+      "title": "Care pathway",
+      "description": "How patients move through a coordinated clinic network.",
+      "category": "content",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "A domain-specific list of specialties or coordinated care stages.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "eyebrow": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 140
+            },
+            "body": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            },
+            "items": {
+              "minItems": 1,
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "meta": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "body",
+                  "meta"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "eyebrow",
+            "title",
+            "body",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "09397c8b9e7c3789b6ef94ab5d73b97e",
+        "fields": {
+          "/eyebrow": {
+            "label": "Eyebrow",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/title": {
+            "label": "Section title",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Introduction",
+            "control": "textarea",
+            "order": 3,
+            "localization": "value"
+          },
+          "/items": {
+            "label": "Items",
+            "control": "list",
+            "order": 4,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/block/info-card"
       ],
       "capabilities": []
     },
@@ -908,5 +1130,5 @@
     }
   },
   "migrations": [],
-  "manifestHash": "227a01e042efbedc8d93cb73efe8179b"
+  "manifestHash": "c77942749f22aabd2ecb630ba4b10072"
 }

@@ -24,9 +24,12 @@ const titles: Record<string, string> = {
 
 export function DashboardShell({ children }: { readonly children: React.ReactNode }) {
   const pathname = usePathname();
+  const appPathname = normalizeDashboardPathname(pathname);
   const [open, setOpen] = useState(false);
-  if (pathname === "/login" || pathname.startsWith("/template-preview/")) return <>{children}</>;
-  if (pathname.startsWith("/account")) {
+  if (appPathname === "/login" || appPathname.startsWith("/template-preview/")) {
+    return <>{children}</>;
+  }
+  if (appPathname.startsWith("/account")) {
     return (
       <div className="appShell clientShell" dir="rtl">
         <div className="appFrame">
@@ -48,7 +51,7 @@ export function DashboardShell({ children }: { readonly children: React.ReactNod
       </div>
     );
   }
-  const segment = pathname.split("/").filter(Boolean)[0];
+  const segment = appPathname.split("/").filter(Boolean)[0];
   const title = segment ? (titles[segment] ?? "Website Factory") : "Overview";
   return (
     <div className="appShell" dir="rtl">
@@ -106,6 +109,12 @@ export function DashboardShell({ children }: { readonly children: React.ReactNod
       </div>
     </div>
   );
+}
+
+function normalizeDashboardPathname(pathname: string): string {
+  if (pathname === "/dashboard") return "/";
+  if (pathname.startsWith("/dashboard/")) return pathname.slice("/dashboard".length);
+  return pathname;
 }
 
 function SystemStatus() {

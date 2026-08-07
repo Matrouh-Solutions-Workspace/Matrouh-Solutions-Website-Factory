@@ -15,9 +15,7 @@ export function middleware(request: NextRequest): NextResponse {
   if (host && host !== dashboardHost) return rendererRewrite(request, host);
 
   if (pathname === "/") {
-    return (request.headers.get("referer") ?? "").includes("/dashboard")
-      ? rewriteDashboard(request, "/")
-      : rendererRewrite(request, dashboardHost, "/matrouh-solutions");
+    return rendererRewrite(request, dashboardHost, "/matrouh-solutions");
   }
   if (pathname === "/matrouh-solutions" || pathname.startsWith("/en/matrouh-solutions")) {
     return rendererRewrite(request, dashboardHost);

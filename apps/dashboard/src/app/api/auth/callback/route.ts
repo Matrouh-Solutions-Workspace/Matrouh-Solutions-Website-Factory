@@ -74,7 +74,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       },
     );
     const response = NextResponse.redirect(
-      new URL(isClientAccount ? "/account" : "/", request.url),
+      new URL(isClientAccount ? "/dashboard/account" : "/dashboard", request.url),
     );
     response.cookies.set(DASHBOARD_SESSION_COOKIE, `${membership.organizationId}.${token}`, {
       httpOnly: true,

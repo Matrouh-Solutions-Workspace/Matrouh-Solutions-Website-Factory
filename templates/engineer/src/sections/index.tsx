@@ -1,6 +1,12 @@
 import { contentSchema, z, type JsonValue, type SectionDefinition } from "@factory/template-sdk";
 import { sharedButtonId, sharedInfoCardId } from "@templates/shared";
-import { engineerContactId, engineerExpertiseId, engineerHeroId, engineerProjectsId } from "../ids";
+import {
+  engineerContactId,
+  engineerExpertiseId,
+  engineerHeroId,
+  engineerProcessId,
+  engineerProjectsId,
+} from "../ids";
 
 const field = (value: Readonly<JsonValue>, key: string): string =>
   value &&
@@ -114,6 +120,7 @@ const contactSchema = contentSchema<JsonValue>({
 
 const expertiseSchema = listSchema("A bounded list of engineering capabilities.");
 const projectsSchema = listSchema("Selected projects with concise measurable outcomes.");
+const processSchema = listSchema("A clear engineering delivery process from brief to handover.");
 
 export const engineerSections: readonly SectionDefinition[] = [
   {
@@ -133,7 +140,7 @@ export const engineerSections: readonly SectionDefinition[] = [
     },
     composedOf: [sharedButtonId],
     render: ({ value, context }) => (
-      <section className="hero">
+      <section className="hero hero--engineer">
         <div className="heroInner">
           <div className="heroCopy">
             <span className="sectionEyebrow">{field(value, "eyebrow")}</span>
@@ -248,6 +255,68 @@ export const engineerSections: readonly SectionDefinition[] = [
     render: listSection("Case study"),
   },
   {
+    id: engineerProcessId,
+    title: "Engineering process",
+    description: "Technical delivery stages and client expectations.",
+    category: "content",
+    schema: processSchema,
+    defaults: {
+      eyebrow: "How projects move",
+      title: "Rigour at every stage",
+      body: "A transparent technical process keeps decisions visible, risks controlled, and delivery moving.",
+      items: [
+        {
+          id: "32000000-0000-4000-8000-000000000001",
+          title: "Define the brief",
+          body: "Align constraints, performance targets, programme, stakeholders, and the decisions that matter most.",
+          meta: "01 · Discover",
+          imageMediaId: null,
+        },
+        {
+          id: "32000000-0000-4000-8000-000000000002",
+          title: "Test the options",
+          body: "Compare structural strategies with evidence on risk, carbon, buildability, and cost.",
+          meta: "02 · Analyse",
+          imageMediaId: null,
+        },
+        {
+          id: "32000000-0000-4000-8000-000000000003",
+          title: "Coordinate the design",
+          body: "Resolve interfaces early and issue coordinated information the wider team can confidently use.",
+          meta: "03 · Engineer",
+          imageMediaId: null,
+        },
+        {
+          id: "32000000-0000-4000-8000-000000000004",
+          title: "Support delivery",
+          body: "Stay close through construction, respond quickly, verify outcomes, and close with a clean handover.",
+          meta: "04 · Deliver",
+          imageMediaId: null,
+        },
+      ],
+    },
+    composedOf: [sharedInfoCardId],
+    render: ({ value }) => (
+      <section className="engineeringProcess">
+        <div className="sectionHeading">
+          <span className="sectionEyebrow">{field(value, "eyebrow")}</span>
+          <h2>{field(value, "title")}</h2>
+          <p>{field(value, "body")}</p>
+        </div>
+        <ol className="processGrid">
+          {items(value).map((item, index) => (
+            <li className="processStep" key={typeof item.id === "string" ? item.id : index}>
+              <span className="processIndex">{String(index + 1).padStart(2, "0")}</span>
+              <small>{typeof item.meta === "string" ? item.meta : "Stage"}</small>
+              <h3>{typeof item.title === "string" ? item.title : "Project stage"}</h3>
+              <p>{typeof item.body === "string" ? item.body : ""}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+    ),
+  },
+  {
     id: engineerContactId,
     title: "Contact",
     description: "Project enquiry details.",
@@ -264,7 +333,7 @@ export const engineerSections: readonly SectionDefinition[] = [
     },
     composedOf: [sharedInfoCardId, sharedButtonId],
     render: ({ value, context }) => (
-      <section className="contactSection">
+      <section className="contactSection engineerContact">
         <div className="sectionHeading">
           <span className="sectionEyebrow">{field(value, "eyebrow")}</span>
           <h1>{field(value, "title")}</h1>
@@ -295,7 +364,9 @@ export const engineerSections: readonly SectionDefinition[] = [
 
 function listSection(fallback: string): SectionDefinition["render"] {
   return ({ value, context }) => (
-    <section className="contentSection">
+    <section
+      className={`contentSection ${fallback === "Capabilities" ? "engineerExpertise" : "engineerProjects"}`}
+    >
       <div className="sectionHeading">
         <span className="sectionEyebrow">{field(value, "eyebrow")}</span>
         <h2>{field(value, "title")}</h2>

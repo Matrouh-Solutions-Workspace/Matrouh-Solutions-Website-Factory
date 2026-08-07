@@ -40,7 +40,7 @@ export function LoginForm({
         autoFocus
         id="email"
         name="email"
-        placeholder="you@example.com"
+        placeholder="Boreto"
         required
         type="email"
       />

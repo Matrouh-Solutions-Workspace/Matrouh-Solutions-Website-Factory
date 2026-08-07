@@ -1,6 +1,6 @@
 import { contentSchema, z, type JsonValue, type SectionDefinition } from "@factory/template-sdk";
 import { sharedButtonId, sharedInfoCardId } from "@templates/shared";
-import { clinicHeroId, clinicLocationsId } from "../ids";
+import { clinicCarePathId, clinicHeroId, clinicLocationsId, clinicSpecialtiesId } from "../ids";
 
 const field = (value: Readonly<JsonValue>, key: string): string =>
   typeof value === "object" &&
@@ -78,6 +78,33 @@ const heroSchema = contentSchema<JsonValue>({
       mediaKinds: ["image"],
       aiHint: "Recommended 1600 × 1200 px landscape image",
     },
+  },
+});
+
+const careListSchema = contentSchema<JsonValue>({
+  version: 1,
+  description: "A domain-specific list of specialties or coordinated care stages.",
+  schema: z.strictObject({
+    eyebrow: z.string().max(80),
+    title: z.string().min(1).max(140),
+    body: z.string().min(1).max(600),
+    items: z
+      .array(
+        z.strictObject({
+          id: z.string().uuid(),
+          title: z.string().min(1).max(100),
+          body: z.string().min(1).max(500),
+          meta: z.string().max(100),
+        }),
+      )
+      .min(1)
+      .max(12),
+  }),
+  fields: {
+    "/eyebrow": { label: "Eyebrow", control: "text", order: 1, localization: "value" },
+    "/title": { label: "Section title", control: "text", order: 2, localization: "value" },
+    "/body": { label: "Introduction", control: "textarea", order: 3, localization: "value" },
+    "/items": { label: "Items", control: "list", order: 4, localization: "value" },
   },
 });
 
@@ -174,6 +201,132 @@ export const clinicSections: readonly SectionDefinition[] = [
             </div>
           )}
         </div>
+      </section>
+    ),
+  },
+  {
+    id: clinicSpecialtiesId,
+    title: "Specialties",
+    description: "A patient-friendly directory of connected clinical specialties.",
+    category: "content",
+    schema: careListSchema,
+    defaults: {
+      eyebrow: "Care by specialty",
+      title: "One clinic, a connected team",
+      body: "Start with the right specialist or let our care team guide you. Your information follows you, so every visit builds on the last.",
+      items: [
+        {
+          id: "21000000-0000-4000-8000-000000000001",
+          title: "Family medicine",
+          body: "Everyday care, prevention, and a trusted first point of contact.",
+          meta: "All ages",
+        },
+        {
+          id: "21000000-0000-4000-8000-000000000002",
+          title: "Pediatrics",
+          body: "Child-focused care from newborn checks through adolescence.",
+          meta: "Children",
+        },
+        {
+          id: "21000000-0000-4000-8000-000000000003",
+          title: "Cardiology",
+          body: "Assessment and ongoing support for heart and circulation health.",
+          meta: "Heart health",
+        },
+        {
+          id: "21000000-0000-4000-8000-000000000004",
+          title: "Orthopedics",
+          body: "Movement, joint, and injury care built around your recovery goals.",
+          meta: "Mobility",
+        },
+        {
+          id: "21000000-0000-4000-8000-000000000005",
+          title: "Women’s health",
+          body: "Respectful, coordinated care through every life stage.",
+          meta: "Women",
+        },
+        {
+          id: "21000000-0000-4000-8000-000000000006",
+          title: "Diagnostics",
+          body: "Imaging and laboratory services connected directly to your care plan.",
+          meta: "On site",
+        },
+      ],
+    },
+    composedOf: [sharedInfoCardId],
+    render: ({ value }) => (
+      <section className="clinicSpecialties">
+        <div className="sectionHeading">
+          <span className="sectionEyebrow">{field(value, "eyebrow")}</span>
+          <h2>{field(value, "title")}</h2>
+          <p>{field(value, "body")}</p>
+        </div>
+        <div className="specialtyGrid">
+          {items(value).map((item, index) => (
+            <article className="specialtyCard" key={typeof item.id === "string" ? item.id : index}>
+              <span className="specialtyIcon" aria-hidden>
+                <i />
+              </span>
+              <small>{stringItem(item, "meta")}</small>
+              <h3>{stringItem(item, "title")}</h3>
+              <p>{stringItem(item, "body")}</p>
+              <span className="specialtyArrow" aria-hidden>
+                ↗
+              </span>
+            </article>
+          ))}
+        </div>
+      </section>
+    ),
+  },
+  {
+    id: clinicCarePathId,
+    title: "Care pathway",
+    description: "How patients move through a coordinated clinic network.",
+    category: "content",
+    schema: careListSchema,
+    defaults: {
+      eyebrow: "How care works",
+      title: "From first question to feeling better",
+      body: "A simple pathway with the reassurance of a wider clinical team behind every decision.",
+      items: [
+        {
+          id: "22000000-0000-4000-8000-000000000001",
+          title: "Choose the right care",
+          body: "Book a specialty directly or ask our team to match your need to the right clinician.",
+          meta: "01 · Start",
+        },
+        {
+          id: "22000000-0000-4000-8000-000000000002",
+          title: "Meet one connected team",
+          body: "Clinicians, diagnostics, and referrals work from the same care story.",
+          meta: "02 · Coordinate",
+        },
+        {
+          id: "22000000-0000-4000-8000-000000000003",
+          title: "Continue with confidence",
+          body: "Leave with clear next steps, results, and follow-up arranged around you.",
+          meta: "03 · Follow up",
+        },
+      ],
+    },
+    composedOf: [sharedInfoCardId],
+    render: ({ value }) => (
+      <section className="clinicCarePath">
+        <div className="sectionHeading">
+          <span className="sectionEyebrow">{field(value, "eyebrow")}</span>
+          <h2>{field(value, "title")}</h2>
+          <p>{field(value, "body")}</p>
+        </div>
+        <ol className="carePathGrid">
+          {items(value).map((item, index) => (
+            <li key={typeof item.id === "string" ? item.id : index}>
+              <small>{stringItem(item, "meta")}</small>
+              <h3>{stringItem(item, "title")}</h3>
+              <p>{stringItem(item, "body")}</p>
+            </li>
+          ))}
+        </ol>
       </section>
     ),
   },

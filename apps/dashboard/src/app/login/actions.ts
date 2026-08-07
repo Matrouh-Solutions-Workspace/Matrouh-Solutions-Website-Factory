@@ -81,7 +81,7 @@ export async function loginAction(formData: FormData): Promise<void> {
   const roleKeys = membership.roles.map((item) => item.role.key);
   const clientOnly =
     roleKeys.includes("client") && !roleKeys.some((role) => role === "owner" || role === "admin");
-  redirect(next ?? (clientOnly ? "/account" : "/"));
+  redirect(next ? dashboardPublicPath(next) : clientOnly ? "/dashboard/account" : "/dashboard");
 }
 
 export async function logoutAction(): Promise<void> {
@@ -123,5 +123,10 @@ export async function logoutAction(): Promise<void> {
     );
   }
   cookieStore.delete(DASHBOARD_SESSION_COOKIE);
-  redirect("/login");
+  redirect("/dashboard/login");
+}
+
+function dashboardPublicPath(pathname: string): string {
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) return pathname;
+  return pathname === "/" ? "/dashboard" : `/dashboard${pathname}`;
 }

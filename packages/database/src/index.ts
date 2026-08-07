@@ -76,10 +76,13 @@ export async function withTenantTransaction<T>(
 ): Promise<T> {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      return await client.$transaction(async (transaction) => {
-        await transaction.$executeRaw`SELECT set_config('app.organization_id', ${context.organizationId}, true), set_config('app.actor_id', ${context.actorId}, true), set_config('app.correlation_id', ${context.correlationId}, true)`;
-        return work(transaction);
-      });
+      return await client.$transaction(
+        async (transaction) => {
+          await transaction.$executeRaw`SELECT set_config('app.organization_id', ${context.organizationId}, true), set_config('app.actor_id', ${context.actorId}, true), set_config('app.correlation_id', ${context.correlationId}, true)`;
+          return work(transaction);
+        },
+        { maxWait: 15_000, timeout: 30_000 },
+      );
     } catch (error) {
       if (attempt === 0 && isRecoverableTransactionError(error)) continue;
       throw error;
@@ -94,6 +97,8 @@ function isRecoverableTransactionError(error: unknown): boolean {
     message.includes("bind message supplies") ||
     message.includes("prepared statement") ||
     message.includes("Transaction not found") ||
+    message.includes("expired transaction") ||
+    message.includes("Transaction API error") ||
     message.includes("Connection terminated unexpectedly") ||
     message.includes("Server has closed the connection")
   );

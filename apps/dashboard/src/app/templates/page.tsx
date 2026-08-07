@@ -42,7 +42,7 @@ export default async function TemplatesPage() {
                     <iframe
                       aria-hidden="true"
                       loading="lazy"
-                      src={`/template-preview/${encodeURIComponent(template.templateId)}/${encodeURIComponent(latest.version)}/`}
+                      src={`/dashboard/template-preview/${encodeURIComponent(template.templateId)}/${encodeURIComponent(latest.version)}/`}
                       tabIndex={-1}
                       title={`${template.displayName} thumbnail`}
                     />

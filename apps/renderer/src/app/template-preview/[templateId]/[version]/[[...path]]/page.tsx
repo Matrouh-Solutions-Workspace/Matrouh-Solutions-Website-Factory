@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
 import { loadCatalogPreview } from "@/server/catalog-preview";
-import { localizedPageRoute } from "@/server/locale-navigation";
+import { localizedPageRoute, textDirection } from "@/server/locale-navigation";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -43,6 +43,13 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
     <div
       className="siteRoot"
       data-color-scheme={appearance}
+      data-template-artifact-id={preview.snapshot.template.id}
+      data-template-id={premiumTemplateId(
+        preview.snapshot.template.id,
+        preview.snapshot.template.version,
+      )}
+      dir={textDirection(preview.rendered.locale)}
+      lang={preview.rendered.locale}
       style={themeVariables(preview.snapshot.theme)}
     >
       <aside className="previewBanner">Template preview · default content</aside>
@@ -75,6 +82,15 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
       </footer>
     </div>
   );
+}
+
+function premiumTemplateId(templateId: string, version: string): string | undefined {
+  const premiumVersions: Readonly<Record<string, string>> = {
+    "com.matrouh.engineer": "2.0.0",
+    "com.matrouh.doctor": "2.0.0",
+    "com.matrouh.clinic": "2.0.0",
+  };
+  return premiumVersions[templateId] === version ? templateId : undefined;
 }
 
 async function safePreview(templateId: string, version: string, pathname: string) {

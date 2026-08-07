@@ -20,7 +20,12 @@ const items = [
 ] satisfies readonly { label: string; href: string; icon: IconName; group: string }[];
 
 export function DashboardNav({ onNavigate }: { readonly onNavigate?: () => void }) {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = rawPathname.startsWith("/dashboard/")
+    ? rawPathname.slice("/dashboard".length)
+    : rawPathname === "/dashboard"
+      ? "/"
+      : rawPathname;
   const groups = [...new Set(items.map((item) => item.group))];
   return (
     <>
@@ -32,11 +37,12 @@ export function DashboardNav({ onNavigate }: { readonly onNavigate?: () => void 
               .filter((item) => item.group === group)
               .map(({ label, href, icon }) => {
                 const active = href === "/" ? pathname === href : pathname.startsWith(href);
+                const publicHref = href === "/" ? "/dashboard" : `/dashboard${href}`;
                 return (
                   <Link
                     aria-current={active ? "page" : undefined}
                     className={active ? "active" : ""}
-                    href={href}
+                    href={publicHref}
                     key={href}
                     onClick={() => onNavigate?.()}
                   >

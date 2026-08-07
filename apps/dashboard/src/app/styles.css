@@ -3266,13 +3266,18 @@ input[type="file"] {
   overflow: hidden;
   border-bottom: 1px solid var(--line);
   background: #eef0ed;
+  direction: ltr;
 }
 .templateLiveVisual iframe {
-  width: 1440px;
-  height: 900px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 250%;
+  height: 550px;
   border: 0;
   pointer-events: none;
-  transform: scale(0.36);
+  transform: scale(0.4);
   transform-origin: top left;
 }
 .templateVisualFallback {
@@ -3633,7 +3638,12 @@ input[type="file"] {
   place-items: center;
   padding: 24px;
   background:
-    radial-gradient(circle at 50% -20%, rgba(255, 204, 0, 0.17), transparent 500px), #f7f7f5;
+    linear-gradient(90deg, rgba(17, 17, 17, 0.055) 1px, transparent 1px),
+    linear-gradient(rgba(17, 17, 17, 0.055) 1px, transparent 1px),
+    radial-gradient(circle at 50% -20%, rgba(245, 166, 35, 0.2), transparent 500px),
+    var(--canvas);
+  background-size: 24px 24px, 24px 24px, auto, auto;
+  color: var(--ink);
 }
 .loginCard {
   position: relative;
@@ -3641,6 +3651,8 @@ input[type="file"] {
   width: min(100%, 430px);
   gap: 15px;
   padding: 34px;
+  background: var(--surface);
+  color: var(--ink);
   box-shadow: var(--shadow-md);
 }
 .loginLogo {
@@ -3658,6 +3670,7 @@ input[type="file"] {
 }
 .loginCard > p:not(.eyebrow) {
   margin: 0 0 4px;
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -3672,6 +3685,28 @@ input[type="file"] {
   font-size: 10px;
   line-height: 1.5;
   text-align: center;
+}
+
+.loginShell label {
+  color: var(--ink-soft);
+}
+.loginShell input,
+.loginShell select,
+.loginShell textarea {
+  border-color: var(--line-strong);
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+.loginShell input::placeholder {
+  color: var(--muted-light);
+  opacity: 1;
+}
+.loginShell button,
+.loginShell .buttonLink,
+.loginShell button:hover:not(:disabled),
+.loginShell .buttonLink:hover {
+  background: var(--primary);
+  color: #111111;
 }
 
 .pageSkeleton {
@@ -4187,4 +4222,65 @@ input[type="file"] {
   .draftSetupProgress li a {
     font-size: 0.82rem;
   }
+}
+
+/* Login is deliberately a light, high-contrast surface even when the saved
+   dashboard preference is dark. Keep this final so legacy and theme rules
+   cannot produce light text on a light card. */
+.loginShell .loginCard {
+  --surface: #ffffff;
+  --surface-soft: #f3f4f1;
+  --ink: #111111;
+  --ink-soft: #292929;
+  --muted: #555b55;
+  --muted-light: #6b716b;
+  --line: #b8bcb6;
+  --line-strong: #111111;
+  --primary-dark: #895900;
+  background: var(--surface);
+  color: var(--ink);
+}
+.loginShell .loginCard h1 {
+  color: var(--ink);
+}
+.loginShell .loginCard > p:not(.eyebrow) {
+  color: var(--muted);
+}
+.loginShell .loginCard .eyebrow {
+  color: var(--primary-dark);
+}
+.loginShell .loginCard label {
+  color: var(--ink-soft);
+}
+.loginShell .loginCard input,
+.loginShell .loginCard select,
+.loginShell .loginCard textarea {
+  border-color: var(--line-strong);
+  background: var(--surface-soft);
+  color: var(--ink);
+  caret-color: var(--ink);
+}
+.loginShell .loginCard input:focus,
+.loginShell .loginCard select:focus,
+.loginShell .loginCard textarea:focus {
+  border-color: var(--primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.22);
+}
+.loginShell .loginCard input:-webkit-autofill,
+.loginShell .loginCard input:-webkit-autofill:hover,
+.loginShell .loginCard input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #111111;
+  box-shadow: 0 0 0 1000px #f3f4f1 inset;
+  caret-color: #111111;
+}
+.loginShell .loginCard button,
+.loginShell .loginCard .buttonLink,
+.loginShell .loginCard button:hover:not(:disabled),
+.loginShell .loginCard .buttonLink:hover {
+  background: var(--primary);
+  color: #111111;
+}
+.loginShell .loginCard .loginHint {
+  color: var(--muted);
 }

@@ -17,7 +17,7 @@ export const loadDashboardTemplatePreview = cache(async function loadDashboardTe
     artifact.manifest.manifestHash,
   );
   if (!compilation.success) return null;
-  const prefix = `/template-preview/${encodeURIComponent(templateId)}/${encodeURIComponent(templateVersion)}`;
+  const prefix = `/dashboard/template-preview/${encodeURIComponent(templateId)}/${encodeURIComponent(templateVersion)}`;
   const runtime = instantiateTemplateRuntime(
     {
       definition: artifact.definition,

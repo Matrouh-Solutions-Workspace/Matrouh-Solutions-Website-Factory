@@ -41,12 +41,20 @@ const websiteSchema = contentSchema<JsonValue>({
 export const template = defineTemplate({
   manifest: {
     id: ids.template("com.matrouh.engineer"),
-    version: ids.version("1.1.0"),
+    version: ids.version("2.0.0"),
     displayName: "Engineer Portfolio",
     author: "Matrouh Solutions",
-    description: "A precise bilingual portfolio for independent engineers and technical studios",
+    description: "Project-led engineering studio with technical process, sectors, credentials, and measurable outcomes",
     category: "professional-services",
-    features: ["localized-content", "project-portfolio", "semantic-theme", "seo", "contact-page"],
+    features: [
+      "localized-content",
+      "project-portfolio",
+      "engineering-process",
+      "technical-credentials",
+      "semantic-theme",
+      "seo",
+      "contact-page",
+    ],
   },
   compatibility: {
     sdkVersion: "1.0.0",

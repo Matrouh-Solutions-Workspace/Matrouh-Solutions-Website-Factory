@@ -1,6 +1,12 @@
 import { contentSchema, z, type JsonValue, type SectionDefinition } from "@factory/template-sdk";
 import { sharedButtonId, sharedInfoCardId } from "@templates/shared";
-import { doctorContactId, doctorHeroId, doctorServicesId } from "../ids";
+import {
+  doctorContactId,
+  doctorHeroId,
+  doctorJourneyId,
+  doctorProfileId,
+  doctorServicesId,
+} from "../ids";
 
 const field = (value: Readonly<JsonValue>, key: string): string =>
   typeof value === "object" &&
@@ -95,6 +101,39 @@ const servicesSchema = contentSchema<JsonValue>({
   fields: {
     "/title": { label: "Section title", control: "text", order: 1, localization: "value" },
     "/items": { label: "Services", control: "list", order: 2, localization: "value" },
+  },
+});
+
+const profileSchema = contentSchema<JsonValue>({
+  version: 1,
+  description: "Physician biography, specialty, credentials, and portrait.",
+  schema: z.strictObject({
+    eyebrow: z.string().max(80),
+    name: z.string().min(1).max(120),
+    specialty: z.string().min(1).max(160),
+    biography: z.string().min(1).max(900),
+    credential: z.string().min(1).max(220),
+    philosophy: z.string().min(1).max(300),
+    portraitMediaId: z.string().uuid().nullable().default(null),
+  }),
+  fields: {
+    "/eyebrow": { label: "Eyebrow", control: "text", order: 1, localization: "value" },
+    "/name": { label: "Doctor name", control: "text", order: 2, localization: "value" },
+    "/specialty": { label: "Specialty", control: "text", order: 3, localization: "value" },
+    "/biography": { label: "Biography", control: "textarea", order: 4, localization: "value" },
+    "/credential": { label: "Credentials", control: "text", order: 5, localization: "value" },
+    "/philosophy": {
+      label: "Care philosophy",
+      control: "textarea",
+      order: 6,
+      localization: "value",
+    },
+    "/portraitMediaId": {
+      label: "Profile portrait",
+      control: "media",
+      order: 7,
+      mediaKinds: ["image"],
+    },
   },
 });
 
@@ -200,6 +239,50 @@ export const doctorSections: readonly SectionDefinition[] = [
     ),
   },
   {
+    id: doctorProfileId,
+    title: "Physician profile",
+    description: "Doctor biography, clinical specialty, and care philosophy.",
+    category: "content",
+    schema: profileSchema,
+    defaults: {
+      eyebrow: "Meet your doctor",
+      name: "Dr. Mariam Salem",
+      specialty: "Consultant in family medicine",
+      biography:
+        "Dr. Salem combines evidence-led medicine with the continuity of a neighborhood practice. Every appointment begins with listening, then turns complex information into a clear plan you can use.",
+      credential: "MD · Board certified · 20+ years in practice",
+      philosophy:
+        "Good care is not rushed. It is a conversation that continues beyond one appointment.",
+      portraitMediaId: null,
+    },
+    composedOf: [sharedInfoCardId],
+    render: ({ value, context }) => (
+      <section className="doctorProfile">
+        <div className="doctorProfilePortrait">
+          {field(value, "portraitMediaId") ? (
+            <img
+              alt={field(value, "name")}
+              src={context.media.url(field(value, "portraitMediaId"))}
+            />
+          ) : (
+            <div aria-hidden className="doctorProfilePlaceholder">
+              <span>MS</span>
+              <small>{localeText(context.locale, "Family medicine", "طب الأسرة")}</small>
+            </div>
+          )}
+        </div>
+        <div className="doctorProfileCopy">
+          <span className="sectionEyebrow">{field(value, "eyebrow")}</span>
+          <h2>{field(value, "name")}</h2>
+          <strong className="doctorSpecialty">{field(value, "specialty")}</strong>
+          <p>{field(value, "biography")}</p>
+          <span className="doctorCredential">{field(value, "credential")}</span>
+          <blockquote>“{field(value, "philosophy")}”</blockquote>
+        </div>
+      </section>
+    ),
+  },
+  {
     id: doctorServicesId,
     title: "Services",
     description: "Practice service overview.",
@@ -260,6 +343,56 @@ export const doctorSections: readonly SectionDefinition[] = [
             </article>
           ))}
         </div>
+      </section>
+    ),
+  },
+  {
+    id: doctorJourneyId,
+    title: "Patient journey",
+    description: "A clear three-stage guide to the appointment experience.",
+    category: "content",
+    schema: servicesSchema,
+    defaults: {
+      title: "What to expect from your visit",
+      items: [
+        {
+          id: "11000000-0000-4000-8000-000000000001",
+          title: "Before your visit",
+          body: "Share your concerns and current medicines so your appointment starts with the right context.",
+          imageMediaId: null,
+        },
+        {
+          id: "11000000-0000-4000-8000-000000000002",
+          title: "In the consultation",
+          body: "Take the time to ask questions, understand the assessment, and agree on the next steps together.",
+          imageMediaId: null,
+        },
+        {
+          id: "11000000-0000-4000-8000-000000000003",
+          title: "After the appointment",
+          body: "Receive a practical care plan and a direct route back to the practice when follow-up is needed.",
+          imageMediaId: null,
+        },
+      ],
+    },
+    composedOf: [sharedInfoCardId],
+    render: ({ value, context }) => (
+      <section className="doctorJourney">
+        <div className="sectionHeading">
+          <span className="sectionEyebrow">
+            {localeText(context.locale, "Your appointment", "موعدك")}
+          </span>
+          <h2>{field(value, "title")}</h2>
+        </div>
+        <ol className="patientJourney">
+          {items(value).map((item, index) => (
+            <li key={typeof item.id === "string" ? item.id : index}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <h3>{typeof item.title === "string" ? item.title : "Visit stage"}</h3>
+              <p>{typeof item.body === "string" ? item.body : ""}</p>
+            </li>
+          ))}
+        </ol>
       </section>
     ),
   },

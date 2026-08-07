@@ -1,0 +1,9 @@
+{
+  "eyebrow": "Engineering",
+  "title": "This deliberately invalid engineering portfolio headline is far too long for the bounded hero title field and must be rejected by validation",
+  "body": "Invalid fixture",
+  "ctaLabel": "Contact",
+  "ctaHref": "/contact",
+  "credential": "Engineer",
+  "heroMediaId": null
+}

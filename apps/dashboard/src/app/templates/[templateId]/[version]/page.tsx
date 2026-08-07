@@ -17,7 +17,7 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPrope
   const entry = catalog.find((item) => item.templateId === templateId);
   if (!entry) notFound();
   const template = artifact.definition;
-  const previewBase = `/template-preview/${encodeURIComponent(templateId)}/${encodeURIComponent(version)}`;
+  const previewBase = `/dashboard/template-preview/${encodeURIComponent(templateId)}/${encodeURIComponent(version)}`;
   return (
     <>
       <header>

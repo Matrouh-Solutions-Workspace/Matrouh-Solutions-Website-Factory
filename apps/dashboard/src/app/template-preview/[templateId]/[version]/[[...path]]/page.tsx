@@ -31,7 +31,17 @@ export default async function TemplatePreviewPage({ params }: PreviewProperties)
   if (!preview) notFound();
   const navigation = navigationLinks(preview.snapshot, preview.rendered.locale);
   return (
-    <div style={themeVariables(preview.snapshot.theme)}>
+    <div
+      className="siteRoot"
+      data-template-artifact-id={preview.snapshot.template.id}
+      data-template-id={premiumTemplateId(
+        preview.snapshot.template.id,
+        preview.snapshot.template.version,
+      )}
+      dir={preview.rendered.locale.toLowerCase().startsWith("ar") ? "rtl" : "ltr"}
+      lang={preview.rendered.locale}
+      style={themeVariables(preview.snapshot.theme)}
+    >
       <aside className="previewBanner">Template preview · default content</aside>
       <header className="siteHeader">
         <a className="siteBrand" href={`${preview.prefix}/`}>
@@ -64,12 +74,34 @@ export default async function TemplatePreviewPage({ params }: PreviewProperties)
   );
 }
 
+function premiumTemplateId(templateId: string, version: string): string | undefined {
+  const premiumVersions: Readonly<Record<string, string>> = {
+    "com.matrouh.engineer": "2.0.0",
+    "com.matrouh.doctor": "2.0.0",
+    "com.matrouh.clinic": "2.0.0",
+  };
+  return premiumVersions[templateId] === version ? templateId : undefined;
+}
+
 async function safePreview(templateId: string, version: string, pathname: string) {
   try {
     return await loadDashboardTemplatePreview(templateId, version, pathname);
-  } catch {
+  } catch (error) {
+    if (isNextRedirect(error)) throw error;
+    console.error("Failed to load dashboard template preview", {
+      templateId,
+      version,
+      pathname,
+      error,
+    });
     return null;
   }
+}
+
+function isNextRedirect(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const digest = (error as { readonly digest?: unknown }).digest;
+  return typeof digest === "string" && digest.startsWith("NEXT_REDIRECT;");
 }
 
 function navigationLinks(snapshot: PublicationSnapshot, locale: string) {

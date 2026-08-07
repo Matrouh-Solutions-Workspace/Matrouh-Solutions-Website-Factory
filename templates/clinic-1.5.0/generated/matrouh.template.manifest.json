@@ -1,0 +1,912 @@
+{
+  "manifestFormatVersion": 1,
+  "manifest": {
+    "id": "com.matrouh.clinic",
+    "version": "1.5.0",
+    "displayName": "Multi-specialty Clinic",
+    "author": "Matrouh Solutions",
+    "description": "Interactive multi-location clinic with coordinated care and live maps",
+    "category": "healthcare",
+    "features": [
+      "localized-content",
+      "multi-location",
+      "semantic-theme",
+      "seo",
+      "google-maps"
+    ]
+  },
+  "compatibility": {
+    "sdkVersion": "1.0.0",
+    "minimumFactoryVersion": "0.1.0",
+    "minimumRendererVersion": "0.1.0",
+    "contentSchemaVersion": 1,
+    "themeSchemaVersion": 1,
+    "publicationSnapshotVersion": 1
+  },
+  "websiteSchema": {
+    "formatVersion": 1,
+    "typeName": "ZodObject",
+    "description": "Public clinic contact settings.",
+    "jsonSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "centralPhone": {
+          "default": "+20 100 000 0000",
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 40
+        },
+        "centralEmail": {
+          "default": "clinic@example.com",
+          "type": "string",
+          "maxLength": 320,
+          "format": "email",
+          "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+        },
+        "bookingPath": {
+          "default": "/book",
+          "type": "string",
+          "pattern": "^\\/(?:[a-z0-9/_-]*)$"
+        },
+        "emergencyNotice": {
+          "default": "",
+          "type": "string",
+          "maxLength": 300
+        },
+        "colorMode": {
+          "default": "light",
+          "type": "string",
+          "enum": [
+            "light",
+            "dark"
+          ]
+        },
+        "logoMediaId": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "schemaHash": "8bb8b8d7e5b5382748bd118aa3ebb2ad",
+    "fields": {
+      "/centralPhone": {
+        "label": "Central phone",
+        "control": "text",
+        "order": 1
+      },
+      "/centralEmail": {
+        "label": "Central email",
+        "control": "text",
+        "order": 2,
+        "sensitive": true
+      },
+      "/bookingPath": {
+        "label": "Booking path",
+        "control": "url",
+        "order": 3
+      },
+      "/emergencyNotice": {
+        "label": "Emergency notice",
+        "control": "textarea",
+        "order": 4,
+        "localization": "value"
+      },
+      "/colorMode": {
+        "label": "Template appearance",
+        "control": "select",
+        "order": 5,
+        "options": [
+          {
+            "label": "Light",
+            "value": "light"
+          },
+          {
+            "label": "Dark",
+            "value": "dark"
+          }
+        ]
+      },
+      "/logoMediaId": {
+        "label": "Custom logo",
+        "control": "media",
+        "order": 6,
+        "mediaKinds": [
+          "image"
+        ]
+      }
+    }
+  },
+  "capabilities": [],
+  "routes": [
+    {
+      "id": "com.matrouh.clinic/route/page",
+      "pattern": "/:slug?",
+      "priority": 0,
+      "pageTypes": [
+        "com.matrouh.clinic/page/home",
+        "com.matrouh.clinic/page/locations"
+      ],
+      "localePolicy": "prefix-except-default",
+      "indexingPolicy": "inherit-page"
+    }
+  ],
+  "pages": [
+    {
+      "id": "com.matrouh.clinic/page/home",
+      "title": "Home",
+      "slug": {
+        "kind": "fixed",
+        "defaultValue": "/",
+        "maximumLength": 1
+      },
+      "allowedSections": [
+        "com.matrouh.clinic/section/hero",
+        "com.matrouh.clinic/section/locations"
+      ],
+      "requiredSections": [
+        {
+          "sectionTypeId": "com.matrouh.clinic/section/hero",
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "sectionTypeId": "com.matrouh.clinic/section/locations",
+          "minimum": 0,
+          "maximum": 1
+        }
+      ],
+      "defaultSections": [
+        {
+          "sectionTypeId": "com.matrouh.clinic/section/hero"
+        },
+        {
+          "sectionTypeId": "com.matrouh.clinic/section/locations"
+        }
+      ],
+      "supportsSEO": true,
+      "supportsNavigation": true,
+      "supportsIndexing": true,
+      "editor": {
+        "description": "Primary clinic landing page",
+        "icon": "home"
+      }
+    },
+    {
+      "id": "com.matrouh.clinic/page/locations",
+      "title": "Locations",
+      "slug": {
+        "kind": "fixed",
+        "defaultValue": "locations",
+        "maximumLength": 80
+      },
+      "allowedSections": [
+        "com.matrouh.clinic/section/locations"
+      ],
+      "requiredSections": [
+        {
+          "sectionTypeId": "com.matrouh.clinic/section/locations",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "defaultSections": [
+        {
+          "sectionTypeId": "com.matrouh.clinic/section/locations"
+        }
+      ],
+      "supportsSEO": true,
+      "supportsNavigation": true,
+      "supportsIndexing": true,
+      "editor": {
+        "description": "Location directory",
+        "icon": "map-pin"
+      }
+    }
+  ],
+  "navigation": [
+    {
+      "id": "com.matrouh.clinic/navigation/main",
+      "title": "Main navigation",
+      "maximumDepth": 3,
+      "allowedPageTypes": "all",
+      "ordering": "manual",
+      "localization": "localized-tree",
+      "allowedNodeKinds": [
+        "page",
+        "external",
+        "label"
+      ],
+      "editor": {
+        "description": "Header and mobile navigation"
+      }
+    }
+  ],
+  "components": [
+    {
+      "id": "com.matrouh.shared/widget/action-button",
+      "kind": "widget",
+      "title": "Action button",
+      "description": "Reusable accessible call-to-action link.",
+      "category": "actions",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "A safe internal or HTTPS action link.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "href": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "style": {
+              "type": "string",
+              "enum": [
+                "primary",
+                "secondary",
+                "text"
+              ]
+            }
+          },
+          "required": [
+            "label",
+            "href",
+            "style"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "e73c684478a6fa16a5e5562d8fc52df5",
+        "fields": {
+          "/label": {
+            "label": "Label",
+            "control": "text",
+            "order": 1,
+            "aiHint": "Use a short action phrase"
+          },
+          "/href": {
+            "label": "Destination",
+            "control": "url",
+            "order": 2
+          },
+          "/style": {
+            "label": "Style",
+            "control": "select",
+            "order": 3,
+            "options": [
+              {
+                "label": "Primary",
+                "value": "primary"
+              },
+              {
+                "label": "Secondary",
+                "value": "secondary"
+              },
+              {
+                "label": "Text",
+                "value": "text"
+              }
+            ]
+          }
+        }
+      },
+      "composedOf": [],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.shared/block/info-card",
+      "kind": "block",
+      "title": "Information card",
+      "description": "Reusable information card shared by first-party templates.",
+      "category": "content",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "A reusable title and body card.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "body": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "id",
+            "title",
+            "body"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "746858aae7753c28dd63ab7461efe3cb",
+        "fields": {
+          "/title": {
+            "label": "Title",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Body",
+            "control": "textarea",
+            "order": 2,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/widget/action-button"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.clinic/section/hero",
+      "kind": "section",
+      "title": "Clinic hero",
+      "description": "Primary clinic introduction.",
+      "category": "marketing",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "Clinic introduction and primary action.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "body": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            },
+            "ctaLabel": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            },
+            "ctaHref": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240,
+              "pattern": "^\\/(?:[a-z0-9/_-]*)$"
+            },
+            "heroMediaId": {
+              "default": null,
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "title",
+            "body",
+            "ctaLabel",
+            "ctaHref"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "d1872575d32dc8cee57573864bac3e17",
+        "fields": {
+          "/title": {
+            "label": "Headline",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Introduction",
+            "control": "textarea",
+            "order": 2,
+            "localization": "value"
+          },
+          "/ctaLabel": {
+            "label": "Action label",
+            "control": "text",
+            "order": 3,
+            "localization": "value"
+          },
+          "/ctaHref": {
+            "label": "Action destination",
+            "control": "url",
+            "order": 4
+          },
+          "/heroMediaId": {
+            "label": "Clinic hero image",
+            "control": "media",
+            "order": 5,
+            "mediaKinds": [
+              "image"
+            ],
+            "aiHint": "Recommended 1600 × 1200 px landscape image"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/widget/action-button"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.clinic/section/locations",
+      "kind": "section",
+      "title": "Locations",
+      "description": "Clinic locations and contact overview.",
+      "category": "content",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "A bounded list of clinic locations.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "body": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "items": {
+              "maxItems": 20,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "address": {
+                    "default": "Matrouh, Egypt",
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "phone": {
+                    "default": "+20 100 000 0000",
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "hours": {
+                    "default": "Saturday–Thursday · 9:00–18:00",
+                    "type": "string",
+                    "maxLength": 160
+                  },
+                  "latitude": {
+                    "default": 31.3543,
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
+                  },
+                  "longitude": {
+                    "default": 27.2373,
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
+                  },
+                  "imageMediaId": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "body"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "title",
+            "body",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "384ef1338c471b2505b414f5227ac7b3",
+        "fields": {
+          "/title": {
+            "label": "Section title",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Introduction",
+            "control": "textarea",
+            "order": 2,
+            "localization": "value"
+          },
+          "/items": {
+            "label": "Locations",
+            "control": "list",
+            "order": 3,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/block/info-card"
+      ],
+      "capabilities": []
+    }
+  ],
+  "theme": {
+    "id": "com.matrouh.clinic/theme/default",
+    "schemaVersion": 1,
+    "schema": {
+      "formatVersion": 1,
+      "typeName": "ZodObject",
+      "description": "Clinic template semantic design tokens.",
+      "jsonSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "colors": {
+            "type": "object",
+            "properties": {
+              "background": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "surface": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "surfaceVariant": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "primary": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "primaryForeground": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "secondary": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "accent": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "success": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "warning": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "danger": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "info": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "border": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "muted": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "heading": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              }
+            },
+            "required": [
+              "background",
+              "surface",
+              "surfaceVariant",
+              "primary",
+              "primaryForeground",
+              "secondary",
+              "accent",
+              "success",
+              "warning",
+              "danger",
+              "info",
+              "border",
+              "muted",
+              "text",
+              "heading"
+            ],
+            "additionalProperties": false
+          },
+          "layout": {
+            "type": "object",
+            "properties": {
+              "radii": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "shadows": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^[^;{}]+$"
+                }
+              },
+              "spacing": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "containerWidths": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "breakpoints": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              }
+            },
+            "required": [
+              "radii",
+              "shadows",
+              "spacing",
+              "containerWidths",
+              "breakpoints"
+            ],
+            "additionalProperties": false
+          },
+          "typography": {
+            "type": "object",
+            "properties": {
+              "fontFamilies": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^[^;{}]+$"
+                }
+              },
+              "fontSizes": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "fontWeights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 1000
+                }
+              },
+              "lineHeights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "number",
+                  "minimum": 0.8,
+                  "maximum": 3
+                }
+              }
+            },
+            "required": [
+              "fontFamilies",
+              "fontSizes",
+              "fontWeights",
+              "lineHeights"
+            ],
+            "additionalProperties": false
+          },
+          "motion": {
+            "type": "object",
+            "properties": {
+              "durations": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^\\d+(?:\\.\\d+)?(?:ms|s)$"
+                }
+              },
+              "curves": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100,
+                  "pattern": "^[^;{}]+$"
+                }
+              }
+            },
+            "required": [
+              "durations",
+              "curves"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "colors",
+          "layout",
+          "typography",
+          "motion"
+        ],
+        "additionalProperties": false
+      },
+      "schemaHash": "35816f87467157bae17e0e8404c713e8",
+      "fields": {}
+    }
+  },
+  "migrations": [],
+  "manifestHash": "acb9235a975c988372b4e6a25f30e5be"
+}

@@ -61,42 +61,34 @@ export async function authenticateDashboardCredential(
   const membership = await withTenantTransaction(
     client,
     { organizationId, actorId: user.id, correlationId: `authenticate:${session.id}` },
-    async (transaction) => {
-      const membership = await transaction.membership.findUnique({
+    (transaction) =>
+      transaction.membership.findUnique({
         where: { organizationId_userId: { organizationId, userId: session.userId } },
-      });
-      if (!membership) return null;
-      const organization = await transaction.organization.findUnique({
-        where: { id: organizationId },
-      });
-      const membershipRoles = await transaction.membershipRole.findMany({
-        where: { organizationId, membershipId: membership.id },
-        select: { roleId: true },
-      });
-      const roleIds = membershipRoles.map((item) => item.roleId);
-      const roles = await transaction.role.findMany({
-        where: { organizationId, id: { in: roleIds } },
-        select: { id: true, key: true },
-      });
-      const rolePermissions = await transaction.rolePermission.findMany({
-        where: { organizationId, roleId: { in: roleIds } },
-        select: { permissionId: true },
-      });
-      const permissions = await transaction.permission.findMany({
-        where: { id: { in: rolePermissions.map((item) => item.permissionId) } },
-        select: { key: true },
-      });
-      return { membership, organization, roles, permissions };
-    },
+        include: {
+          organization: true,
+          roles: {
+            include: {
+              role: {
+                select: {
+                  key: true,
+                  permissions: {
+                    select: { permission: { select: { key: true } } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
   );
-  if (
-    !membership ||
-    membership.membership.status !== "active" ||
-    membership.organization?.status !== "active"
-  )
+  if (!membership || membership.status !== "active" || membership.organization.status !== "active")
     return null;
-  const roleKeys = membership.roles.map((role) => role.key).sort();
-  const permissions = new Set(membership.permissions.map((permission) => permission.key));
+  const roleKeys = membership.roles.map(({ role }) => role.key).sort();
+  const permissions = new Set(
+    membership.roles.flatMap(({ role }) =>
+      role.permissions.map(({ permission }) => permission.key),
+    ),
+  );
   return Object.freeze({
     organization: Object.freeze({
       id: membership.organization.id,
@@ -109,7 +101,7 @@ export async function authenticateDashboardCredential(
       email: user.primaryEmail,
       displayName: user.displayName,
     }),
-    membershipId: membership.membership.id,
+    membershipId: membership.id,
     roleKeys: Object.freeze(roleKeys),
     permissions,
   });

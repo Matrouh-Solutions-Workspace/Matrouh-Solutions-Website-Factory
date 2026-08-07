@@ -43,7 +43,7 @@ export function ThemeLiveEditor({
   const [jsonError, setJsonError] = useState("");
   const colors = tokens.colors ?? {};
   const previewRef = useRef<HTMLIFrameElement>(null);
-  const previewUrl = `/template-preview/${encodeURIComponent(templateId)}/${encodeURIComponent(templateVersion)}/`;
+  const previewUrl = `/dashboard/template-preview/${encodeURIComponent(templateId)}/${encodeURIComponent(templateVersion)}/`;
 
   useEffect(() => applyPreviewColors(previewRef.current, colors), [colors]);
 
