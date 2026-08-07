@@ -64,8 +64,14 @@ const copy = {
     servicesEyebrow: "What we deliver",
     servicesTitle: "A complete website, not another template.",
     services: [
-      ["Digital design and identity", "Distinctive interfaces that represent your brand on every screen."],
-      ["Bilingual websites", "Natural Arabic and English content, navigation, direction, and user journeys."],
+      [
+        "Digital design and identity",
+        "Distinctive interfaces that represent your brand on every screen.",
+      ],
+      [
+        "Bilingual websites",
+        "Natural Arabic and English content, navigation, direction, and user journeys.",
+      ],
       ["Launch and operations", "Domains, publishing, monitoring, and ongoing care in one system."],
     ],
     processEyebrow: "How we work",
@@ -73,7 +79,11 @@ const copy = {
     process: [
       ["01", "Understand", "We define your goals, audience, and the content the site needs."],
       ["02", "Design and build", "We turn the agreed direction into a focused, fast experience."],
-      ["03", "Launch and improve", "We publish, monitor, and keep improving as your business grows."],
+      [
+        "03",
+        "Launch and improve",
+        "We publish, monitor, and keep improving as your business grows.",
+      ],
     ],
     ctaEyebrow: "Let’s build something worth visiting",
     ctaTitle: "Ready for a website that represents your work properly?",
@@ -88,7 +98,10 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
   return (
     <div className={styles.page} dir={text.direction} lang={locale}>
       <header className={styles.header}>
-        <a className={styles.brand} href={locale === "ar" ? "/matrouh-solutions" : "/en/matrouh-solutions"}>
+        <a
+          className={styles.brand}
+          href={locale === "ar" ? "/matrouh-solutions" : "/en/matrouh-solutions"}
+        >
           <img alt="" src="/matrouh-logo.png" />
           <span>
             <strong>Matrouh</strong>
@@ -97,9 +110,15 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
         </a>
         <nav aria-label={locale === "ar" ? "التنقل الرئيسي" : "Main navigation"}>
           {text.nav.map(([label, href]) => (
-            <a href={href} key={href}>{label}</a>
+            <a href={href} key={href}>
+              {label}
+            </a>
           ))}
-          <a className={styles.language} href={text.languageHref} hrefLang={locale === "ar" ? "en" : "ar"}>
+          <a
+            className={styles.language}
+            href={text.languageHref}
+            hrefLang={locale === "ar" ? "en" : "ar"}
+          >
             {text.language}
           </a>
         </nav>
@@ -112,23 +131,42 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
             <h1>{text.title}</h1>
             <p className={styles.lead}>{text.lead}</p>
             <div className={styles.actions}>
-              <a className={styles.primary} href="#contact">{text.primary}</a>
-              <a className={styles.secondary} href="#services">{text.secondary}</a>
+              <a className={styles.primary} href="#contact">
+                {text.primary}
+              </a>
+              <a className={styles.secondary} href="#services">
+                {text.secondary}
+              </a>
             </div>
           </div>
           <div aria-hidden="true" className={styles.heroVisual}>
-            <div className={styles.browserBar}><i /><i /><i /></div>
+            <div className={styles.browserBar}>
+              <i />
+              <i />
+              <i />
+            </div>
             <div className={styles.visualBody}>
               <span>MATROUH / SOLUTIONS</span>
-              <strong>وضوح في التصميم.<br />قوة في التنفيذ.</strong>
-              <div><i /><i /><i /></div>
+              <strong>
+                وضوح في التصميم.
+                <br />
+                قوة في التنفيذ.
+              </strong>
+              <div>
+                <i />
+                <i />
+                <i />
+              </div>
             </div>
           </div>
         </section>
 
         <section aria-label={locale === "ar" ? "مميزات" : "Highlights"} className={styles.proof}>
           {text.proof.map(([title, body]) => (
-            <article key={title}><strong>{title}</strong><p>{body}</p></article>
+            <article key={title}>
+              <strong>{title}</strong>
+              <p>{body}</p>
+            </article>
           ))}
         </section>
 
@@ -139,7 +177,11 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           </div>
           <div className={styles.cardGrid}>
             {text.services.map(([title, body], index) => (
-              <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{body}</p></article>
+              <article key={title}>
+                <span>0{index + 1}</span>
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </article>
             ))}
           </div>
         </section>
@@ -151,7 +193,13 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           </div>
           <div className={styles.process}>
             {text.process.map(([number, title, body]) => (
-              <article key={number}><span>{number}</span><div><h3>{title}</h3><p>{body}</p></div></article>
+              <article key={number}>
+                <span>{number}</span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </div>
+              </article>
             ))}
           </div>
         </section>
@@ -167,7 +215,10 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
       <footer className={styles.footer}>
         <div className={styles.brand}>
           <img alt="" src="/matrouh-logo.png" />
-          <span><strong>Matrouh</strong><small>Solutions</small></span>
+          <span>
+            <strong>Matrouh</strong>
+            <small>Solutions</small>
+          </span>
         </div>
         <p>{text.footer}</p>
         <a href="mailto:support@matrouh.solutions">support@matrouh.solutions</a>

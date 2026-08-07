@@ -12,9 +12,7 @@ describe("media storage keys", () => {
     const first = mediaStorageKey({ ...common, assetId: "asset-one" });
     const second = mediaStorageKey({ ...common, assetId: "asset-two" });
 
-    expect(first).toBe(
-      "media/00000000-0000-4000-8000-000000000001/abc123-asset-one.png",
-    );
+    expect(first).toBe("media/00000000-0000-4000-8000-000000000001/abc123-asset-one.png");
     expect(second).not.toBe(first);
   });
 });

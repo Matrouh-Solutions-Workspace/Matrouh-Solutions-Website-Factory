@@ -50,7 +50,10 @@ export default async function MonitoringPage() {
       </section>
       <section aria-label="Monitored systems" className="monitoringGrid">
         {monitoring.systems.map((system) => (
-          <article className={`panel monitoringCard monitoringCard--${system.state}`} key={system.id}>
+          <article
+            className={`panel monitoringCard monitoringCard--${system.state}`}
+            key={system.id}
+          >
             <div className="monitoringCardHead">
               <div>
                 <p className="eyebrow">{system.description}</p>

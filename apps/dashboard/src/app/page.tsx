@@ -196,8 +196,8 @@ export default async function Dashboard() {
             </div>
           </div>
           <p>
-            Use the guided setup to choose a template, verify the exact subdomain, select
-            languages, and configure billing.
+            Use the guided setup to choose a template, verify the exact subdomain, select languages,
+            and configure billing.
           </p>
           <a className="buttonLink" href="/websites#create-website">
             Open website setup

@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const dashboardHost = new URL(
-  process.env.FACTORY_DASHBOARD_PUBLIC_URL ?? "http://localhost:3000",
-).hostname;
+const dashboardHost = new URL(process.env.FACTORY_DASHBOARD_PUBLIC_URL ?? "http://localhost:3000")
+  .hostname;
 const rendererBase = new URL(process.env.FACTORY_RENDERER_PUBLIC_URL ?? "http://localhost:3001");
 
 /**
@@ -30,7 +29,9 @@ export function middleware(request: NextRequest): NextResponse {
   if (pathname.startsWith("/api/")) return NextResponse.next();
   if (pathname.startsWith("/_next/")) {
     const referer = request.headers.get("referer") ?? "";
-    return referer.includes("/dashboard") ? NextResponse.next() : rendererRewrite(request, dashboardHost);
+    return referer.includes("/dashboard")
+      ? NextResponse.next()
+      : rendererRewrite(request, dashboardHost);
   }
   return NextResponse.redirect(new URL(`/dashboard${pathname}${search}`, request.url));
 }

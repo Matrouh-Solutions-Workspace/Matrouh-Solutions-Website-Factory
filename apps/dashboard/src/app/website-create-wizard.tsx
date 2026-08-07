@@ -25,13 +25,17 @@ export function WebsiteCreateWizard({
   readonly clients: readonly Option[];
   readonly creationError?: string | undefined;
   readonly initialTemplate?: string | undefined;
-  readonly hostingDomains: readonly { id: string; hostname: string; isDefault: boolean; hostedWebsiteCount: number }[];
+  readonly hostingDomains: readonly {
+    id: string;
+    hostname: string;
+    isDefault: boolean;
+    hostedWebsiteCount: number;
+  }[];
 }) {
   const [step, setStep] = useState(0);
   const [languageMode, setLanguageMode] = useState("both");
   const [cadence, setCadence] = useState("monthly");
-  const [hostnameAvailability, setHostnameAvailability] =
-    useState<HostnameAvailability>("idle");
+  const [hostnameAvailability, setHostnameAvailability] = useState<HostnameAvailability>("idle");
   const handleHostnameAvailability = useCallback(
     (status: HostnameAvailability) => setHostnameAvailability(status),
     [],
@@ -75,7 +79,23 @@ export function WebsiteCreateWizard({
           <input name="name" placeholder="North Coast Clinic" required />
         </label>
         <HostnameAvailabilityField onAvailabilityChange={handleHostnameAvailability} />
-        {hostingDomains.length > 0 && <label>Hosting domain<select name="hostingDomainId" defaultValue={hostingDomains.find((domain) => domain.isDefault)?.id ?? hostingDomains[0]?.id}>{hostingDomains.map((domain) => <option key={domain.id} value={domain.id}>{domain.hostname} ({domain.hostedWebsiteCount} hosted)</option>)}</select></label>}
+        {hostingDomains.length > 0 && (
+          <label>
+            Hosting domain
+            <select
+              name="hostingDomainId"
+              defaultValue={
+                hostingDomains.find((domain) => domain.isDefault)?.id ?? hostingDomains[0]?.id
+              }
+            >
+              {hostingDomains.map((domain) => (
+                <option key={domain.id} value={domain.id}>
+                  {domain.hostname} ({domain.hostedWebsiteCount} hosted)
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label>
           Template
           <select defaultValue={initialTemplate} name="template" required>

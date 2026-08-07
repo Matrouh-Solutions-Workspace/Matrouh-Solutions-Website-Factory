@@ -124,10 +124,16 @@ export async function createWebsiteAction(formData: FormData): Promise<void> {
   const actorId = context.actor.id;
   const hostingDomainId = cleanText(formData.get("hostingDomainId"), 80);
   const hostingDomain = hostingDomainId
-    ? await client.hostingDomain.findFirst({ where: { id: hostingDomainId, organizationId: organization.id } })
+    ? await client.hostingDomain.findFirst({
+        where: { id: hostingDomainId, organizationId: organization.id },
+      })
     : null;
   const hostname = hostingDomain
-    ? `${(hostnameInput || name).trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "")}.${hostingDomain.hostnameNormalized}`
+    ? `${(hostnameInput || name)
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/^-+|-+$/g, "")}.${hostingDomain.hostnameNormalized}`
     : localHostname(hostnameInput || name);
   if (!hostname) return;
 
@@ -1639,10 +1645,18 @@ export async function createHostingDomainAction(formData: FormData): Promise<voi
         select: { id: true },
       });
       await transaction.hostingDomain.upsert({
-        where: { organizationId_hostnameNormalized: { organizationId: context.organization.id, hostnameNormalized: hostname } },
+        where: {
+          organizationId_hostnameNormalized: {
+            organizationId: context.organization.id,
+            hostnameNormalized: hostname,
+          },
+        },
         create: {
-          id: randomUUID(), organizationId: context.organization.id, hostnameNormalized: hostname,
-          hostnameDisplay: input, isDefault: !existingDefault,
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          hostnameNormalized: hostname,
+          hostnameDisplay: input,
+          isDefault: !existingDefault,
         },
         update: { hostnameDisplay: input },
       });
@@ -1657,12 +1671,21 @@ export async function setDefaultHostingDomainAction(formData: FormData): Promise
   if (!domainId) return;
   const context = await requireDashboardContext("domain.create");
   await withTenantTransaction(
-    dashboardDatabase(), tenantActionContext(context, `hosting-domain-default:${domainId}`),
+    dashboardDatabase(),
+    tenantActionContext(context, `hosting-domain-default:${domainId}`),
     async (transaction) => {
-      const domain = await transaction.hostingDomain.findFirst({ where: { id: domainId, organizationId: context.organization.id } });
+      const domain = await transaction.hostingDomain.findFirst({
+        where: { id: domainId, organizationId: context.organization.id },
+      });
       if (!domain) return;
-      await transaction.hostingDomain.updateMany({ where: { organizationId: context.organization.id }, data: { isDefault: false } });
-      await transaction.hostingDomain.update({ where: { id: domain.id }, data: { isDefault: true } });
+      await transaction.hostingDomain.updateMany({
+        where: { organizationId: context.organization.id },
+        data: { isDefault: false },
+      });
+      await transaction.hostingDomain.update({
+        where: { id: domain.id },
+        data: { isDefault: true },
+      });
     },
   );
   revalidatePath("/domains");
@@ -2180,7 +2203,11 @@ async function uploadMedia(formData: FormData): Promise<string | undefined> {
             contentHash,
             detectedContentType: upload.type,
             byteSize: BigInt(bytes.byteLength),
-            metadataJson: jsonInput({ ...processed.metadata, signatureChecked: true, processing: "ready" }),
+            metadataJson: jsonInput({
+              ...processed.metadata,
+              signatureChecked: true,
+              processing: "ready",
+            }),
             folderId: folderId || null,
           },
         });
@@ -2685,7 +2712,10 @@ export async function updateNavigationNodeAction(formData: FormData): Promise<vo
         where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
         select: {
           defaultLocale: true,
-          locales: { orderBy: [{ isDefault: "desc" }, { locale: "asc" }], select: { locale: true } },
+          locales: {
+            orderBy: [{ isDefault: "desc" }, { locale: "asc" }],
+            select: { locale: true },
+          },
         },
       });
       if (!website) return;

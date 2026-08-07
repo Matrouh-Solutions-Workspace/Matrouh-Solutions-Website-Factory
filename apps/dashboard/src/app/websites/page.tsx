@@ -28,7 +28,10 @@ export default async function WebsitesPage({
     template?: string;
   }>;
 }) {
-  const [overview, hostingDomains] = await Promise.all([loadDashboardOverview(), loadHostingDomainChoices()]);
+  const [overview, hostingDomains] = await Promise.all([
+    loadDashboardOverview(),
+    loadHostingDomainChoices(),
+  ]);
   const filters = await searchParams;
   const query = filters.q?.trim().toLowerCase() ?? "";
   const status = filters.status ?? "all";
@@ -260,7 +263,12 @@ export default async function WebsitesPage({
             value: client.id,
           }))}
           initialTemplate={filters.template}
-          hostingDomains={hostingDomains.map((domain) => ({ id: domain.id, hostname: domain.hostnameDisplay, isDefault: domain.isDefault, hostedWebsiteCount: domain.hostedWebsiteCount }))}
+          hostingDomains={hostingDomains.map((domain) => ({
+            id: domain.id,
+            hostname: domain.hostnameDisplay,
+            isDefault: domain.isDefault,
+            hostedWebsiteCount: domain.hostedWebsiteCount,
+          }))}
           templates={overview.templates.map((template) => ({
             id: template.templateId,
             label: `${template.displayName} ${template.latestVersion ?? ""}`,

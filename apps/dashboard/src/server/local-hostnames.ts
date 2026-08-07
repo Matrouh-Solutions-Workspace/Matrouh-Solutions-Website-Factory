@@ -1,5 +1,8 @@
 export function localHostname(value: string): string | null {
-  const withoutSuffix = value.trim().toLowerCase().replace(/\.localhost\.?$/, "");
+  const withoutSuffix = value
+    .trim()
+    .toLowerCase()
+    .replace(/\.localhost\.?$/, "");
   const label = withoutSuffix
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "")

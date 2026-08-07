@@ -120,7 +120,9 @@
   border-radius: 9px;
   font-weight: 850;
   text-decoration: none;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 .actions a:hover,
 .cta > a:hover {
@@ -142,7 +144,9 @@
   border: 2px solid var(--ink);
   border-radius: 16px;
   background: white;
-  box-shadow: 22px 22px 0 var(--yellow), 0 30px 90px rgba(17, 19, 24, 0.15);
+  box-shadow:
+    22px 22px 0 var(--yellow),
+    0 30px 90px rgba(17, 19, 24, 0.15);
   transform: rotate(-2deg);
 }
 [dir="rtl"] .heroVisual {
@@ -318,26 +322,75 @@
   font-weight: 750;
 }
 @media (max-width: 880px) {
-  .header nav a:not(.language) { display: none; }
-  .hero { min-height: auto; grid-template-columns: 1fr; padding-top: 50px; }
-  .hero h1 { font-size: clamp(3rem, 13vw, 5.2rem); }
-  .heroVisual { max-width: 600px; }
-  .proof, .cardGrid { grid-template-columns: 1fr; }
-  .proof { gap: 10px; }
-  .proof article + article { border-inline-start: 1px solid #dedbd2; }
-  .cardGrid article { min-height: 230px; }
-  .cardGrid h3 { margin-top: 42px; }
-  .cta { margin: 80px 24px; }
-  .footer { grid-template-columns: 1fr; gap: 14px; }
+  .header nav a:not(.language) {
+    display: none;
+  }
+  .hero {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    padding-top: 50px;
+  }
+  .hero h1 {
+    font-size: clamp(3rem, 13vw, 5.2rem);
+  }
+  .heroVisual {
+    max-width: 600px;
+  }
+  .proof,
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+  .proof {
+    gap: 10px;
+  }
+  .proof article + article {
+    border-inline-start: 1px solid #dedbd2;
+  }
+  .cardGrid article {
+    min-height: 230px;
+  }
+  .cardGrid h3 {
+    margin-top: 42px;
+  }
+  .cta {
+    margin: 80px 24px;
+  }
+  .footer {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
 }
 @media (max-width: 520px) {
-  .header, .hero, .section { padding-inline: 20px; }
-  .header { min-height: 76px; }
-  .brand small { display: none; }
-  .visualBody { min-height: 300px; padding: 24px; }
-  .proof { padding-inline: 20px; }
-  .processSection { padding-inline: 20px; }
-  .process article { grid-template-columns: 48px 1fr; }
-  .cta { margin-inline: 20px; padding: 42px 24px; box-shadow: 9px 9px 0 var(--yellow); }
-  .footer { padding-inline: 20px; }
+  .header,
+  .hero,
+  .section {
+    padding-inline: 20px;
+  }
+  .header {
+    min-height: 76px;
+  }
+  .brand small {
+    display: none;
+  }
+  .visualBody {
+    min-height: 300px;
+    padding: 24px;
+  }
+  .proof {
+    padding-inline: 20px;
+  }
+  .processSection {
+    padding-inline: 20px;
+  }
+  .process article {
+    grid-template-columns: 48px 1fr;
+  }
+  .cta {
+    margin-inline: 20px;
+    padding: 42px 24px;
+    box-shadow: 9px 9px 0 var(--yellow);
+  }
+  .footer {
+    padding-inline: 20px;
+  }
 }

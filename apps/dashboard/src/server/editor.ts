@@ -284,10 +284,7 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
       nodes: navigation.nodes.map((node) => ({
         id: node.id,
         labels: Object.fromEntries(
-          editorData.locales.map(({ locale }) => [
-            locale,
-            localizedLabel(node.labelJson, locale),
-          ]),
+          editorData.locales.map(({ locale }) => [locale, localizedLabel(node.labelJson, locale)]),
         ),
         kind: node.nodeKind,
         revision: node.revision.toString(),

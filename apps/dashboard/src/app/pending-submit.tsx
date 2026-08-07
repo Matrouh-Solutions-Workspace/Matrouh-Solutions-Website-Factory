@@ -9,7 +9,12 @@ interface PendingSubmitProps {
   disabled?: boolean;
 }
 
-export function PendingSubmit({ children, pendingLabel, className, disabled = false }: PendingSubmitProps) {
+export function PendingSubmit({
+  children,
+  pendingLabel,
+  className,
+  disabled = false,
+}: PendingSubmitProps) {
   const { pending } = useFormStatus();
 
   return (

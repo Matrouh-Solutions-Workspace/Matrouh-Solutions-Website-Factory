@@ -48,15 +48,38 @@ export default async function DomainsPage() {
       </section>
       <section className="workspaceGrid">
         <div className="panel">
-          <div className="panelHead"><div><p className="eyebrow">Platform hosting</p><h2>Website base domains</h2></div></div>
+          <div className="panelHead">
+            <div>
+              <p className="eyebrow">Platform hosting</p>
+              <h2>Website base domains</h2>
+            </div>
+          </div>
           {hostingDomains.map((domain) => (
             <article className="dataRow" key={domain.id}>
-              <div><strong>{domain.hostnameDisplay}</strong><p>{domain.hostedWebsiteCount} hosted website{domain.hostedWebsiteCount === 1 ? "" : "s"}</p></div>
-              {domain.isDefault ? <span className="mutedBadge">Default</span> : <form action={setDefaultHostingDomainAction}><input name="domainId" type="hidden" value={domain.id}/><button className="inlineButton" type="submit">Make default</button></form>}
+              <div>
+                <strong>{domain.hostnameDisplay}</strong>
+                <p>
+                  {domain.hostedWebsiteCount} hosted website
+                  {domain.hostedWebsiteCount === 1 ? "" : "s"}
+                </p>
+              </div>
+              {domain.isDefault ? (
+                <span className="mutedBadge">Default</span>
+              ) : (
+                <form action={setDefaultHostingDomainAction}>
+                  <input name="domainId" type="hidden" value={domain.id} />
+                  <button className="inlineButton" type="submit">
+                    Make default
+                  </button>
+                </form>
+              )}
             </article>
           ))}
           <form action={createHostingDomainAction} className="inlineForm">
-            <label>Base domain<input name="hostname" placeholder="clients.example.com" required maxLength={253}/></label>
+            <label>
+              Base domain
+              <input name="hostname" placeholder="clients.example.com" required maxLength={253} />
+            </label>
             <PendingSubmit pendingLabel="Adding…">Add hosting domain</PendingSubmit>
           </form>
         </div>

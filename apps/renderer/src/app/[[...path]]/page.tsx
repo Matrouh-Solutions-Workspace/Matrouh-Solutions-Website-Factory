@@ -128,11 +128,7 @@ export default async function SitePage({ params }: PageProperties) {
           ))}
         </nav>
         {!site.branding.whiteLabelEnabled && (
-          <a
-            className="factoryWatermark"
-            href={matrouhSolutionsUrl(rendered.locale)}
-            rel="author"
-          >
+          <a className="factoryWatermark" href={matrouhSolutionsUrl(rendered.locale)} rel="author">
             {rendered.locale === "ar" ? "موقع من مطروح سوليوشنز" : "Website by Matrouh Solutions"}
           </a>
         )}
@@ -143,7 +139,10 @@ export default async function SitePage({ params }: PageProperties) {
 
 function matrouhSolutionsUrl(locale: string): string {
   const path = locale === "ar" ? "/matrouh-solutions" : "/en/matrouh-solutions";
-  return new URL(path, `${rendererConfig.FACTORY_RENDERER_PUBLIC_URL.replace(/\/$/, "")}/`).toString();
+  return new URL(
+    path,
+    `${rendererConfig.FACTORY_RENDERER_PUBLIC_URL.replace(/\/$/, "")}/`,
+  ).toString();
 }
 
 function websiteSetting(snapshot: PublicationSnapshot, key: string): unknown {

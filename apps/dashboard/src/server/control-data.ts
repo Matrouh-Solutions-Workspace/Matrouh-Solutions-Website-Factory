@@ -204,13 +204,30 @@ export async function loadDomainsWorkspace() {
 
 export async function loadHostingDomainChoices() {
   const context = await requireDashboardContext("website.create");
-  return withTenantTransaction(dashboardDatabase(), tenantContext(context, "hosting-domain-choices"), async (transaction) => {
-    const [domains, mappings] = await Promise.all([
-      transaction.hostingDomain.findMany({ where: { organizationId: context.organization.id }, orderBy: [{ isDefault: "desc" }, { hostnameNormalized: "asc" }] }),
-      transaction.domain.findMany({ where: { organizationId: context.organization.id, releasedAt: null }, select: { hostnameNormalized: true } }),
-    ]);
-    return domains.map((domain) => ({ ...domain, hostedWebsiteCount: mappings.filter((mapping) => mapping.hostnameNormalized === domain.hostnameNormalized || mapping.hostnameNormalized.endsWith(`.${domain.hostnameNormalized}`)).length }));
-  });
+  return withTenantTransaction(
+    dashboardDatabase(),
+    tenantContext(context, "hosting-domain-choices"),
+    async (transaction) => {
+      const [domains, mappings] = await Promise.all([
+        transaction.hostingDomain.findMany({
+          where: { organizationId: context.organization.id },
+          orderBy: [{ isDefault: "desc" }, { hostnameNormalized: "asc" }],
+        }),
+        transaction.domain.findMany({
+          where: { organizationId: context.organization.id, releasedAt: null },
+          select: { hostnameNormalized: true },
+        }),
+      ]);
+      return domains.map((domain) => ({
+        ...domain,
+        hostedWebsiteCount: mappings.filter(
+          (mapping) =>
+            mapping.hostnameNormalized === domain.hostnameNormalized ||
+            mapping.hostnameNormalized.endsWith(`.${domain.hostnameNormalized}`),
+        ).length,
+      }));
+    },
+  );
 }
 
 export async function loadMediaLibrary(filters: { query?: string; folderId?: string } = {}) {

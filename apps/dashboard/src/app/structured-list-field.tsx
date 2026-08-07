@@ -189,24 +189,26 @@ export function StructuredListField({
                   <label key={key}>
                     {humanize(key)}
                     {key === "body" || String(item[key] ?? "").length > 100 ? (
-                    <textarea
-                      onChange={(event) => update(index, key, event.target.value)}
-                      required
-                      rows={3}
-                      value={String(item[key] ?? "")}
-                    />
-                  ) : (
-                    <input
-                      inputMode={key === "latitude" || key === "longitude" ? "decimal" : undefined}
-                      onChange={(event) => update(index, key, event.target.value)}
-                      required={
-                        key !== "latitude" && key !== "longitude" && !key.endsWith("MediaId")
-                      }
-                      step={key === "latitude" || key === "longitude" ? "any" : undefined}
-                      type={key === "latitude" || key === "longitude" ? "number" : "text"}
-                      value={String(item[key] ?? "")}
-                    />
-                  )}
+                      <textarea
+                        onChange={(event) => update(index, key, event.target.value)}
+                        required
+                        rows={3}
+                        value={String(item[key] ?? "")}
+                      />
+                    ) : (
+                      <input
+                        inputMode={
+                          key === "latitude" || key === "longitude" ? "decimal" : undefined
+                        }
+                        onChange={(event) => update(index, key, event.target.value)}
+                        required={
+                          key !== "latitude" && key !== "longitude" && !key.endsWith("MediaId")
+                        }
+                        step={key === "latitude" || key === "longitude" ? "any" : undefined}
+                        type={key === "latitude" || key === "longitude" ? "number" : "text"}
+                        value={String(item[key] ?? "")}
+                      />
+                    )}
                   </label>
                 ),
               )}

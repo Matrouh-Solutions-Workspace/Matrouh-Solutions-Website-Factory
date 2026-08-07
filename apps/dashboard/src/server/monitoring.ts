@@ -72,8 +72,8 @@ export async function loadMonitoringOverview(): Promise<MonitoringOverview> {
   const failedMail = statusCount(queueData.mailStatuses, ["failed"]);
   const mailConfigured = Boolean(
     dashboardConfig.FACTORY_MAIL_PROVIDER_URL &&
-      dashboardConfig.FACTORY_MAIL_PROVIDER_SECRET &&
-      dashboardConfig.FACTORY_MAIL_FROM,
+    dashboardConfig.FACTORY_MAIL_PROVIDER_SECRET &&
+    dashboardConfig.FACTORY_MAIL_FROM,
   );
   const mailState: MonitoringState =
     dashboardConfig.FACTORY_DEPLOYMENT_MODE === "production" && !mailConfigured
@@ -141,7 +141,10 @@ export async function loadMonitoringOverview(): Promise<MonitoringOverview> {
               ? `Latest message is ${queueData.latestMail.status}${queueData.latestMail.failureReason ? `: ${queueData.latestMail.failureReason}` : "."}`
               : "No outbound messages have been queued yet.",
         checkedAt:
-          queueData.latestMail?.sentAt ?? queueData.latestMail?.createdAt ?? heartbeat?.heartbeatAt ?? checkedAt,
+          queueData.latestMail?.sentAt ??
+          queueData.latestMail?.createdAt ??
+          heartbeat?.heartbeatAt ??
+          checkedAt,
         metrics: [
           { label: "Queued / delivering", value: String(queuedMail) },
           { label: "Sent", value: String(sentMail) },
@@ -162,7 +165,11 @@ export async function loadMonitoringOverview(): Promise<MonitoringOverview> {
         id: "templates",
         name: "Template Lab",
         description: "Template discovery and compatibility diagnostics",
-        state: templateLabProbe ? (templateLabProbe.ok ? "operational" : "offline") : "informational",
+        state: templateLabProbe
+          ? templateLabProbe.ok
+            ? "operational"
+            : "offline"
+          : "informational",
         status: templateLabProbe
           ? templateLabProbe.ok
             ? "Online"
@@ -181,7 +188,8 @@ export async function loadMonitoringOverview(): Promise<MonitoringOverview> {
         name: "Artifact storage",
         description: "Compiled publications, previews, and generated assets",
         state: "operational",
-        status: dashboardConfig.FACTORY_ARTIFACT_DRIVER === "s3" ? "S3 configured" : "Local storage",
+        status:
+          dashboardConfig.FACTORY_ARTIFACT_DRIVER === "s3" ? "S3 configured" : "Local storage",
         detail:
           dashboardConfig.FACTORY_ARTIFACT_DRIVER === "s3"
             ? `Using bucket ${dashboardConfig.FACTORY_S3_BUCKET ?? "configured by deployment"}.`

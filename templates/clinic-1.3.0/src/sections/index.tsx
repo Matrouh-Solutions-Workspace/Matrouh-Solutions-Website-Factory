@@ -217,10 +217,7 @@ export const clinicSections: readonly SectionDefinition[] = [
                 name="clinic-location-map"
                 type="radio"
               />
-              <label
-                className="locationChoice"
-                htmlFor={locationControlId(item, index)}
-              >
+              <label className="locationChoice" htmlFor={locationControlId(item, index)}>
                 <span className="locationChoiceTop">
                   <span className="locationMarker" aria-hidden>
                     <svg viewBox="0 0 24 24">

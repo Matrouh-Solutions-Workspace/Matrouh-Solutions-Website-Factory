@@ -37,8 +37,14 @@ export default async function ClientsPage({
                 type="search"
               />
             </label>
-            <button className="secondaryButton" type="submit">Search</button>
-            {query && <a className="textLink" href="/clients">Clear</a>}
+            <button className="secondaryButton" type="submit">
+              Search
+            </button>
+            {query && (
+              <a className="textLink" href="/clients">
+                Clear
+              </a>
+            )}
           </form>
           <div className="tableList">
             {clients.map((client) => (
@@ -49,7 +55,9 @@ export default async function ClientsPage({
                   <p>{client.contactName || "No contact name"}</p>
                 </div>
                 <div>
-                  <strong>{client.contactEmail || client.contactPhone || "No contact details"}</strong>
+                  <strong>
+                    {client.contactEmail || client.contactPhone || "No contact details"}
+                  </strong>
                   <p>
                     {client._count.websites} managed website
                     {client._count.websites === 1 ? "" : "s"}
@@ -77,7 +85,9 @@ export default async function ClientsPage({
             Create an ownerless website and send its claim link. After the recipient registers or
             signs in and claims it, their account appears here automatically.
           </p>
-          <a className="buttonLink" href="/websites#create-website">Create ownerless website</a>
+          <a className="buttonLink" href="/websites#create-website">
+            Create ownerless website
+          </a>
         </section>
       </section>
     </>

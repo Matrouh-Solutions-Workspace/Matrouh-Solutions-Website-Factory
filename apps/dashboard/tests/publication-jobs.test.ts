@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  canRetryPublicationJob,
-  isActivePublicationJob,
-} from "../src/server/publication-jobs";
+import { canRetryPublicationJob, isActivePublicationJob } from "../src/server/publication-jobs";
 
 describe("publication job controls", () => {
   it("blocks duplicate publishing while work is active", () => {

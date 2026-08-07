@@ -160,10 +160,7 @@ export async function loadTemplateArtifact(
   ]);
   throwIfAborted(signal);
   const executableHash = createHash("sha256").update(entryBytes).digest("hex");
-  const artifactHash = createHash("sha256")
-    .update(manifestBytes)
-    .update(entryBytes)
-    .digest("hex");
+  const artifactHash = createHash("sha256").update(manifestBytes).update(entryBytes).digest("hex");
   const executableUrl = pathToFileURL(entry);
   executableUrl.searchParams.set("factoryArtifact", executableHash);
   let imported: { template?: TemplateDefinition };

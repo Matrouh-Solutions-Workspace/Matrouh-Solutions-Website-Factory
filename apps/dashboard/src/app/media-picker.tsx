@@ -118,7 +118,9 @@ export function MediaPicker({
           </>
         ) : (
           <>
-            <span aria-hidden="true" className="mediaPickerEmptyIcon">+</span>
+            <span aria-hidden="true" className="mediaPickerEmptyIcon">
+              +
+            </span>
             <span>
               <strong>{noneLabel}</strong>
               <small>Choose from this website or upload a new image</small>

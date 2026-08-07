@@ -4,9 +4,7 @@ import { isHostnameConflict, localHostname } from "../src/server/local-hostnames
 describe("local hostnames", () => {
   it("uses the requested slug without a generated suffix", () => {
     expect(localHostname("North Coast Clinic")).toBe("north-coast-clinic.localhost");
-    expect(localHostname("north-coast-clinic.localhost")).toBe(
-      "north-coast-clinic.localhost",
-    );
+    expect(localHostname("north-coast-clinic.localhost")).toBe("north-coast-clinic.localhost");
   });
 
   it("rejects input that cannot form a hostname", () => {

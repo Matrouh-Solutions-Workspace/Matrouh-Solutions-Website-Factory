@@ -1648,7 +1648,8 @@ function buildNavigationTree(
 }
 
 function websiteMediaUrl(storageKey: string, hostname: string | undefined): string {
-  if (!hostname) throw new PermanentJobError("Website media hostname is missing", "MEDIA_HOSTNAME_MISSING");
+  if (!hostname)
+    throw new PermanentJobError("Website media hostname is missing", "MEDIA_HOSTNAME_MISSING");
   const filename = storageFilename(storageKey);
   const dashboardUrl = new URL(workerConfig.FACTORY_DASHBOARD_PUBLIC_URL);
   const localPort = hostname.endsWith(".localhost") ? dashboardUrl.port : "";

@@ -491,7 +491,10 @@ footer {
   font-size: 0.72rem;
   font-weight: 650;
   white-space: nowrap;
-  transition: border-color 160ms ease, color 160ms ease, transform 160ms ease;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
 }
 .factoryWatermark:hover {
   border-color: var(--primary);
