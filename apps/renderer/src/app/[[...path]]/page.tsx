@@ -13,7 +13,8 @@ interface PageProperties {
 }
 
 export async function generateMetadata({ params }: PageProperties): Promise<Metadata> {
-  const host = (await headers()).get("host") ?? "";
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-factory-site-host") ?? requestHeaders.get("host") ?? "";
   const site = await loadSite(host);
   if (!site) return { robots: { index: false, follow: false } };
   const { path = [] } = await params;
@@ -48,7 +49,8 @@ export async function generateMetadata({ params }: PageProperties): Promise<Meta
 }
 
 export default async function SitePage({ params }: PageProperties) {
-  const host = (await headers()).get("host") ?? "";
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-factory-site-host") ?? requestHeaders.get("host") ?? "";
   const site = await loadSite(host);
   if (!site) notFound();
   const { path = [] } = await params;

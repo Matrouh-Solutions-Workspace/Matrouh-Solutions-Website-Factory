@@ -3,7 +3,8 @@ import type { MetadataRoute } from "next";
 import { loadSite } from "@/server/site";
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
-  const host = (await headers()).get("host") ?? "";
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-factory-site-host") ?? requestHeaders.get("host") ?? "";
   const site = await loadSite(host);
   if (!site) return { rules: { userAgent: "*", disallow: "/" } };
   return {

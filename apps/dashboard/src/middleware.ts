@@ -44,9 +44,10 @@ function rewriteDashboard(request: NextRequest, pathname: string): NextResponse 
 
 function rendererRewrite(request: NextRequest, host: string, pathname?: string): NextResponse {
   const destination = new URL(request.nextUrl.pathname + request.nextUrl.search, rendererBase);
-  destination.hostname = host;
   if (pathname) destination.pathname = pathname;
-  return NextResponse.rewrite(destination);
+  const forwarded = new Headers(request.headers);
+  forwarded.set("x-factory-site-host", host);
+  return NextResponse.rewrite(destination, { request: { headers: forwarded } });
 }
 
 export const config = {
