@@ -11,7 +11,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest): Promise<Response> {
   if (dashboardConfig.FACTORY_AUTH_MODE !== "oidc") {
-    return NextResponse.redirect(new URL("/login?error=unavailable", "http://localhost"));
+    return NextResponse.redirect(
+      new URL("/dashboard/login?error=unavailable", dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL),
+    );
   }
   const clientAddress =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

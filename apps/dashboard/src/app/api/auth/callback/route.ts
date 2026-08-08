@@ -18,7 +18,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const nonce = request.cookies.get("factory_oidc_nonce")?.value;
   const verifier = request.cookies.get("factory_oidc_verifier")?.value;
   if (!code || !state || !expectedState || state !== expectedState || !nonce || !verifier) {
-    return loginFailure(request, "state");
+    return loginFailure("state");
   }
   try {
     const identity = await dashboardOidcClient().exchangeCode({
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       (await claimClientInvitation(identity));
     const membership = authIdentity?.user.memberships[0];
     if (!authIdentity || !membership || authIdentity.user.status !== "active") {
-      return loginFailure(request, "unauthorized");
+      return loginFailure("unauthorized");
     }
     const token = randomBytes(48).toString("base64url");
     const sessionId = randomUUID();
@@ -85,8 +85,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     });
     clearOidcCookies(response);
     return response;
-  } catch {
-    return loginFailure(request, "provider");
+  } catch (error) {
+    console.error("OIDC callback failed", error);
+    return loginFailure("provider");
   }
 }
 
@@ -220,8 +221,10 @@ async function claimClientInvitation(identity: OidcIdentity) {
   );
 }
 
-function loginFailure(request: NextRequest, reason: string): NextResponse {
-  const response = NextResponse.redirect(new URL(`/login?error=${reason}`, request.url));
+function loginFailure(reason: string): NextResponse {
+  const response = NextResponse.redirect(
+    new URL(`/dashboard/login?error=${reason}`, dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL),
+  );
   clearOidcCookies(response);
   return response;
 }
