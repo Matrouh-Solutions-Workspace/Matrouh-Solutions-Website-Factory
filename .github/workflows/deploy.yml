@@ -26,11 +26,18 @@ jobs:
         env:
           DEPLOY_KEY: ${{ secrets.MPORTFOLIO_SSH_PRIVATE_KEY }}
           DEPLOY_HOST_KEY: ${{ secrets.MPORTFOLIO_SSH_HOST_KEY }}
+          DEPLOY_HOST: ${{ secrets.MPORTFOLIO_SSH_HOST }}
         run: |
           install -d -m 700 ~/.ssh
           printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "$DEPLOY_HOST_KEY" > ~/.ssh/known_hosts
+          printf '%s\n' "$DEPLOY_HOST_KEY" > ~/.ssh/expected_known_hosts
+          ssh-keyscan -T 10 -t ed25519 "$DEPLOY_HOST" > ~/.ssh/known_hosts
+          expected_fingerprint="$(ssh-keygen -lf ~/.ssh/expected_known_hosts | awk 'NR == 1 { print $2 }')"
+          actual_fingerprint="$(ssh-keygen -lf ~/.ssh/known_hosts | awk 'NR == 1 { print $2 }')"
+          test -n "$expected_fingerprint"
+          test "$actual_fingerprint" = "$expected_fingerprint"
+          rm ~/.ssh/expected_known_hosts
       - name: Upload and activate the release
         env:
           DEPLOY_HOST: ${{ secrets.MPORTFOLIO_SSH_HOST }}
