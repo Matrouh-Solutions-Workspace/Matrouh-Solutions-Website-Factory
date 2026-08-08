@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 
 interface EditCommand {
   readonly name: string;
@@ -20,6 +21,7 @@ export function DraftEditorForm({
   readonly autosaveDelay?: number;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
   const valuesRef = useRef(new Map<string, string>());
   const undoRef = useRef<EditCommand[]>([]);
   const redoRef = useRef<EditCommand[]>([]);
@@ -51,6 +53,7 @@ export function DraftEditorForm({
     setStatus("saving");
     try {
       await action(formData);
+      router.refresh();
       setStatus("saved");
       undoRef.current = [];
       redoRef.current = [];

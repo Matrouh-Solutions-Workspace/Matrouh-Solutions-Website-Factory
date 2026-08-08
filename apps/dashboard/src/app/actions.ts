@@ -708,13 +708,6 @@ export async function toggleWebsitePublicationAction(formData: FormData): Promis
         },
       });
       if (!website) return "missing" as const;
-      if (website.status === "published") {
-        await transaction.website.update({
-          where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
-          data: { status: "unpublished", revision: { increment: 1 } },
-        });
-        return "unpublished" as const;
-      }
       if (
         website.subscription &&
         (website.subscription.status !== "active" || website.subscription.expiresAt <= new Date())
@@ -753,7 +746,7 @@ export async function toggleWebsitePublicationAction(formData: FormData): Promis
       {
         organizationId: context.organization.id,
         actorId: context.actor.id,
-        correlationId: `toggle-publish:${websiteId}`,
+        correlationId: `publish-update:${websiteId}`,
       },
       { websiteId },
     );
@@ -1322,8 +1315,9 @@ export async function previewWebsiteAction(formData: FormData): Promise<void> {
     throw error;
   }
 
-  const rendererUrl = dashboardConfig.FACTORY_RENDERER_PUBLIC_URL.replace(/\/$/, "");
-  redirect(`${rendererUrl}/preview/?token=${encodeURIComponent(token)}`);
+  const gatewayUrl = new URL("/preview/", dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL);
+  gatewayUrl.searchParams.set("token", token);
+  redirect(gatewayUrl.toString());
 }
 
 export async function rollbackPublicationAction(formData: FormData): Promise<void> {
@@ -2752,6 +2746,8 @@ export async function updateNavigationNodeAction(formData: FormData): Promise<vo
       const labels = jsonRecord(node.labelJson);
       const updatedLabels = Object.fromEntries(
         website.locales.map(({ locale }) => {
+          if (!formData.has(`label:${locale}`))
+            return [locale, localizedJsonLabel(node.labelJson, locale)];
           const label = cleanText(formData.get(`label:${locale}`), 160);
           return [locale, label || localizedJsonLabel(node.labelJson, website.defaultLocale)];
         }),

@@ -20,6 +20,12 @@ export function middleware(request: NextRequest): NextResponse {
   if (pathname === "/matrouh-solutions" || pathname.startsWith("/en/matrouh-solutions")) {
     return rendererRewrite(request, dashboardHost);
   }
+  if (pathname === "/preview" || pathname.startsWith("/preview/")) {
+    return rendererRewrite(request, dashboardHost);
+  }
+  if (pathname === "/template-preview" || pathname.startsWith("/template-preview/")) {
+    return rendererRewrite(request, dashboardHost);
+  }
   if (pathname === "/dashboard") return rewriteDashboard(request, "/");
   if (pathname.startsWith("/dashboard/")) return rewriteDashboard(request, pathname.slice(10));
 

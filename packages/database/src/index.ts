@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "./generated/client/client";
 
@@ -13,16 +13,31 @@ export function databaseUrlFromEnv(environment: Record<string, string | undefine
   return connectionString;
 }
 export function createDatabaseClient(options: DatabaseOptions): PrismaClient {
+  const localPrismaDev = process.env.FACTORY_DATABASE_UNIQUE_PREPARED_STATEMENTS === "true";
+  const adapterOptions = localPrismaDev
+    ? { statementNameGenerator: uniqueStatementNameGenerator() }
+    : {};
   return new PrismaClient({
-    // Dashboard rendering and server actions run concurrently; keep a real pool so one
-    // request never attempts to issue another query over an in-flight connection.
-    adapter: new PrismaPg({
-      connectionString: directPostgresUrl(options.connectionString),
-      max: 10,
-      connectionTimeoutMillis: 10_000,
-      idleTimeoutMillis: 10_000,
-    }),
+    // Prisma's embedded development server cannot safely interleave portal operations.
+    // Production uses a normal pool; local Prisma Dev serializes database access.
+    adapter: new PrismaPg(
+      {
+        connectionString: directPostgresUrl(options.connectionString),
+        max: localPrismaDev ? 1 : 10,
+        connectionTimeoutMillis: 10_000,
+        idleTimeoutMillis: 10_000,
+      },
+      adapterOptions,
+    ),
   });
+}
+
+function uniqueStatementNameGenerator(): () => string {
+  const prefix = randomBytes(10).toString("hex");
+  let sequence = 0;
+  // Prisma Postgres' embedded development server corrupts unnamed statements and
+  // does not cache stable named statements. Use this only for local development.
+  return () => `factory_${prefix}_${++sequence}`;
 }
 
 export function directPostgresUrl(connectionString: string): string {

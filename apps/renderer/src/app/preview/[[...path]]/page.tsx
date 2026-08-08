@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { PublicationSnapshot } from "@factory/publication-contract";
 import { instantiateTemplateRuntime } from "@factory/template-runtime";
+import { AppearanceToggle } from "@/app/appearance-toggle";
 import { textDirection } from "@/server/locale-navigation";
 import { loadPreviewSite } from "@/server/site";
 
@@ -59,6 +60,7 @@ export default async function PreviewPage({ params, searchParams }: PreviewPrope
         site.snapshot.template.id,
         site.snapshot.template.version,
       )}
+      data-template-version={site.snapshot.template.version}
       dir={textDirection(rendered.locale)}
       lang={rendered.locale}
       style={
@@ -79,6 +81,11 @@ export default async function PreviewPage({ params, searchParams }: PreviewPrope
           />
           <strong>{site.snapshot.website.name}</strong>
         </a>
+        <AppearanceToggle
+          initialAppearance={appearance}
+          locale={rendered.locale}
+          storageKey={`factory:appearance:preview:${site.organizationId}:${site.snapshot.website.name}`}
+        />
       </header>
       <main>{rendered.node}</main>
     </div>

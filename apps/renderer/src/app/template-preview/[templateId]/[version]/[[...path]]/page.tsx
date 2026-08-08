@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
+import { AppearanceToggle } from "@/app/appearance-toggle";
 import { loadCatalogPreview } from "@/server/catalog-preview";
 import { localizedPageRoute, textDirection } from "@/server/locale-navigation";
 
@@ -48,6 +49,7 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
         preview.snapshot.template.id,
         preview.snapshot.template.version,
       )}
+      data-template-version={preview.snapshot.template.version}
       dir={textDirection(preview.rendered.locale)}
       lang={preview.rendered.locale}
       style={themeVariables(preview.snapshot.theme)}
@@ -64,6 +66,11 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
               {item.label}
             </a>
           ))}
+          <AppearanceToggle
+            initialAppearance={appearance}
+            locale={preview.rendered.locale}
+            storageKey={`factory:appearance:template:${preview.snapshot.template.id}:${preview.snapshot.template.version}`}
+          />
         </nav>
       </header>
       <main>{preview.rendered.node}</main>

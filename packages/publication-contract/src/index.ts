@@ -25,7 +25,12 @@ const safePublicUrl = z
   .refine((value) => {
     if (value.startsWith("/")) return true;
     try {
-      return new URL(value).protocol === "https:";
+      const url = new URL(value);
+      return (
+        url.protocol === "https:" ||
+        (url.protocol === "http:" &&
+          (url.hostname === "localhost" || url.hostname.endsWith(".localhost")))
+      );
     } catch {
       return false;
     }

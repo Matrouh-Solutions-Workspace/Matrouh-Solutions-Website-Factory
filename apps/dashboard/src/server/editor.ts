@@ -19,6 +19,7 @@ export interface WebsiteEditor {
     locales: string[];
     draftRevision: string;
     activePublicationId: string | null;
+    pendingUpdate: boolean;
     hostname: string | null;
     clientId: string | null;
     faviconAssetId: string | null;
@@ -30,6 +31,7 @@ export interface WebsiteEditor {
   navigation: {
     id: string;
     title: string;
+    locale: string | null;
     revision: string;
     nodes: { id: string; labels: Record<string, string>; kind: string; revision: string }[];
   }[];
@@ -99,6 +101,7 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
     async (transaction) => {
       const website = await transaction.website.findUnique({
         where: { organizationId_id: { organizationId: organization.id, id: websiteId } },
+        include: { activePublication: { select: { sourceDraftRevision: true } } },
       });
       if (!website) return null;
 
@@ -250,6 +253,10 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
       locales: editorData.locales.map((item) => item.locale),
       draftRevision: website.draftRevision.toString(),
       activePublicationId: website.activePublicationId,
+      pendingUpdate:
+        website.status === "published" &&
+        website.activePublication !== null &&
+        website.activePublication?.sourceDraftRevision !== website.draftRevision,
       hostname: editorData.domains[0]?.hostnameNormalized ?? null,
       clientId: website.clientId,
       faviconAssetId: website.faviconAssetId,
@@ -280,6 +287,7 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
       title:
         template.navigation.find((definition) => definition.id === navigation.definitionId)
           ?.title ?? navigation.definitionId,
+      locale: navigation.locale,
       revision: navigation.revision.toString(),
       nodes: navigation.nodes.map((node) => ({
         id: node.id,

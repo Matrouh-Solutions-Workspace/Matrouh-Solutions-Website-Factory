@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MediaPicker, type MediaPickerAsset } from "@/app/media-picker";
 
 type ListItem = Record<string, string | number | boolean>;
@@ -8,38 +8,16 @@ type ListItem = Record<string, string | number | boolean>;
 export function CoordinatePickerFields({
   latitude,
   longitude,
-  address,
 }: {
   readonly latitude: string;
   readonly longitude: string;
-  readonly address?: string | undefined;
 }) {
   const [point, setPoint] = useState({ latitude, longitude });
-  const [locationError, setLocationError] = useState("");
-  const coordinateQuery = validPoint(point.latitude, point.longitude)
-    ? `${point.latitude},${point.longitude}`
-    : address || "Matrouh, Egypt";
-
-  function useCurrentLocation() {
-    setLocationError("");
-    if (!navigator.geolocation) {
-      setLocationError("Location access is not available in this browser.");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) =>
-        setPoint({
-          latitude: position.coords.latitude.toFixed(6),
-          longitude: position.coords.longitude.toFixed(6),
-        }),
-      () => setLocationError("Location access was denied or could not be read."),
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }
 
   return (
     <fieldset className="coordinatePicker">
-      <legend>Google Maps location</legend>
+      <legend>Map coordinates</legend>
+      <p>Enter the exact latitude and longitude for this location.</p>
       <div className="coordinateInputs">
         <label>
           Latitude
@@ -66,20 +44,6 @@ export function CoordinatePickerFields({
           />
         </label>
       </div>
-      <div className="coordinateActions">
-        <button className="secondaryButton" onClick={useCurrentLocation} type="button">
-          Use my location
-        </button>
-        <a
-          className="buttonLink secondaryButton"
-          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinateQuery)}`}
-          rel="noreferrer"
-          target="_blank"
-        >
-          Open in Google Maps
-        </a>
-      </div>
-      {locationError && <small className="fieldError">{locationError}</small>}
     </fieldset>
   );
 }
@@ -104,7 +68,18 @@ export function StructuredListField({
     [initialJson, locationMode],
   );
   const [items, setItems] = useState<ListItem[]>(initialItems);
+  const serializedItems = JSON.stringify(items);
+  const serializedField = useRef<HTMLInputElement>(null);
+  const didMount = useRef(false);
   const editableKeys = useMemo(() => fieldKeys(items), [items]);
+
+  useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true;
+      return;
+    }
+    serializedField.current?.dispatchEvent(new Event("input", { bubbles: true }));
+  }, [serializedItems]);
 
   function update(index: number, key: string, value: string) {
     setItems((current) =>
@@ -137,7 +112,14 @@ export function StructuredListField({
   return (
     <fieldset className="structuredList">
       <legend>{label}</legend>
-      <input name={`jsonField:${fieldName}`} readOnly type="hidden" value={JSON.stringify(items)} />
+      <input
+        data-autosave
+        name={`jsonField:${fieldName}`}
+        readOnly
+        ref={serializedField}
+        type="hidden"
+        value={serializedItems}
+      />
       <div className="structuredListItems">
         {items.map((item, index) => (
           <article className="structuredListItem" key={String(item.id ?? index)}>
@@ -213,15 +195,6 @@ export function StructuredListField({
                 ),
               )}
             </div>
-            {locationMode && (
-              <LocationTools
-                item={item}
-                onLocate={(latitude, longitude) => {
-                  update(index, "latitude", String(latitude));
-                  update(index, "longitude", String(longitude));
-                }}
-              />
-            )}
           </article>
         ))}
         {items.length === 0 && <p className="structuredListEmpty">No items in this section.</p>}
@@ -230,59 +203,6 @@ export function StructuredListField({
         Add item
       </button>
     </fieldset>
-  );
-}
-
-function LocationTools({
-  item,
-  onLocate,
-}: {
-  readonly item: ListItem;
-  readonly onLocate: (latitude: number, longitude: number) => void;
-}) {
-  const [locationError, setLocationError] = useState("");
-  const query = coordinates(item) ?? String(item.address || item.title || "Matrouh, Egypt");
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-
-  function useCurrentLocation() {
-    setLocationError("");
-    if (!navigator.geolocation) {
-      setLocationError("Location access is not available in this browser.");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) =>
-        onLocate(
-          Number(position.coords.latitude.toFixed(6)),
-          Number(position.coords.longitude.toFixed(6)),
-        ),
-      () => setLocationError("Location access was denied or could not be read."),
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }
-
-  return (
-    <div className="locationTools">
-      <div className="locationToolsIcon" aria-hidden>
-        <svg viewBox="0 0 24 24">
-          <path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z" />
-          <circle cx="12" cy="9" r="2.3" />
-        </svg>
-      </div>
-      <div>
-        <strong>Google Maps location</strong>
-        <p>Use this device’s position or enter coordinates from Google Maps.</p>
-        {locationError && <small className="fieldError">{locationError}</small>}
-      </div>
-      <div className="locationToolActions">
-        <button className="secondaryButton" onClick={useCurrentLocation} type="button">
-          Use my location
-        </button>
-        <a className="buttonLink secondaryButton" href={mapsUrl} rel="noreferrer" target="_blank">
-          Open in Google Maps
-        </a>
-      </div>
-    </div>
   );
 }
 
@@ -318,20 +238,6 @@ function locationItem(item: ListItem): ListItem {
     latitude: item.latitude ?? 0,
     longitude: item.longitude ?? 0,
   };
-}
-
-function coordinates(item: ListItem): string | null {
-  const latitude = Number(item.latitude);
-  const longitude = Number(item.longitude);
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
-  if (latitude === 0 && longitude === 0) return null;
-  return `${latitude},${longitude}`;
-}
-
-function validPoint(latitude: string, longitude: string): boolean {
-  const lat = Number(latitude);
-  const lng = Number(longitude);
-  return Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
 }
 
 function typedValue(previous: string | number | boolean | undefined, value: string) {

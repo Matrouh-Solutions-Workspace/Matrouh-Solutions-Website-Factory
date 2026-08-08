@@ -168,11 +168,12 @@ console.log(JSON.stringify({ service: "worker", status: "ready", workerId, pid: 
 
 let nextMaintenanceAt = Date.now();
 let nextHeartbeatAt = 0;
+let workerHealthy = true;
 try {
   while (!abort.signal.aborted) {
     try {
       if (Date.now() >= nextHeartbeatAt) {
-        await recordHeartbeat("ready");
+        await recordHeartbeat(workerHealthy ? "ready" : "error");
         nextHeartbeatAt = Date.now() + 15_000;
       }
       if (Date.now() >= nextMaintenanceAt) {
@@ -185,26 +186,32 @@ try {
       const job = await claimJob();
       if (job) {
         await runJob(job, abort.signal);
+        workerHealthy = true;
         continue;
       }
 
       const event = await claimOutboxEvent();
       if (event) {
         await deliverOutboxEvent(event);
+        workerHealthy = true;
         continue;
       }
 
       const message = await claimOutboundMessage();
       if (message) {
         await deliverOutboundMessage(message);
+        workerHealthy = true;
         continue;
       }
 
       await sleep(2_000, abort.signal);
+      workerHealthy = true;
     } catch (error) {
+      workerHealthy = false;
       console.error(
         JSON.stringify({ service: "worker", event: "loop.retrying", ...errorDetails(error) }),
       );
+      await recordHeartbeat("error").catch(() => undefined);
       await sleep(2_000, abort.signal);
     }
   }

@@ -11,6 +11,7 @@ export interface DashboardWebsite {
   status: string;
   templateVersion: string;
   activePublicationId: string | null;
+  pendingUpdate: boolean;
   templateId: string;
   updatedAt: Date;
   domains: readonly { hostname: string; status: string }[];
@@ -94,6 +95,7 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
           orderBy: { updatedAt: "desc" },
           include: {
             domains: { orderBy: { hostnameNormalized: "asc" } },
+            activePublication: { select: { sourceDraftRevision: true } },
             _count: { select: { pages: true } },
           },
           take: 100,
@@ -155,6 +157,10 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
       templateId: website.templateId,
       templateVersion: website.templateVersion,
       activePublicationId: website.activePublicationId,
+      pendingUpdate:
+        website.status === "published" &&
+        website.activePublication !== null &&
+        website.activePublication?.sourceDraftRevision !== website.draftRevision,
       updatedAt: website.updatedAt,
       domains: website.domains.map((domain) => ({
         hostname: domain.hostnameDisplay,

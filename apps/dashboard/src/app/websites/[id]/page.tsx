@@ -9,6 +9,7 @@ import {
   moveSectionDraftAction,
   previewWebsiteAction,
   retryPublicationJobAction,
+  setWebsiteAvailabilityAction,
   toggleWebsitePublicationAction,
   uploadMediaAction,
   rollbackPublicationAction,
@@ -20,7 +21,6 @@ import {
   updateWebsiteIdentityAction,
   updateWebsiteBrandingAction,
   updateWebsiteLogoAction,
-  updateWebsiteAppearanceAction,
   updateWebsiteDefaultLocaleAction,
   updateWebsiteSettingsDraftAction,
   upgradeWebsiteTemplateAction,
@@ -86,16 +86,34 @@ export default async function WebsiteEditorPage({
           <form action={toggleWebsitePublicationAction}>
             <input name="websiteId" type="hidden" value={editor.website.id} />
             <PendingSubmit
-              disabled={editor.website.status !== "published" && publishPending}
-              pendingLabel={editor.website.status === "published" ? "Unpublishing…" : "Publishing…"}
+              disabled={
+                publishPending ||
+                (editor.website.status === "published" && !editor.website.pendingUpdate)
+              }
+              pendingLabel={editor.website.pendingUpdate ? "Publishing update…" : "Publishing…"}
             >
-              {editor.website.status === "published"
-                ? "Unpublish"
-                : publishPending
-                  ? "Publish queued"
-                  : "Publish"}
+              {publishPending
+                ? "Publish queued"
+                : editor.website.pendingUpdate
+                  ? "Publish update"
+                  : editor.website.status === "published"
+                    ? "Published"
+                    : "Publish"}
             </PendingSubmit>
           </form>
+          {editor.website.status === "published" && (
+            <form action={setWebsiteAvailabilityAction}>
+              <input name="websiteId" type="hidden" value={editor.website.id} />
+              <input name="status" type="hidden" value="unpublished" />
+              <ConfirmSubmit
+                className="secondaryButton dangerButton"
+                confirmation={`Unpublish “${editor.website.name}”? The current live version will stop receiving public traffic.`}
+                pendingLabel="Unpublishing…"
+              >
+                Unpublish
+              </ConfirmSubmit>
+            </form>
+          )}
           <form action={deleteWebsiteAction}>
             <input name="websiteId" type="hidden" value={editor.website.id} />
             <ConfirmSubmit
@@ -115,7 +133,9 @@ export default async function WebsiteEditorPage({
       <section aria-label="Website details" className="editorMetaBar">
         <div>
           <span>Status</span>
-          <strong className="status">{editor.website.status}</strong>
+          <strong className="status">
+            {editor.website.pendingUpdate ? "pending update" : editor.website.status}
+          </strong>
         </div>
         <div>
           <span>Draft revision</span>
@@ -273,30 +293,6 @@ export default async function WebsiteEditorPage({
           </form>
         </div>
       </div>
-
-      <form
-        action={updateWebsiteAppearanceAction}
-        className="panel localeManager"
-        hidden={setupStep !== "design"}
-      >
-        <div>
-          <p className="eyebrow">Template appearance</p>
-          <h2>Light or dark</h2>
-          <p>This choice is published with this website only.</p>
-        </div>
-        <input name="websiteId" type="hidden" value={editor.website.id} />
-        <label>
-          Color mode
-          <select
-            defaultValue={settingsValue(editor.settings?.content, "colorMode") ?? "light"}
-            name="colorMode"
-          >
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </label>
-        <PendingSubmit pendingLabel="Saving…">Save appearance</PendingSubmit>
-      </form>
 
       <form
         action={uploadMediaAction}
@@ -463,47 +459,57 @@ export default async function WebsiteEditorPage({
             </div>
             <span>{editor.navigation.length} menus</span>
           </div>
-          {editor.navigation.map((navigation) => (
-            <div className="navigationEditor" key={navigation.id}>
-              <strong>{navigation.title}</strong>
-              <div className="navigationNodeGrid">
-                {navigation.nodes.map((node) => (
-                  <form
-                    action={updateNavigationNodeAction}
-                    className="inlineEditForm"
-                    key={node.id}
-                  >
-                    <input name="websiteId" type="hidden" value={editor.website.id} />
-                    <input name="nodeId" type="hidden" value={node.id} />
-                    <input name="expectedRevision" type="hidden" value={node.revision} />
-                    <input
-                      name="websiteDraftRevision"
-                      type="hidden"
-                      value={editor.website.draftRevision}
-                    />
-                    <fieldset className="localizedNavigationLabels">
-                      <legend>{node.kind} labels</legend>
-                      {editor.website.locales.map((locale) => (
-                        <label key={locale}>
-                          {localeName(locale)}
-                          <input
-                            defaultValue={node.labels[locale] ?? ""}
-                            dir={locale === "ar" ? "rtl" : "ltr"}
-                            lang={locale}
-                            name={`label:${locale}`}
-                            required
-                          />
-                        </label>
-                      ))}
-                    </fieldset>
-                    <PendingSubmit className="inlineButton" pendingLabel="Saving...">
-                      Save
-                    </PendingSubmit>
-                  </form>
-                ))}
+          {editor.navigation.map((navigation) => {
+            const navigationLocales = navigation.locale
+              ? [navigation.locale]
+              : editor.website.locales;
+            return (
+              <div className="navigationEditor" key={navigation.id}>
+                <strong>
+                  {navigation.title}
+                  {navigation.locale ? ` — ${localeName(navigation.locale)}` : ""}
+                </strong>
+                <div className="navigationNodeGrid">
+                  {navigation.nodes.map((node) => (
+                    <form
+                      action={updateNavigationNodeAction}
+                      className="inlineEditForm"
+                      key={node.id}
+                    >
+                      <input name="websiteId" type="hidden" value={editor.website.id} />
+                      <input name="nodeId" type="hidden" value={node.id} />
+                      <input name="expectedRevision" type="hidden" value={node.revision} />
+                      <input
+                        name="websiteDraftRevision"
+                        type="hidden"
+                        value={editor.website.draftRevision}
+                      />
+                      <fieldset className="localizedNavigationLabels">
+                        <legend>
+                          {node.kind} label{navigationLocales.length === 1 ? "" : "s"}
+                        </legend>
+                        {navigationLocales.map((locale) => (
+                          <label key={locale}>
+                            {localeName(locale)}
+                            <input
+                              defaultValue={node.labels[locale] ?? ""}
+                              dir={locale === "ar" ? "rtl" : "ltr"}
+                              lang={locale}
+                              name={`label:${locale}`}
+                              required
+                            />
+                          </label>
+                        ))}
+                      </fieldset>
+                      <PendingSubmit className="inlineButton" pendingLabel="Saving...">
+                        Save
+                      </PendingSubmit>
+                    </form>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </section>
       )}
 
@@ -641,9 +647,6 @@ export default async function WebsiteEditorPage({
                           section.fields.map((field) =>
                             field.name === "longitude" ? null : field.name === "latitude" ? (
                               <CoordinatePickerFields
-                                address={
-                                  section.fields.find((item) => item.name === "address")?.value
-                                }
                                 key="location-coordinates"
                                 latitude={field.value}
                                 longitude={
@@ -903,9 +906,9 @@ function formatDate(value: Date): string {
 }
 
 function websitePublicUrl(hostname: string): string {
-  const renderer = new URL(dashboardConfig.FACTORY_RENDERER_PUBLIC_URL);
+  const dashboard = new URL(dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL);
   if (hostname.endsWith(".localhost") || hostname === "localhost") {
-    return `${renderer.protocol}//${hostname}${renderer.port ? `:${renderer.port}` : ""}/`;
+    return `${dashboard.protocol}//${hostname}${dashboard.port ? `:${dashboard.port}` : ""}/`;
   }
   return `https://${hostname}/`;
 }

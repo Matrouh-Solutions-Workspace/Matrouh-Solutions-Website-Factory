@@ -1,0 +1,7 @@
+{
+  "manifestFormatVersion": 1,
+  "templateId": "com.matrouh.doctor",
+  "templateVersion": "1.7.0",
+  "packageEntry": "./dist/index.js",
+  "generatedManifest": "./generated/matrouh.template.manifest.json"
+}

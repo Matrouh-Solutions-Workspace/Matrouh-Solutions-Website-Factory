@@ -107,6 +107,9 @@ export default async function WebsitesPage({
               </div>
               <div className="statusStack">
                 <span className="status">{website.status}</span>
+                {website.pendingUpdate && (
+                  <span className="jobStatus retryable">pending update</span>
+                )}
                 {website.latestPublishJob && (
                   <span className={`jobStatus ${website.latestPublishJob.status}`}>
                     {website.latestPublishJob.status}
@@ -117,7 +120,7 @@ export default async function WebsitesPage({
                 <a href={`/websites/${website.id}`}>Edit</a>
                 {website.domains[0] && (
                   <a
-                    href={`http://${website.domains[0].hostname}:3001`}
+                    href={`http://${website.domains[0].hostname}:3000`}
                     rel="noreferrer"
                     target="_blank"
                   >
@@ -129,18 +132,33 @@ export default async function WebsitesPage({
                   <PendingSubmit
                     className="inlineButton"
                     disabled={
-                      website.status !== "published" &&
-                      isActivePublicationJob(website.latestPublishJob?.status)
+                      isActivePublicationJob(website.latestPublishJob?.status) ||
+                      (website.status === "published" && !website.pendingUpdate)
                     }
-                    pendingLabel={website.status === "published" ? "Unpublishing…" : "Publishing…"}
+                    pendingLabel={website.pendingUpdate ? "Publishing update…" : "Publishing…"}
                   >
-                    {website.status === "published"
-                      ? "Unpublish"
-                      : isActivePublicationJob(website.latestPublishJob?.status)
-                        ? "Publish queued"
-                        : "Publish"}
+                    {isActivePublicationJob(website.latestPublishJob?.status)
+                      ? "Publish queued"
+                      : website.pendingUpdate
+                        ? "Publish update"
+                        : website.status === "published"
+                          ? "Published"
+                          : "Publish"}
                   </PendingSubmit>
                 </form>
+                {website.status === "published" && (
+                  <form action={setWebsiteAvailabilityAction}>
+                    <input name="websiteId" type="hidden" value={website.id} />
+                    <input name="status" type="hidden" value="unpublished" />
+                    <ConfirmSubmit
+                      className="inlineButton dangerButton"
+                      confirmation={`Unpublish “${website.name}”? The current live version will stop receiving public traffic.`}
+                      pendingLabel="Unpublishing…"
+                    >
+                      Unpublish
+                    </ConfirmSubmit>
+                  </form>
+                )}
                 {website.status !== "disabled" && (
                   <form action={setWebsiteAvailabilityAction}>
                     <input name="websiteId" type="hidden" value={website.id} />

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
 import { instantiateTemplateRuntime } from "@factory/template-runtime";
+import { AppearanceToggle } from "@/app/appearance-toggle";
 import { localeLinks, localizedPageRoute, textDirection } from "@/server/locale-navigation";
 import { rendererConfig } from "@/server/config";
 import { loadSite } from "@/server/site";
@@ -62,6 +63,7 @@ export default async function SitePage({ params }: PageProperties) {
   }
   const structuredData = rendered.seo?.structuredData ?? [];
   const navigation = navigationLinks(site.snapshot, rendered.locale);
+  const homeHref = localizedHomeRoute(site.snapshot, rendered.locale);
   const localizedRoutes = localeLinks(site.snapshot, `/${path.join("/")}`);
   const appearance = websiteSetting(site.snapshot, "colorMode") === "dark" ? "dark" : "light";
   const customLogo = websiteSetting(site.snapshot, "logoMediaId");
@@ -78,12 +80,13 @@ export default async function SitePage({ params }: PageProperties) {
         site.snapshot.template.id,
         site.snapshot.template.version,
       )}
+      data-template-version={site.snapshot.template.version}
       dir={textDirection(rendered.locale)}
       lang={rendered.locale}
       style={themeVariables(site.snapshot.theme)}
     >
       <header className="siteHeader">
-        <a className="siteBrand" href="/">
+        <a className="siteBrand" href={homeHref}>
           <img
             alt=""
             className="siteBrandMark"
@@ -112,6 +115,11 @@ export default async function SitePage({ params }: PageProperties) {
               ))}
             </span>
           )}
+          <AppearanceToggle
+            initialAppearance={appearance}
+            locale={rendered.locale}
+            storageKey={`factory:appearance:${host.toLowerCase()}`}
+          />
         </nav>
       </header>
       <main>{rendered.node}</main>
@@ -189,6 +197,12 @@ function runtime(site: NonNullable<Awaited<ReturnType<typeof loadSite>>>) {
 
 function routeForPage(snapshot: PublicationSnapshot, pageId: string, locale: string) {
   return localizedPageRoute(snapshot, pageId, locale) ?? "#";
+}
+
+function localizedHomeRoute(snapshot: PublicationSnapshot, locale: string): string {
+  const homePage = snapshot.pages.find((page) => page.locale === locale && page.slug === "/");
+  if (!homePage) return "/";
+  return localizedPageRoute(snapshot, homePage.id, locale) ?? "/";
 }
 
 function navigationLinks(
