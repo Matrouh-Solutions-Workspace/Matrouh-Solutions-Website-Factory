@@ -92,21 +92,43 @@ export async function GET(request: NextRequest): Promise<Response> {
 }
 
 async function loadOidcIdentity(providerKey: string, providerSubject: string) {
-  return dashboardDatabase().authIdentity.findUnique({
+  const client = dashboardDatabase();
+  const identity = await client.authIdentity.findUnique({
     where: { providerKey_providerSubject: { providerKey, providerSubject } },
     include: {
       user: {
-        include: {
-          memberships: {
-            where: { status: "active", organization: { status: "active" } },
-            orderBy: { createdAt: "asc" },
-            take: 1,
-            include: { roles: { include: { role: { select: { key: true } } } } },
-          },
-        },
+        select: { id: true, status: true },
       },
     },
   });
+  if (!identity || identity.user.status !== "active") return null;
+
+  // Memberships are tenant-isolated. At sign-in time the organization is not
+  // known yet, so resolve it through the narrowly scoped security-definer
+  // function before opening the tenant transaction that loads roles.
+  const membershipRows = await client.$queryRaw<
+    { membership_id: string; organization_id: string }[]
+  >`SELECT * FROM find_active_membership_for_user(${identity.userId}::uuid)`;
+  const membershipKey = membershipRows[0];
+  if (!membershipKey) return null;
+  const membership = await withTenantTransaction(
+    client,
+    {
+      organizationId: membershipKey.organization_id,
+      actorId: identity.userId,
+      correlationId: `oidc-membership:${identity.userId}`,
+    },
+    (transaction) =>
+      transaction.membership.findUnique({
+        where: { id: membershipKey.membership_id },
+        include: { roles: { include: { role: { select: { key: true } } } } },
+      }),
+  );
+  if (!membership) return null;
+  return {
+    userId: identity.userId,
+    user: { status: identity.user.status, memberships: [membership] },
+  };
 }
 
 async function claimClientInvitation(identity: OidcIdentity) {
