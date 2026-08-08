@@ -8,6 +8,7 @@
     "build": "tsup src/main.ts src/seed-demo.ts --format esm --clean",
     "start": "node dist/main.js",
     "seed:demo": "tsx src/seed-demo.ts",
+    "bootstrap:owner": "tsx src/bootstrap-owner.ts",
     "templates:sync": "tsx src/sync-templates.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
