@@ -49,7 +49,8 @@ export const template = defineTemplate({
     version: ids.version("2.0.0"),
     displayName: "Multi-specialty Clinic",
     author: "Matrouh Solutions",
-    description: "Connected multi-specialty clinic with care pathways, specialty discovery, booking, and live maps",
+    description:
+      "Connected multi-specialty clinic with care pathways, specialty discovery, booking, and live maps",
     category: "healthcare",
     features: [
       "localized-content",

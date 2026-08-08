@@ -3640,9 +3640,12 @@ input[type="file"] {
   background:
     linear-gradient(90deg, rgba(17, 17, 17, 0.055) 1px, transparent 1px),
     linear-gradient(rgba(17, 17, 17, 0.055) 1px, transparent 1px),
-    radial-gradient(circle at 50% -20%, rgba(245, 166, 35, 0.2), transparent 500px),
-    var(--canvas);
-  background-size: 24px 24px, 24px 24px, auto, auto;
+    radial-gradient(circle at 50% -20%, rgba(245, 166, 35, 0.2), transparent 500px), var(--canvas);
+  background-size:
+    24px 24px,
+    24px 24px,
+    auto,
+    auto;
   color: var(--ink);
 }
 .loginCard {

@@ -44,7 +44,8 @@ export const template = defineTemplate({
     version: ids.version("2.0.0"),
     displayName: "Doctor Practice",
     author: "Matrouh Solutions",
-    description: "Physician-led practice with biography, credentials, patient journey, appointments, and live map",
+    description:
+      "Physician-led practice with biography, credentials, patient journey, appointments, and live map",
     category: "healthcare",
     features: [
       "localized-content",

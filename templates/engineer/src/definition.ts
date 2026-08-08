@@ -44,7 +44,8 @@ export const template = defineTemplate({
     version: ids.version("2.0.0"),
     displayName: "Engineer Portfolio",
     author: "Matrouh Solutions",
-    description: "Project-led engineering studio with technical process, sectors, credentials, and measurable outcomes",
+    description:
+      "Project-led engineering studio with technical process, sectors, credentials, and measurable outcomes",
     category: "professional-services",
     features: [
       "localized-content",
