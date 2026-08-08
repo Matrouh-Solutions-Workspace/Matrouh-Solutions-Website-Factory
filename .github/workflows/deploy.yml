@@ -50,4 +50,5 @@ jobs:
         run: |
           git archive --format=tar.gz --output="$RELEASE_ID.tgz" HEAD
           scp "$RELEASE_ID.tgz" "$DEPLOY_USER@$DEPLOY_HOST:/opt/mportfolio/incoming/$RELEASE_ID.tgz"
-          ssh "$DEPLOY_USER@$DEPLOY_HOST" "sudo /usr/local/sbin/mportfolio-deploy $RELEASE_ID"
+          scp scripts/production/deploy-release.sh "$DEPLOY_USER@$DEPLOY_HOST:/opt/mportfolio/incoming/$RELEASE_ID.deploy"
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "sudo /usr/bin/install -D -o root -g root -m 0755 /opt/mportfolio/incoming/$RELEASE_ID.deploy /usr/local/sbin/mportfolio-deploy && sudo /usr/local/sbin/mportfolio-deploy $RELEASE_ID"

@@ -38,14 +38,27 @@ SQL
 run_as_factory '/usr/bin/corepack pnpm build'
 ln -sfn "$release" /opt/mportfolio/current.new
 mv -Tf /opt/mportfolio/current.new /opt/mportfolio/current
+systemctl enable factory-provider-bridge factory-renderer factory-dashboard factory-worker
 systemctl restart factory-provider-bridge factory-renderer factory-dashboard factory-worker
 
-for endpoint in \
-  http://127.0.0.1:3003/health \
-  http://127.0.0.1:3001/api/health \
-  http://127.0.0.1:3000/api/health; do
-  curl --fail --silent --show-error --retry 10 --retry-delay 1 "$endpoint" >/dev/null
-done
+wait_for_health() {
+  local name="$1"
+  shift
+  for attempt in $(seq 1 30); do
+    if "$@" >/dev/null; then
+      return 0
+    fi
+    if [ "$attempt" = 30 ]; then
+      echo "Health check did not become ready: $name" >&2
+      exit 1
+    fi
+    sleep 2
+  done
+}
+
+wait_for_health provider-bridge curl --fail --silent --show-error http://127.0.0.1:3003/health
+wait_for_health renderer curl --fail --silent --show-error http://127.0.0.1:3001/api/health
+wait_for_health dashboard curl --fail --silent --show-error -H 'Host: mportfolio.ink' http://127.0.0.1:3000/api/health
 
 find /opt/mportfolio/releases -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' \
   | sort -nr | tail -n +4 | cut -d ' ' -f2- | xargs -r rm -rf
