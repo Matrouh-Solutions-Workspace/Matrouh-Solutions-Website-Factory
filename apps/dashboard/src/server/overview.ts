@@ -3,6 +3,7 @@ import { requireDashboardContext } from "./auth";
 import { dashboardDatabase } from "./database";
 import { workerStatusFromHeartbeat, type WorkerStatus } from "./worker-status";
 import { dashboardConfig } from "./config";
+import { latestTemplateVersion } from "./template-versions";
 export { dashboardDatabase } from "./database";
 
 export interface DashboardWebsite {
@@ -71,7 +72,12 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
   // The pg adapter uses one connection and cannot safely overlap prepared queries.
   const templates = await client.templateCatalogEntry.findMany({
     orderBy: { displayName: "asc" },
-    include: { versions: { orderBy: { discoveredAt: "desc" }, take: 1 } },
+    include: {
+      versions: {
+        where: { lifecycleStatus: "ready", validationStatus: "valid" },
+        select: { templateVersion: true },
+      },
+    },
   });
   const workerHeartbeat = await client.serviceHeartbeat.findFirst({
     where: { service: "worker" },
@@ -183,7 +189,9 @@ function mapTemplates(templates: TemplateCatalogOverviewRow[]): DashboardOvervie
     displayName: template.displayName,
     category: template.category,
     lifecycleStatus: template.lifecycleStatus,
-    latestVersion: template.versions[0]?.templateVersion ?? null,
+    latestVersion: latestTemplateVersion(
+      template.versions.map((version) => version.templateVersion),
+    ),
   }));
 }
 

@@ -151,7 +151,7 @@ export async function createWebsiteAction(formData: FormData): Promise<void> {
     catalogVersion.validationStatus !== "valid" ||
     catalogVersion.artifactHash !== artifact.artifactHash
   ) {
-    throw new Error("TEMPLATE_NOT_READY");
+    redirect(templateUnavailableUrl());
   }
   const websiteId = randomUUID();
   const expiresAt = expiresOn
@@ -3952,6 +3952,10 @@ function cleanText(value: FormDataEntryValue | null, max: number): string {
 
 function subdomainUnavailableUrl(hostname: string): string {
   return `/websites?createError=subdomain-taken&hostname=${encodeURIComponent(hostname)}#create-website`;
+}
+
+function templateUnavailableUrl(): string {
+  return "/websites?createError=template-not-ready#create-website";
 }
 
 function parseSubscriptionExpiry(value: string): Date | null {

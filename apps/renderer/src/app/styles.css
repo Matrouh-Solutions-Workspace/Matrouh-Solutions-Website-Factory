@@ -2626,6 +2626,52 @@ footer {
   .siteRoot .siteHeader nav::-webkit-scrollbar {
     display: none;
   }
+  .siteRoot[data-template-id="com.matrouh.doctor"] .siteHeader {
+    align-items: stretch;
+    gap: 0.85rem;
+    padding-inline: 1rem;
+  }
+  .siteRoot[data-template-id="com.matrouh.doctor"] .siteBrand {
+    align-self: flex-start;
+    min-width: 0;
+  }
+  .siteRoot[data-template-id="com.matrouh.doctor"] .siteBrand strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .siteRoot[data-template-id="com.matrouh.doctor"] .siteHeader nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    overflow: visible;
+  }
+  .siteRoot[data-template-id="com.matrouh.doctor"] .siteHeader nav > a,
+  .siteRoot[data-template-id="com.matrouh.doctor"] .appearanceToggle {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0.55rem 0.7rem;
+  }
+  .siteRoot[data-template-id="com.matrouh.doctor"] .siteHeader nav > a {
+    border: 1px solid color-mix(in srgb, var(--theme-colors-border) 78%, transparent);
+    border-radius: 999px;
+  }
+  .siteRoot[data-template-id="com.matrouh.doctor"] .siteHeader nav > a::after {
+    display: none;
+  }
+  .siteRoot[data-template-id="com.matrouh.doctor"] .localeSwitcher {
+    justify-content: center;
+    margin-inline-start: 0;
+    padding-inline-start: 0;
+    border: 1px solid color-mix(in srgb, var(--theme-colors-border) 78%, transparent);
+    border-inline-start: 1px solid color-mix(in srgb, var(--theme-colors-border) 78%, transparent);
+    border-radius: 999px;
+  }
+  .siteRoot[data-template-id="com.matrouh.doctor"] .appearanceToggle {
+    width: 100%;
+  }
   .siteRoot section {
     padding-inline: 1.25rem;
   }

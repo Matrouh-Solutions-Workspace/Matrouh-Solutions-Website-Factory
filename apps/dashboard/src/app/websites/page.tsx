@@ -273,7 +273,9 @@ export default async function WebsitesPage({
           creationError={
             filters.createError === "subdomain-taken"
               ? `${filters.hostname ?? "That subdomain"} is already in use. Choose another subdomain.`
-              : undefined
+              : filters.createError === "template-not-ready"
+                ? "That template version is no longer available. Choose the latest version and try again."
+                : undefined
           }
           clients={overview.clients.map((client) => ({
             id: client.id,
@@ -287,11 +289,17 @@ export default async function WebsitesPage({
             isDefault: domain.isDefault,
             hostedWebsiteCount: domain.hostedWebsiteCount,
           }))}
-          templates={overview.templates.map((template) => ({
-            id: template.templateId,
-            label: `${template.displayName} ${template.latestVersion ?? ""}`,
-            value: `${template.templateId}@${template.latestVersion ?? "1.0.0"}`,
-          }))}
+          templates={overview.templates.flatMap((template) =>
+            template.latestVersion
+              ? [
+                  {
+                    id: template.templateId,
+                    label: `${template.displayName} ${template.latestVersion}`,
+                    value: `${template.templateId}@${template.latestVersion}`,
+                  },
+                ]
+              : [],
+          )}
         />
       </section>
     </>
