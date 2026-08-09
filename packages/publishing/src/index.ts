@@ -227,7 +227,6 @@ export class S3PublicationArtifactStore implements PublicationArtifactStore {
           CacheControl: "private, max-age=31536000, immutable",
           IfNoneMatch: "*",
           Metadata: { contentHash: snapshotHash(snapshot) },
-          ServerSideEncryption: "AES256",
         }),
       );
     } catch (error) {
