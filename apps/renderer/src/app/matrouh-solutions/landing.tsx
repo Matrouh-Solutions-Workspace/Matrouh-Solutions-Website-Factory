@@ -202,7 +202,11 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           </div>
         </section>
 
-        <section aria-label={locale === "ar" ? "مميزات" : "Highlights"} className={styles.proof} data-reveal="scale">
+        <section
+          aria-label={locale === "ar" ? "مميزات" : "Highlights"}
+          className={styles.proof}
+          data-reveal="scale"
+        >
           {text.proof.map(([title, body], index) => (
             <article key={title} style={{ "--item-index": index } as CSSProperties}>
               <span aria-hidden="true">0{index + 1}</span>
@@ -219,7 +223,12 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           </div>
           <div className={styles.cardGrid}>
             {text.services.map(([title, body], index) => (
-              <article data-reveal="card" key={title} className="transition duration-200 ease-in-out" style={{ "--item-index": index, transition:"0.2s" } as CSSProperties}>
+              <article
+                data-reveal="card"
+                key={title}
+                className="transition duration-200 ease-in-out"
+                style={{ "--item-index": index, transition: "0.2s" } as CSSProperties}
+              >
                 <span>0{index + 1}</span>
                 <i aria-hidden="true">↗</i>
                 <h3>{title}</h3>
@@ -229,7 +238,11 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           </div>
         </section>
 
-        <section className={`${styles.section} ${styles.processSection}`} data-section="02" id="process">
+        <section
+          className={`${styles.section} ${styles.processSection}`}
+          data-section="02"
+          id="process"
+        >
           <div aria-hidden="true" className={styles.processGlow} />
           <div className={styles.sectionHead} data-reveal="heading">
             <p className={styles.eyebrow}>{text.processEyebrow}</p>
@@ -237,7 +250,12 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           </div>
           <div className={styles.process}>
             {text.process.map(([number, title, body], index) => (
-              <article data-reveal="process" key={number} className="transition duration-200 ease-in-out" style={{ "--item-index": index, transition: "0.2s" } as CSSProperties}>
+              <article
+                data-reveal="process"
+                key={number}
+                className="transition duration-200 ease-in-out"
+                style={{ "--item-index": index, transition: "0.2s" } as CSSProperties}
+              >
                 <span>{number}</span>
                 <div>
                   <h3>{title}</h3>
@@ -249,12 +267,17 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
         </section>
 
         <section className={styles.cta} data-reveal="scale" id="contact">
-          <div aria-hidden="true" className={styles.ctaMark}>M</div>
+          <div aria-hidden="true" className={styles.ctaMark}>
+            M
+          </div>
           <p className={styles.eyebrow}>{text.ctaEyebrow}</p>
           <h2>{text.ctaTitle}</h2>
           <p>{text.ctaBody}</p>
           <div className={styles.ctaAction}>
-            <a href="mailto:support@matrouh.solutions">{text.cta}<span aria-hidden="true">↗</span></a>
+            <a href="mailto:support@matrouh.solutions">
+              {text.cta}
+              <span aria-hidden="true">↗</span>
+            </a>
             <small>{text.ctaNote}</small>
           </div>
         </section>
@@ -288,7 +311,9 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
             <span>© Matrouh Solutions</span>
             <nav aria-label={locale === "ar" ? "روابط التذييل" : "Footer navigation"}>
               {text.nav.map(([label, href]) => (
-                <a href={href} key={href}>{label}</a>
+                <a href={href} key={href}>
+                  {label}
+                </a>
               ))}
               <a href={text.languageHref} hrefLang={locale === "ar" ? "en" : "ar"}>
                 {text.language}

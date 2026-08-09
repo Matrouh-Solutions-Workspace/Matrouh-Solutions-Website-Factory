@@ -4323,7 +4323,9 @@ input[type="file"] {
   background: var(--primary);
   opacity: 0;
   transform: scaleY(0.2);
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 .appShell .navGroup > a.active::before,
 .appShell .navGroup > a:hover::before {
@@ -4339,8 +4341,7 @@ input[type="file"] {
   padding: clamp(28px, 4vw, 48px);
   border: 2px solid #111111;
   background:
-    radial-gradient(circle at 85% 15%, rgba(245, 166, 35, 0.23), transparent 24%),
-    #151719;
+    radial-gradient(circle at 85% 15%, rgba(245, 166, 35, 0.23), transparent 24%), #151719;
   color: #ffffff;
   box-shadow: 8px 8px 0 var(--primary);
 }
@@ -4456,7 +4457,10 @@ input[type="file"] {
   border: 1px solid var(--ink);
   background: var(--surface-soft);
   color: var(--ink);
-  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
 }
 .appShell .stats article:hover .statHead > span {
   background: var(--ink);
@@ -4538,7 +4542,10 @@ input[type="file"] {
   letter-spacing: 0.04em;
   text-decoration: none;
   text-transform: uppercase;
-  transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
 }
 .appShell .quickRail a:hover {
   background: var(--ink);
@@ -4554,7 +4561,10 @@ input[type="file"] {
 .appShell .workspaceGrid > .panel {
   position: relative;
   overflow: hidden;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 .appShell .workspaceGrid > .panel::before {
   content: "";
@@ -4569,13 +4579,16 @@ input[type="file"] {
   box-shadow: 6px 6px 0 var(--primary);
   transform: translate(-2px, -2px);
 }
-.appShell .catalogPanel::before { background: #111111 !important; }
-.appShell .operationsPanel::before { background: #16a36a !important; }
+.appShell .catalogPanel::before {
+  background: #111111 !important;
+}
+.appShell .operationsPanel::before {
+  background: #16a36a !important;
+}
 .appShell .createPanel {
   background:
     linear-gradient(90deg, rgba(17, 17, 17, 0.04) 1px, transparent 1px),
-    linear-gradient(rgba(17, 17, 17, 0.04) 1px, transparent 1px),
-    var(--surface);
+    linear-gradient(rgba(17, 17, 17, 0.04) 1px, transparent 1px), var(--surface);
   background-size: 18px 18px;
 }
 .appShell .website,
@@ -4601,21 +4614,39 @@ input[type="file"] {
   width: 100%;
 }
 @keyframes dashboardRise {
-  from { opacity: 0; transform: translateY(18px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes dashboardOrbit {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 @keyframes dashboardStatus {
-  75%, 100% { box-shadow: 0 0 0 11px rgba(74, 222, 128, 0); }
+  75%,
+  100% {
+    box-shadow: 0 0 0 11px rgba(74, 222, 128, 0);
+  }
 }
 @media (max-width: 980px) {
-  .appShell .quickRail { align-items: stretch; flex-direction: column; }
-  .appShell .quickRail nav { justify-content: flex-start; }
+  .appShell .quickRail {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .appShell .quickRail nav {
+    justify-content: flex-start;
+  }
 }
 @media (max-width: 900px) {
-  .appShell .appFrame::before { right: 0; }
+  .appShell .appFrame::before {
+    right: 0;
+  }
 }
 @media (max-width: 600px) {
   .appShell .overviewHero {
@@ -4624,14 +4655,34 @@ input[type="file"] {
     padding: 26px 20px;
     box-shadow: 5px 5px 0 var(--primary);
   }
-  .appShell .overviewHero::after { top: 16px; right: 18px; }
-  .appShell .overviewHero h1 { font-size: 2rem; }
-  .appShell .stats { margin: 0 5px; }
-  .appShell .stats article { min-height: 122px; }
-  .appShell .statValue { align-items: flex-start; flex-direction: column; gap: 2px; }
-  .appShell .statValue small { text-align: left; }
-  .appShell .quickRail nav { display: grid; grid-template-columns: 1fr 1fr; }
-  .appShell .quickRail a { justify-content: space-between; }
+  .appShell .overviewHero::after {
+    top: 16px;
+    right: 18px;
+  }
+  .appShell .overviewHero h1 {
+    font-size: 2rem;
+  }
+  .appShell .stats {
+    margin: 0 5px;
+  }
+  .appShell .stats article {
+    min-height: 122px;
+  }
+  .appShell .statValue {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .appShell .statValue small {
+    text-align: left;
+  }
+  .appShell .quickRail nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .appShell .quickRail a {
+    justify-content: space-between;
+  }
 }
 
 /* Website settings forms need a calmer vertical rhythm than dense data tables. */

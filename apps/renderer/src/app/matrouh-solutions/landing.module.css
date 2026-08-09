@@ -582,7 +582,10 @@
     linear-gradient(rgba(17, 19, 24, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(17, 19, 24, 0.035) 1px, transparent 1px),
     radial-gradient(circle at 72% 18%, rgba(255, 204, 0, 0.18), transparent 24%);
-  background-size: 48px 48px, 48px 48px, auto;
+  background-size:
+    48px 48px,
+    48px 48px,
+    auto;
   mask-image: linear-gradient(to bottom, black 45%, transparent 100%);
 }
 .scrollMarker {
@@ -597,7 +600,9 @@
   pointer-events: none;
 }
 .header {
-  transition: background 200ms ease, border-color 200ms ease;
+  transition:
+    background 200ms ease,
+    border-color 200ms ease;
 }
 .header::after {
   content: "";
@@ -655,10 +660,14 @@
   animation: scrollDot 1.7s ease-in-out infinite;
 }
 .heroVisual {
-  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 420ms ease;
+  transition:
+    transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 420ms ease;
 }
 .heroVisual:hover {
-  box-shadow: 30px 30px 0 var(--yellow), 0 42px 110px rgba(17, 19, 24, 0.2);
+  box-shadow:
+    30px 30px 0 var(--yellow),
+    0 42px 110px rgba(17, 19, 24, 0.2);
   transform: rotate(0deg) translateY(-8px);
 }
 [dir="rtl"] .heroVisual:hover {
@@ -695,7 +704,10 @@
 .proof article {
   position: relative;
   overflow: hidden;
-  transition: transform 220ms ease, background 220ms ease, border-color 220ms ease;
+  transition:
+    transform 220ms ease,
+    background 220ms ease,
+    border-color 220ms ease;
 }
 .proof article:hover {
   z-index: 1;
@@ -743,7 +755,10 @@
 .cardGrid article {
   position: relative;
   overflow: hidden;
-  transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease;
+  transition:
+    transform 260ms ease,
+    box-shadow 260ms ease,
+    border-color 260ms ease;
 }
 .cardGrid article::before {
   content: "";
@@ -754,7 +769,9 @@
   border-radius: 50%;
   background: var(--yellow);
   opacity: 0.08;
-  transition: transform 350ms ease, opacity 350ms ease;
+  transition:
+    transform 350ms ease,
+    opacity 350ms ease;
 }
 .cardGrid article:hover {
   border-color: var(--ink);
@@ -795,7 +812,9 @@
 .process article {
   position: relative;
   overflow: hidden;
-  transition: padding 220ms ease, background 220ms ease;
+  transition:
+    padding 220ms ease,
+    background 220ms ease;
 }
 .process article::before {
   content: "";
@@ -844,8 +863,7 @@
   overflow: hidden;
   background:
     linear-gradient(90deg, rgba(17, 19, 24, 0.035) 1px, transparent 1px),
-    linear-gradient(rgba(17, 19, 24, 0.035) 1px, transparent 1px),
-    white;
+    linear-gradient(rgba(17, 19, 24, 0.035) 1px, transparent 1px), white;
   background-size: 28px 28px;
 }
 .ctaMark {
@@ -878,7 +896,9 @@
   font-weight: 850;
   text-decoration: none;
   box-shadow: 0 14px 34px rgba(172, 138, 0, 0.2);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 .ctaAction > a:hover {
   box-shadow: 8px 8px 0 var(--ink);
@@ -928,35 +948,85 @@
   transform: translate(-5px, -5px);
 }
 @keyframes processDot {
-  0% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.6); transform: translateY(-50%) scale(0.6); }
-  65% { box-shadow: 0 0 0 13px rgba(255, 204, 0, 0); transform: translateY(-50%) scale(1.25); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0); transform: translateY(-50%) scale(1); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.6);
+    transform: translateY(-50%) scale(0.6);
+  }
+  65% {
+    box-shadow: 0 0 0 13px rgba(255, 204, 0, 0);
+    transform: translateY(-50%) scale(1.25);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
+    transform: translateY(-50%) scale(1);
+  }
 }
 @keyframes scrollDot {
-  0%, 100% { opacity: 0; transform: translate(-50%, 0); }
-  35% { opacity: 1; }
-  70% { opacity: 0; transform: translate(-50%, 10px); }
+  0%,
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+  35% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
 }
 @keyframes markerPulse {
-  0%, 100% { opacity: 0.35; }
-  50% { opacity: 0.9; }
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.9;
+  }
 }
 @media (max-width: 880px) {
-  .scrollCue { display: none; }
-  .section[data-section]::before { top: 70px; }
-  .proof article + article { border-inline-start: 1px solid #dedbd2; }
-  .proof article { border-bottom-width: 1px; }
+  .scrollCue {
+    display: none;
+  }
+  .section[data-section]::before {
+    top: 70px;
+  }
+  .proof article + article {
+    border-inline-start: 1px solid #dedbd2;
+  }
+  .proof article {
+    border-bottom-width: 1px;
+  }
 }
 @media (max-width: 520px) {
-  .heroVisualFrame { padding: 30px 12px 18px 0; }
-  [dir="rtl"] .heroVisualFrame { padding: 30px 0 18px 12px; }
-  .heroVisual:hover { transform: rotate(0deg); }
-  .visualBadge { inset-inline-end: 0; }
-  .cardGrid article:hover { box-shadow: 6px 6px 0 var(--yellow); }
-  .process article::before { inset-inline-start: 12px; }
-  .process article > span { padding-inline-start: 0; }
-  .ctaAction { align-items: stretch; flex-direction: column; }
-  .ctaAction > a { justify-content: space-between; }
+  .heroVisualFrame {
+    padding: 30px 12px 18px 0;
+  }
+  [dir="rtl"] .heroVisualFrame {
+    padding: 30px 0 18px 12px;
+  }
+  .heroVisual:hover {
+    transform: rotate(0deg);
+  }
+  .visualBadge {
+    inset-inline-end: 0;
+  }
+  .cardGrid article:hover {
+    box-shadow: 6px 6px 0 var(--yellow);
+  }
+  .process article::before {
+    inset-inline-start: 12px;
+  }
+  .process article > span {
+    padding-inline-start: 0;
+  }
+  .ctaAction {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .ctaAction > a {
+    justify-content: space-between;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .page *,
@@ -967,7 +1037,10 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .page [data-reveal] { opacity: 1 !important; transform: none !important; }
+  .page [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* Floating, section-aware landing navigation. */
@@ -1039,7 +1112,10 @@
   gap: 7px;
   padding: 0 13px;
   border-radius: 9px;
-  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
 }
 .navLinks a small {
   color: #9a7d00;
@@ -1128,22 +1204,38 @@
   scroll-margin-top: 112px;
 }
 @media (max-width: 1000px) {
-  .navLinks a { padding-inline: 10px; }
-  .navLinks a small { display: none; }
+  .navLinks a {
+    padding-inline: 10px;
+  }
+  .navLinks a small {
+    display: none;
+  }
 }
 @media (max-width: 1120px) {
-  .header { gap: 18px; }
-  .header .brand { padding-inline: 5px 9px; }
-  .header .brand small { display: none; }
-  .navLinks a { padding-inline: 10px; }
-  .navLinks a small { display: none; }
+  .header {
+    gap: 18px;
+  }
+  .header .brand {
+    padding-inline: 5px 9px;
+  }
+  .header .brand small {
+    display: none;
+  }
+  .navLinks a {
+    padding-inline: 10px;
+  }
+  .navLinks a small {
+    display: none;
+  }
   .header .portal,
   [dir="rtl"] .header .portal {
     width: 44px;
     min-width: 44px;
     padding: 6px;
   }
-  .header .portal > span { display: none; }
+  .header .portal > span {
+    display: none;
+  }
   .header .portal:hover {
     box-shadow: none;
     transform: none;
@@ -1159,10 +1251,18 @@
     padding: 7px;
     border-radius: 15px;
   }
-  .header .brand { padding-inline: 5px 10px; }
-  .header nav { flex: 0 0 auto; }
-  .header nav a.portal { display: inline-flex; }
-  .navLinks { display: none; }
+  .header .brand {
+    padding-inline: 5px 10px;
+  }
+  .header nav {
+    flex: 0 0 auto;
+  }
+  .header nav a.portal {
+    display: inline-flex;
+  }
+  .navLinks {
+    display: none;
+  }
   .mobileNav {
     position: fixed;
     z-index: 55;
@@ -1203,12 +1303,32 @@
   .mobileNav a[data-current] small {
     color: #6f5900;
   }
-  .footer { padding-bottom: 100px; }
+  .footer {
+    padding-bottom: 100px;
+  }
 }
 @media (max-width: 520px) {
-  .header .brand strong { font-size: 0.82rem; }
-  .header .language { min-width: 64px; min-height: 40px; padding-inline: 10px; font-size: 0.72rem; }
-  .header .portal { width: 42px; min-height: 42px; padding: 5px; }
-  .header .portal i { width: 30px; height: 30px; }
-  .mobileNav { right: 10px; bottom: 10px; left: 10px; }
+  .header .brand strong {
+    font-size: 0.82rem;
+  }
+  .header .language {
+    min-width: 64px;
+    min-height: 40px;
+    padding-inline: 10px;
+    font-size: 0.72rem;
+  }
+  .header .portal {
+    width: 42px;
+    min-height: 42px;
+    padding: 5px;
+  }
+  .header .portal i {
+    width: 30px;
+    height: 30px;
+  }
+  .mobileNav {
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+  }
 }

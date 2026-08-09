@@ -67,7 +67,9 @@ export default async function Dashboard() {
         <div>
           <div className="overviewMeta">
             <p className="eyebrow">{headerDate()}</p>
-            <span><i /> Live workspace</span>
+            <span>
+              <i /> Live workspace
+            </span>
           </div>
           <h1>{overview.organization?.name ?? "Website Factory"}</h1>
           <p className="sub">A clear view of your websites, delivery status, and recent work.</p>
@@ -81,7 +83,9 @@ export default async function Dashboard() {
           <article key={label} style={{ "--stat-index": index } as CSSProperties}>
             <div className="statHead">
               <p>{label}</p>
-              <span><Icon name={icon} /></span>
+              <span>
+                <Icon name={icon} />
+              </span>
             </div>
             <div className="statValue">
               <strong>{value}</strong>
@@ -92,14 +96,27 @@ export default async function Dashboard() {
       </section>
       <section aria-label="Quick actions" className="quickRail">
         <div>
-          <span><Icon name="spark" /></span>
-          <p><strong>Move your workspace forward</strong><small>Jump directly to the tools you use most.</small></p>
+          <span>
+            <Icon name="spark" />
+          </span>
+          <p>
+            <strong>Move your workspace forward</strong>
+            <small>Jump directly to the tools you use most.</small>
+          </p>
         </div>
         <nav>
-          <a href="/dashboard/websites">Websites <b>↗</b></a>
-          <a href="/dashboard/templates">Templates <b>↗</b></a>
-          <a href="/dashboard/domains">Domains <b>↗</b></a>
-          <a href="/dashboard/monitoring">System health <b>↗</b></a>
+          <a href="/dashboard/websites">
+            Websites <b>↗</b>
+          </a>
+          <a href="/dashboard/templates">
+            Templates <b>↗</b>
+          </a>
+          <a href="/dashboard/domains">
+            Domains <b>↗</b>
+          </a>
+          <a href="/dashboard/monitoring">
+            System health <b>↗</b>
+          </a>
         </nav>
       </section>
       <section className="workspaceGrid">

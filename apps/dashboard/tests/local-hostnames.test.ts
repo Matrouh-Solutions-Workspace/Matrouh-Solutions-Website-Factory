@@ -14,9 +14,7 @@ describe("local hostnames", () => {
 
   it("builds a hostname under the selected hosting domain", () => {
     expect(hostedHostname("ia2d", "mportfolio.ink")).toBe("ia2d.mportfolio.ink");
-    expect(hostedHostname("ia2d.mportfolio.ink", "mportfolio.ink")).toBe(
-      "ia2d.mportfolio.ink",
-    );
+    expect(hostedHostname("ia2d.mportfolio.ink", "mportfolio.ink")).toBe("ia2d.mportfolio.ink");
   });
 
   it("recognizes a database hostname uniqueness conflict", () => {

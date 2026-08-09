@@ -36,13 +36,18 @@ export function LandingMotion() {
     const updateNavigation = () => {
       header?.toggleAttribute("data-scrolled", window.scrollY > 24);
       const activationLine = window.scrollY + Math.min(240, window.innerHeight * 0.36);
-      const active = navSections.filter((section) => {
-        const sectionTop = section.getBoundingClientRect().top + window.scrollY;
-        return sectionTop <= activationLine;
-      }).at(-1);
+      const active = navSections
+        .filter((section) => {
+          const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+          return sectionTop <= activationLine;
+        })
+        .at(-1);
 
       page.querySelectorAll<HTMLElement>("[data-nav-target]").forEach((link) => {
-        link.toggleAttribute("data-current", Boolean(active && link.dataset.navTarget === active.id));
+        link.toggleAttribute(
+          "data-current",
+          Boolean(active && link.dataset.navTarget === active.id),
+        );
       });
     };
     const scheduleNavigationUpdate = () => {
