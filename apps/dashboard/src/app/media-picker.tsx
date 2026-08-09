@@ -44,21 +44,18 @@ export function MediaPicker({
     (provisionalAsset?.id === selectedId ? provisionalAsset : undefined);
   const visibleAssets = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
+    const availableAssets =
+      provisionalAsset && !assets.some((asset) => asset.id === provisionalAsset.id)
+        ? [provisionalAsset, ...assets]
+        : assets;
     return normalized
-      ? assets.filter((asset) => asset.name.toLocaleLowerCase().includes(normalized))
-      : assets;
-  }, [assets, query]);
+      ? availableAssets.filter((asset) => asset.name.toLocaleLowerCase().includes(normalized))
+      : availableAssets;
+  }, [assets, provisionalAsset, query]);
 
   useEffect(() => {
     if (value === undefined) setInternalValue(defaultValue);
   }, [defaultValue, value]);
-
-  useEffect(
-    () => () => {
-      if (provisionalAsset?.url.startsWith("blob:")) URL.revokeObjectURL(provisionalAsset.url);
-    },
-    [provisionalAsset],
-  );
 
   function choose(assetId: string) {
     if (value === undefined) setInternalValue(assetId);
@@ -84,9 +81,9 @@ export function MediaPicker({
       setProvisionalAsset({
         id: result.assetId,
         name: file.name,
-        url: URL.createObjectURL(file),
+        url: result.url,
       });
-      setUploadStatus("Upload queued for processing and selected.");
+      setUploadStatus("Upload ready and selected.");
       choose(result.assetId);
     } catch {
       setUploadStatus("The image could not be uploaded. Please try again.");

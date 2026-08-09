@@ -48,13 +48,19 @@ export default async function TemplatePreviewPage({ params }: PreviewProperties)
           <img alt="" className="siteBrandMark" src="/matrouh-logo.png" />
           <strong>{preview.snapshot.website.name}</strong>
         </a>
-        <nav aria-label="Preview navigation">
-          {navigation.map((item) => (
-            <a href={`${preview.prefix}${item.href}`} key={item.id}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
+        <details className="siteNavigation">
+          <summary aria-label={preview.rendered.locale === "ar" ? "فتح القائمة" : "Open menu"}>
+            <span aria-hidden className="siteMenuIcon" />
+            <span>{preview.rendered.locale === "ar" ? "القائمة" : "Menu"}</span>
+          </summary>
+          <nav aria-label="Preview navigation">
+            {navigation.map((item) => (
+              <a href={`${preview.prefix}${item.href}`} key={item.id}>
+                {item.label}
+              </a>
+            ))}
+          </nav>
+        </details>
       </header>
       <main>{preview.rendered.node}</main>
       <footer className="siteFooter">

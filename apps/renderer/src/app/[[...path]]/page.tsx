@@ -94,33 +94,39 @@ export default async function SitePage({ params }: PageProperties) {
           />
           <strong>{site.snapshot.website.name}</strong>
         </a>
-        <nav aria-label="Main navigation">
-          {navigation.map((item) => (
-            <a href={item.href} key={item.id}>
-              {item.label}
-            </a>
-          ))}
-          {localizedRoutes.length > 1 && (
-            <span aria-label="Language" className="localeSwitcher" role="group">
-              {localizedRoutes.map((item) => (
-                <a
-                  aria-current={item.current ? "page" : undefined}
-                  dir={textDirection(item.locale)}
-                  href={item.href}
-                  key={item.locale}
-                  lang={item.locale}
-                >
-                  {localeLabel(item.locale)}
-                </a>
-              ))}
-            </span>
-          )}
-          <AppearanceToggle
-            initialAppearance={appearance}
-            locale={rendered.locale}
-            storageKey={`factory:appearance:${host.toLowerCase()}`}
-          />
-        </nav>
+        <details className="siteNavigation">
+          <summary aria-label={rendered.locale === "ar" ? "فتح القائمة" : "Open menu"}>
+            <span aria-hidden className="siteMenuIcon" />
+            <span>{rendered.locale === "ar" ? "القائمة" : "Menu"}</span>
+          </summary>
+          <nav aria-label="Main navigation">
+            {navigation.map((item) => (
+              <a href={item.href} key={item.id}>
+                {item.label}
+              </a>
+            ))}
+            {localizedRoutes.length > 1 && (
+              <span aria-label="Language" className="localeSwitcher" role="group">
+                {localizedRoutes.map((item) => (
+                  <a
+                    aria-current={item.current ? "page" : undefined}
+                    dir={textDirection(item.locale)}
+                    href={item.href}
+                    key={item.locale}
+                    lang={item.locale}
+                  >
+                    {localeLabel(item.locale)}
+                  </a>
+                ))}
+              </span>
+            )}
+            <AppearanceToggle
+              initialAppearance={appearance}
+              locale={rendered.locale}
+              storageKey={`factory:appearance:${host.toLowerCase()}`}
+            />
+          </nav>
+        </details>
       </header>
       <main>{rendered.node}</main>
       {structuredData.map((document, index) => (

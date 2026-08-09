@@ -40,7 +40,7 @@ import { workerStatusFromHeartbeat } from "@/server/worker-status";
 import { renewalResumeStatus } from "@/server/subscriptions";
 import { defaultSubscriptionExpiry } from "@/server/subscription-dates";
 import { isSupportedWebsiteLocale, websiteLanguageSelection } from "@/server/website-languages";
-import { mediaStorageKey } from "@/server/media-storage";
+import { dashboardMediaPath, mediaStorageKey } from "@/server/media-storage";
 import { canReuseActivePublication } from "@/server/publication-toggle";
 
 const templatesRoot = resolve(workspaceRoot, dashboardConfig.FACTORY_TEMPLATE_DIRECTORY);
@@ -2065,9 +2065,9 @@ export async function uploadMediaAction(formData: FormData): Promise<void> {
 
 export async function uploadMediaForPickerAction(
   formData: FormData,
-): Promise<{ assetId: string } | null> {
+): Promise<{ assetId: string; url: string } | null> {
   const assetId = await uploadMedia(formData);
-  return assetId ? { assetId } : null;
+  return assetId ? { assetId, url: dashboardMediaPath(assetId) } : null;
 }
 
 async function uploadMedia(formData: FormData): Promise<string | undefined> {

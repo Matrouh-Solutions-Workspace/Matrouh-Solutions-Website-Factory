@@ -9,6 +9,6 @@ coverage/
 *.log
 packages/database/src/generated/
 artifacts/
-media/
+/media/
 .factory/
 *.tsbuildinfo

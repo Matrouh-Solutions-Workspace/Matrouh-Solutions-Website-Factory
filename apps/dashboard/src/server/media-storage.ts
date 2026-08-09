@@ -6,3 +6,7 @@ export function mediaStorageKey(input: {
 }): string {
   return `media/${input.organizationId}/${input.contentHash}-${input.assetId}.${input.extension}`;
 }
+
+export function dashboardMediaPath(assetId: string): string {
+  return `/dashboard/api/media/${encodeURIComponent(assetId)}`;
+}

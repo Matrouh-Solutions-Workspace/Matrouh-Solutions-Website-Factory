@@ -4,7 +4,7 @@ import type { JsonValue } from "@factory/template-sdk";
 import { discoverTemplates, loadTemplate } from "@factory/template-loader";
 import { dashboardDatabase } from "@/server/overview";
 import { requireDashboardContext } from "@/server/auth";
-import { dashboardConfig } from "@/server/config";
+import { dashboardMediaPath } from "@/server/media-storage";
 
 const templatesRoot = join(process.cwd(), "..", "..", "templates");
 
@@ -175,7 +175,7 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
               kind: "image",
             },
             orderBy: { createdAt: "desc" },
-            select: { id: true, originalFilename: true, storageKey: true },
+            select: { id: true, originalFilename: true },
             take: 100,
           })
         : [];
@@ -265,7 +265,7 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
     mediaAssets: editorData.mediaAssets.map((asset) => ({
       id: asset.id,
       name: asset.originalFilename,
-      url: mediaUrl(asset.storageKey, editorData.domains[0]?.hostnameNormalized),
+      url: dashboardMediaPath(asset.id),
     })),
     latestPublishJob: editorData.latestPublishJob,
     settings: editorData.settingsDrafts[0]
@@ -365,15 +365,6 @@ export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEdito
       readyAt: publication.readyAt,
     })),
   };
-}
-
-function mediaUrl(storageKey: string, hostname: string | undefined): string {
-  const filename = storageKey.split("/").at(-1) ?? "";
-  if (!hostname || !filename) return "";
-  const dashboardUrl = new URL(dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL);
-  const localPort = hostname.endsWith(".localhost") ? dashboardUrl.port : "";
-  const scheme = hostname.endsWith(".localhost") ? dashboardUrl.protocol : "https:";
-  return `${scheme}//${hostname}${localPort ? `:${localPort}` : ""}/media/${encodeURIComponent(filename)}`;
 }
 
 function seoValues(value: unknown): WebsiteEditor["pages"][number]["seo"] {
