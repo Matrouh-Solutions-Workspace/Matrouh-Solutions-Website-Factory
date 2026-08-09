@@ -7,7 +7,7 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "build": "pnpm db:generate && turbo run build --concurrency=1",
+    "build": "pnpm db:generate && turbo run build --filter=@templates/* --concurrency=1 && turbo run build --concurrency=1",
     "dev": "turbo run dev",
     "typecheck": "pnpm db:generate && turbo run typecheck",
     "test": "turbo run test",
@@ -20,7 +20,7 @@
     "db:verify": "pnpm --filter @factory/database verify:production",
     "seed:demo": "pnpm db:generate && turbo run build --filter=@factory/worker --filter=@templates/doctor --filter=@templates/clinic --filter=@templates/engineer --filter=@templates/doctor-v1 --filter=@templates/clinic-v1 --filter=@templates/doctor-v1-1 --filter=@templates/clinic-v1-1 --filter=@templates/doctor-v1-2 --filter=@templates/clinic-v1-2 --filter=@templates/doctor-v1-3 --filter=@templates/clinic-v1-3 --concurrency=1 && pnpm --filter @factory/worker seed:demo",
     "templates:sync": "pnpm db:generate && pnpm --filter @factory/worker templates:sync",
-    "check": "pnpm db:generate && turbo run lint && turbo run typecheck && pnpm test && turbo run build --concurrency=1"
+    "check": "pnpm db:generate && turbo run lint && turbo run typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
