@@ -29,6 +29,15 @@ export async function GET(
   const contentType = extension ? contentTypes[extension] : undefined;
   if (!contentType) return new Response("Not found", { status: 404 });
 
+  const providerBase = rendererConfig.FACTORY_MEDIA_PROVIDER_URL?.replace(/\/$/, "");
+  if (providerBase) {
+    return proxyProviderMedia(
+      `${providerBase}/factory-media/${site.organizationId}/${encodeURIComponent(filename)}`,
+      contentType,
+      filename,
+    );
+  }
+
   const publicBase = rendererConfig.FACTORY_MEDIA_PUBLIC_BASE_URL?.replace(/\/$/, "");
   if (publicBase) {
     return Response.redirect(
@@ -65,6 +74,48 @@ export async function GET(
       return new Response("Not found", { status: 404 });
     }
     console.error(JSON.stringify({ service: "renderer", event: "media.read_failed", filename }));
+    return new Response("Media unavailable", { status: 503 });
+  }
+}
+
+async function proxyProviderMedia(
+  url: string,
+  expectedContentType: string,
+  filename: string,
+): Promise<Response> {
+  try {
+    const upstream = await fetch(url, { cache: "no-store" });
+    if (upstream.status === 404) return new Response("Not found", { status: 404 });
+    if (!upstream.ok || !upstream.body) throw new Error(`MEDIA_PROVIDER_${upstream.status}`);
+
+    const contentLength = Number(upstream.headers.get("content-length"));
+    const contentType = upstream.headers.get("content-type")?.split(";", 1)[0]?.trim();
+    if (
+      contentType !== expectedContentType ||
+      !Number.isSafeInteger(contentLength) ||
+      contentLength < 1 ||
+      contentLength > rendererConfig.FACTORY_MAX_UPLOAD_BYTES
+    ) {
+      throw new Error("MEDIA_PROVIDER_RESPONSE_INVALID");
+    }
+
+    return new Response(upstream.body, {
+      headers: {
+        "Cache-Control": immutableCache,
+        "Content-Length": String(contentLength),
+        "Content-Type": contentType,
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        service: "renderer",
+        event: "media.provider_read_failed",
+        filename,
+        message: error instanceof Error ? error.message : String(error),
+      }),
+    );
     return new Response("Media unavailable", { status: 503 });
   }
 }
