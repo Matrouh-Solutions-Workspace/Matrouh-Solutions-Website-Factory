@@ -16,12 +16,12 @@ export function LoginForm({
     return (
       <section className="panel loginCard">
         <img alt="Matrouh Solutions" className="loginLogo" src="/matrouh-logo.png" />
-        <p className="eyebrow">Matrouh Factory</p>
-        <h1>Welcome back</h1>
-        <p>Continue through your organization&apos;s secure identity provider.</p>
-        {invalid ? <p role="alert">Sign-in could not be completed. Please try again.</p> : null}
+        <p className="eyebrow">Matrouh Solutions</p>
+        <h1>بوابة لوحة التحكم</h1>
+        <p>سجّل الدخول لإدارة مواقعك ومحتواك ونطاقاتك ونشرها من مكان واحد.</p>
+        {invalid ? <p role="alert">تعذّر تسجيل الدخول. يُرجى المحاولة مرة أخرى.</p> : null}
         <a className="buttonLink" href="/api/auth/start">
-          Continue with SSO
+          تسجيل الدخول
         </a>
       </section>
     );
@@ -29,11 +29,11 @@ export function LoginForm({
   return (
     <form action={loginAction} className="panel loginCard">
       <img alt="Matrouh Solutions" className="loginLogo" src="/matrouh-logo.png" />
-      <p className="eyebrow">Matrouh Factory</p>
-      <h1>Welcome back</h1>
-      <p>Sign in to manage websites, content, domains, and publications for your workspace.</p>
+      <p className="eyebrow">Matrouh Solutions</p>
+      <h1>بوابة لوحة التحكم</h1>
+      <p>سجّل الدخول لإدارة مواقعك ومحتواك ونطاقاتك ونشرها من مكان واحد.</p>
       {next ? <input name="next" type="hidden" value={next} /> : null}
-      <label htmlFor="email">Email</label>
+      <label htmlFor="email">البريد الإلكتروني</label>
       <input
         aria-invalid={invalid}
         autoComplete="email"
@@ -44,7 +44,7 @@ export function LoginForm({
         required
         type="email"
       />
-      <label htmlFor="password">Password</label>
+      <label htmlFor="password">كلمة المرور</label>
       <input
         autoComplete="current-password"
         id="password"
@@ -52,9 +52,9 @@ export function LoginForm({
         required
         type="password"
       />
-      {invalid ? <p role="alert">The email or password is incorrect.</p> : null}
+      {invalid ? <p role="alert">البريد الإلكتروني أو كلمة المرور غير صحيحين.</p> : null}
       <SubmitButton />
-      <small className="loginHint">Local demo: owner@matrouh.local / MatrouhDemo2026!</small>
+      <small className="loginHint">بوابة إدارة مواقع Matrouh Solutions</small>
     </form>
   );
 }
@@ -63,7 +63,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <button aria-disabled={pending} disabled={pending} type="submit">
-      {pending ? "Signing in…" : "Continue"}
+      {pending ? "جارٍ تسجيل الدخول…" : "تسجيل الدخول"}
     </button>
   );
 }

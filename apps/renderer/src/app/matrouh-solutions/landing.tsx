@@ -7,6 +7,7 @@ const copy = {
     direction: "rtl" as const,
     language: "English",
     languageHref: "/en/matrouh-solutions",
+    portal: "بوابة لوحة التحكم",
     nav: [
       ["الخدمات", "#services"],
       ["كيف نعمل", "#process"],
@@ -46,6 +47,7 @@ const copy = {
     direction: "ltr" as const,
     language: "العربية",
     languageHref: "/matrouh-solutions",
+    portal: "Control portal",
     nav: [
       ["Services", "#services"],
       ["Process", "#process"],
@@ -120,6 +122,9 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
             hrefLang={locale === "ar" ? "en" : "ar"}
           >
             {text.language}
+          </a>
+          <a className={styles.portal} href="/dashboard/login">
+            {text.portal}
           </a>
         </nav>
       </header>

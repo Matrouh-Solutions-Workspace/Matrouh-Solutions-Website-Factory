@@ -71,6 +71,26 @@
   border-radius: 999px;
   background: white;
 }
+.header .portal {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--yellow);
+  box-shadow: 4px 4px 0 var(--yellow);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.header .portal:hover {
+  color: var(--yellow);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--yellow);
+}
 .hero {
   display: grid;
   max-width: 1240px;
@@ -327,6 +347,9 @@
 @media (max-width: 880px) {
   .header nav a:not(.language) {
     display: none;
+  }
+  .header nav .portal {
+    display: inline-flex;
   }
   .hero {
     min-height: auto;
