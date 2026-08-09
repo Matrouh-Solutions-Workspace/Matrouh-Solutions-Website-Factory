@@ -74,7 +74,10 @@ export async function GET(request: NextRequest): Promise<Response> {
       },
     );
     const response = NextResponse.redirect(
-      new URL(isClientAccount ? "/dashboard/account" : "/dashboard", request.url),
+      new URL(
+        isClientAccount ? "/dashboard/account" : "/dashboard",
+        dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL,
+      ),
     );
     response.cookies.set(DASHBOARD_SESSION_COOKIE, `${membership.organizationId}.${token}`, {
       httpOnly: true,
