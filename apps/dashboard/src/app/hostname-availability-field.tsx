@@ -5,8 +5,10 @@ import { useEffect, useId, useState } from "react";
 export type HostnameAvailability = "idle" | "checking" | "available" | "unavailable" | "invalid";
 
 export function HostnameAvailabilityField({
+  hostingDomainId,
   onAvailabilityChange,
 }: {
+  readonly hostingDomainId?: string | undefined;
   readonly onAvailabilityChange?: ((status: HostnameAvailability) => void) | undefined;
 }) {
   const messageId = useId();
@@ -23,10 +25,12 @@ export function HostnameAvailabilityField({
       return;
     }
     const controller = new AbortController();
+    setStatus("checking");
+    onAvailabilityChange?.("checking");
     const timeout = window.setTimeout(() => {
-      setStatus("checking");
-      onAvailabilityChange?.("checking");
-      void fetch(`/api/domains/availability?hostname=${encodeURIComponent(trimmed)}`, {
+      const query = new URLSearchParams({ hostname: trimmed });
+      if (hostingDomainId) query.set("hostingDomainId", hostingDomainId);
+      void fetch(`/api/domains/availability?${query.toString()}`, {
         cache: "no-store",
         signal: controller.signal,
       })
@@ -52,11 +56,11 @@ export function HostnameAvailabilityField({
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [onAvailabilityChange, value]);
+  }, [hostingDomainId, onAvailabilityChange, value]);
 
   return (
     <label>
-      Local hostname
+      Website address
       <input
         aria-describedby={messageId}
         autoComplete="off"
@@ -65,9 +69,10 @@ export function HostnameAvailabilityField({
         onChange={(event) => setValue(event.target.value)}
         placeholder="north-coast-clinic"
         required
+        spellCheck={false}
         value={value}
       />
-      <span className={`availabilityFeedback ${status}`} id={messageId} role="status">
+      <span className={`availabilityFeedback ${status}`} dir="ltr" id={messageId} role="status">
         {availabilityMessage(status, hostname)}
       </span>
     </label>
@@ -79,5 +84,5 @@ function availabilityMessage(status: HostnameAvailability, hostname: string): st
   if (status === "available") return `${hostname} is available.`;
   if (status === "unavailable") return `${hostname} is already in use.`;
   if (status === "invalid") return "Enter a valid Latin-letter subdomain.";
-  return "Enter the exact subdomain you want. No suffix will be added.";
+  return "Enter the subdomain you want. The selected hosting domain will be added.";
 }

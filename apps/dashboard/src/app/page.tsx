@@ -1,7 +1,8 @@
 import { join } from "node:path";
+import type { CSSProperties } from "react";
 import { discoverTemplates } from "@factory/template-loader";
 import { previewWebsiteAction, toggleWebsitePublicationAction } from "@/app/actions";
-import { Icon } from "@/app/icons";
+import { Icon, type IconName } from "@/app/icons";
 import { PendingSubmit } from "@/app/pending-submit";
 import { PublicationStatusRefresh } from "@/app/publication-status-refresh";
 import { loadDashboardOverview } from "@/server/overview";
@@ -32,13 +33,42 @@ export default async function Dashboard() {
         lifecycleStatus: "ready",
         latestVersion: discovery.templateVersion,
       }));
+  const statCards = [
+    {
+      label: "Websites",
+      value: String(overview.stats.websites || websites.length),
+      note: `${overview.stats.publishedWebsites} published`,
+      icon: "websites",
+    },
+    {
+      label: "Templates",
+      value: String(overview.stats.templates || catalog.length),
+      note: "Validated catalog",
+      icon: "templates",
+    },
+    {
+      label: "Domains",
+      value: String(overview.stats.activeDomains),
+      note: "Active hostnames",
+      icon: "domains",
+    },
+    {
+      label: "Publish jobs",
+      value: String(overview.stats.activePublishJobs),
+      note: `${overview.stats.failedPublishJobs} failed`,
+      icon: "monitoring",
+    },
+  ] satisfies readonly { label: string; value: string; note: string; icon: IconName }[];
 
   return (
     <>
       <PublicationStatusRefresh active={hasActivePublication} />
-      <header>
+      <header className="overviewHero">
         <div>
-          <p className="eyebrow">{headerDate()}</p>
+          <div className="overviewMeta">
+            <p className="eyebrow">{headerDate()}</p>
+            <span><i /> Live workspace</span>
+          </div>
           <h1>{overview.organization?.name ?? "Website Factory"}</h1>
           <p className="sub">A clear view of your websites, delivery status, and recent work.</p>
         </div>
@@ -47,29 +77,33 @@ export default async function Dashboard() {
         </a>
       </header>
       <section className="stats">
-        {[
-          [
-            "Websites",
-            String(overview.stats.websites || websites.length),
-            `${overview.stats.publishedWebsites} published`,
-          ],
-          ["Templates", String(overview.stats.templates || catalog.length), "Validated catalog"],
-          ["Domains", String(overview.stats.activeDomains), "Active hostnames"],
-          [
-            "Publish jobs",
-            String(overview.stats.activePublishJobs),
-            `${overview.stats.failedPublishJobs} failed`,
-          ],
-        ].map(([label, value, note]) => (
-          <article key={label}>
-            <p>{label}</p>
-            <strong>{value}</strong>
-            <small>{note}</small>
+        {statCards.map(({ label, value, note, icon }, index) => (
+          <article key={label} style={{ "--stat-index": index } as CSSProperties}>
+            <div className="statHead">
+              <p>{label}</p>
+              <span><Icon name={icon} /></span>
+            </div>
+            <div className="statValue">
+              <strong>{value}</strong>
+              <small>{note}</small>
+            </div>
           </article>
         ))}
       </section>
+      <section aria-label="Quick actions" className="quickRail">
+        <div>
+          <span><Icon name="spark" /></span>
+          <p><strong>Move your workspace forward</strong><small>Jump directly to the tools you use most.</small></p>
+        </div>
+        <nav>
+          <a href="/dashboard/websites">Websites <b>↗</b></a>
+          <a href="/dashboard/templates">Templates <b>↗</b></a>
+          <a href="/dashboard/domains">Domains <b>↗</b></a>
+          <a href="/dashboard/monitoring">System health <b>↗</b></a>
+        </nav>
+      </section>
       <section className="workspaceGrid">
-        <div className="panel">
+        <div className="panel portfolioPanel">
           <div className="panelHead">
             <div>
               <p className="eyebrow">Portfolio</p>
@@ -145,7 +179,7 @@ export default async function Dashboard() {
             </div>
           )}
         </div>
-        <div className="panel">
+        <div className="panel catalogPanel">
           <div className="panelHead">
             <div>
               <p className="eyebrow">SDK catalog</p>
@@ -170,7 +204,7 @@ export default async function Dashboard() {
             <p className="empty">Run pnpm seed:demo to populate the catalog.</p>
           )}
         </div>
-        <div className="panel">
+        <div className="panel operationsPanel">
           <div className="panelHead">
             <div>
               <p className="eyebrow">Operations</p>

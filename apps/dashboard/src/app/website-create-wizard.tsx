@@ -35,6 +35,9 @@ export function WebsiteCreateWizard({
   const [step, setStep] = useState(0);
   const [languageMode, setLanguageMode] = useState("both");
   const [cadence, setCadence] = useState("monthly");
+  const [hostingDomainId, setHostingDomainId] = useState(
+    hostingDomains.find((domain) => domain.isDefault)?.id ?? hostingDomains[0]?.id ?? "",
+  );
   const [hostnameAvailability, setHostnameAvailability] = useState<HostnameAvailability>("idle");
   const handleHostnameAvailability = useCallback(
     (status: HostnameAvailability) => setHostnameAvailability(status),
@@ -78,15 +81,17 @@ export function WebsiteCreateWizard({
           Website name
           <input name="name" placeholder="North Coast Clinic" required />
         </label>
-        <HostnameAvailabilityField onAvailabilityChange={handleHostnameAvailability} />
+        <HostnameAvailabilityField
+          hostingDomainId={hostingDomainId || undefined}
+          onAvailabilityChange={handleHostnameAvailability}
+        />
         {hostingDomains.length > 0 && (
           <label>
             Hosting domain
             <select
               name="hostingDomainId"
-              defaultValue={
-                hostingDomains.find((domain) => domain.isDefault)?.id ?? hostingDomains[0]?.id
-              }
+              onChange={(event) => setHostingDomainId(event.target.value)}
+              value={hostingDomainId}
             >
               {hostingDomains.map((domain) => (
                 <option key={domain.id} value={domain.id}>

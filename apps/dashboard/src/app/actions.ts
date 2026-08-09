@@ -33,7 +33,7 @@ import { requestPublication } from "@factory/publishing";
 import { dashboardArtifactStore as artifactStore } from "@/server/artifact-store";
 import { dashboardDatabase } from "@/server/overview";
 import { requireDashboardContext } from "@/server/auth";
-import { isHostnameConflict, localHostname } from "@/server/local-hostnames";
+import { hostedHostname, isHostnameConflict, localHostname } from "@/server/local-hostnames";
 import { dashboardConfig, workspaceRoot } from "@/server/config";
 import { heartbeatProcessId, processIsRunning, startLocalWorker } from "@/server/worker-control";
 import { workerStatusFromHeartbeat } from "@/server/worker-status";
@@ -129,11 +129,7 @@ export async function createWebsiteAction(formData: FormData): Promise<void> {
       })
     : null;
   const hostname = hostingDomain
-    ? `${(hostnameInput || name)
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9-]+/g, "-")
-        .replace(/^-+|-+$/g, "")}.${hostingDomain.hostnameNormalized}`
+    ? hostedHostname(hostnameInput || name, hostingDomain.hostnameNormalized)
     : localHostname(hostnameInput || name);
   if (!hostname) return;
 

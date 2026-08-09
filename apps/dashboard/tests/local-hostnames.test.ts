@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isHostnameConflict, localHostname } from "../src/server/local-hostnames";
+import { hostedHostname, isHostnameConflict, localHostname } from "../src/server/local-hostnames";
 
 describe("local hostnames", () => {
   it("uses the requested slug without a generated suffix", () => {
@@ -10,6 +10,13 @@ describe("local hostnames", () => {
   it("rejects input that cannot form a hostname", () => {
     expect(localHostname("!!!")).toBeNull();
     expect(localHostname("---")).toBeNull();
+  });
+
+  it("builds a hostname under the selected hosting domain", () => {
+    expect(hostedHostname("ia2d", "mportfolio.ink")).toBe("ia2d.mportfolio.ink");
+    expect(hostedHostname("ia2d.mportfolio.ink", "mportfolio.ink")).toBe(
+      "ia2d.mportfolio.ink",
+    );
   });
 
   it("recognizes a database hostname uniqueness conflict", () => {
