@@ -55,9 +55,9 @@ export default async function WebsiteEditorPage({
   const publishPending = isActivePublicationJob(editor.latestPublishJob?.status);
 
   return (
-    <>
+    <div className="websiteEditorPage">
       <PublicationStatusRefresh active={publishPending && setupStep === "review"} />
-      <header>
+      <header className="websiteEditorHeader">
         <div>
           <p className="eyebrow">Draft editor</p>
           <h1>{editor.website.name}</h1>
@@ -117,20 +117,20 @@ export default async function WebsiteEditorPage({
           <form action={deleteWebsiteAction}>
             <input name="websiteId" type="hidden" value={editor.website.id} />
             <ConfirmSubmit
-              className="secondaryButton dangerButton"
+              className="secondaryButton dangerButton websiteDeleteAction"
               confirmation={`Delete “${editor.website.name}” permanently? Its domains, drafts, previews, and publication history will also be deleted. This cannot be undone.`}
               pendingLabel="Deleting…"
             >
               Delete website
             </ConfirmSubmit>
           </form>
-          <a className="textLink" href="/websites">
-            All websites
+          <a className="textLink editorBackLink" href="/websites">
+            ← All websites
           </a>
         </div>
       </header>
 
-      <section aria-label="Website details" className="editorMetaBar">
+      <section aria-label="Website details" className="editorMetaBar websiteEditorMeta">
         <div>
           <span>Status</span>
           <strong className="status">
@@ -846,7 +846,7 @@ export default async function WebsiteEditorPage({
         })}
         {editor.publications.length === 0 && <p className="empty">No publications yet.</p>}
       </section>
-    </>
+    </div>
   );
 }
 

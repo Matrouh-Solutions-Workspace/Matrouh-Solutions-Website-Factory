@@ -21,6 +21,30 @@ export function DraftSetupSteps({
   const currentIndex = steps.findIndex((step) => step.id === current);
   return (
     <nav aria-label="Website setup progress" className="draftSetupProgress">
+      <div className="draftSetupHeader">
+        <div>
+          <span>Setup workflow</span>
+          <strong>{steps[currentIndex]?.label}</strong>
+        </div>
+        <div className="draftSetupActions">
+          {currentIndex > 0 && (
+            <a
+              className="secondaryButton"
+              href={`/websites/${websiteId}?setupStep=${steps[currentIndex - 1]?.id}`}
+            >
+              Back
+            </a>
+          )}
+          {currentIndex < steps.length - 1 && (
+            <a
+              className="buttonLink"
+              href={`/websites/${websiteId}?setupStep=${steps[currentIndex + 1]?.id}`}
+            >
+              Continue
+            </a>
+          )}
+        </div>
+      </div>
       <ol>
         {steps.map((step, index) => (
           <li
@@ -37,24 +61,6 @@ export function DraftSetupSteps({
           </li>
         ))}
       </ol>
-      <div className="draftSetupActions">
-        {currentIndex > 0 && (
-          <a
-            className="secondaryButton"
-            href={`/websites/${websiteId}?setupStep=${steps[currentIndex - 1]?.id}`}
-          >
-            Back
-          </a>
-        )}
-        {currentIndex < steps.length - 1 && (
-          <a
-            className="buttonLink"
-            href={`/websites/${websiteId}?setupStep=${steps[currentIndex + 1]?.id}`}
-          >
-            Continue
-          </a>
-        )}
-      </div>
     </nav>
   );
 }

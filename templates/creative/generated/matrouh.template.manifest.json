@@ -1,0 +1,1535 @@
+{
+  "manifestFormatVersion": 1,
+  "manifest": {
+    "id": "com.matrouh.creative",
+    "version": "1.0.0",
+    "displayName": "Studio Folio",
+    "author": "Matrouh Solutions",
+    "description": "Editorial portfolio for designers, creative directors, photographers, and independent studios",
+    "category": "portfolio",
+    "features": [
+      "localized-content",
+      "editorial-hero",
+      "portrait-media",
+      "case-studies",
+      "services",
+      "creative-process",
+      "testimonials",
+      "semantic-theme",
+      "seo",
+      "contact-page"
+    ]
+  },
+  "compatibility": {
+    "sdkVersion": "1.0.0",
+    "minimumFactoryVersion": "0.1.0",
+    "minimumRendererVersion": "0.1.0",
+    "contentSchemaVersion": 1,
+    "themeSchemaVersion": 1,
+    "publicationSnapshotVersion": 1
+  },
+  "websiteSchema": {
+    "formatVersion": 1,
+    "typeName": "ZodObject",
+    "description": "Creative studio identity and contact settings.",
+    "jsonSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "email": {
+          "default": "hello@studio.example",
+          "type": "string",
+          "maxLength": 320,
+          "format": "email",
+          "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+        },
+        "phone": {
+          "default": "+20 100 000 0000",
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 40
+        },
+        "location": {
+          "default": "Cairo, Egypt / Available worldwide",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "enquiryPath": {
+          "default": "/contact",
+          "type": "string",
+          "pattern": "^\\/(?:[a-z0-9/_-]*)$"
+        },
+        "colorMode": {
+          "default": "light",
+          "type": "string",
+          "enum": [
+            "light",
+            "dark"
+          ]
+        },
+        "logoMediaId": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "schemaHash": "ed62c061a2360f37bb02b52f6067371d",
+    "fields": {
+      "/email": {
+        "label": "Email",
+        "control": "text",
+        "order": 1,
+        "sensitive": true
+      },
+      "/phone": {
+        "label": "Phone",
+        "control": "text",
+        "order": 2
+      },
+      "/location": {
+        "label": "Location",
+        "control": "text",
+        "order": 3,
+        "localization": "value"
+      },
+      "/enquiryPath": {
+        "label": "Enquiry path",
+        "control": "url",
+        "order": 4
+      },
+      "/colorMode": {
+        "label": "Template appearance",
+        "control": "select",
+        "order": 5,
+        "options": [
+          {
+            "label": "Light",
+            "value": "light"
+          },
+          {
+            "label": "Dark",
+            "value": "dark"
+          }
+        ]
+      },
+      "/logoMediaId": {
+        "label": "Custom logo",
+        "control": "media",
+        "order": 6,
+        "mediaKinds": [
+          "image"
+        ]
+      }
+    }
+  },
+  "capabilities": [],
+  "routes": [
+    {
+      "id": "com.matrouh.creative/route/page",
+      "pattern": "/:slug?",
+      "priority": 0,
+      "pageTypes": [
+        "com.matrouh.creative/page/home",
+        "com.matrouh.creative/page/work",
+        "com.matrouh.creative/page/contact"
+      ],
+      "localePolicy": "prefix-except-default",
+      "indexingPolicy": "inherit-page"
+    }
+  ],
+  "pages": [
+    {
+      "id": "com.matrouh.creative/page/home",
+      "title": "Home",
+      "slug": {
+        "kind": "fixed",
+        "defaultValue": "/",
+        "maximumLength": 1
+      },
+      "allowedSections": [
+        "com.matrouh.creative/section/hero",
+        "com.matrouh.creative/section/proof",
+        "com.matrouh.creative/section/work",
+        "com.matrouh.creative/section/services",
+        "com.matrouh.creative/section/approach",
+        "com.matrouh.creative/section/quote"
+      ],
+      "requiredSections": [
+        {
+          "sectionTypeId": "com.matrouh.creative/section/hero",
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "sectionTypeId": "com.matrouh.creative/section/work",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "defaultSections": [
+        {
+          "sectionTypeId": "com.matrouh.creative/section/hero"
+        },
+        {
+          "sectionTypeId": "com.matrouh.creative/section/proof"
+        },
+        {
+          "sectionTypeId": "com.matrouh.creative/section/work"
+        },
+        {
+          "sectionTypeId": "com.matrouh.creative/section/services"
+        },
+        {
+          "sectionTypeId": "com.matrouh.creative/section/approach"
+        },
+        {
+          "sectionTypeId": "com.matrouh.creative/section/quote"
+        }
+      ],
+      "supportsSEO": true,
+      "supportsNavigation": true,
+      "supportsIndexing": true,
+      "editor": {
+        "description": "Editorial portfolio landing page",
+        "icon": "home"
+      }
+    },
+    {
+      "id": "com.matrouh.creative/page/work",
+      "title": "Work",
+      "slug": {
+        "kind": "fixed",
+        "defaultValue": "work",
+        "maximumLength": 80
+      },
+      "allowedSections": [
+        "com.matrouh.creative/section/work",
+        "com.matrouh.creative/section/quote"
+      ],
+      "requiredSections": [
+        {
+          "sectionTypeId": "com.matrouh.creative/section/work",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "defaultSections": [
+        {
+          "sectionTypeId": "com.matrouh.creative/section/work"
+        },
+        {
+          "sectionTypeId": "com.matrouh.creative/section/quote"
+        }
+      ],
+      "supportsSEO": true,
+      "supportsNavigation": true,
+      "supportsIndexing": true,
+      "editor": {
+        "description": "Selected portfolio case studies",
+        "icon": "grid"
+      }
+    },
+    {
+      "id": "com.matrouh.creative/page/contact",
+      "title": "Contact",
+      "slug": {
+        "kind": "fixed",
+        "defaultValue": "contact",
+        "maximumLength": 80
+      },
+      "allowedSections": [
+        "com.matrouh.creative/section/contact"
+      ],
+      "requiredSections": [
+        {
+          "sectionTypeId": "com.matrouh.creative/section/contact",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "defaultSections": [
+        {
+          "sectionTypeId": "com.matrouh.creative/section/contact"
+        }
+      ],
+      "supportsSEO": true,
+      "supportsNavigation": true,
+      "supportsIndexing": true,
+      "editor": {
+        "description": "Project enquiry and availability",
+        "icon": "mail"
+      }
+    }
+  ],
+  "navigation": [
+    {
+      "id": "com.matrouh.creative/navigation/main",
+      "title": "Main navigation",
+      "maximumDepth": 2,
+      "allowedPageTypes": "all",
+      "ordering": "manual",
+      "localization": "localized-labels",
+      "allowedNodeKinds": [
+        "page",
+        "external"
+      ],
+      "editor": {
+        "description": "Portfolio header navigation"
+      }
+    }
+  ],
+  "components": [
+    {
+      "id": "com.matrouh.shared/widget/action-button",
+      "kind": "widget",
+      "title": "Action button",
+      "description": "Reusable accessible call-to-action link.",
+      "category": "actions",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "A safe internal or HTTPS action link.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "href": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "style": {
+              "type": "string",
+              "enum": [
+                "primary",
+                "secondary",
+                "text"
+              ]
+            }
+          },
+          "required": [
+            "label",
+            "href",
+            "style"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "e73c684478a6fa16a5e5562d8fc52df5",
+        "fields": {
+          "/label": {
+            "label": "Label",
+            "control": "text",
+            "order": 1,
+            "aiHint": "Use a short action phrase"
+          },
+          "/href": {
+            "label": "Destination",
+            "control": "url",
+            "order": 2
+          },
+          "/style": {
+            "label": "Style",
+            "control": "select",
+            "order": 3,
+            "options": [
+              {
+                "label": "Primary",
+                "value": "primary"
+              },
+              {
+                "label": "Secondary",
+                "value": "secondary"
+              },
+              {
+                "label": "Text",
+                "value": "text"
+              }
+            ]
+          }
+        }
+      },
+      "composedOf": [],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.shared/block/info-card",
+      "kind": "block",
+      "title": "Information card",
+      "description": "Reusable information card shared by first-party templates.",
+      "category": "content",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "A reusable title and body card.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "body": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "id",
+            "title",
+            "body"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "746858aae7753c28dd63ab7461efe3cb",
+        "fields": {
+          "/title": {
+            "label": "Title",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Body",
+            "control": "textarea",
+            "order": 2,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/widget/action-button"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.creative/section/hero",
+      "kind": "section",
+      "title": "Editorial hero",
+      "description": "Creative positioning, portrait, availability, and primary action.",
+      "category": "marketing",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "Editorial introduction with a customizable portrait and project action.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "eyebrow": {
+              "type": "string",
+              "maxLength": 90
+            },
+            "personName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
+            },
+            "body": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 700
+            },
+            "ctaLabel": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "ctaHref": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240,
+              "pattern": "^\\/(?:[a-z0-9/_-]*)$"
+            },
+            "availability": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "imageAlt": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 180
+            },
+            "heroMediaId": {
+              "default": null,
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "eyebrow",
+            "personName",
+            "title",
+            "body",
+            "ctaLabel",
+            "ctaHref",
+            "availability",
+            "imageAlt"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "522cc148d5f35be4d513df331666dac8",
+        "fields": {
+          "/eyebrow": {
+            "label": "Role or specialty",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/personName": {
+            "label": "Portfolio owner name",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/title": {
+            "label": "Headline",
+            "control": "text",
+            "order": 3,
+            "localization": "value",
+            "aiHint": "A short, distinctive creative point of view"
+          },
+          "/body": {
+            "label": "Introduction",
+            "control": "textarea",
+            "order": 4,
+            "localization": "value"
+          },
+          "/ctaLabel": {
+            "label": "Action label",
+            "control": "text",
+            "order": 5,
+            "localization": "value"
+          },
+          "/ctaHref": {
+            "label": "Action destination",
+            "control": "url",
+            "order": 6
+          },
+          "/availability": {
+            "label": "Availability",
+            "control": "text",
+            "order": 7,
+            "localization": "value"
+          },
+          "/imageAlt": {
+            "label": "Portrait description",
+            "control": "text",
+            "order": 8,
+            "localization": "value"
+          },
+          "/heroMediaId": {
+            "label": "Hero portrait",
+            "control": "media",
+            "order": 9,
+            "mediaKinds": [
+              "image"
+            ],
+            "aiHint": "Recommended 1600 x 1200 px editorial portrait with room around the subject"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/widget/action-button"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.creative/section/proof",
+      "kind": "section",
+      "title": "Proof strip",
+      "description": "Experience and outcome highlights.",
+      "category": "content",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "Compact proof points that establish scale and experience.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "eyebrow": {
+              "type": "string",
+              "maxLength": 90
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 140
+            },
+            "body": {
+              "type": "string",
+              "maxLength": 600
+            },
+            "items": {
+              "minItems": 1,
+              "maxItems": 4,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 140
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 700
+                  },
+                  "meta": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 140
+                  },
+                  "imageMediaId": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "body"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "eyebrow",
+            "title",
+            "body",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "ae93f0fe35eb748c5c3d604b923c5ebb",
+        "fields": {
+          "/eyebrow": {
+            "label": "Eyebrow",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/title": {
+            "label": "Section title",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Introduction",
+            "control": "textarea",
+            "order": 3,
+            "localization": "value"
+          },
+          "/items": {
+            "label": "Items",
+            "control": "list",
+            "order": 4,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/block/info-card"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.creative/section/work",
+      "kind": "section",
+      "title": "Selected work",
+      "description": "Visual case studies with concise outcomes.",
+      "category": "portfolio",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "Selected case studies with category and outcome.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "eyebrow": {
+              "type": "string",
+              "maxLength": 90
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 140
+            },
+            "body": {
+              "type": "string",
+              "maxLength": 600
+            },
+            "items": {
+              "minItems": 1,
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 140
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 700
+                  },
+                  "meta": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 140
+                  },
+                  "imageMediaId": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "body"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "eyebrow",
+            "title",
+            "body",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "fec42d5421fb83b9e4eaa22a95891623",
+        "fields": {
+          "/eyebrow": {
+            "label": "Eyebrow",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/title": {
+            "label": "Section title",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Introduction",
+            "control": "textarea",
+            "order": 3,
+            "localization": "value"
+          },
+          "/items": {
+            "label": "Items",
+            "control": "list",
+            "order": 4,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/block/info-card"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.creative/section/services",
+      "kind": "section",
+      "title": "Services",
+      "description": "Focused offers presented as an editorial capability list.",
+      "category": "content",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "A focused creative service offering.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "eyebrow": {
+              "type": "string",
+              "maxLength": 90
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 140
+            },
+            "body": {
+              "type": "string",
+              "maxLength": 600
+            },
+            "items": {
+              "minItems": 1,
+              "maxItems": 8,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 140
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 700
+                  },
+                  "meta": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 140
+                  },
+                  "imageMediaId": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "body"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "eyebrow",
+            "title",
+            "body",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "84458f07b2129080d74a6521b3b42317",
+        "fields": {
+          "/eyebrow": {
+            "label": "Eyebrow",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/title": {
+            "label": "Section title",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Introduction",
+            "control": "textarea",
+            "order": 3,
+            "localization": "value"
+          },
+          "/items": {
+            "label": "Items",
+            "control": "list",
+            "order": 4,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/block/info-card"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.creative/section/approach",
+      "kind": "section",
+      "title": "Creative approach",
+      "description": "A clear, collaborative process.",
+      "category": "content",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "A transparent creative process from question to launch.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "eyebrow": {
+              "type": "string",
+              "maxLength": 90
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 140
+            },
+            "body": {
+              "type": "string",
+              "maxLength": 600
+            },
+            "items": {
+              "minItems": 1,
+              "maxItems": 6,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 140
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 700
+                  },
+                  "meta": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 140
+                  },
+                  "imageMediaId": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "body"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "eyebrow",
+            "title",
+            "body",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "1df5847cb1e4900e54891cd7b1c62ef1",
+        "fields": {
+          "/eyebrow": {
+            "label": "Eyebrow",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/title": {
+            "label": "Section title",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Introduction",
+            "control": "textarea",
+            "order": 3,
+            "localization": "value"
+          },
+          "/items": {
+            "label": "Items",
+            "control": "list",
+            "order": 4,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/block/info-card"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.creative/section/quote",
+      "kind": "section",
+      "title": "Client quote",
+      "description": "A high-impact endorsement.",
+      "category": "testimonials",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "A featured client quotation and attribution.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "quote": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 700
+            },
+            "person": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "role": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          },
+          "required": [
+            "quote",
+            "person",
+            "role"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "6d63eb3631a764355615f7bf7bdb1f1d",
+        "fields": {
+          "/quote": {
+            "label": "Quote",
+            "control": "textarea",
+            "order": 1,
+            "localization": "value"
+          },
+          "/person": {
+            "label": "Client name",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/role": {
+            "label": "Client role",
+            "control": "text",
+            "order": 3,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/block/info-card"
+      ],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.creative/section/contact",
+      "kind": "section",
+      "title": "Contact",
+      "description": "Direct project enquiry and studio availability.",
+      "category": "contact",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "Availability, contact details, and a direct project invitation.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "eyebrow": {
+              "type": "string",
+              "maxLength": 90
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
+            },
+            "body": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 700
+            },
+            "email": {
+              "type": "string",
+              "maxLength": 320,
+              "format": "email",
+              "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+            },
+            "phone": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 40
+            },
+            "location": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "availability": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 180
+            }
+          },
+          "required": [
+            "eyebrow",
+            "title",
+            "body",
+            "email",
+            "phone",
+            "location",
+            "availability"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "a3b1ccd5835a6370d0031a8c19a9a247",
+        "fields": {
+          "/eyebrow": {
+            "label": "Eyebrow",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/title": {
+            "label": "Headline",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Introduction",
+            "control": "textarea",
+            "order": 3,
+            "localization": "value"
+          },
+          "/email": {
+            "label": "Email",
+            "control": "text",
+            "order": 4
+          },
+          "/phone": {
+            "label": "Phone",
+            "control": "text",
+            "order": 5
+          },
+          "/location": {
+            "label": "Location",
+            "control": "text",
+            "order": 6,
+            "localization": "value"
+          },
+          "/availability": {
+            "label": "Availability",
+            "control": "text",
+            "order": 7,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [
+        "com.matrouh.shared/block/info-card",
+        "com.matrouh.shared/widget/action-button"
+      ],
+      "capabilities": []
+    }
+  ],
+  "theme": {
+    "id": "com.matrouh.creative/theme/default",
+    "schemaVersion": 1,
+    "schema": {
+      "formatVersion": 1,
+      "typeName": "ZodObject",
+      "description": "Editorial portfolio design tokens.",
+      "jsonSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "colors": {
+            "type": "object",
+            "properties": {
+              "background": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "surface": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "surfaceVariant": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "primary": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "primaryForeground": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "secondary": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "accent": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "success": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "warning": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "danger": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "info": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "border": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "muted": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "heading": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              }
+            },
+            "required": [
+              "background",
+              "surface",
+              "surfaceVariant",
+              "primary",
+              "primaryForeground",
+              "secondary",
+              "accent",
+              "success",
+              "warning",
+              "danger",
+              "info",
+              "border",
+              "muted",
+              "text",
+              "heading"
+            ],
+            "additionalProperties": false
+          },
+          "layout": {
+            "type": "object",
+            "properties": {
+              "radii": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "shadows": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^[^;{}]+$"
+                }
+              },
+              "spacing": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "containerWidths": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "breakpoints": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              }
+            },
+            "required": [
+              "radii",
+              "shadows",
+              "spacing",
+              "containerWidths",
+              "breakpoints"
+            ],
+            "additionalProperties": false
+          },
+          "typography": {
+            "type": "object",
+            "properties": {
+              "fontFamilies": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^[^;{}]+$"
+                }
+              },
+              "fontSizes": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "fontWeights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 1000
+                }
+              },
+              "lineHeights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "number",
+                  "minimum": 0.8,
+                  "maximum": 3
+                }
+              }
+            },
+            "required": [
+              "fontFamilies",
+              "fontSizes",
+              "fontWeights",
+              "lineHeights"
+            ],
+            "additionalProperties": false
+          },
+          "motion": {
+            "type": "object",
+            "properties": {
+              "durations": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^\\d+(?:\\.\\d+)?(?:ms|s)$"
+                }
+              },
+              "curves": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100,
+                  "pattern": "^[^;{}]+$"
+                }
+              }
+            },
+            "required": [
+              "durations",
+              "curves"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "colors",
+          "layout",
+          "typography",
+          "motion"
+        ],
+        "additionalProperties": false
+      },
+      "schemaHash": "35816f87467157bae17e0e8404c713e8",
+      "fields": {}
+    }
+  },
+  "migrations": [],
+  "manifestHash": "bf260c758357bbb56c9f7b0f2ad6f3e8"
+}

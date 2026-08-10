@@ -9,11 +9,18 @@ import { workerConfig, workspaceRoot } from "./config";
 
 const database = createDatabaseClient({ connectionString: workerConfig.DATABASE_URL });
 const templatesRoot = resolve(workspaceRoot, workerConfig.FACTORY_TEMPLATE_DIRECTORY);
+const requestedTemplateId = process.env.FACTORY_TEMPLATE_SYNC_ID?.trim();
 let ready = 0;
 let quarantined = 0;
 
 try {
-  const candidates = await discoverTemplates(templatesRoot);
+  const discovered = await discoverTemplates(templatesRoot);
+  const candidates = requestedTemplateId
+    ? discovered.filter((candidate) => candidate.discovery.templateId === requestedTemplateId)
+    : discovered;
+  if (requestedTemplateId && candidates.length === 0) {
+    throw new Error(`TEMPLATE_NOT_DISCOVERED:${requestedTemplateId}`);
+  }
   for (const candidate of candidates) {
     const artifact = await loadTemplateArtifact(candidate);
     const template = artifact.definition;

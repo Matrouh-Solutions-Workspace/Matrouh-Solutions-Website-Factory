@@ -1,0 +1,7 @@
+{
+  "manifestFormatVersion": 1,
+  "templateId": "com.matrouh.creative",
+  "templateVersion": "1.0.0",
+  "packageEntry": "./dist/index.js",
+  "generatedManifest": "./generated/matrouh.template.manifest.json"
+}

@@ -1,4 +1,5 @@
 import type { JsonValue } from "@factory/template-sdk";
+import { creativeArabicDefaults } from "./arabic-creative-defaults";
 export interface SectionDraft {
   id: string;
   pageId: string;
@@ -18,6 +19,7 @@ export function rankedKey(index: number): string {
 }
 
 const arabicDefaults: Readonly<Record<string, string>> = Object.freeze({
+  ...creativeArabicDefaults,
   Home: "الرئيسية",
   Contact: "تواصل معنا",
   Locations: "الفروع",

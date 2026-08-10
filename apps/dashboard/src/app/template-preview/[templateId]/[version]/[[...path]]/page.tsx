@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
+import { TemplatePreviewNavigation } from "@/app/template-preview/template-preview-navigation";
 import { loadDashboardTemplatePreview } from "@/server/template-preview";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,7 @@ export default async function TemplatePreviewPage({ params }: PreviewProperties)
         preview.snapshot.template.id,
         preview.snapshot.template.version,
       )}
+      data-template-version={preview.snapshot.template.version}
       dir={preview.rendered.locale.toLowerCase().startsWith("ar") ? "rtl" : "ltr"}
       lang={preview.rendered.locale}
       style={themeVariables(preview.snapshot.theme)}
@@ -48,19 +50,14 @@ export default async function TemplatePreviewPage({ params }: PreviewProperties)
           <img alt="" className="siteBrandMark" src="/matrouh-logo.png" />
           <strong>{preview.snapshot.website.name}</strong>
         </a>
-        <details className="siteNavigation">
-          <summary aria-label={preview.rendered.locale === "ar" ? "فتح القائمة" : "Open menu"}>
-            <span aria-hidden className="siteMenuIcon" />
-            <span>{preview.rendered.locale === "ar" ? "القائمة" : "Menu"}</span>
-          </summary>
-          <nav aria-label="Preview navigation">
-            {navigation.map((item) => (
-              <a href={`${preview.prefix}${item.href}`} key={item.id}>
-                {item.label}
-              </a>
-            ))}
-          </nav>
-        </details>
+        <TemplatePreviewNavigation
+          ariaLabel="Preview navigation"
+          items={navigation.map((item) => ({
+            ...item,
+            href: `${preview.prefix}${item.href}`,
+          }))}
+          locale={preview.rendered.locale}
+        />
       </header>
       <main>{preview.rendered.node}</main>
       <footer className="siteFooter">

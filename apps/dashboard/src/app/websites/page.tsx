@@ -45,6 +45,13 @@ export default async function WebsitesPage({
   const hasActivePublication = overview.websites.some((website) =>
     isActivePublicationJob(website.latestPublishJob?.status),
   );
+  const publishedWebsiteCount = overview.websites.filter(
+    (website) => website.status === "published",
+  ).length;
+  const draftWebsiteCount = overview.websites.filter(
+    (website) => website.status === "draft",
+  ).length;
+  const pendingUpdateCount = overview.websites.filter((website) => website.pendingUpdate).length;
   return (
     <>
       <PublicationStatusRefresh active={hasActivePublication} />
@@ -58,8 +65,26 @@ export default async function WebsitesPage({
           New website
         </a>
       </header>
-      <section className="workspaceGrid">
-        <div className="panel">
+      <section aria-label="Website overview" className="websiteSummary">
+        <article>
+          <span>All websites</span>
+          <strong>{overview.websites.length}</strong>
+        </article>
+        <article>
+          <span>Published</span>
+          <strong>{publishedWebsiteCount}</strong>
+        </article>
+        <article>
+          <span>Drafts</span>
+          <strong>{draftWebsiteCount}</strong>
+        </article>
+        <article>
+          <span>Updates waiting</span>
+          <strong>{pendingUpdateCount}</strong>
+        </article>
+      </section>
+      <section className="workspaceGrid websitesWorkspace">
+        <div className="panel websiteInventoryPanel">
           <div className="panelHead">
             <div>
               <p className="eyebrow">Inventory</p>
@@ -98,12 +123,22 @@ export default async function WebsitesPage({
           {websites.map((website) => (
             <div className="website" key={website.id}>
               <div className="thumb">{initials(website.name)}</div>
-              <div>
+              <div className="websiteIdentity">
                 <strong>{website.name}</strong>
                 <p>
                   {website.templateId} | {website.templateVersion} | {website.pages} page
                   {website.pages === 1 ? "" : "s"}
                 </p>
+                {website.domains[0] && (
+                  <a
+                    className="websiteDomain"
+                    href={`http://${website.domains[0].hostname}:3000`}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {website.domains[0].hostname}
+                  </a>
+                )}
               </div>
               <div className="statusStack">
                 <span className="status">{website.status}</span>
@@ -116,78 +151,75 @@ export default async function WebsitesPage({
                   </span>
                 )}
               </div>
-              <div className="rowActions">
-                <a href={`/websites/${website.id}`}>Edit</a>
-                {website.domains[0] && (
-                  <a
-                    href={`http://${website.domains[0].hostname}:3000`}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Open
+              <div className="rowActions websiteActions">
+                <div className="websitePrimaryActions">
+                  <a className="websiteEditAction" href={`/websites/${website.id}`}>
+                    Edit site
                   </a>
-                )}
-                <form action={toggleWebsitePublicationAction}>
-                  <input name="websiteId" type="hidden" value={website.id} />
-                  <PendingSubmit
-                    className="inlineButton"
-                    disabled={
-                      isActivePublicationJob(website.latestPublishJob?.status) ||
-                      (website.status === "published" && !website.pendingUpdate)
-                    }
-                    pendingLabel={website.pendingUpdate ? "Publishing update…" : "Publishing…"}
-                  >
-                    {isActivePublicationJob(website.latestPublishJob?.status)
-                      ? "Publish queued"
-                      : website.pendingUpdate
-                        ? "Publish update"
-                        : website.status === "published"
-                          ? "Published"
-                          : "Publish"}
-                  </PendingSubmit>
-                </form>
-                {website.status === "published" && (
-                  <form action={setWebsiteAvailabilityAction}>
+                  <form action={previewWebsiteAction}>
                     <input name="websiteId" type="hidden" value={website.id} />
-                    <input name="status" type="hidden" value="unpublished" />
+                    <PendingSubmit className="inlineButton" pendingLabel="Preparing…">
+                      Preview
+                    </PendingSubmit>
+                  </form>
+                  <form action={toggleWebsitePublicationAction}>
+                    <input name="websiteId" type="hidden" value={website.id} />
+                    <PendingSubmit
+                      className="inlineButton"
+                      disabled={
+                        isActivePublicationJob(website.latestPublishJob?.status) ||
+                        (website.status === "published" && !website.pendingUpdate)
+                      }
+                      pendingLabel={website.pendingUpdate ? "Publishing update…" : "Publishing…"}
+                    >
+                      {isActivePublicationJob(website.latestPublishJob?.status)
+                        ? "Publish queued"
+                        : website.pendingUpdate
+                          ? "Publish update"
+                          : website.status === "published"
+                            ? "Published"
+                            : "Publish"}
+                    </PendingSubmit>
+                  </form>
+                </div>
+                <div className="websiteSecondaryActions">
+                  {website.status === "published" && (
+                    <form action={setWebsiteAvailabilityAction}>
+                      <input name="websiteId" type="hidden" value={website.id} />
+                      <input name="status" type="hidden" value="unpublished" />
+                      <ConfirmSubmit
+                        className="inlineButton dangerButton"
+                        confirmation={`Unpublish “${website.name}”? The current live version will stop receiving public traffic.`}
+                        pendingLabel="Unpublishing…"
+                      >
+                        Unpublish
+                      </ConfirmSubmit>
+                    </form>
+                  )}
+                  {website.status !== "disabled" && (
+                    <form action={setWebsiteAvailabilityAction}>
+                      <input name="websiteId" type="hidden" value={website.id} />
+                      <input name="status" type="hidden" value="disabled" />
+                      <ConfirmSubmit
+                        className="inlineButton dangerButton"
+                        confirmation={`Disable “${website.name}”? It will be removed from public traffic immediately.`}
+                        pendingLabel="Disabling…"
+                      >
+                        Disable
+                      </ConfirmSubmit>
+                    </form>
+                  )}
+                  <form action={deleteWebsiteAction}>
+                    <input name="websiteId" type="hidden" value={website.id} />
                     <ConfirmSubmit
                       className="inlineButton dangerButton"
-                      confirmation={`Unpublish “${website.name}”? The current live version will stop receiving public traffic.`}
-                      pendingLabel="Unpublishing…"
+                      confirmation={`Delete “${website.name}” permanently? Its domains, drafts, previews, and publication history will also be deleted. This cannot be undone.`}
+                      pendingLabel="Deleting…"
                     >
-                      Unpublish
+                      Delete
                     </ConfirmSubmit>
                   </form>
-                )}
-                {website.status !== "disabled" && (
-                  <form action={setWebsiteAvailabilityAction}>
-                    <input name="websiteId" type="hidden" value={website.id} />
-                    <input name="status" type="hidden" value="disabled" />
-                    <ConfirmSubmit
-                      className="inlineButton dangerButton"
-                      confirmation={`Disable “${website.name}”? It will be removed from public traffic immediately.`}
-                      pendingLabel="Disabling…"
-                    >
-                      Disable
-                    </ConfirmSubmit>
-                  </form>
-                )}
-                <form action={previewWebsiteAction}>
-                  <input name="websiteId" type="hidden" value={website.id} />
-                  <PendingSubmit className="inlineButton" pendingLabel="Preparing…">
-                    Preview
-                  </PendingSubmit>
-                </form>
-                <form action={deleteWebsiteAction}>
-                  <input name="websiteId" type="hidden" value={website.id} />
-                  <ConfirmSubmit
-                    className="inlineButton dangerButton"
-                    confirmation={`Delete “${website.name}” permanently? Its domains, drafts, previews, and publication history will also be deleted. This cannot be undone.`}
-                    pendingLabel="Deleting…"
-                  >
-                    Delete
-                  </ConfirmSubmit>
-                </form>
+                </div>
               </div>
             </div>
           ))}
@@ -204,7 +236,7 @@ export default async function WebsitesPage({
             </div>
           )}
         </div>
-        <div className="panel" id="publish-jobs">
+        <div className="panel publishJobsPanel" id="publish-jobs">
           <div className="panelHead">
             <div>
               <p className="eyebrow">Background work</p>

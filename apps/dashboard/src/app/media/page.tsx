@@ -16,9 +16,10 @@ export default async function MediaPage({
   const folderId = parameters.folder?.trim().slice(0, 80) ?? "";
   const { assets, folders } = await loadMediaLibrary({ query, folderId });
   const totalBytes = assets.reduce((sum, asset) => sum + Number(asset.byteSize), 0);
+  const totalReferences = assets.reduce((sum, asset) => sum + asset._count.references, 0);
   return (
-    <>
-      <header>
+    <div className="mediaLibraryPage">
+      <header className="mediaLibraryHeader">
         <div>
           <p className="eyebrow">Assets</p>
           <h1>Media library</h1>
@@ -28,7 +29,7 @@ export default async function MediaPage({
           Upload media
         </a>
       </header>
-      <section className="stats compactStats">
+      <section aria-label="Media overview" className="stats compactStats mediaLibraryStats">
         <article>
           <p>Ready assets</p>
           <strong>{assets.filter((item) => item.status === "ready").length}</strong>
@@ -37,15 +38,24 @@ export default async function MediaPage({
         <article>
           <p>Storage</p>
           <strong>{formatBytes(totalBytes)}</strong>
-          <small>Organization quota usage</small>
+          <small>Visible asset size</small>
         </article>
         <article>
           <p>Folders</p>
           <strong>{folders.length}</strong>
           <small>Organization scoped</small>
         </article>
+        <article>
+          <p>References</p>
+          <strong>{totalReferences}</strong>
+          <small>Connected to content</small>
+        </article>
       </section>
-      <form action="/media" className="panel mediaFilters" method="get">
+      <form action="/media" className="panel mediaFilters mediaLibraryFilters" method="get">
+        <div className="mediaFilterIntro">
+          <strong>Find media</strong>
+          <span>Search by filename or narrow the library by folder.</span>
+        </div>
         <label>
           Search assets
           <input defaultValue={query} name="q" placeholder="Filename" type="search" />
@@ -68,8 +78,8 @@ export default async function MediaPage({
           </a>
         )}
       </form>
-      <section className="workspaceGrid">
-        <div className="panel">
+      <section className="workspaceGrid mediaWorkspace">
+        <div className="panel mediaAssetsPanel">
           <div className="panelHead">
             <div>
               <p className="eyebrow">Recent uploads</p>
@@ -92,7 +102,7 @@ export default async function MediaPage({
                 ) : (
                   <div className="assetPreview assetPreview--document">PDF</div>
                 )}
-                <div>
+                <div className="assetDetails">
                   <strong title={asset.originalFilename}>{asset.originalFilename}</strong>
                   <p>
                     {asset.folder?.name ?? "Unfiled"} · {formatBytes(Number(asset.byteSize))}
@@ -104,7 +114,7 @@ export default async function MediaPage({
                     {asset._count.references} refs · {asset._count.variants} variants
                   </small>
                 </div>
-                <form action={deleteMediaAction}>
+                <form action={deleteMediaAction} className="assetActions">
                   <input name="assetId" type="hidden" value={asset.id} />
                   <ConfirmSubmit
                     className="dangerButton"
@@ -128,8 +138,12 @@ export default async function MediaPage({
             </div>
           )}
         </div>
-        <div className="sideStack">
-          <form action={uploadMediaAction} className="panel createPanel" id="upload-media">
+        <aside className="sideStack mediaTools" aria-label="Media tools">
+          <form
+            action={uploadMediaAction}
+            className="panel createPanel mediaUploadPanel"
+            id="upload-media"
+          >
             <div className="panelHead">
               <div>
                 <p className="eyebrow">Secure upload</p>
@@ -175,9 +189,9 @@ export default async function MediaPage({
             </label>
             <PendingSubmit pendingLabel="Creating…">Create folder</PendingSubmit>
           </form>
-        </div>
+        </aside>
       </section>
-    </>
+    </div>
   );
 }
 
