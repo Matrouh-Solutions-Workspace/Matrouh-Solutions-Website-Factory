@@ -102,6 +102,34 @@ const copy = {
 
 export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
   const text = copy[locale];
+  const enterprise =
+    locale === "ar"
+      ? {
+          proofLabel: "معايير التسليم",
+          proofNote: "منهج رقمي واضح يجمع بين الجودة والسرعة وسهولة التشغيل.",
+          servicesSummary:
+            "نربط الاستراتيجية والتصميم والهندسة في مسار واحد، من القرار الأول حتى التشغيل المستمر.",
+          processSummary:
+            "مراحل محددة، مسؤوليات واضحة، وتسليمات قابلة للقياس في كل نقطة من المشروع.",
+          serviceMeta: ["استراتيجية / تجربة", "محتوى / RTL + LTR", "إطلاق / تشغيل"],
+          phaseLabel: "مرحلة",
+          processMeta: ["اكتشاف ومواءمة", "تصميم وهندسة", "إطلاق وتحسين"],
+          contactLabel: "قناة المشاريع الجديدة",
+          emailLabel: "تواصل مباشرة مع فريقنا",
+        }
+      : {
+          proofLabel: "Delivery standards",
+          proofNote: "A clear digital operating model built around quality, speed, and control.",
+          servicesSummary:
+            "We connect strategy, design, and engineering in one accountable path—from the first decision to ongoing operations.",
+          processSummary:
+            "Defined phases, clear ownership, and measurable deliverables at every point in the engagement.",
+          serviceMeta: ["Strategy / Experience", "Content / RTL + LTR", "Launch / Operations"],
+          phaseLabel: "Phase",
+          processMeta: ["Discovery & alignment", "Design & engineering", "Launch & optimization"],
+          contactLabel: "New business desk",
+          emailLabel: "Speak directly with our team",
+        };
   return (
     <div className={styles.page} data-landing-page dir={text.direction} lang={locale}>
       <LandingMotion />
@@ -160,7 +188,7 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
       </nav>
 
       <main>
-        <section className={styles.hero}>
+        <section className={styles.hero} data-reveal="section">
           <div className={styles.heroCopy} data-reveal>
             <h1>{text.title}</h1>
             <p className={styles.lead}>{text.lead}</p>
@@ -177,7 +205,7 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
               <span>{text.scroll}</span>
             </div>
           </div>
-          <div className={styles.heroVisualFrame} data-reveal>
+          <div className={styles.heroVisualFrame} data-reveal="hero-visual">
             <div aria-hidden="true" className={styles.heroVisual}>
               <div className={styles.visualBadge}>01 / DIGITAL</div>
               <div className={styles.browserBar}>
@@ -188,9 +216,19 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
               <div className={styles.visualBody}>
                 <span>MATROUH / SOLUTIONS</span>
                 <strong>
-                  وضوح في التصميم.
-                  <br />
-                  قوة في التنفيذ.
+                  {locale === "en" ? (
+                    <>
+                      Clarity in design.
+                      <br />
+                      Strength in delivery.
+                    </>
+                  ) : (
+                    <>
+                      وضوح في التصميم.
+                      <br />
+                      قوة في التنفيذ.
+                    </>
+                  )}
                 </strong>
                 <div>
                   <i />
@@ -207,6 +245,10 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           className={styles.proof}
           data-reveal="scale"
         >
+          <div className={styles.proofIntro}>
+            <span>{enterprise.proofLabel}</span>
+            <p>{enterprise.proofNote}</p>
+          </div>
           {text.proof.map(([title, body], index) => (
             <article key={title} style={{ "--item-index": index } as CSSProperties}>
               <span aria-hidden="true">0{index + 1}</span>
@@ -216,10 +258,13 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           ))}
         </section>
 
-        <section className={styles.section} data-section="01" id="services">
+        <section className={styles.section} data-reveal="section" data-section="01" id="services">
           <div className={styles.sectionHead} data-reveal="heading">
-            <p className={styles.eyebrow}>{text.servicesEyebrow}</p>
-            <h2>{text.servicesTitle}</h2>
+            <div>
+              <p className={styles.eyebrow}>{text.servicesEyebrow}</p>
+              <h2>{text.servicesTitle}</h2>
+            </div>
+            <p className={styles.sectionSummary}>{enterprise.servicesSummary}</p>
           </div>
           <div className={styles.cardGrid}>
             {text.services.map(([title, body], index) => (
@@ -229,8 +274,11 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
                 className="transition duration-200 ease-in-out"
                 style={{ "--item-index": index, transition: "0.2s" } as CSSProperties}
               >
-                <span>0{index + 1}</span>
-                <i aria-hidden="true">↗</i>
+                <div className={styles.serviceCardTop}>
+                  <span>0{index + 1}</span>
+                  <i aria-hidden="true">↗</i>
+                </div>
+                <small className={styles.serviceMeta}>{enterprise.serviceMeta[index]}</small>
                 <h3>{title}</h3>
                 <p>{body}</p>
               </article>
@@ -240,13 +288,17 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
 
         <section
           className={`${styles.section} ${styles.processSection}`}
+          data-reveal="section"
           data-section="02"
           id="process"
         >
           <div aria-hidden="true" className={styles.processGlow} />
           <div className={styles.sectionHead} data-reveal="heading">
-            <p className={styles.eyebrow}>{text.processEyebrow}</p>
-            <h2>{text.processTitle}</h2>
+            <div>
+              <p className={styles.eyebrow}>{text.processEyebrow}</p>
+              <h2>{text.processTitle}</h2>
+            </div>
+            <p className={styles.sectionSummary}>{enterprise.processSummary}</p>
           </div>
           <div className={styles.process}>
             {text.process.map(([number, title, body], index) => (
@@ -256,8 +308,12 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
                 className="transition duration-200 ease-in-out"
                 style={{ "--item-index": index, transition: "0.2s" } as CSSProperties}
               >
-                <span>{number}</span>
-                <div>
+                <div className={styles.processIndex}>
+                  <small>{enterprise.phaseLabel}</small>
+                  <span>{number}</span>
+                </div>
+                <div className={styles.processCopy}>
+                  <small>{enterprise.processMeta[index]}</small>
                   <h3>{title}</h3>
                   <p>{body}</p>
                 </div>
@@ -270,13 +326,22 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           <div aria-hidden="true" className={styles.ctaMark}>
             M
           </div>
-          <p className={styles.eyebrow}>{text.ctaEyebrow}</p>
-          <h2>{text.ctaTitle}</h2>
-          <p>{text.ctaBody}</p>
-          <div className={styles.ctaAction}>
-            <a href="mailto:support@matrouh.solutions">
-              {text.cta}
-              <span aria-hidden="true">↗</span>
+          <div className={styles.ctaContent}>
+            <p className={styles.eyebrow}>{text.ctaEyebrow}</p>
+            <h2>{text.ctaTitle}</h2>
+            <p>{text.ctaBody}</p>
+          </div>
+          <div className={styles.ctaContactCard}>
+            <span className={styles.ctaStatus}>
+              <i aria-hidden="true" />
+              {enterprise.contactLabel}
+            </span>
+            <a href="mailto:matrouhsolutions@gmail.com">
+              <span>
+                <small>{enterprise.emailLabel}</small>
+                <strong>matrouhsolutions@gmail.com</strong>
+              </span>
+              <i aria-hidden="true">↗</i>
             </a>
             <small>{text.ctaNote}</small>
           </div>
@@ -301,8 +366,8 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
             </div>
             <div className={styles.footerContact}>
               <span>{locale === "ar" ? "لديك مشروع في ذهنك؟" : "Have a project in mind?"}</span>
-              <a href="mailto:support@matrouh.solutions">
-                support@matrouh.solutions
+              <a href="mailto:matrouhsolutions@gmail.com">
+                matrouhsolutions@gmail.com
                 <i aria-hidden="true">↗</i>
               </a>
             </div>
