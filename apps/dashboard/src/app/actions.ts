@@ -3165,9 +3165,7 @@ export async function updatePageDraftAction(formData: FormData): Promise<void> {
   const title = cleanText(formData.get("title"), 200);
   const slug = normalizePageSlug(cleanText(formData.get("slug"), 240));
   const expectedRevision = parseRevision(formData.get("expectedRevision"));
-  const websiteDraftRevision = parseRevision(formData.get("websiteDraftRevision"));
-  if (!websiteId || !pageId || !title || !slug || !expectedRevision || !websiteDraftRevision)
-    return;
+  if (!websiteId || !pageId || !title || !slug || !expectedRevision) return;
 
   const client = dashboardDatabase();
   const context = await requireDashboardContext("website.edit");
@@ -3190,15 +3188,17 @@ export async function updatePageDraftAction(formData: FormData): Promise<void> {
       });
       if (pageUpdate.count !== 1) throw new Error("DRAFT_REVISION_CONFLICT");
 
+      // The page revision is the concurrency boundary for page metadata. The website draft
+      // revision is an aggregate counter changed by every editor card, so using it as a
+      // compare-and-swap guard would make unrelated section saves conflict with this page.
       const websiteUpdate = await transaction.website.updateMany({
         where: {
           organizationId: organization.id,
           id: websiteId,
-          draftRevision: websiteDraftRevision,
         },
         data: { draftRevision: { increment: 1 } },
       });
-      if (websiteUpdate.count !== 1) throw new Error("WEBSITE_DRAFT_REVISION_CONFLICT");
+      if (websiteUpdate.count !== 1) throw new Error("WEBSITE_NOT_FOUND");
       await transaction.auditEvent.create({
         data: {
           id: randomUUID(),
@@ -3595,8 +3595,7 @@ export async function updateSectionDraftAction(formData: FormData): Promise<void
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const sectionId = cleanText(formData.get("sectionId"), 80);
   const expectedRevision = parseRevision(formData.get("expectedRevision"));
-  const websiteDraftRevision = parseRevision(formData.get("websiteDraftRevision"));
-  if (!websiteId || !sectionId || !expectedRevision || !websiteDraftRevision) return;
+  if (!websiteId || !sectionId || !expectedRevision) return;
 
   const client = dashboardDatabase();
   const context = await requireDashboardContext("website.edit");
@@ -3696,15 +3695,17 @@ export async function updateSectionDraftAction(formData: FormData): Promise<void
         });
       }
 
+      // The section revision above protects this section from concurrent edits. The website
+      // draft revision is only an aggregate publication counter and may legitimately change
+      // while another section is being edited.
       const websiteUpdate = await transaction.website.updateMany({
         where: {
           organizationId: organization.id,
           id: websiteId,
-          draftRevision: websiteDraftRevision,
         },
         data: { draftRevision: { increment: 1 } },
       });
-      if (websiteUpdate.count !== 1) throw new Error("WEBSITE_DRAFT_REVISION_CONFLICT");
+      if (websiteUpdate.count !== 1) throw new Error("WEBSITE_NOT_FOUND");
       await transaction.auditEvent.create({
         data: {
           id: randomUUID(),

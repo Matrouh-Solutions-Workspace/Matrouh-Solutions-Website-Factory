@@ -36,6 +36,7 @@ ALTER DEFAULT PRIVILEGES FOR USER factory_migrator IN SCHEMA public GRANT SELECT
 SQL
 
 run_as_factory '/usr/bin/corepack pnpm build'
+run_as_factory '/usr/bin/corepack pnpm templates:sync'
 ln -sfn "$release" /opt/mportfolio/current.new
 mv -Tf /opt/mportfolio/current.new /opt/mportfolio/current
 systemctl enable factory-provider-bridge factory-renderer factory-dashboard factory-worker

@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import {
+  incrementRevision,
+  newestRevision,
+  serializeWebsiteSave,
+} from "@/app/draft-save-coordinator";
 
 interface EditCommand {
   readonly name: string;
   readonly before: string;
   readonly after: string;
 }
+
+type SaveStatus = "saved" | "unsaved" | "saving" | "conflict" | "error";
+
+const latestWebsiteRevisions = new Map<string, string>();
 
 export function DraftEditorForm({
   action,
@@ -27,9 +36,16 @@ export function DraftEditorForm({
   const redoRef = useRef<EditCommand[]>([]);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const applyingRef = useRef(false);
+  const savingRef = useRef(false);
+  const saveAgainRef = useRef(false);
+  const editRevisionRef = useRef(0);
+  const entityRevisionRef = useRef<string | null>(null);
+  const recoveryRequestedRef = useRef(false);
+  const refreshObservedRef = useRef(false);
   const [historyRevision, setHistoryRevision] = useState(0);
-  const [status, setStatus] = useState<"saved" | "unsaved" | "saving" | "conflict">("saved");
+  const [status, setStatus] = useState<SaveStatus>("saved");
   const [showToast, setShowToast] = useState(false);
+  const [refreshing, startRefresh] = useTransition();
 
   useEffect(
     () => () => {
@@ -48,18 +64,73 @@ export function DraftEditorForm({
     return () => clearTimeout(timer);
   }, [status]);
 
-  async function submit(formData: FormData): Promise<void> {
+  useEffect(() => {
+    if (refreshing) {
+      refreshObservedRef.current = true;
+      return;
+    }
+    if (!refreshObservedRef.current || !recoveryRequestedRef.current) return;
+    refreshObservedRef.current = false;
+    recoveryRequestedRef.current = false;
+    setStatus("unsaved");
+    const timer = setTimeout(() => formRef.current?.requestSubmit(), 0);
+    return () => clearTimeout(timer);
+  }, [refreshing]);
+
+  async function submit(): Promise<void> {
     if (timerRef.current) clearTimeout(timerRef.current);
+    if (savingRef.current) {
+      saveAgainRef.current = true;
+      return;
+    }
+    const form = formRef.current;
+    if (!form) return;
+    savingRef.current = true;
     setStatus("saving");
     try {
-      await action(formData);
+      do {
+        saveAgainRef.current = false;
+        const submittedEditRevision = editRevisionRef.current;
+        const websiteId = fieldValueByName(form, "websiteId");
+        if (!websiteId) throw new Error("DRAFT_WEBSITE_ID_MISSING");
+
+        await serializeWebsiteSave(websiteId, async () => {
+          const currentForm = formRef.current;
+          if (!currentForm) throw new Error("DRAFT_FORM_UNAVAILABLE");
+          const formData = new FormData(currentForm);
+          const websiteRevision = newestRevision(
+            latestWebsiteRevisions.get(websiteId) ?? null,
+            stringFormValue(formData.get("websiteDraftRevision")),
+          );
+          if (websiteRevision) formData.set("websiteDraftRevision", websiteRevision);
+          const entityRevision = newestRevision(
+            entityRevisionRef.current,
+            stringFormValue(formData.get("expectedRevision")),
+          );
+          if (entityRevision) formData.set("expectedRevision", entityRevision);
+
+          await action(formData);
+
+          entityRevisionRef.current = incrementRevision(entityRevision);
+          const nextWebsiteRevision = incrementRevision(websiteRevision);
+          if (nextWebsiteRevision) latestWebsiteRevisions.set(websiteId, nextWebsiteRevision);
+        });
+
+        if (editRevisionRef.current !== submittedEditRevision) saveAgainRef.current = true;
+      } while (saveAgainRef.current);
+
       router.refresh();
       setStatus("saved");
       undoRef.current = [];
       redoRef.current = [];
       setHistoryRevision((value) => value + 1);
-    } catch {
-      setStatus("conflict");
+    } catch (error) {
+      setShowToast(false);
+      setStatus(
+        error instanceof Error && error.message.includes("CONFLICT") ? "conflict" : "error",
+      );
+    } finally {
+      savingRef.current = false;
     }
   }
 
@@ -74,6 +145,7 @@ export function DraftEditorForm({
     if (applyingRef.current) return;
     const field = editableField(event.target);
     if (!field?.name) return;
+    editRevisionRef.current += 1;
     const after = fieldValue(field);
     const before = valuesRef.current.get(field.name) ?? after;
     if (before !== after) {
@@ -104,6 +176,12 @@ export function DraftEditorForm({
     setHistoryRevision((value) => value + 1);
   }
 
+  function refreshAndRetry(): void {
+    if (refreshing || savingRef.current) return;
+    recoveryRequestedRef.current = true;
+    startRefresh(() => router.refresh());
+  }
+
   function applyCommand(name: string, value: string): void {
     const field = formRef.current?.elements.namedItem(name);
     if (!(
@@ -117,6 +195,7 @@ export function DraftEditorForm({
       field.checked = value === "true";
     else field.value = value;
     valuesRef.current.set(name, value);
+    editRevisionRef.current += 1;
     applyingRef.current = false;
     setStatus("unsaved");
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -138,15 +217,48 @@ export function DraftEditorForm({
         </div>
       ) : null}
       <div className="draftCommandBar" aria-label="Edit history">
-        <span className={`saveState saveState--${status}`}>
-          {status === "saving"
-            ? "Saving..."
-            : status === "unsaved"
-              ? "Unsaved changes"
-              : status === "conflict"
-                ? "Save conflict — refresh to merge"
-                : "Saved"}
+        <div
+          className={`saveProgress saveProgress--${refreshing ? "refreshing" : status}`}
+          aria-hidden="true"
+        >
+          <span />
+        </div>
+        <span
+          className={`saveState saveState--${refreshing ? "saving" : status}`}
+          aria-live="polite"
+          role="status"
+        >
+          {refreshing
+            ? "Refreshing latest revision..."
+            : status === "saving"
+              ? "Saving..."
+              : status === "unsaved"
+                ? "Unsaved changes"
+                : status === "conflict"
+                  ? "This section changed elsewhere"
+                  : status === "error"
+                    ? "Save failed — retry"
+                    : "Saved"}
         </span>
+        {status === "conflict" ? (
+          <button
+            className="saveRecoveryButton"
+            disabled={refreshing}
+            onClick={refreshAndRetry}
+            type="button"
+          >
+            {refreshing ? "Refreshing..." : "Refresh & retry"}
+          </button>
+        ) : null}
+        {status === "error" ? (
+          <button
+            className="saveRetryButton"
+            onClick={() => formRef.current?.requestSubmit()}
+            type="button"
+          >
+            Retry
+          </button>
+        ) : null}
         <button disabled={undoRef.current.length === 0} onClick={undo} type="button">
           Undo
         </button>
@@ -176,4 +288,13 @@ function fieldValue(field: HTMLInputElement | HTMLTextAreaElement | HTMLSelectEl
   return field instanceof HTMLInputElement && field.type === "checkbox"
     ? String(field.checked)
     : field.value;
+}
+
+function fieldValueByName(form: HTMLFormElement, name: string): string | null {
+  const field = form.elements.namedItem(name);
+  return field instanceof HTMLInputElement ? field.value : null;
+}
+
+function stringFormValue(value: FormDataEntryValue | null): string | null {
+  return typeof value === "string" ? value : null;
 }

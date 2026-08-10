@@ -637,7 +637,7 @@ p {
   line-height: 1.7;
   max-width: 62ch;
 }
-footer {
+.siteFooter {
   padding: 34px max(24px, calc((100vw - var(--theme-layout-container-widths-page, 72rem)) / 2));
   border-top: 1px solid color-mix(in srgb, var(--text) 15%, transparent);
   color: var(--theme-colors-muted, #667085);
@@ -2851,12 +2851,18 @@ footer {
 }
 
 /* Medical Practice 1.7 — deliberately compact the visual hierarchy in RTL. */
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraHero {
   min-height: max(680px, calc(100svh - 92px));
   padding-block: clamp(3.5rem, 6vw, 6rem);
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraHero::before {
   width: min(35vw, 480px);
   right: -8%;
@@ -2866,18 +2872,27 @@ footer {
     0 0 0 3.5rem color-mix(in srgb, var(--theme-colors-primary) 3%, transparent),
     0 0 0 7rem color-mix(in srgb, var(--theme-colors-primary) 2%, transparent);
 }
-.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraHero::before {
   left: -8%;
   right: auto;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraHero
   .heroInner {
   grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
   gap: clamp(2.5rem, 6vw, 6rem);
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraHeroCopy
   h1 {
   font-size: clamp(3.35rem, 5.7vw, 5.6rem);
@@ -2885,12 +2900,18 @@ footer {
   line-height: 1.02;
   max-width: 9.5ch;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraHeroCopy
   .heroLead {
   max-width: 38ch;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisual {
   aspect-ratio: 0.82;
   border-radius: 2.25rem 2.25rem 1.5rem 1.5rem;
@@ -2898,17 +2919,26 @@ footer {
   max-width: 400px;
   padding: 0;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisual
   > img {
   border-radius: inherit;
   object-position: center;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisual::after {
   display: none;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisual::before {
   align-items: center;
   background:
@@ -2931,7 +2961,10 @@ footer {
   width: max-content;
   z-index: 4;
 }
-.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisual::before {
   color: #39281d;
   background:
@@ -2941,12 +2974,18 @@ footer {
   inset: 1rem 1rem auto auto;
   padding: 0.6rem 1.8rem 0.6rem 0.8rem;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisual--placeholder
   .doctorAvailability {
   display: none;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisual--placeholder {
   align-items: flex-start;
   background:
@@ -2961,7 +3000,10 @@ footer {
   padding-bottom: clamp(5.5rem, 10vw, 6.5rem);
   text-align: start;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisual--placeholder
   > strong {
   color: #fffaf2;
@@ -2976,7 +3018,10 @@ footer {
   text-shadow: 0 3px 18px rgba(19, 28, 22, 0.45);
   z-index: 2;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisual--placeholder
   > small {
   color: rgba(255, 250, 242, 0.78);
@@ -2986,7 +3031,10 @@ footer {
   text-align: start;
   z-index: 2;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisual--placeholder
   .doctorPortraitMark {
   inset-inline-start: 1.25rem;
@@ -2994,7 +3042,10 @@ footer {
   top: 1.25rem;
   z-index: 3;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisual--placeholder
   .doctorAvailability {
   inset-inline-end: 0;
@@ -3004,40 +3055,58 @@ footer {
   white-space: nowrap;
   z-index: 3;
 }
-.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisualBadge
   span {
   display: none;
 }
-.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisualBadge {
   align-items: center;
   gap: 0.35rem;
   min-width: 0;
   padding: 0.65rem 0.8rem;
 }
-.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisualBadge::before {
   color: #ae762d;
   content: "★";
   font-size: 0.9rem;
   line-height: 1;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraVisualBadge {
   bottom: 1rem;
   inset-inline-start: 1rem;
   left: auto;
   max-width: calc(100% - 2rem);
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraProof {
   display: grid;
   gap: 0;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 2.4rem;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraProof
   span {
   align-content: start;
@@ -3048,13 +3117,19 @@ footer {
   padding-inline: 0.85rem;
   text-align: start;
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraProof
   span
   + span {
   border-inline-start: 1px solid color-mix(in srgb, var(--theme-colors-border) 70%, transparent);
 }
-.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
+    [data-template-version^="1.7."],
+    [data-template-version="2.1.0"]
+  )
   .medivraProof
   strong {
   color: var(--theme-colors-heading, var(--text));
@@ -3062,25 +3137,431 @@ footer {
   font-size: 1rem;
   line-height: 1;
 }
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"] {
+  background: var(--theme-colors-background);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .siteHeader {
+  background: color-mix(in srgb, var(--theme-colors-surface) 90%, transparent);
+  min-height: 82px;
+  padding-inline: max(24px, calc((100vw - 86rem) / 2));
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .siteBrand
+  strong {
+  font-weight: 780;
+  letter-spacing: -0.025em;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .siteHeader
+  nav
+  > a {
+  border-radius: 999px;
+  padding: 0.65rem 0.8rem;
+  transition:
+    background 180ms ease,
+    color 180ms ease;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .siteHeader
+  nav
+  > a:hover {
+  background: color-mix(in srgb, var(--theme-colors-primary) 10%, transparent);
+  color: var(--theme-colors-primary);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .medivraHero {
+  background:
+    radial-gradient(
+      circle at 72% 42%,
+      color-mix(in srgb, var(--theme-colors-primary) 10%, transparent) 0 20rem,
+      transparent 20.1rem
+    ),
+    linear-gradient(135deg, var(--theme-colors-background), var(--theme-colors-surface-variant));
+  min-height: max(740px, calc(100svh - 42px));
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .medivraVisual {
+  background: var(--theme-colors-surface);
+  box-shadow:
+    0 30px 85px color-mix(in srgb, var(--theme-colors-heading) 18%, transparent),
+    1rem 1rem 0 color-mix(in srgb, var(--theme-colors-primary) 18%, transparent);
+  isolation: isolate;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .medivraVisual
+  > img {
+  object-position: center 30%;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .medivraVisualBadge {
+  border: 1px solid color-mix(in srgb, var(--theme-colors-border) 65%, transparent);
+  bottom: 1.1rem;
+  inset-inline-start: 1.1rem;
+  left: auto;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  :is(.doctorServices, .doctorTeam, .doctorTestimonials) {
+  padding-block: clamp(5.5rem, 8vw, 8.5rem);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  :is(.doctorServices, .doctorTeam, .doctorTestimonials)
+  .sectionHeading {
+  margin-inline: auto;
+  max-width: 54rem;
+  text-align: center;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  :is(.doctorServices, .doctorTeam, .doctorTestimonials)
+  .sectionHeading
+  h2 {
+  font-size: clamp(2.8rem, 5vw, 5rem);
+  margin: 1rem auto;
+  text-wrap: balance;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  :is(.doctorServices, .doctorTeam, .doctorTestimonials)
+  .sectionEyebrow::before {
+  display: none;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorServices {
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--theme-colors-primary) 4%, transparent),
+      transparent 35%
+    ),
+    var(--theme-colors-surface);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorServices
+  .cardGrid {
+  align-items: stretch;
+  gap: clamp(1rem, 2.4vw, 2rem);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorServices
+  .infoCard {
+  border-color: color-mix(in srgb, var(--theme-colors-border) 76%, transparent);
+  border-radius: 1.6rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 410px;
+  overflow: hidden;
+  padding: 1.5rem;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorServices
+  .infoCardMedia {
+  height: 205px;
+  margin: -1.5rem -1.5rem 1.6rem;
+  width: calc(100% + 3rem);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorServices
+  .infoCardMedia--placeholder {
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0 21%,
+      currentColor 21.5% 22%,
+      transparent 22.5%
+    ),
+    linear-gradient(145deg, var(--theme-colors-surface-variant), var(--theme-colors-background));
+  color: color-mix(in srgb, var(--theme-colors-primary) 46%, transparent);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorServices
+  .infoCardMedia--placeholder
+  span {
+  align-items: center;
+  background: var(--theme-colors-primary);
+  border-radius: 50%;
+  color: var(--theme-colors-primary-foreground);
+  display: flex;
+  font-size: 0.8rem;
+  font-weight: 800;
+  height: 3.7rem;
+  justify-content: center;
+  letter-spacing: 0.08em;
+  width: 3.7rem;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorServices
+  .infoCard
+  p {
+  margin-top: auto;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTeam {
+  background: var(--theme-colors-background);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTeam
+  .cardGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-inline: auto;
+  max-width: 72rem;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTeam
+  .infoCard {
+  display: grid;
+  gap: 0.3rem 1.7rem;
+  grid-template-columns: minmax(180px, 0.72fr) minmax(0, 1fr);
+  grid-template-rows: auto auto auto 1fr;
+  min-height: 290px;
+  overflow: hidden;
+  padding: 0;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTeam
+  .infoCardMedia {
+  border-radius: 0;
+  grid-row: 1 / -1;
+  height: 100%;
+  margin: 0;
+  min-height: 290px;
+  width: 100%;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTeam
+  .infoCardMedia--placeholder {
+  background:
+    radial-gradient(circle at 50% 36%, var(--theme-colors-surface) 0 16%, transparent 16.5%),
+    linear-gradient(160deg, var(--theme-colors-surface-variant), var(--theme-colors-primary));
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTeam
+  .infoCardMedia--placeholder
+  span {
+  color: var(--theme-colors-primary-foreground);
+  font-size: 2rem;
+  font-weight: 760;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTeam
+  :is(.cardNumber, h3, strong, p) {
+  margin-inline-end: 1.7rem;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTeam
+  .cardNumber {
+  margin-top: 2rem;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTeam
+  h3 {
+  margin-bottom: 0.25rem;
+  margin-top: 0.75rem;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTeam
+  p {
+  margin-bottom: 2rem;
+  margin-top: 0.75rem;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTestimonials {
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      color-mix(in srgb, var(--theme-colors-primary) 18%, transparent),
+      transparent 24rem
+    ),
+    var(--theme-colors-secondary);
+  color: #fffaf2;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTestimonials
+  .sectionHeading
+  :is(h2, .sectionEyebrow) {
+  color: #fffaf2;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTestimonials
+  .cardGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-inline: auto;
+  max-width: 70rem;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTestimonials
+  .infoCard {
+  background: color-mix(in srgb, var(--theme-colors-surface) 10%, transparent);
+  border-color: color-mix(in srgb, #fffaf2 18%, transparent);
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 310px;
+  padding: clamp(2rem, 4vw, 3rem);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTestimonials
+  blockquote
+  > p {
+  color: #fffaf2;
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  line-height: 1.6;
+  margin-top: 0;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTestimonials
+  footer {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, #fffaf2 18%, transparent);
+  color: #fffaf2;
+  margin-top: auto;
+  padding: 1.5rem 0 0;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorTestimonials
+  footer
+  small {
+  color: color-mix(in srgb, #fffaf2 65%, transparent);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorContact
+  .sectionHeading {
+  max-width: 52rem;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorContact
+  .contactLayout {
+  margin-inline: auto;
+  max-width: 86rem;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorContact
+  .contactCard {
+  border-color: color-mix(in srgb, var(--theme-colors-border) 70%, transparent);
+  min-height: 140px;
+  overflow: hidden;
+  position: relative;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorContact
+  .contactCard::before {
+  background: var(--theme-colors-primary);
+  content: "";
+  inset: 0 0 auto;
+  height: 3px;
+  position: absolute;
+  transform: scaleX(0.18);
+  transform-origin: left;
+  transition: transform 220ms ease;
+}
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorContact
+  .contactCard::before {
+  transform-origin: right;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .doctorContact
+  .contactCard:hover::before {
+  transform: scaleX(1);
+}
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  :is(.medivraHeroCopy h1, .sectionHeading h1, .sectionHeading h2) {
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+  .medivraHeroCopy
+  h1 {
+  font-size: clamp(3.2rem, 5vw, 5.1rem);
+}
+@media (min-width: 90rem) {
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+    .medivraHero {
+    padding-inline: max(3rem, calc((100vw - 94rem) / 2));
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+    .medivraHero
+    .heroInner {
+    gap: clamp(5rem, 7vw, 9rem);
+    grid-template-columns: minmax(32rem, 1.1fr) minmax(24rem, 0.75fr);
+    margin-inline: auto;
+    max-width: 94rem;
+    width: 100%;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+    .medivraVisual {
+    max-width: 460px;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+    .doctorTestimonials
+    .cardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-inline: auto;
+    max-width: 70rem;
+  }
+}
+@media (max-width: 64rem) {
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+    :is(.doctorTeam, .doctorTestimonials)
+    .cardGrid {
+    grid-template-columns: 1fr;
+    margin-inline: auto;
+    max-width: 44rem;
+  }
+}
 @media (max-width: 48rem) {
-  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
     .medivraHero {
     min-height: auto;
     padding-block: 3.5rem;
   }
-  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
     .medivraHero
     .heroInner {
     grid-template-columns: 1fr;
   }
-  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
     .medivraHeroCopy
     h1 {
     font-size: clamp(3rem, 13vw, 4.5rem);
   }
-  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="1.7.0"]
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
     .medivraVisual {
     width: min(100%, 23rem);
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+    .medivraProof {
+    grid-template-columns: 1fr;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+    .medivraProof
+    span {
+    border-inline-start: 0;
+    border-top: 1px solid color-mix(in srgb, var(--theme-colors-border) 70%, transparent);
+    padding-block: 0.9rem;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+    .doctorTeam
+    .infoCard {
+    grid-template-columns: 1fr;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+    .doctorTeam
+    .infoCardMedia {
+    grid-row: auto;
+    height: 220px;
+    min-height: 0;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+    .doctorTeam
+    :is(.cardNumber, h3, strong, p) {
+    margin-inline: 1.5rem;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
+    .doctorTestimonials
+    .infoCard {
+    min-height: 0;
   }
 }
 

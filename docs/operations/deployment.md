@@ -22,7 +22,8 @@ for queueing and atomic rate limits; renderer HTML does not depend on a shared c
 2. Back up the database and record the recovery point.
 3. Run `pnpm db:deploy` once with the migrator role.
 4. Run `pnpm db:verify` and retain its output with the deployment record.
-5. Run `pnpm templates:sync`; any immutable-hash conflict or quarantined artifact stops deployment.
+5. Run `pnpm templates:sync`; immutable-hash conflicts and missing referenced artifacts are
+   quarantined and excluded from selection, while missing unreferenced catalog records are pruned.
 6. Deploy worker, renderer, then dashboard using the same revision.
 7. Check `/api/ready` on dashboard and renderer, scrape authenticated `/api/metrics`, and confirm a
    fresh worker heartbeat.

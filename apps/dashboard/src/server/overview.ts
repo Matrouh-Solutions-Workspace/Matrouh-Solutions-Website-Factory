@@ -71,6 +71,11 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
   const organization = context.organization;
   // The pg adapter uses one connection and cannot safely overlap prepared queries.
   const templates = await client.templateCatalogEntry.findMany({
+    where: {
+      versions: {
+        some: { lifecycleStatus: "ready", validationStatus: "valid" },
+      },
+    },
     orderBy: { displayName: "asc" },
     include: {
       versions: {

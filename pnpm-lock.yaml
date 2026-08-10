@@ -720,6 +720,22 @@ importers:
         specifier: ^19.1.9
         version: 19.2.18
 
+  templates/doctor-2.1.0:
+    dependencies:
+      '@factory/template-sdk':
+        specifier: workspace:*
+        version: link:../../packages/template-sdk
+      '@templates/shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^19.1.1
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.9
+        version: 19.2.18
+
   templates/engineer:
     dependencies:
       '@factory/template-sdk':

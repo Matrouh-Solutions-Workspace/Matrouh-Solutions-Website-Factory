@@ -29,6 +29,10 @@ export async function loadTemplateCatalog(): Promise<readonly TemplateCatalogIte
     orderBy: { displayName: "asc" },
     include: {
       versions: {
+        where: {
+          lifecycleStatus: { in: ["ready", "deprecated"] },
+          validationStatus: "valid",
+        },
         orderBy: { discoveredAt: "desc" },
         select: {
           templateVersion: true,
@@ -38,26 +42,28 @@ export async function loadTemplateCatalog(): Promise<readonly TemplateCatalogIte
       },
     },
   });
-  return rows.map((row) => ({
-    templateId: row.templateId,
-    displayName: row.displayName,
-    author: row.author,
-    description: row.description,
-    category: row.category,
-    lifecycleStatus: row.lifecycleStatus,
-    versions: row.versions
-      .map((version) => ({
-        version: version.templateVersion,
-        lifecycleStatus: version.lifecycleStatus,
-        validationStatus: version.validationStatus,
-      }))
-      .sort((left, right) =>
-        right.version.localeCompare(left.version, undefined, {
-          numeric: true,
-          sensitivity: "base",
-        }),
-      ),
-  }));
+  return rows
+    .map((row) => ({
+      templateId: row.templateId,
+      displayName: row.displayName,
+      author: row.author,
+      description: row.description,
+      category: row.category,
+      lifecycleStatus: row.lifecycleStatus,
+      versions: row.versions
+        .map((version) => ({
+          version: version.templateVersion,
+          lifecycleStatus: version.lifecycleStatus,
+          validationStatus: version.validationStatus,
+        }))
+        .sort((left, right) =>
+          right.version.localeCompare(left.version, undefined, {
+            numeric: true,
+            sensitivity: "base",
+          }),
+        ),
+    }))
+    .filter((row) => row.versions.length > 0);
 }
 
 export async function loadExactCatalogTemplate(
