@@ -1,0 +1,10 @@
+@import url("./login-v6.css");
+
+/* Keycloak puts the invalid-credentials helper directly below the username
+   field. Keep it distinct from regular helper copy, including in RTL. */
+#kc-form-login #input-error,
+#kc-form-login .pf-c-helper-text__item.pf-m-error,
+#kc-form-login .pf-c-helper-text__item-text {
+  color: #b42318 !important;
+  font-weight: 800 !important;
+}
