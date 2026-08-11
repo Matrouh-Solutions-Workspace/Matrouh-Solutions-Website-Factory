@@ -457,6 +457,7 @@ const remainingArabicText: Readonly<Record<string, string>> = {
   "Website setup progress": "تقدم إعداد الموقع",
   "Working…": "جارٍ التنفيذ…",
   "Website media": "وسائط الموقع",
+  "View live": "عرض الموقع الحي",
   "White label this website (hide the Matrouh Solutions watermark)":
     "استخدم العلامة البيضاء لهذا الموقع (إخفاء علامة Matrouh Solutions المائية)",
   Yearly: "سنوي",
@@ -481,6 +482,40 @@ const remainingArabicText: Readonly<Record<string, string>> = {
   "Template preview pages": "صفحات معاينة القالب",
   "Upload an image": "رفع صورة",
   "Yearly — one year": "سنوي — سنة واحدة",
+  "Action destination": "وجهة الإجراء",
+  "Action label": "نص الإجراء",
+  "Add item": "إضافة عنصر",
+  "Add section": "إضافة قسم",
+  Address: "العنوان",
+  Body: "المحتوى",
+  "Care team": "فريق الرعاية",
+  Contact: "التواصل",
+  "Contact controls": "عناصر التحكم في التواصل",
+  "Doctor portrait": "صورة الطبيب",
+  Detail: "التفاصيل",
+  Eyebrow: "عنوان تمهيدي",
+  Headline: "العنوان الرئيسي",
+  Hero: "القسم الرئيسي",
+  "Hero controls": "عناصر التحكم في القسم الرئيسي",
+  Introduction: "المقدمة",
+  Latitude: "خط العرض",
+  Longitude: "خط الطول",
+  "Main navigation": "التنقل الرئيسي",
+  Name: "الاسم",
+  "Move down": "نقل لأسفل",
+  "Move up": "نقل لأعلى",
+  "Opening hours": "ساعات العمل",
+  "Page labels": "تسميات الصفحة",
+  "Page title": "عنوان الصفحة",
+  "Patient stories": "قصص المرضى",
+  "Patient testimonials": "آراء المرضى",
+  Phone: "الهاتف",
+  Quote: "الاقتباس",
+  "Section title": "عنوان القسم",
+  Services: "الخدمات",
+  "Services controls": "عناصر التحكم في الخدمات",
+  Slug: "المسار",
+  Title: "العنوان",
   "Extension boundary": "حدود الإضافة",
   Governance: "الحوكمة",
   Menus: "القوائم",
@@ -554,6 +589,21 @@ export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale })
 }
 
 function dynamicArabicText(value: string): string | undefined {
+  const publicationJob = value.match(/^Publish job: (.+)$/);
+  if (publicationJob) return `مهمة النشر: ${translateStatus(publicationJob[1] ?? "")}`;
+
+  const attempt = value.match(/^Attempt (\d+\/\d+)$/);
+  if (attempt) return `محاولة ${attempt[1]}`;
+
+  const revision = value.match(/^revision (\d+)$/);
+  if (revision) return `مراجعة ${revision[1]}`;
+
+  const count = value.match(/^(\d+) (menus|sections)$/);
+  if (count) return `${count[1]} ${count[2] === "menus" ? "قوائم" : "أقسام"}`;
+
+  const item = value.match(/^Item (\d+)$/);
+  if (item) return `العنصر ${item[1]}`;
+
   const select = value.match(/^Select (.+)$/);
   if (select) return `اختيار ${select[1]}`;
 
@@ -583,4 +633,8 @@ function dynamicArabicText(value: string): string | undefined {
   if (remove)
     return `هل تريد حذف «${remove[1]}» نهائيًا؟ سيُحذف أيضًا نطاقاته ومسوداته ومعايناته وسجل نشره. لا يمكن التراجع عن ذلك.`;
   return undefined;
+}
+
+function translateStatus(value: string): string {
+  return dashboardArabicCopy[value] ?? value;
 }
