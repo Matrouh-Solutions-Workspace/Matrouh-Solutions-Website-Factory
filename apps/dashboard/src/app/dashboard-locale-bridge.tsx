@@ -58,6 +58,7 @@ const arabicText: Readonly<Record<string, string>> = {
   Publish: "نشر",
   "Publish changes": "نشر التغييرات",
   "Publish jobs": "مهام النشر",
+  "Publish job:": "مهمة النشر:",
   Published: "منشور",
   "Publishing…": "جارٍ النشر…",
   Retry: "إعادة المحاولة",
@@ -212,6 +213,8 @@ const arabicText: Readonly<Record<string, string>> = {
   Workspace: "مساحة العمل",
   "Active hostnames": "أسماء النطاقات النشطة",
   "All websites": "كل المواقع",
+  "← All websites": "← كل المواقع",
+  Attempt: "محاولة",
   "Arabic only": "العربية فقط",
   "Before activation": "قبل التفعيل",
   "Connected to content": "مرتبطة بالمحتوى",
@@ -508,6 +511,11 @@ const remainingArabicText: Readonly<Record<string, string>> = {
   "Page labels": "تسميات الصفحة",
   "Page title": "عنوان الصفحة",
   "Patient stories": "قصص المرضى",
+  Item: "العنصر",
+  Remove: "إزالة",
+  menus: "قوائم",
+  sections: "أقسام",
+  "| revision": "| مراجعة",
   "Patient testimonials": "آراء المرضى",
   Phone: "الهاتف",
   Quote: "الاقتباس",
@@ -589,6 +597,7 @@ export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale })
 }
 
 function dynamicArabicText(value: string): string | undefined {
+  const translateSubject = (subject: string): string => dashboardArabicCopy[subject] ?? subject;
   const publicationJob = value.match(/^Publish job: (.+)$/);
   if (publicationJob) return `مهمة النشر: ${translateStatus(publicationJob[1] ?? "")}`;
 
@@ -614,13 +623,13 @@ function dynamicArabicText(value: string): string | undefined {
   if (removeItem) return `إزالة العنصر ${removeItem[1]}`;
 
   const colorPicker = value.match(/^(.+) color picker$/);
-  if (colorPicker) return `منتقي لون ${colorPicker[1]}`;
+  if (colorPicker) return `منتقي لون ${translateSubject(colorPicker[1] ?? "")}`;
 
   const colorValue = value.match(/^(.+) hex value$/);
-  if (colorValue) return `قيمة اللون السداسية لـ${colorValue[1]}`;
+  if (colorValue) return `قيمة اللون السداسية لـ${translateSubject(colorValue[1] ?? "")}`;
 
   const controls = value.match(/^(.+) controls$/);
-  if (controls) return `عناصر التحكم في ${controls[1]}`;
+  if (controls) return `عناصر التحكم في ${translateSubject(controls[1] ?? "")}`;
 
   const unpublish = value.match(
     /^Unpublish [“"](.+)[”"]\? The current live version will stop receiving public traffic\.$/,

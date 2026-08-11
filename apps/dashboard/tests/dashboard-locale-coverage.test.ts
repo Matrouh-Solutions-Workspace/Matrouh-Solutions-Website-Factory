@@ -54,8 +54,17 @@ describe("dashboard Arabic copy coverage", () => {
 
   it("translates generated draft-editor UI without changing website content", () => {
     expect(translateDashboardArabicText("Publish job: succeeded")).toBe("مهمة النشر: نجح");
+    expect(translateDashboardArabicText("Publish job: ")).toBe("مهمة النشر: ");
     expect(translateDashboardArabicText("Attempt 1/5")).toBe("محاولة 1/5");
+    expect(translateDashboardArabicText("Attempt ")).toBe("محاولة ");
     expect(translateDashboardArabicText("3 sections")).toBe("3 أقسام");
+    expect(translateDashboardArabicText(" sections")).toBe(" أقسام");
+    expect(translateDashboardArabicText("Item ")).toBe("العنصر ");
+    expect(translateDashboardArabicText("Remove")).toBe("إزالة");
+    expect(translateDashboardArabicText("| revision")).toBe("| مراجعة");
+    expect(translateDashboardArabicText("Patient stories controls")).toBe(
+      "عناصر التحكم في قصص المرضى",
+    );
     expect(translateDashboardArabicText("Move item 2 down")).toBe("نقل العنصر 2 لأسفل");
     expect(translateDashboardArabicText("Matrouh Solutions")).toBe("Matrouh Solutions");
   });
