@@ -1,0 +1,146 @@
+@import url("./login-v3.css");
+
+:root {
+  --claim-canvas: #ececec;
+  --claim-surface: #ffffff;
+  --claim-surface-soft: #f3f4f1;
+  --claim-ink: #111111;
+  --claim-muted: #555b55;
+  --claim-primary: #f5a623;
+  --claim-primary-dark: #895900;
+}
+
+html.login-pf {
+  background:
+    linear-gradient(90deg, rgb(17 17 17 / 5.5%) 1px, transparent 1px),
+    linear-gradient(rgb(17 17 17 / 5.5%) 1px, transparent 1px),
+    radial-gradient(circle at 50% -20%, rgb(245 166 35 / 20%), transparent 31.25rem),
+    var(--claim-canvas) !important;
+  background-size:
+    1.5rem 1.5rem,
+    1.5rem 1.5rem,
+    auto,
+    auto !important;
+}
+
+body,
+html.login-pf body {
+  color: var(--claim-ink);
+  font-family: Cairo, "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+#kc-header {
+  margin-bottom: 1.25rem;
+}
+
+#kc-header-wrapper {
+  color: var(--claim-ink);
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+#kc-header-wrapper::before {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 2px solid var(--claim-ink);
+  border-radius: 0;
+  background: var(--claim-primary);
+  box-shadow: 0.25rem 0.25rem 0 var(--claim-ink);
+  color: var(--claim-ink);
+}
+
+.card-pf {
+  width: min(100%, 26.875rem);
+  padding: 2.125rem;
+  border: 2px solid var(--claim-ink);
+  border-radius: 0;
+  background: var(--claim-surface);
+  box-shadow: 0.5rem 0.5rem 0 var(--claim-ink);
+}
+
+#kc-locale {
+  margin-bottom: 0.9rem;
+}
+
+#kc-current-locale-link {
+  border: 2px solid var(--claim-ink);
+  border-radius: 0;
+  background: var(--claim-surface);
+  color: var(--claim-primary-dark);
+  box-shadow: 0.18rem 0.18rem 0 var(--claim-ink);
+}
+
+#kc-locale-dropdown ul {
+  border: 2px solid var(--claim-ink);
+  border-radius: 0;
+  box-shadow: 0.25rem 0.25rem 0 var(--claim-ink);
+}
+
+#kc-page-title,
+.login-pf-header h1 {
+  color: var(--claim-ink);
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+}
+
+.login-pf-header::after {
+  color: var(--claim-muted);
+  font-size: 0.78rem;
+}
+
+.pf-c-form__label,
+.control-label,
+label {
+  color: var(--claim-ink);
+  font-weight: 800;
+}
+
+.pf-c-form-control,
+.form-control {
+  min-height: 3rem;
+  border: 2px solid var(--claim-ink);
+  border-radius: 0;
+  background: var(--claim-surface-soft);
+  color: var(--claim-ink);
+}
+
+.pf-c-form-control:focus,
+.form-control:focus {
+  border-color: var(--claim-ink);
+  background: var(--claim-surface);
+  box-shadow: 0 0 0 0.2rem rgb(245 166 35 / 30%);
+}
+
+.pf-c-button.pf-m-primary,
+#kc-login {
+  min-height: 3.15rem;
+  border: 2px solid var(--claim-ink);
+  border-radius: 0;
+  background: var(--claim-primary);
+  box-shadow: 0.25rem 0.25rem 0 var(--claim-ink);
+  color: var(--claim-ink);
+  font-weight: 900;
+}
+
+.pf-c-button.pf-m-primary:hover,
+.pf-c-button.pf-m-primary:focus,
+#kc-login:hover,
+#kc-login:focus {
+  background: #ffb52f;
+  box-shadow: 0.12rem 0.12rem 0 var(--claim-ink);
+  color: var(--claim-ink);
+  transform: translate(0.12rem, 0.12rem);
+}
+
+a,
+.pf-c-button.pf-m-link {
+  color: var(--claim-primary-dark);
+  font-weight: 800;
+}
+
+[dir="rtl"] #kc-header-wrapper::before {
+  margin-inline: 0 0.65rem;
+}
