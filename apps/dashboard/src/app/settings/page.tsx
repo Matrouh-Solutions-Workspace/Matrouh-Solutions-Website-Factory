@@ -17,7 +17,7 @@ export default async function SettingsPage() {
           <p className="sub">Identity, locale, plan, and access context.</p>
         </div>
       </header>
-      <section className="workspaceGrid">
+      <section className="workspaceGrid settingsWorkspace">
         <form action={updateOrganizationAction} className="panel createPanel">
           <div className="panelHead">
             <div>

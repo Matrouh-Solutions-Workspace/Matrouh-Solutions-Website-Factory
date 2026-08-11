@@ -47,8 +47,8 @@ export default async function DomainsPage() {
           <small>Development hostnames</small>
         </article>
       </section>
-      <section className="workspaceGrid">
-        <div className="panel">
+      <section className="workspaceGrid domainsWorkspace">
+        <div className="panel domainsHostingPanel">
           <div className="panelHead">
             <div>
               <p className="eyebrow">Platform hosting</p>
@@ -86,7 +86,7 @@ export default async function DomainsPage() {
               </form>
             </article>
           ))}
-          <form action={createHostingDomainAction} className="inlineForm">
+          <form action={createHostingDomainAction} className="inlineForm hostingDomainForm">
             <label>
               Base domain
               <input name="hostname" placeholder="clients.example.com" required maxLength={253} />
@@ -94,7 +94,7 @@ export default async function DomainsPage() {
             <PendingSubmit pendingLabel="Adding…">Add hosting domain</PendingSubmit>
           </form>
         </div>
-        <div className="panel">
+        <div className="panel domainsHostnamesPanel">
           <div className="panelHead">
             <div>
               <p className="eyebrow">Routing table</p>

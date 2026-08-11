@@ -53,7 +53,11 @@ export default async function BillingPage({
           {websites.map((website) => {
             const subscription = website.subscription;
             return (
-              <form action={saveWebsiteSubscriptionAction} className="dataRow" key={website.id}>
+              <form
+                action={saveWebsiteSubscriptionAction}
+                className="dataRow billingSubscriptionRow"
+                key={website.id}
+              >
                 <input name="websiteId" type="hidden" value={website.id} />
                 <div>
                   <strong>{website.name}</strong>

@@ -5624,14 +5624,171 @@ input[type="file"] {
 :root[data-theme="dark"] .appShell .mediaLibraryStats article:last-child small {
   color: var(--muted);
 }
+:root[data-theme="dark"] .skeleton {
+  background: linear-gradient(90deg, #222720 25%, #30372d 50%, #222720 75%);
+  background-size: 200% 100%;
+}
 .appShell .hostingDomainRow {
   grid-template-columns: minmax(0, 1fr) auto auto;
 }
-.appShell .compactStats:not(.mediaLibraryStats) {
+.appShell .compactStats:not(.mediaLibraryStats):not(.monitoringStats) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 @media (max-width: 480px) {
-  .appShell .compactStats:not(.mediaLibraryStats) {
+  .appShell .compactStats:not(.mediaLibraryStats):not(.monitoringStats) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Page-specific desktop structures. Shared rows are intentionally generic;
+   these workspaces have more controls than the shared grid can safely hold. */
+.appShell .settingsWorkspace > .createPanel {
+  grid-column: 1;
+  grid-row: 1;
+}
+.appShell .settingsWorkspace > .sideStack {
+  grid-column: 2;
+  grid-row: 1;
+}
+.appShell .domainsWorkspace {
+  grid-template-columns: minmax(0, 1.15fr) minmax(440px, 1fr);
+}
+.appShell .domainsWorkspace > .createPanel {
+  grid-column: auto;
+}
+.appShell .domainsHostnamesPanel .domainRow {
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "icon identity kind"
+    "icon identity status"
+    "icon identity actions";
+  align-items: center;
+  gap: 8px 12px;
+}
+.appShell .domainsHostnamesPanel .domainRow > .templateIcon {
+  grid-area: icon;
+}
+.appShell .domainsHostnamesPanel .domainRow > div:nth-child(2) {
+  grid-area: identity;
+}
+.appShell .domainsHostnamesPanel .domainRow > .mutedBadge {
+  grid-area: kind;
+}
+.appShell .domainsHostnamesPanel .domainRow > .jobStatus {
+  grid-area: status;
+}
+.appShell .domainsHostnamesPanel .domainRow > .rowActions {
+  grid-area: actions;
+  justify-self: end;
+}
+.appShell .domainsHostnamesPanel .domainRow .rowActions .inlineButton {
+  min-width: 122px;
+}
+.appShell .hostingDomainForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  margin-top: 14px;
+}
+.appShell .hostingDomainForm label {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+}
+.appShell .hostingDomainForm button {
+  min-height: 42px;
+  white-space: nowrap;
+}
+.appShell .billingSubscriptionRow {
+  grid-template-columns:
+    minmax(180px, 1.15fr) minmax(160px, 1fr) minmax(150px, 0.9fr) minmax(220px, 1.1fr)
+    128px;
+  align-items: end;
+  gap: 14px 16px;
+  padding: 18px 4px;
+}
+.appShell .billingSubscriptionRow > div,
+.appShell .billingSubscriptionRow > label {
+  min-width: 0;
+}
+.appShell .billingSubscriptionRow > label {
+  display: grid;
+  gap: 7px;
+}
+.appShell .billingSubscriptionRow > label select,
+.appShell .billingSubscriptionRow > label input {
+  min-width: 0;
+  min-height: 42px;
+}
+.appShell .billingSubscriptionRow > .inlineButton {
+  width: 128px;
+  min-height: 42px;
+  justify-content: center;
+}
+.appShell .monitoringStats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.appShell .monitoringStats strong {
+  white-space: nowrap;
+}
+@media (max-width: 1280px) {
+  .appShell .domainsWorkspace {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .appShell .billingSubscriptionRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .appShell .billingSubscriptionRow > div {
+    grid-column: 1 / -1;
+  }
+  .appShell .billingSubscriptionRow > .inlineButton {
+    justify-self: start;
+  }
+}
+@media (max-width: 900px) {
+  .appShell .settingsWorkspace > .createPanel,
+  .appShell .settingsWorkspace > .sideStack {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .appShell .domainsWorkspace {
+    grid-template-columns: 1fr;
+  }
+  .appShell .monitoringStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .appShell .hostingDomainForm,
+  .appShell .billingSubscriptionRow {
+    grid-template-columns: 1fr;
+  }
+  .appShell .billingSubscriptionRow > div {
+    grid-column: auto;
+  }
+  .appShell .billingSubscriptionRow > label {
+    display: grid !important;
+  }
+  .appShell .billingSubscriptionRow > .inlineButton {
+    width: 100%;
+  }
+  .appShell .domainsHostnamesPanel .domainRow {
+    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-areas:
+      "icon identity"
+      "kind status"
+      "actions actions";
+  }
+  .appShell .domainsHostnamesPanel .domainRow > .rowActions {
+    justify-self: stretch;
+  }
+  .appShell .domainsHostnamesPanel .domainRow .rowActions,
+  .appShell .domainsHostnamesPanel .domainRow .rowActions form,
+  .appShell .domainsHostnamesPanel .domainRow .rowActions .inlineButton {
+    width: 100%;
+  }
+  .appShell .monitoringStats {
+    grid-template-columns: 1fr;
   }
 }
