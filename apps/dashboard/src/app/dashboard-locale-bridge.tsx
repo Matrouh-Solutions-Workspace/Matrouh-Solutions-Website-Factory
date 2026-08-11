@@ -266,13 +266,72 @@ const arabicAttributes: Readonly<Record<string, string>> = {
   "Use dark mode": "استخدم الوضع الداكن",
 };
 
+const supplementalArabicText: Readonly<Record<string, string>> = {
+  "Add this DNS TXT record": "أضف سجل DNS TXT هذا",
+  "Adding…": "جارٍ الإضافة…",
+  "Awaiting connection": "بانتظار الربط",
+  "BCP 47 language tag, for example en or ar-EG.": "رمز لغة BCP 47، مثل en أو ar-EG.",
+  "Capability-scoped integrations that react to platform events.":
+    "تكاملات بصلاحيات محددة تستجيب لأحداث المنصة.",
+  "Changes stay in draft until you publish.": "تبقى التغييرات في المسودة حتى تنشرها.",
+  "Click to choose another image": "انقر لاختيار صورة أخرى",
+  "Connecting…": "جارٍ الربط…",
+  "Create a local hostname for one of your websites.": "أنشئ اسم نطاق محليًا لأحد مواقعك.",
+  "Create a website before assigning billing.": "أنشئ موقعًا قبل تعيين الفوترة.",
+  "Create a draft to customize it.": "أنشئ مسودة لتخصيصه.",
+  "Creating…": "جارٍ الإنشاء…",
+  "Creating website…": "جارٍ إنشاء الموقع…",
+  "Customer support": "دعم العملاء",
+  "Default template content. Create a draft to customize it.":
+    "محتوى القالب الافتراضي. أنشئ مسودة لتخصيصه.",
+  "Degraded or offline": "متدهور أو غير متصل",
+  Delivery: "النشر",
+  "Delivery log": "سجل التسليم",
+  "Development hostnames": "أسماء نطاقات التطوير",
+  "Editable copy": "نسخة قابلة للتعديل",
+  "Enter the exact latitude and longitude for this location.":
+    "أدخل خط العرض وخط الطول بدقة لهذا الموقع.",
+  "Factory output": "مخرجات المنصة",
+  "Identity, locale, plan, and access context.": "الهوية واللغة والخطة وسياق الوصول.",
+  Local: "محلي",
+  "Needs attention": "تحتاج متابعة",
+  "Only images in this website's folder are shown.": "تظهر فقط الصور الموجودة في مجلد هذا الموقع.",
+  "Open full map": "افتح الخريطة كاملة",
+  "Queueing…": "جارٍ وضعه في القائمة…",
+  "Queueing retry...": "جارٍ وضع إعادة المحاولة في القائمة…",
+  "Remove all content references before deleting.": "أزل كل مراجع المحتوى قبل الحذف.",
+  "Refreshes every 15 seconds": "يتحدث كل 15 ثانية",
+  "Run pnpm seed:demo to populate the catalog.": "شغّل pnpm seed:demo لملء الكتالوج.",
+  "Search by filename or narrow the library by folder.":
+    "ابحث باسم الملف أو ضيّق المكتبة حسب المجلد.",
+  "Serving traffic": "يخدم الزيارات",
+  "Something went wrong": "حدث خطأ ما",
+  "Subscription notices and manual messages appear here.":
+    "تظهر هنا إشعارات الاشتراك والرسائل اليدوية.",
+  "Template preview · default content": "معاينة القالب · المحتوى الافتراضي",
+  "The owner can register or sign in, review the website, and claim it.":
+    "يمكن للمالك التسجيل أو الدخول ومراجعة الموقع والمطالبة به.",
+  "This page is not available": "هذه الصفحة غير متاحة",
+  Trial: "تجريبي",
+  "Trial — 24 hours": "تجريبي — 24 ساعة",
+  Unfiled: "بدون مجلد",
+  "Upload a JPG, PNG, WebP, GIF, or PDF up to 5 MB.":
+    "ارفع JPG أو PNG أو WebP أو GIF أو PDF حتى 5 ميغابايت.",
+  "Uploading…": "جارٍ الرفع…",
+  "Visitors see this language at the unprefixed URL.": "يرى الزوار هذه اللغة في الرابط دون بادئة.",
+  "We could not load this view": "تعذر تحميل هذه الصفحة",
+  "Your data is safe. Retry the request, or return to the overview.":
+    "بياناتك آمنة. أعد المحاولة أو ارجع إلى النظرة العامة.",
+};
+
 export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale }) {
   useEffect(() => {
     if (locale !== "ar") return;
     const root = document.querySelector<HTMLElement>(".appShell");
     if (!root) return;
 
-    const translate = (value: string): string => arabicText[value.trim()] ?? value;
+    const translate = (value: string): string =>
+      supplementalArabicText[value.trim()] ?? arabicText[value.trim()] ?? value;
     const apply = (node: Node): void => {
       if (node.nodeType === Node.TEXT_NODE) {
         const parent = node.parentElement;
@@ -291,9 +350,12 @@ export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale })
 
     apply(root);
     const observer = new MutationObserver((records) => {
-      records.forEach((record) => record.addedNodes.forEach(apply));
+      records.forEach((record) => {
+        if (record.type === "characterData") apply(record.target);
+        record.addedNodes.forEach(apply);
+      });
     });
-    observer.observe(root, { childList: true, subtree: true });
+    observer.observe(root, { characterData: true, childList: true, subtree: true });
     return () => observer.disconnect();
   }, [locale]);
 
