@@ -37,10 +37,34 @@ SQL
 
 run_as_factory '/usr/bin/corepack pnpm build'
 run_as_factory '/usr/bin/corepack pnpm templates:sync'
+
+keycloak_theme_source="$release/deployment/keycloak/themes/matrouh"
+keycloak_theme_target="/opt/keycloak/themes/matrouh"
+
+if [ -d "$keycloak_theme_source" ]; then
+  install -d -o factory -g factory -m 0755 "$keycloak_theme_target"
+  cp -a "$keycloak_theme_source/." "$keycloak_theme_target/"
+  chown -R factory:factory "$keycloak_theme_target"
+
+  set -a
+  source /etc/mportfolio/keycloak.env
+  set +a
+  /opt/keycloak/bin/kcadm.sh config credentials \
+    --server "http://127.0.0.1:${KC_HTTP_PORT}" \
+    --realm master \
+    --user "$KC_BOOTSTRAP_ADMIN_USERNAME" \
+    --password "$KC_BOOTSTRAP_ADMIN_PASSWORD"
+  /opt/keycloak/bin/kcadm.sh update realms/factory \
+    -s loginTheme=matrouh \
+    -s internationalizationEnabled=true \
+    -s defaultLocale=ar \
+    -s 'supportedLocales=["ar","en"]'
+fi
+
 ln -sfn "$release" /opt/mportfolio/current.new
 mv -Tf /opt/mportfolio/current.new /opt/mportfolio/current
-systemctl enable factory-provider-bridge factory-renderer factory-dashboard factory-worker
-systemctl restart factory-provider-bridge factory-renderer factory-dashboard factory-worker
+systemctl enable factory-keycloak factory-provider-bridge factory-renderer factory-dashboard factory-worker
+systemctl restart factory-keycloak factory-provider-bridge factory-renderer factory-dashboard factory-worker
 
 wait_for_health() {
   local name="$1"
@@ -58,6 +82,7 @@ wait_for_health() {
 }
 
 wait_for_health provider-bridge curl --fail --silent --show-error http://127.0.0.1:3003/health
+wait_for_health keycloak curl --fail --silent --show-error http://127.0.0.1:8080/realms/factory/.well-known/openid-configuration
 wait_for_health renderer curl --fail --silent --show-error http://127.0.0.1:3001/api/health
 wait_for_health dashboard curl --fail --silent --show-error -H 'Host: mportfolio.ink' http://127.0.0.1:3000/api/health
 

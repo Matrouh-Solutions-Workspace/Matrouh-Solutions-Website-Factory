@@ -1,0 +1,209 @@
+:root {
+  --matrouh-ink: #243c51;
+  --matrouh-blue: #1f83c5;
+  --matrouh-deep-blue: #13699f;
+  --matrouh-mist: #f5f8fa;
+  --matrouh-sand: #f4efe8;
+  --matrouh-line: #d8e0e7;
+}
+
+html,
+body.login-pf {
+  min-height: 100%;
+}
+
+body.login-pf {
+  background:
+    radial-gradient(circle at 80% 12%, rgb(31 131 197 / 14%), transparent 28rem),
+    radial-gradient(circle at 10% 92%, rgb(36 60 81 / 12%), transparent 26rem),
+    linear-gradient(145deg, #f8fafb 0%, var(--matrouh-sand) 100%);
+  color: var(--matrouh-ink);
+  font-family: Cairo, Tahoma, Arial, sans-serif;
+}
+
+.login-pf-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2.5rem 1.25rem;
+}
+
+#kc-header {
+  margin: 0 auto 1.25rem;
+  padding: 0;
+  text-align: center;
+}
+
+#kc-header-wrapper {
+  color: var(--matrouh-ink);
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+#kc-header-wrapper::before {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  margin-inline-end: 0.65rem;
+  border-radius: 0.7rem;
+  background: linear-gradient(145deg, var(--matrouh-blue), var(--matrouh-deep-blue));
+  box-shadow: 0 0.55rem 1.3rem rgb(31 131 197 / 25%);
+  color: #fff;
+  content: "M";
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  vertical-align: middle;
+}
+
+.card-pf {
+  width: min(100%, 30rem);
+  margin: 0 auto;
+  padding: 2.3rem;
+  border: 1px solid rgb(255 255 255 / 85%);
+  border-radius: 1.45rem;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 1.5rem 4rem rgb(36 60 81 / 15%);
+}
+
+#kc-content {
+  width: 100%;
+}
+
+#kc-content-wrapper,
+#kc-form-wrapper {
+  width: 100%;
+}
+
+#kc-page-title,
+.login-pf-header h1 {
+  margin: 0 0 0.45rem;
+  color: var(--matrouh-ink);
+  font-size: 1.65rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.login-pf-header::after {
+  display: block;
+  margin: 0 0 1.65rem;
+  color: #627587;
+  content: "A secure space to manage your website and digital services.";
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+html[lang^="ar"] .login-pf-header::after {
+  content: "مساحة آمنة لإدارة موقعك وخدماتك الرقمية";
+}
+
+.pf-c-form__label,
+.control-label,
+label {
+  color: var(--matrouh-ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.pf-c-form-control,
+.form-control {
+  min-height: 3rem;
+  border: 1px solid var(--matrouh-line);
+  border-radius: 0.7rem;
+  background: #fff;
+  box-shadow: none;
+  color: var(--matrouh-ink);
+  font-size: 1rem;
+}
+
+.pf-c-form-control:focus,
+.form-control:focus {
+  border-color: var(--matrouh-blue);
+  box-shadow: 0 0 0 0.22rem rgb(31 131 197 / 16%);
+}
+
+.pf-c-button.pf-m-primary,
+#kc-login {
+  min-height: 3.15rem;
+  margin-top: 0.6rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, var(--matrouh-blue), var(--matrouh-deep-blue));
+  box-shadow: 0 0.6rem 1.2rem rgb(31 131 197 / 22%);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+  text-shadow: none;
+}
+
+.pf-c-button.pf-m-primary:hover,
+.pf-c-button.pf-m-primary:focus,
+#kc-login:hover,
+#kc-login:focus {
+  background: linear-gradient(135deg, #1976b4, #0f5d90);
+  color: #fff;
+}
+
+#kc-form-options,
+#kc-form-buttons,
+#kc-registration,
+.login-pf-signup {
+  margin-top: 1.25rem;
+}
+
+a,
+.pf-c-button.pf-m-link {
+  color: var(--matrouh-deep-blue);
+  font-weight: 700;
+}
+
+a:hover,
+a:focus {
+  color: var(--matrouh-ink);
+}
+
+.alert {
+  border-radius: 0.7rem;
+  font-size: 0.9rem;
+}
+
+.login-pf-social-section {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--matrouh-line);
+  padding-top: 1.25rem;
+}
+
+[dir="rtl"] .login-pf-header,
+[dir="rtl"] .control-label,
+[dir="rtl"] .form-group,
+[dir="rtl"] .checkbox {
+  text-align: right;
+}
+
+[dir="rtl"] #kc-header-wrapper {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+[dir="rtl"] #kc-header-wrapper::before {
+  margin-inline: 0 0.65rem;
+}
+
+@media (max-width: 36rem) {
+  .login-pf-page {
+    padding: 1.25rem 0.85rem;
+  }
+
+  .card-pf {
+    padding: 1.65rem 1.25rem;
+    border-radius: 1.1rem;
+  }
+
+  #kc-header-wrapper {
+    font-size: 1.2rem;
+  }
+}
