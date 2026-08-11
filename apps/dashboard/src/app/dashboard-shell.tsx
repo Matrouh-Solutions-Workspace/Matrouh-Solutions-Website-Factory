@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardNav } from "@/app/dashboard-nav";
+import { DashboardLocaleBridge } from "@/app/dashboard-locale-bridge";
 import { Icon } from "@/app/icons";
 import { logoutAction } from "@/app/login/actions";
 import { LocalePreferenceLink } from "@/app/locale-preference-link";
@@ -91,6 +92,7 @@ export function DashboardShell({
   if (appPathname.startsWith("/account")) {
     return (
       <div className="appShell clientShell" dir={locale === "ar" ? "rtl" : "ltr"}>
+        <DashboardLocaleBridge locale={locale} />
         <div className="appFrame">
           <div className="topbar">
             <div className="brand">
@@ -105,7 +107,7 @@ export function DashboardShell({
               >
                 {alternateLocale === "ar" ? "العربية" : "English"}
               </LocalePreferenceLink>
-              <ThemeToggle />
+              <ThemeToggle locale={locale} />
               <form action={logoutAction}>
                 <button className="logoutButton" type="submit">
                   <Icon name="logout" />
@@ -125,6 +127,7 @@ export function DashboardShell({
     : text.overview;
   return (
     <div className="appShell" dir={locale === "ar" ? "rtl" : "ltr"}>
+      <DashboardLocaleBridge locale={locale} />
       <a className="skipLink" href="#dashboard-content">
         {text.skip}
       </a>
@@ -174,7 +177,7 @@ export function DashboardShell({
             <LocalePreferenceLink className="localeToggle" href={pathname} locale={alternateLocale}>
               {alternateLocale === "ar" ? "العربية" : "English"}
             </LocalePreferenceLink>
-            <ThemeToggle />
+            <ThemeToggle locale={locale} />
             <SystemStatus locale={locale} />
           </div>
         </div>

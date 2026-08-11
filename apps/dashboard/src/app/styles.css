@@ -4506,6 +4506,56 @@ input[type="file"] {
   padding-top: 16px;
   border-top: 2px solid var(--line);
 }
+
+/* The shell is deliberately mirrored with the selected UI language. Arabic keeps
+   the operational rail on the right; English uses the familiar left rail. */
+.appShell[dir="ltr"]:not(.clientShell) .sidebar {
+  right: auto;
+  left: 0;
+  border-right: 3px solid var(--primary);
+  border-left: 0;
+}
+.appShell[dir="ltr"]:not(.clientShell) .appFrame {
+  padding-right: 0;
+  padding-left: 252px;
+}
+.appShell[dir="ltr"]:not(.clientShell) .appFrame::before {
+  right: 0;
+  left: 252px;
+}
+.appShell[dir="ltr"] .navArrow {
+  margin-right: 0;
+  margin-left: auto;
+  transform: none;
+}
+@media (max-width: 1100px) {
+  .appShell[dir="ltr"]:not(.clientShell) .sidebar {
+    right: auto;
+    left: 0;
+    transform: translateX(-110%);
+  }
+  .appShell[dir="ltr"]:not(.clientShell) .sidebarOpen {
+    transform: translateX(0);
+  }
+  .appShell[dir="ltr"]:not(.clientShell) .appFrame {
+    padding-left: 0;
+  }
+  .appShell[dir="ltr"]:not(.clientShell) .mobileClose {
+    right: 12px;
+    left: auto;
+  }
+}
+:root[data-theme="dark"] .appShell .localeToggle {
+  border-color: var(--line-strong);
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+:root[data-theme="dark"] .appShell .localeToggle:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--ink);
+  box-shadow: 3px 3px 0 #000000;
+}
 .appShell .topbar {
   box-shadow: 0 1px 0 rgba(17, 17, 17, 0.08);
 }

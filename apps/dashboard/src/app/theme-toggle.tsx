@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { UiLocale } from "@/server/ui-locale";
 
 type DashboardTheme = "light" | "dark";
 
-export function ThemeToggle() {
+export function ThemeToggle({ locale = "ar" }: { readonly locale?: UiLocale }) {
   const [theme, setTheme] = useState<DashboardTheme>("light");
 
   useEffect(() => {
@@ -28,13 +29,25 @@ export function ThemeToggle() {
 
   return (
     <button
-      aria-label={`Use ${theme === "dark" ? "light" : "dark"} mode`}
+      aria-label={
+        locale === "ar"
+          ? `استخدم الوضع ${theme === "dark" ? "الفاتح" : "الداكن"}`
+          : `Use ${theme === "dark" ? "light" : "dark"} mode`
+      }
       className="themeToggle"
       onClick={toggle}
       type="button"
     >
       <span aria-hidden>{theme === "dark" ? "☀" : "☾"}</span>
-      <b>{theme === "dark" ? "Light" : "Dark"}</b>
+      <b>
+        {locale === "ar"
+          ? theme === "dark"
+            ? "فاتح"
+            : "داكن"
+          : theme === "dark"
+            ? "Light"
+            : "Dark"}
+      </b>
     </button>
   );
 }
