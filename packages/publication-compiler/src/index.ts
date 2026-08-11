@@ -69,67 +69,130 @@ export function createDefaultTemplateDraft(
   artifactHash: string,
   locale = "en",
 ): DraftProjection {
+  return createLocalizedTemplateDraft(template, artifactHash, [locale], locale);
+}
+
+/**
+ * Builds a complete catalog draft for every requested locale. Catalog previews use this so
+ * visitors can switch languages against the same template structure they will receive in a
+ * website draft, rather than merely changing the surrounding preview chrome.
+ */
+export function createLocalizedTemplateDraft(
+  template: TemplateDefinition,
+  artifactHash: string,
+  requestedLocales: readonly string[] = ["en", "ar"],
+  defaultLocale = requestedLocales[0] ?? "en",
+): DraftProjection {
   const identity = artifactHash.slice(0, 16);
-  const pageIds = new Map(
-    template.pages.map((page, index) => [page.id as string, `page-${identity}-${index}`]),
-  );
+  const locales = uniqueLocales(requestedLocales, defaultLocale);
+  const pageIds = new Map<string, string>();
+  for (const locale of locales) {
+    template.pages.forEach((page, index) => {
+      pageIds.set(
+        `${locale}:${page.id}`,
+        `page-${identity}-${safeLocaleId(locale)}-${String(index).padStart(3, "0")}`,
+      );
+    });
+  }
   return {
     organizationId: `catalog-${identity}`,
     websiteId: `website-${identity}`,
     publicationId: `preview-${identity}`,
     revision: 1n,
     name: template.manifest.displayName,
-    defaultLocale: locale,
+    defaultLocale,
     settingsSchemaVersion: template.websiteSchema.version,
     settings: template.websiteSchema.parse({}),
-    locales: [{ locale, fallbackLocale: null }],
-    pages: template.pages.map((page, pageIndex) => ({
-      id: pageIds.get(page.id)!,
-      pageTypeId: page.id,
+    locales: locales.map((locale) => ({
       locale,
-      title: page.title,
-      slug: page.slug.defaultValue ?? (pageIndex === 0 ? "/" : defaultSlug(page.title)),
-      seo: { title: page.title, description: template.manifest.description },
-      sections: page.defaultSections.flatMap((section, sectionIndex) => {
-        const definition = template.sections.find((item) => item.id === section.sectionTypeId);
-        return definition
-          ? [
-              {
-                id: `section-${identity}-${pageIndex}-${sectionIndex}`,
-                sectionTypeId: definition.id,
-                schemaVersion: definition.schema.version,
-                content: section.content ?? definition.defaults,
-                orderKey: String(sectionIndex).padStart(4, "0"),
-              },
-            ]
-          : [];
-      }),
+      fallbackLocale: locale === defaultLocale ? null : defaultLocale,
     })),
-    navigation: template.navigation.map((definition) => ({
-      definitionId: definition.id,
-      locale: definition.localization === "localized-tree" ? locale : null,
-      schemaVersion: definition.visibilitySchema.version,
-      nodes: template.pages.flatMap((page, index) => {
-        const pageId = pageIds.get(page.id);
-        const allowed =
-          definition.allowedPageTypes === "all" || definition.allowedPageTypes.includes(page.id);
-        return pageId && allowed
-          ? [
-              {
-                id: `nav-${identity}-${String(definition.id).replace(/[^a-z0-9]/gi, "-")}-${index}`,
-                kind: "page",
-                pageId,
-                label: { [locale]: page.title },
-                visibility: definition.visibilitySchema.parse({}),
-                children: [],
-              },
-            ]
-          : [];
-      }),
-    })),
+    pages: locales.flatMap((locale) =>
+      template.pages.map((page, pageIndex) => ({
+        id: pageIds.get(`${locale}:${page.id}`)!,
+        pageTypeId: page.id,
+        locale,
+        title: localizedCatalogLabel(page.title, locale),
+        slug: page.slug.defaultValue ?? (pageIndex === 0 ? "/" : defaultSlug(page.title)),
+        seo: {
+          title: localizedCatalogLabel(page.title, locale),
+          description: template.manifest.description,
+        },
+        sections: page.defaultSections.flatMap((section, sectionIndex) => {
+          const definition = template.sections.find((item) => item.id === section.sectionTypeId);
+          return definition
+            ? [
+                {
+                  id: `section-${identity}-${safeLocaleId(locale)}-${pageIndex}-${sectionIndex}`,
+                  sectionTypeId: definition.id,
+                  schemaVersion: definition.schema.version,
+                  content: section.content ?? definition.defaults,
+                  orderKey: String(sectionIndex).padStart(4, "0"),
+                },
+              ]
+            : [];
+        }),
+      })),
+    ),
+    navigation: template.navigation.flatMap((definition) => {
+      const navigationLocales = definition.localization === "localized-tree" ? locales : [null];
+      return navigationLocales.map((locale) => ({
+        definitionId: definition.id,
+        locale,
+        schemaVersion: definition.visibilitySchema.version,
+        nodes: template.pages.flatMap((page, index) => {
+          const pageLocale = locale ?? defaultLocale;
+          const pageId = pageIds.get(`${pageLocale}:${page.id}`);
+          const allowed =
+            definition.allowedPageTypes === "all" || definition.allowedPageTypes.includes(page.id);
+          return pageId && allowed
+            ? [
+                {
+                  id: `nav-${identity}-${String(definition.id).replace(/[^a-z0-9]/gi, "-")}-${safeLocaleId(pageLocale)}-${index}`,
+                  kind: "page",
+                  pageId,
+                  label: Object.fromEntries(
+                    locales.map((labelLocale) => [
+                      labelLocale,
+                      localizedCatalogLabel(page.title, labelLocale),
+                    ]),
+                  ),
+                  visibility: definition.visibilitySchema.parse({}),
+                  children: [],
+                },
+              ]
+            : [];
+        }),
+      }));
+    }),
     theme: template.theme.defaults,
     media: [],
   };
+}
+
+function uniqueLocales(requestedLocales: readonly string[], defaultLocale: string): string[] {
+  const locales = new Set<string>();
+  for (const locale of [defaultLocale, ...requestedLocales]) {
+    const normalized = locale.trim();
+    if (normalized) locales.add(normalized);
+  }
+  return [...locales];
+}
+
+function safeLocaleId(locale: string): string {
+  return locale.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "locale";
+}
+
+function localizedCatalogLabel(value: string, locale: string): string {
+  if (!locale.toLowerCase().startsWith("ar")) return value;
+  const labels: Readonly<Record<string, string>> = {
+    Home: "الرئيسية",
+    Contact: "تواصل معنا",
+    Locations: "الفروع",
+    Work: "الأعمال",
+    Services: "الخدمات",
+  };
+  return labels[value] ?? value;
 }
 
 export function compilePublication(

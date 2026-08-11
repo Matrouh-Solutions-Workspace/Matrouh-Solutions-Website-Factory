@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { compilePublication, createDefaultTemplateDraft } from "@factory/publication-compiler";
+import { compilePublication, createLocalizedTemplateDraft } from "@factory/publication-compiler";
 import { instantiateTemplateRuntime } from "@factory/template-runtime";
 import { loadCatalogTemplateArtifact } from "./site";
 
@@ -11,7 +11,7 @@ export const loadCatalogPreview = cache(async function loadCatalogPreview(
   const artifact = await loadCatalogTemplateArtifact(templateId, templateVersion);
   if (!artifact) return null;
   const compilation = compilePublication(
-    createDefaultTemplateDraft(artifact.definition, artifact.artifactHash),
+    createLocalizedTemplateDraft(artifact.definition, artifact.artifactHash, ["en", "ar"], "en"),
     artifact.definition,
     artifact.artifactHash,
     artifact.manifest.manifestHash,

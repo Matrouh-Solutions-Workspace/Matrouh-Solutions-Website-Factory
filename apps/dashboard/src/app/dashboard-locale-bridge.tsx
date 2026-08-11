@@ -548,6 +548,10 @@ export const dashboardArabicCopy: Readonly<Record<string, string>> = {
   ...arabicAttributes,
   ...supplementalArabicText,
   ...remainingArabicText,
+  "Arabic & English": "العربية والإنجليزية",
+  "Light & dark": "الوضع الفاتح والداكن",
+  "Arabic, English &amp; light/dark controls are available inside the preview.":
+    "تتوفر عناصر التحكم بالعربية والإنجليزية والوضع الفاتح والداكن داخل المعاينة.",
 };
 
 export function translateDashboardArabicText(value: string): string {

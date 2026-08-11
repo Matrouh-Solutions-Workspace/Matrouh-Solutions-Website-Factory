@@ -56,7 +56,7 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPrope
               );
             })}
           </nav>
-          <span>Interactive preview</span>
+          <span>Arabic, English &amp; light/dark controls are available inside the preview.</span>
         </div>
         <div className="templatePreviewFrame">
           <iframe

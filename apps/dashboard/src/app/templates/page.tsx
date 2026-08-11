@@ -55,6 +55,8 @@ export default async function TemplatesPage() {
                 <div className="templateCardBody">
                   <div>
                     <span className="status">{template.lifecycleStatus}</span>
+                    <span className="mutedBadge">Arabic{" & "}English</span>
+                    <span className="mutedBadge">Light{" & "}dark</span>
                     <span className="mutedBadge">v{latest?.version ?? "—"}</span>
                   </div>
                   <h2>{template.displayName}</h2>

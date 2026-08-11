@@ -20,20 +20,26 @@ interface PreviewProperties {
 export async function generateMetadata({ params }: PreviewProperties): Promise<Metadata> {
   const { templateId, version, path = [] } = await params;
   const preview = await safePreview(templateId, version, `/${path.join("/")}`);
+  const text = previewText(preview?.rendered.locale);
   return {
-    title: preview ? `${preview.rendered.title} · Template preview` : "Template preview",
+    title: preview ? `${preview.rendered.title} ${text.titleSuffix}` : text.title,
     robots: { index: false, follow: false, noarchive: true, noimageindex: true },
   };
 }
 
 export default async function TemplatePreviewPage({ params }: PreviewProperties) {
   const { templateId, version, path = [] } = await params;
-  const preview = await safePreview(templateId, version, `/${path.join("/")}`);
+  const pathname = `/${path.join("/")}`;
+  const preview = await safePreview(templateId, version, pathname);
   if (!preview) notFound();
   const navigation = navigationLinks(preview.snapshot, preview.rendered.locale);
+  const localizedRoutes = localeLinks(preview.snapshot, pathname);
+  const appearance = previewAppearance(preview.snapshot);
+  const text = previewText(preview.rendered.locale);
   return (
     <div
       className="siteRoot"
+      data-color-scheme={appearance}
       data-template-artifact-id={preview.snapshot.template.id}
       data-template-id={premiumTemplateId(
         preview.snapshot.template.id,
@@ -44,28 +50,37 @@ export default async function TemplatePreviewPage({ params }: PreviewProperties)
       lang={preview.rendered.locale}
       style={themeVariables(preview.snapshot.theme)}
     >
-      <aside className="previewBanner">Template preview · default content</aside>
+      <aside className="previewBanner">{text.banner}</aside>
       <header className="siteHeader">
         <a className="siteBrand" href={`${preview.prefix}/`}>
           <img alt="" className="siteBrandMark" src="/matrouh-logo.png" />
           <strong>{preview.snapshot.website.name}</strong>
         </a>
         <TemplatePreviewNavigation
-          ariaLabel="Preview navigation"
+          ariaLabel={text.navigation}
+          initialAppearance={appearance}
           items={navigation.map((item) => ({
             ...item,
             href: `${preview.prefix}${item.href}`,
           }))}
           locale={preview.rendered.locale}
+          localeItems={localizedRoutes.map((item) => ({
+            current: item.current,
+            direction: textDirection(item.locale),
+            href: `${preview.prefix}${item.href}`,
+            id: item.locale,
+            label: localeLabel(item.locale),
+            locale: item.locale,
+          }))}
         />
       </header>
       <main>{preview.rendered.node}</main>
       <footer className="siteFooter">
         <div>
           <strong>{preview.snapshot.website.name}</strong>
-          <p>Default template content. Create a draft to customize it.</p>
+          <p>{text.footerDescription}</p>
         </div>
-        <nav aria-label="Preview footer navigation">
+        <nav aria-label={text.footerNavigation}>
           {navigation.map((item) => (
             <a href={`${preview.prefix}${item.href}`} key={item.id}>
               {item.label}
@@ -75,6 +90,26 @@ export default async function TemplatePreviewPage({ params }: PreviewProperties)
       </footer>
     </div>
   );
+}
+
+function previewText(locale: string | undefined) {
+  return locale?.toLowerCase().startsWith("ar")
+    ? {
+        title: "معاينة القالب",
+        titleSuffix: "· معاينة القالب",
+        banner: "معاينة القالب · محتوى افتراضي",
+        navigation: "تنقل المعاينة",
+        footerDescription: "محتوى افتراضي للقالب. أنشئ مسودة لتخصيصه.",
+        footerNavigation: "تنقل تذييل المعاينة",
+      }
+    : {
+        title: "Template preview",
+        titleSuffix: "· Template preview",
+        banner: "Template preview · default content",
+        navigation: "Preview navigation",
+        footerDescription: "Default template content. Create a draft to customize it.",
+        footerNavigation: "Preview footer navigation",
+      };
 }
 
 function premiumTemplateId(templateId: string, version: string): string | undefined {
@@ -127,18 +162,60 @@ function navigationNodeLink(value: unknown, snapshot: PublicationSnapshot, local
   if (!value || typeof value !== "object" || Array.isArray(value)) return [];
   const node = value as Record<string, unknown>;
   if (node.kind !== "page" || typeof node.pageId !== "string") return [];
-  const labels = node.label;
-  const label =
-    labels && typeof labels === "object" && !Array.isArray(labels)
-      ? Object.values(labels).find((item): item is string => typeof item === "string")
-      : undefined;
   return [
     {
       id: typeof node.id === "string" ? node.id : node.pageId,
       href: routeForPage(snapshot, node.pageId, locale),
-      label: label ?? "Page",
+      label: navigationLabel(node.label, locale),
     },
   ];
+}
+
+function navigationLabel(value: unknown, locale: string): string {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "Page";
+  const labels = value as Record<string, unknown>;
+  const label = labels[locale] ?? Object.values(labels).find((item) => typeof item === "string");
+  return typeof label === "string" ? label : "Page";
+}
+
+function localeLabel(locale: string): string {
+  if (locale.toLowerCase().startsWith("ar")) return "العربية";
+  if (locale.toLowerCase().startsWith("en")) return "English";
+  return locale;
+}
+
+function previewAppearance(snapshot: PublicationSnapshot): "dark" | "light" {
+  const settings = snapshot.website.settings;
+  return settings &&
+    typeof settings === "object" &&
+    !Array.isArray(settings) &&
+    (settings as Record<string, unknown>).colorMode === "dark"
+    ? "dark"
+    : "light";
+}
+
+function textDirection(locale: string): "ltr" | "rtl" {
+  return locale.toLowerCase().startsWith("ar") ? "rtl" : "ltr";
+}
+
+function localeLinks(snapshot: PublicationSnapshot, pathname: string) {
+  const currentRoute = snapshot.routes.find((route) => route.pathname === pathname);
+  if (!currentRoute) return [];
+  const currentPage = snapshot.pages.find(
+    (page) => page.id === currentRoute.pageId && page.locale === currentRoute.locale,
+  );
+  if (!currentPage) return [];
+  return snapshot.locales.flatMap(({ locale }) => {
+    const page = snapshot.pages.find(
+      (candidate) => candidate.locale === locale && candidate.pageTypeId === currentPage.pageTypeId,
+    );
+    const route = page
+      ? snapshot.routes.find(
+          (candidate) => candidate.locale === locale && candidate.pageId === page.id,
+        )
+      : undefined;
+    return route ? [{ locale, href: route.pathname, current: locale === currentRoute.locale }] : [];
+  });
 }
 
 function routeForPage(snapshot: PublicationSnapshot, pageId: string, locale: string): string {
