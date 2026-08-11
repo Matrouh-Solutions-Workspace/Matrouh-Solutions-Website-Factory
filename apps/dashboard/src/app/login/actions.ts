@@ -131,19 +131,20 @@ export async function logoutAction(): Promise<void> {
   const oidcIdToken = cookieStore.get(DASHBOARD_OIDC_ID_TOKEN_COOKIE)?.value;
   cookieStore.delete(DASHBOARD_OIDC_ID_TOKEN_COOKIE);
   if (dashboardConfig.FACTORY_AUTH_MODE === "oidc") {
+    let endSessionUrl: URL | null = null;
     try {
       const postLogoutRedirectUri = new URL(
         "/dashboard/login?loggedOut=1",
         dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL,
       ).toString();
-      const endSessionUrl = await dashboardOidcClient().endSessionUrl({
+      endSessionUrl = await dashboardOidcClient().endSessionUrl({
         postLogoutRedirectUri,
         ...(oidcIdToken ? { idTokenHint: oidcIdToken } : {}),
       });
-      if (endSessionUrl) redirect(endSessionUrl.toString());
     } catch (error) {
       console.error("OIDC logout failed", error);
     }
+    if (endSessionUrl) redirect(endSessionUrl.toString());
   }
   redirect("/dashboard/login");
 }
