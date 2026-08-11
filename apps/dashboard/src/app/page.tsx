@@ -6,6 +6,7 @@ import { Icon, type IconName } from "@/app/icons";
 import { PendingSubmit } from "@/app/pending-submit";
 import { PublicationStatusRefresh } from "@/app/publication-status-refresh";
 import { loadDashboardOverview } from "@/server/overview";
+import { dashboardLocale } from "@/server/dashboard-locale";
 import { isActivePublicationJob } from "@/server/publication-jobs";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,11 @@ async function templateCatalog() {
 }
 
 export default async function Dashboard() {
-  const [templates, overview] = await Promise.all([templateCatalog(), loadDashboardOverview()]);
+  const [templates, overview, locale] = await Promise.all([
+    templateCatalog(),
+    loadDashboardOverview(),
+    dashboardLocale(),
+  ]);
   const websites = overview.websites;
   const hasActivePublication = websites.some((website) =>
     isActivePublicationJob(website.latestPublishJob?.status),
@@ -66,7 +71,7 @@ export default async function Dashboard() {
       <header className="overviewHero">
         <div>
           <div className="overviewMeta">
-            <p className="eyebrow">{headerDate()}</p>
+            <p className="eyebrow">{headerDate(locale)}</p>
             <span>
               <i /> Live workspace
             </span>
@@ -185,7 +190,7 @@ export default async function Dashboard() {
                     Preview
                   </PendingSubmit>
                 </form>
-                <small>{relativeDate(website.updatedAt)}</small>
+                <small>{relativeDate(website.updatedAt, locale)}</small>
               </div>
             </div>
           ))}
@@ -237,7 +242,7 @@ export default async function Dashboard() {
                   {shortId(job.websiteId)} | attempt {job.attemptCount}/{job.maxAttempts}
                 </p>
               </div>
-              <small>{relativeDate(job.completedAt ?? job.createdAt)}</small>
+              <small>{relativeDate(job.completedAt ?? job.createdAt, locale)}</small>
             </div>
           ))}
           {overview.publishJobs.length === 0 && (
@@ -264,10 +269,12 @@ export default async function Dashboard() {
   );
 }
 
-function headerDate(): string {
-  return new Intl.DateTimeFormat("en", { weekday: "long", month: "long", day: "numeric" }).format(
-    new Date(),
-  );
+function headerDate(locale: "ar" | "en"): string {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(new Date());
 }
 
 function shortId(value: string): string {
@@ -284,8 +291,10 @@ function initials(value: string): string {
     .toUpperCase();
 }
 
-function relativeDate(value: Date): string {
-  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+function relativeDate(value: Date, locale: "ar" | "en"): string {
+  const formatter = new Intl.RelativeTimeFormat(locale === "ar" ? "ar-EG" : "en", {
+    numeric: "auto",
+  });
   const seconds = Math.round((value.getTime() - Date.now()) / 1000);
   const units: readonly [Intl.RelativeTimeFormatUnit, number][] = [
     ["year", 31_536_000],
@@ -297,5 +306,5 @@ function relativeDate(value: Date): string {
   for (const [unit, size] of units) {
     if (Math.abs(seconds) >= size) return formatter.format(Math.round(seconds / size), unit);
   }
-  return "just now";
+  return locale === "ar" ? "الآن" : "just now";
 }

@@ -37,6 +37,7 @@ import { MediaPicker } from "@/app/media-picker";
 import { loadWebsiteEditor } from "@/server/editor";
 import { dashboardConfig } from "@/server/config";
 import { canRetryPublicationJob, isActivePublicationJob } from "@/server/publication-jobs";
+import { dashboardLocale } from "@/server/dashboard-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,7 @@ export default async function WebsiteEditorPage({
 }) {
   const { id } = await params;
   const { claimLink, setupStep: requestedSetupStep } = await searchParams;
-  const editor = await loadWebsiteEditor(id);
+  const [editor, locale] = await Promise.all([loadWebsiteEditor(id), dashboardLocale()]);
   if (!editor) notFound();
   const setupStep = draftSetupStep(requestedSetupStep);
   const publishPending = isActivePublicationJob(editor.latestPublishJob?.status);
@@ -841,7 +842,7 @@ export default async function WebsiteEditorPage({
                 </div>
                 <p>
                   Draft {publication.sourceDraftRevision} | template {publication.templateVersion} |{" "}
-                  {formatDate(publication.readyAt ?? publication.createdAt)}
+                  {formatDate(publication.readyAt ?? publication.createdAt, locale)}
                 </p>
                 {publication.failureCode && <small>{publication.failureCode}</small>}
               </div>
@@ -917,8 +918,11 @@ function SectionCommand({
   );
 }
 
-function formatDate(value: Date): string {
-  return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(value);
+function formatDate(value: Date, locale: "ar" | "en"): string {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(value);
 }
 
 function websitePublicUrl(hostname: string): string {
