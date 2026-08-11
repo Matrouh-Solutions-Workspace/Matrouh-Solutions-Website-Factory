@@ -9,6 +9,11 @@ const ignoredLiteralText = new Set([
   "generated/matrouh.template.manifest.json",
   "matrouh.template.json",
   "PDF",
+  // Domain names and email addresses are technical examples, not UI copy.
+  "clients.example.com",
+  "my-clinic",
+  "name@example.com",
+  "north-coast-clinic",
 ]);
 
 async function tsxFiles(directory: string): Promise<string[]> {
@@ -29,11 +34,22 @@ function visibleLiterals(source: string): string[] {
     .filter((value) => value && !value.startsWith("{") && !ignoredLiteralText.has(value));
 }
 
+function accessibleAttributeLiterals(source: string): string[] {
+  return [...source.matchAll(/(?:placeholder|aria-label|title)="([A-Za-z][^"]{1,120})"/g)]
+    .map((match) => match[1].trim())
+    .filter((value) => !ignoredLiteralText.has(value));
+}
+
 describe("dashboard Arabic copy coverage", () => {
   it("covers every static visible English dashboard label", async () => {
     const files = await tsxFiles(appRoot);
     const literals = (
-      await Promise.all(files.map(async (file) => visibleLiterals(await readFile(file, "utf8"))))
+      await Promise.all(
+        files.map(async (file) => {
+          const source = await readFile(file, "utf8");
+          return [...visibleLiterals(source), ...accessibleAttributeLiterals(source)];
+        }),
+      )
     ).flat();
     const missing = [...new Set(literals)].filter((value) => !dashboardArabicCopy[value]).sort();
 

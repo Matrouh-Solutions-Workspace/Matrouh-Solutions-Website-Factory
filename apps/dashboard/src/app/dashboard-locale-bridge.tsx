@@ -260,6 +260,7 @@ const arabicText: Readonly<Record<string, string>> = {
 };
 
 const arabicAttributes: Readonly<Record<string, string>> = {
+  "North Coast Clinic": "عيادة الساحل الشمالي",
   "Search name, email, phone, or domain": "ابحث بالاسم أو البريد أو الهاتف أو النطاق",
   "Search name or domain": "ابحث بالاسم أو النطاق",
   "Use light mode": "استخدم الوضع الفاتح",
@@ -503,6 +504,7 @@ const remainingArabicText: Readonly<Record<string, string>> = {
 
 export const dashboardArabicCopy: Readonly<Record<string, string>> = {
   ...arabicText,
+  ...arabicAttributes,
   ...supplementalArabicText,
   ...remainingArabicText,
 };
@@ -554,6 +556,24 @@ export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale })
 }
 
 function dynamicArabicText(value: string): string | undefined {
+  const select = value.match(/^Select (.+)$/);
+  if (select) return `اختيار ${select[1]}`;
+
+  const move = value.match(/^Move item (\d+) (up|down)$/);
+  if (move) return `نقل العنصر ${move[1]} ${move[2] === "up" ? "لأعلى" : "لأسفل"}`;
+
+  const removeItem = value.match(/^Remove item (\d+)$/);
+  if (removeItem) return `إزالة العنصر ${removeItem[1]}`;
+
+  const colorPicker = value.match(/^(.+) color picker$/);
+  if (colorPicker) return `منتقي لون ${colorPicker[1]}`;
+
+  const colorValue = value.match(/^(.+) hex value$/);
+  if (colorValue) return `قيمة اللون السداسية لـ${colorValue[1]}`;
+
+  const controls = value.match(/^(.+) controls$/);
+  if (controls) return `عناصر التحكم في ${controls[1]}`;
+
   const unpublish = value.match(
     /^Unpublish [“"](.+)[”"]\? The current live version will stop receiving public traffic\.$/,
   );
