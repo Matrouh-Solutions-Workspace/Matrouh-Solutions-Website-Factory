@@ -83,4 +83,14 @@ describe("dashboard Arabic copy coverage", () => {
 
     expect(missing).toEqual([]);
   });
+
+  it("renders localized navigation-node labels as one locale-aware value", async () => {
+    const editorPage = await readFile(resolve(appRoot, "websites", "[id]", "page.tsx"), "utf8");
+
+    expect(editorPage).toContain(
+      "navigationNodeLabel(node.kind, navigationLocales.length, locale)",
+    );
+    expect(editorPage).toContain('Page: "تسميات الصفحة"');
+    expect(editorPage).not.toContain("{node.kind} label{navigationLocales.length");
+  });
 });

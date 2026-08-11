@@ -503,7 +503,7 @@ export default async function WebsiteEditorPage({
                       />
                       <fieldset className="localizedNavigationLabels">
                         <legend>
-                          {node.kind} label{navigationLocales.length === 1 ? "" : "s"}
+                          {navigationNodeLabel(node.kind, navigationLocales.length, locale)}
                         </legend>
                         {navigationLocales.map((locale) => (
                           <label key={locale}>
@@ -883,6 +883,18 @@ function localeName(locale: string): string {
   if (locale === "ar") return "العربية";
   if (locale === "en") return "English";
   return locale;
+}
+
+function navigationNodeLabel(kind: string, localeCount: number, locale: "ar" | "en"): string {
+  if (locale === "ar") {
+    const labels: Readonly<Record<string, string>> = {
+      Page: "تسميات الصفحة",
+      Link: "تسميات الرابط",
+      Item: "تسميات العنصر",
+    };
+    return labels[kind] ?? "تسميات العنصر";
+  }
+  return `${kind} label${localeCount === 1 ? "" : "s"}`;
 }
 
 function SectionCommand({
