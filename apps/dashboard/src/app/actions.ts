@@ -32,7 +32,7 @@ import { instantiateTemplateRuntime } from "@factory/template-runtime";
 import { requestPublication } from "@factory/publishing";
 import { dashboardArtifactStore as artifactStore } from "@/server/artifact-store";
 import { dashboardDatabase } from "@/server/overview";
-import { requireDashboardContext } from "@/server/auth";
+import { requireDashboardContext, requireWebsiteMutationContext } from "@/server/auth";
 import { hostedHostname, isHostnameConflict, localHostname } from "@/server/local-hostnames";
 import { dashboardConfig, workspaceRoot } from "@/server/config";
 import { heartbeatProcessId, processIsRunning, startLocalWorker } from "@/server/worker-control";
@@ -869,7 +869,7 @@ export async function updateWebsiteIdentityAction(formData: FormData): Promise<v
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const name = cleanText(formData.get("name"), 200);
   if (!websiteId || !name) return;
-  const context = await requireDashboardContext("website.edit");
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   await withTenantTransaction(
     dashboardDatabase(),
     tenantActionContext(context, `website-identity:${websiteId}`),
@@ -921,7 +921,7 @@ export async function createWebsiteClaimLinkAction(formData: FormData): Promise<
           clientId: null,
           archivedAt: null,
         },
-        select: { id: true },
+        select: { id: true, name: true },
       });
       if (!website) throw new Error("WEBSITE_ALREADY_HAS_OWNER");
       await transaction.websiteClaim.updateMany({
@@ -938,6 +938,35 @@ export async function createWebsiteClaimLinkAction(formData: FormData): Promise<
           expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1_000),
         },
       });
+      if (intendedEmail) {
+        const claimUrl = new URL(
+          `/dashboard/claim/${token}`,
+          dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL,
+        ).toString();
+        await transaction.outboundMessage.upsert({
+          where: { websiteId_kind: { websiteId, kind: "website.claim" } },
+          update: {
+            recipientEmail: intendedEmail,
+            subject: `Claim ownership of ${website.name}`,
+            bodyText: `You have been invited to claim ownership of ${website.name}. Open this secure link within 14 days: ${claimUrl}`,
+            status: "queued",
+            scheduledFor: new Date(),
+            availableAt: new Date(),
+            attemptCount: 0,
+            sentAt: null,
+            failureReason: null,
+          },
+          create: {
+            id: randomUUID(),
+            organizationId: context.organization.id,
+            websiteId,
+            recipientEmail: intendedEmail,
+            subject: `Claim ownership of ${website.name}`,
+            bodyText: `You have been invited to claim ownership of ${website.name}. Open this secure link within 14 days: ${claimUrl}`,
+            kind: "website.claim",
+          },
+        });
+      }
     },
   );
   redirect(`/websites/${websiteId}?claimLink=${encodeURIComponent(`/claim/${token}`)}`);
@@ -2082,7 +2111,10 @@ async function uploadMedia(formData: FormData): Promise<string | undefined> {
     upload.size > dashboardConfig.FACTORY_MAX_UPLOAD_BYTES
   )
     return;
-  const context = await requireDashboardContext("media.create");
+  const context = websiteId
+    ? await requireWebsiteMutationContext(websiteId, "media.create")
+    : await requireDashboardContext("media.create");
+  if (websiteId && context.roleKeys.includes("client")) folderId = "";
   await enforceRateLimit(
     dashboardDatabase(),
     `media-upload:${context.organization.id}:${context.actor.id}`,
@@ -2462,7 +2494,7 @@ export async function updateSeoDraftAction(formData: FormData): Promise<void> {
   });
   if (!parsed.success) return;
 
-  const context = await requireDashboardContext("website.edit");
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   await withTenantTransaction(
     dashboardDatabase(),
     {
@@ -3598,7 +3630,7 @@ export async function updateSectionDraftAction(formData: FormData): Promise<void
   if (!websiteId || !sectionId || !expectedRevision) return;
 
   const client = dashboardDatabase();
-  const context = await requireDashboardContext("website.edit");
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   const organization = context.organization;
   const actorId = context.actor.id;
 
@@ -3945,6 +3977,7 @@ function revalidateWebsiteEditor(websiteId: string): void {
   revalidatePath("/");
   revalidatePath("/websites");
   revalidatePath(`/websites/${websiteId}`);
+  revalidatePath(`/account/websites/${websiteId}`);
 }
 
 function cleanText(value: FormDataEntryValue | null, max: number): string {

@@ -8,6 +8,7 @@ import { withTenantTransaction } from "@factory/database";
 import { DASHBOARD_SESSION_COOKIE, getDashboardContext } from "@/server/auth";
 import { dashboardConfig } from "@/server/config";
 import { dashboardDatabase } from "@/server/database";
+import { createOidcPasswordUser, deleteOidcUser, OidcAdminError } from "@/server/oidc-admin";
 import { findWebsiteClaim } from "@/server/website-claims";
 
 export async function claimWebsiteAction(formData: FormData): Promise<void> {
@@ -31,9 +32,10 @@ export async function registerAndClaimWebsiteAction(formData: FormData): Promise
   const displayName = textField(formData, "displayName", 200);
   const email = textField(formData, "email", 320).toLowerCase();
   const password = textField(formData, "password", 256);
+  const confirmPassword = textField(formData, "confirmPassword", 256);
   const claim = await findWebsiteClaim(token);
-  if (!claim || !displayName || !email || password.length < 10)
-    redirect(`/claim/${token}?error=invalid`);
+  if (!claim || !displayName || !email || password.length < 10 || password !== confirmPassword)
+    redirect(`/claim/${token}?error=password`);
   if (claim.intendedEmail && claim.intendedEmail.toLowerCase() !== email)
     redirect(`/claim/${token}?error=email`);
   const existing = await dashboardDatabase().user.findUnique({
@@ -43,47 +45,76 @@ export async function registerAndClaimWebsiteAction(formData: FormData): Promise
   if (existing) redirect(`/login?next=${encodeURIComponent(`/claim/${token}`)}`);
 
   const userId = randomUUID();
-  await withTenantTransaction(
-    dashboardDatabase(),
-    {
-      organizationId: claim.organizationId,
-      actorId: userId,
-      correlationId: `register-claim:${claim.claimId}`,
-    },
-    async (transaction) => {
-      await transaction.user.create({
-        data: {
-          id: userId,
-          displayName,
-          primaryEmail: email,
-          normalizedEmail: email,
-          passwordHash: hashPassword(password),
-          status: "active",
-        },
-      });
-      const role = await transaction.role.upsert({
-        where: { organizationId_key: { organizationId: claim.organizationId, key: "client" } },
-        update: {},
-        create: {
-          id: randomUUID(),
-          organizationId: claim.organizationId,
-          key: "client",
-          name: "Client",
-          isSystem: true,
-        },
-      });
-      const membership = await transaction.membership.create({
-        data: { id: randomUUID(), organizationId: claim.organizationId, userId, status: "active" },
-      });
-      await transaction.membershipRole.create({
-        data: {
-          organizationId: claim.organizationId,
-          membershipId: membership.id,
-          roleId: role.id,
-        },
-      });
-    },
-  );
+  let oidcSubject: string | null = null;
+  try {
+    if (dashboardConfig.FACTORY_AUTH_MODE === "oidc") {
+      oidcSubject = await createOidcPasswordUser({ displayName, email, password });
+    }
+    await withTenantTransaction(
+      dashboardDatabase(),
+      {
+        organizationId: claim.organizationId,
+        actorId: userId,
+        correlationId: `register-claim:${claim.claimId}`,
+      },
+      async (transaction) => {
+        await transaction.user.create({
+          data: {
+            id: userId,
+            displayName,
+            primaryEmail: email,
+            normalizedEmail: email,
+            passwordHash: hashPassword(password),
+            status: "active",
+          },
+        });
+        if (oidcSubject) {
+          await transaction.authIdentity.create({
+            data: {
+              id: randomUUID(),
+              userId,
+              providerKey: dashboardConfig.FACTORY_OIDC_ISSUER!,
+              providerSubject: oidcSubject,
+            },
+          });
+        }
+        const role = await transaction.role.upsert({
+          where: { organizationId_key: { organizationId: claim.organizationId, key: "client" } },
+          update: {},
+          create: {
+            id: randomUUID(),
+            organizationId: claim.organizationId,
+            key: "client",
+            name: "Client",
+            isSystem: true,
+          },
+        });
+        const membership = await transaction.membership.create({
+          data: {
+            id: randomUUID(),
+            organizationId: claim.organizationId,
+            userId,
+            status: "active",
+          },
+        });
+        await transaction.membershipRole.create({
+          data: {
+            organizationId: claim.organizationId,
+            membershipId: membership.id,
+            roleId: role.id,
+          },
+        });
+      },
+    );
+  } catch (error) {
+    if (oidcSubject) await deleteOidcUser(oidcSubject).catch(() => undefined);
+    if (error instanceof OidcAdminError) {
+      if (error.code === "conflict")
+        redirect(`/login?next=${encodeURIComponent(`/claim/${token}`)}`);
+      redirect(`/claim/${token}?error=registration`);
+    }
+    throw error;
+  }
   await assignClaim(claim, userId, displayName, email);
   await createSession(claim.organizationId, userId);
   redirect("/account");

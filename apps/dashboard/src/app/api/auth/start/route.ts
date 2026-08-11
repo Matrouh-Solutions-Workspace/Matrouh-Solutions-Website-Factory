@@ -23,6 +23,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const state = randomBytes(32).toString("base64url");
   const nonce = randomBytes(32).toString("base64url");
   const verifier = randomBytes(48).toString("base64url");
+  const next = safeNext(request.nextUrl.searchParams.get("next"));
   const authorization = await dashboardOidcClient().authorizationUrl({
     state,
     nonce,
@@ -39,5 +40,10 @@ export async function GET(request: NextRequest): Promise<Response> {
   response.cookies.set("factory_oidc_state", state, options);
   response.cookies.set("factory_oidc_nonce", nonce, options);
   response.cookies.set("factory_oidc_verifier", verifier, options);
+  if (next) response.cookies.set("factory_oidc_next", next, options);
   return response;
+}
+
+function safeNext(value: string | null): string | null {
+  return value && value.startsWith("/") && !value.startsWith("//") ? value : null;
 }

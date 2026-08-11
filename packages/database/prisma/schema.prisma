@@ -102,6 +102,7 @@ model Organization {
   subscriptions       WebsiteSubscription[]
   outboundMessages    OutboundMessage[]
   websiteClaims       WebsiteClaim[]
+  passwordResets      PasswordReset[]
   roles               Role[]
   pluginInstallations PluginInstallation[]
   hostingDomains     HostingDomain[]
@@ -122,6 +123,7 @@ model User {
   identities      AuthIdentity[]
   memberships     Membership[]
   sessions        Session[]
+  passwordResets  PasswordReset[]
   claimedWebsites WebsiteClaim[] @relation("ClaimedWebsiteOwner")
 
   @@map("users")
@@ -150,6 +152,22 @@ model Session {
 
   @@index([userId, expiresAt])
   @@map("sessions")
+}
+
+model PasswordReset {
+  id             String       @id @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
+  tokenHash      String       @unique @map("token_hash") @db.VarChar(128)
+  expiresAt      DateTime     @map("expires_at") @db.Timestamptz
+  usedAt         DateTime?    @map("used_at") @db.Timestamptz
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  user           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, id])
+  @@index([userId, expiresAt])
+  @@map("password_resets")
 }
 
 model Membership {

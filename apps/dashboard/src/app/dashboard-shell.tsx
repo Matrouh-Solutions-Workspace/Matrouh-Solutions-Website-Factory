@@ -26,7 +26,12 @@ export function DashboardShell({ children }: { readonly children: React.ReactNod
   const pathname = usePathname();
   const appPathname = normalizeDashboardPathname(pathname);
   const [open, setOpen] = useState(false);
-  if (appPathname === "/login" || appPathname.startsWith("/template-preview/")) {
+  if (
+    appPathname === "/login" ||
+    appPathname === "/forgot-password" ||
+    appPathname.startsWith("/reset-password/") ||
+    appPathname.startsWith("/template-preview/")
+  ) {
     return <>{children}</>;
   }
   if (appPathname.startsWith("/account")) {

@@ -33,6 +33,8 @@ const environmentSchema = z
     FACTORY_OIDC_CLIENT_ID: optionalText(3),
     FACTORY_OIDC_CLIENT_SECRET: optionalText(8),
     FACTORY_OIDC_REDIRECT_URI: optionalUrl,
+    FACTORY_OIDC_ADMIN_CLIENT_ID: optionalText(3),
+    FACTORY_OIDC_ADMIN_CLIENT_SECRET: optionalText(8),
     FACTORY_CACHE_INVALIDATION_URL: optionalUrl,
     FACTORY_CACHE_INVALIDATION_SECRET: optionalText(32),
     FACTORY_DOMAIN_CHALLENGE_SECRET: optionalText(32),

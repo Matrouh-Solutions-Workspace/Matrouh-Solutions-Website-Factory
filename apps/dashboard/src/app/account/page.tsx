@@ -45,6 +45,9 @@ export default async function ClientAccountPage() {
                   <strong>Website: {website.status}</strong>
                   <p>Plan: {website.subscription?.status ?? "not configured"}</p>
                 </div>
+                <a className="buttonLink secondaryButton" href={`/account/websites/${website.id}`}>
+                  Manage website
+                </a>
               </article>
             ))}
           </div>

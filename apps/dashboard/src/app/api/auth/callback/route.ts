@@ -17,6 +17,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const expectedState = request.cookies.get("factory_oidc_state")?.value;
   const nonce = request.cookies.get("factory_oidc_nonce")?.value;
   const verifier = request.cookies.get("factory_oidc_verifier")?.value;
+  const next = safeNext(request.cookies.get("factory_oidc_next")?.value);
   if (!code || !state || !expectedState || state !== expectedState || !nonce || !verifier) {
     return loginFailure("state");
   }
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     );
     const response = NextResponse.redirect(
       new URL(
-        isClientAccount ? "/dashboard/account" : "/dashboard",
+        next ? dashboardPublicPath(next) : isClientAccount ? "/dashboard/account" : "/dashboard",
         dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL,
       ),
     );
@@ -258,4 +259,14 @@ function clearOidcCookies(response: NextResponse): void {
   response.cookies.delete("factory_oidc_state");
   response.cookies.delete("factory_oidc_nonce");
   response.cookies.delete("factory_oidc_verifier");
+  response.cookies.delete("factory_oidc_next");
+}
+
+function safeNext(value: string | undefined): string | null {
+  return value && value.startsWith("/") && !value.startsWith("//") ? value : null;
+}
+
+function dashboardPublicPath(pathname: string): string {
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) return pathname;
+  return pathname === "/" ? "/dashboard" : `/dashboard${pathname}`;
 }

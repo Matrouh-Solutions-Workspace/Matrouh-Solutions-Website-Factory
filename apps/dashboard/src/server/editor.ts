@@ -3,7 +3,7 @@ import { withTenantTransaction } from "@factory/database";
 import type { JsonValue } from "@factory/template-sdk";
 import { discoverTemplates, loadTemplate } from "@factory/template-loader";
 import { dashboardDatabase } from "@/server/overview";
-import { requireDashboardContext } from "@/server/auth";
+import { requireClientAccountContext, requireDashboardContext } from "@/server/auth";
 import { dashboardMediaPath } from "@/server/media-storage";
 
 const templatesRoot = join(process.cwd(), "..", "..", "templates");
@@ -91,16 +91,40 @@ export interface WebsiteEditor {
 }
 
 export async function loadWebsiteEditor(websiteId: string): Promise<WebsiteEditor | null> {
+  return loadWebsiteEditorForContext(websiteId, false);
+}
+
+export async function loadClientWebsiteEditor(websiteId: string): Promise<WebsiteEditor | null> {
+  return loadWebsiteEditorForContext(websiteId, true);
+}
+
+async function loadWebsiteEditorForContext(
+  websiteId: string,
+  clientScoped: boolean,
+): Promise<WebsiteEditor | null> {
   const client = dashboardDatabase();
-  const context = await requireDashboardContext("website.read");
+  const context = clientScoped
+    ? await requireClientAccountContext()
+    : await requireDashboardContext("website.read");
   const organization = context.organization;
 
   const editorData = await withTenantTransaction(
     client,
     { organizationId: organization.id, actorId: context.actor.id, correlationId: "editor-load" },
     async (transaction) => {
-      const website = await transaction.website.findUnique({
-        where: { organizationId_id: { organizationId: organization.id, id: websiteId } },
+      const website = await transaction.website.findFirst({
+        where: {
+          organizationId: organization.id,
+          id: websiteId,
+          ...(clientScoped
+            ? {
+                client: {
+                  archivedAt: null,
+                  contactEmail: { equals: context.actor.email, mode: "insensitive" as const },
+                },
+              }
+            : {}),
+        },
         include: { activePublication: { select: { sourceDraftRevision: true } } },
       });
       if (!website) return null;

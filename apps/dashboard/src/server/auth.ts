@@ -124,6 +124,40 @@ export async function requireClientAccountContext(): Promise<DashboardContext> {
   return context;
 }
 
+/** Allows a client to change only a website that is assigned to their email address. */
+export async function requireWebsiteMutationContext(
+  websiteId: string,
+  permission: string,
+): Promise<DashboardContext> {
+  const context = await getDashboardContext();
+  if (!context) redirect("/login");
+  const privileged = context.roleKeys.some((role) => role === "owner" || role === "admin");
+  if (privileged || context.permissions.has(permission)) return context;
+  if (!context.roleKeys.includes("client")) throw new DashboardAuthorizationError(permission);
+  const owned = await withTenantTransaction(
+    dashboardDatabase(),
+    {
+      organizationId: context.organization.id,
+      actorId: context.actor.id,
+      correlationId: `client-website-access:${websiteId}`,
+    },
+    (transaction) =>
+      transaction.website.count({
+        where: {
+          id: websiteId,
+          organizationId: context.organization.id,
+          archivedAt: null,
+          client: {
+            archivedAt: null,
+            contactEmail: { equals: context.actor.email, mode: "insensitive" },
+          },
+        },
+      }),
+  );
+  if (owned !== 1) throw new DashboardAuthorizationError("client.website");
+  return context;
+}
+
 export class DashboardAuthorizationError extends Error {
   constructor(readonly permission: string) {
     super("FORBIDDEN");

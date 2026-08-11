@@ -26,6 +26,12 @@ export default async function ClaimPage({
         {error === "email" ? (
           <p role="alert">Use the email address this invitation was sent to.</p>
         ) : null}
+        {error === "password" ? (
+          <p role="alert">Passwords must match and contain at least 10 characters.</p>
+        ) : null}
+        {error === "registration" ? (
+          <p role="alert">We could not create the account. Please try again or contact support.</p>
+        ) : null}
         {context ? (
           <form action={claimWebsiteAction}>
             <input name="token" type="hidden" value={token} />
@@ -64,6 +70,16 @@ export default async function ClaimPage({
                   autoComplete="new-password"
                   minLength={10}
                   name="password"
+                  required
+                  type="password"
+                />
+              </label>
+              <label>
+                Confirm password
+                <input
+                  autoComplete="new-password"
+                  minLength={10}
+                  name="confirmPassword"
                   required
                   type="password"
                 />
