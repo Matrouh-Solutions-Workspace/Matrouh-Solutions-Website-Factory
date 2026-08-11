@@ -4375,6 +4375,16 @@ input[type="file"] {
   height: 56px;
   margin-bottom: 2px;
 }
+
+.loginShell .loginLanguageLink {
+  justify-self: end;
+  min-height: auto;
+  font-weight: 800;
+}
+
+[dir="rtl"] .loginShell .loginLanguageLink {
+  justify-self: start;
+}
 .loginShell .authCard label {
   display: grid;
   gap: 7px;

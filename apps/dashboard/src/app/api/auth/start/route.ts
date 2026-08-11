@@ -24,7 +24,11 @@ export async function GET(request: NextRequest): Promise<Response> {
   const nonce = randomBytes(32).toString("base64url");
   const verifier = randomBytes(48).toString("base64url");
   const next = safeNext(request.nextUrl.searchParams.get("next"));
-  const uiLocales = preferredUiLocale(request.headers.get("accept-language"));
+  const uiLocales =
+    preferredUiLocale(request.nextUrl.searchParams.get("locale")) ??
+    preferredUiLocale(request.cookies.get("factory_ui_locale")?.value) ??
+    preferredUiLocale(request.headers.get("accept-language")) ??
+    "ar";
   const authorization = await dashboardOidcClient().authorizationUrl({
     state,
     nonce,
@@ -42,6 +46,13 @@ export async function GET(request: NextRequest): Promise<Response> {
   response.cookies.set("factory_oidc_state", state, options);
   response.cookies.set("factory_oidc_nonce", nonce, options);
   response.cookies.set("factory_oidc_verifier", verifier, options);
+  response.cookies.set("factory_ui_locale", uiLocales, {
+    httpOnly: true,
+    secure: dashboardConfig.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
   if (next) response.cookies.set("factory_oidc_next", next, options);
   return response;
 }
@@ -50,7 +61,7 @@ function safeNext(value: string | null): string | null {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : null;
 }
 
-function preferredUiLocale(value: string | null): "ar" | "en" | undefined {
+function preferredUiLocale(value: string | null | undefined): "ar" | "en" | undefined {
   const locales = (value ?? "")
     .split(",")
     .map((item) => item.trim().split(";", 1)[0]?.toLowerCase())
