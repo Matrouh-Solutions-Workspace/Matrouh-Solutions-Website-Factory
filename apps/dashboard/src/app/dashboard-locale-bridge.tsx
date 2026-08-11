@@ -501,6 +501,12 @@ const remainingArabicText: Readonly<Record<string, string>> = {
   yearly: "سنوي",
 };
 
+export const dashboardArabicCopy: Readonly<Record<string, string>> = {
+  ...arabicText,
+  ...supplementalArabicText,
+  ...remainingArabicText,
+};
+
 export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale }) {
   useLayoutEffect(() => {
     if (locale !== "ar") return;
@@ -511,8 +517,7 @@ export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale })
       const leadingWhitespace = value.match(/^\s*/)?.[0] ?? "";
       const trailingWhitespace = value.match(/\s*$/)?.[0] ?? "";
       const content = value.trim();
-      const translated =
-        remainingArabicText[content] ?? supplementalArabicText[content] ?? arabicText[content];
+      const translated = dashboardArabicCopy[content];
       const dynamic = translated ?? dynamicArabicText(content);
       return dynamic ? `${leadingWhitespace}${dynamic}${trailingWhitespace}` : value;
     };
