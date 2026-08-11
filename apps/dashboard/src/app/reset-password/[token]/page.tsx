@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import { findActivePasswordReset } from "@/server/password-resets";
 import { resetPasswordAction } from "./actions";
 
@@ -10,8 +9,26 @@ export default async function ResetPasswordPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { token } = await params;
-  if (!(await findActivePasswordReset(token))) notFound();
+  const activeReset = await findActivePasswordReset(token);
   const error = (await searchParams).error;
+  if (!activeReset) {
+    return (
+      <main className="loginShell" dir="rtl">
+        <section className="panel loginCard authCard">
+          <img alt="Matrouh Solutions" className="loginLogo" src="/matrouh-logo.png" />
+          <p className="eyebrow">بوابة لوحة التحكم</p>
+          <h1>رابط الاستعادة غير صالح</h1>
+          <p>
+            انتهت صلاحية الرابط أو تم استبداله بطلب أحدث. اطلب رابطًا جديدًا، ثم افتح الرابط الكامل
+            من أحدث رسالة تصلك.
+          </p>
+          <a className="textLink loginRecoveryLink" href="/forgot-password">
+            طلب رابط استعادة جديد
+          </a>
+        </section>
+      </main>
+    );
+  }
   return (
     <main className="loginShell" dir="rtl">
       <form action={resetPasswordAction} className="panel loginCard authCard">

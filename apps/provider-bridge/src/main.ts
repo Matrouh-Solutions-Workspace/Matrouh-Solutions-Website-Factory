@@ -4,6 +4,7 @@ import { access, mkdir, readFile, rename, stat, unlink, writeFile } from "node:f
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { isAbsolute, relative, resolve } from "node:path";
 import { spawn } from "node:child_process";
+import { renderMail } from "./mail";
 
 const port = numberSetting("FACTORY_PROVIDER_BRIDGE_PORT", 3003);
 const root = resolve(
@@ -200,13 +201,7 @@ async function servePublicMedia(pathname: string, response: ServerResponse): Pro
 
 async function sendMail(input: MailRequest): Promise<void> {
   if (!isMail(input)) throw new HttpError(400, "MAIL_REQUEST_INVALID");
-  const raw = [
-    `From: ${input.from}`,
-    `To: ${input.to}`,
-    `Subject: ${input.subject}`,
-    "",
-    input.text,
-  ].join("\r\n");
+  const raw = renderMail(input);
   await new Promise<void>((resolvePromise, reject) => {
     const child = spawn("msmtp", ["--read-envelope-from", "--", input.to], {
       stdio: ["pipe", "ignore", "pipe"],
