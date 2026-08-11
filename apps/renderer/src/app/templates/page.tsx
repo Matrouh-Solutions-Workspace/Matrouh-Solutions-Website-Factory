@@ -21,7 +21,10 @@ export default async function TemplatesGallery({ searchParams }: TemplatesGaller
   const cookieLocale = (await cookies()).get("factory_ui_locale")?.value;
   const locale: "ar" | "en" =
     requestedLocale === "en" || (!requestedLocale && cookieLocale === "en") ? "en" : "ar";
-  const templates = await loadPublicTemplateCatalog();
+  const templates = (await loadPublicTemplateCatalog()).map((template) => ({
+    ...template,
+    ...localizedTemplateMetadata(template.templateId, locale),
+  }));
   const text = copy[locale];
   const languageHref = locale === "ar" ? "/templates?locale=en" : "/templates?locale=ar";
 
@@ -103,6 +106,39 @@ function previewHref(templateId: string, version: string, locale: "ar" | "en"): 
   const base = `/template-preview/${encodeURIComponent(templateId)}/${encodeURIComponent(version)}`;
   return locale === "ar" ? `${base}/ar` : `${base}/`;
 }
+
+function localizedTemplateMetadata(templateId: string, locale: "ar" | "en") {
+  if (locale !== "ar") return {};
+  return arabicTemplateMetadata[templateId] ?? {};
+}
+
+const arabicTemplateMetadata: Readonly<
+  Record<
+    string,
+    { readonly displayName: string; readonly description: string; readonly category: string }
+  >
+> = {
+  "com.matrouh.engineer": {
+    displayName: "ملف مهندس",
+    description: "قالب ثنائي اللغة دقيق للمهندسين المستقلين والاستوديوهات التقنية.",
+    category: "خدمات احترافية",
+  },
+  "com.matrouh.doctor": {
+    displayName: "عيادة طبية",
+    description: "قالب طبي ثنائي اللغة يركّز على الثقة للعيادات والأطباء وفرق الرعاية.",
+    category: "رعاية صحية",
+  },
+  "com.matrouh.clinic": {
+    displayName: "عيادة متعددة التخصصات",
+    description: "قالب عيادة تفاعلي متعدد المواقع مع رعاية منسقة وخرائط مباشرة.",
+    category: "رعاية صحية",
+  },
+  "com.matrouh.creative": {
+    displayName: "ملف إبداعي",
+    description: "قالب تحريري للمصممين والمديرين الإبداعيين والمصورين والاستوديوهات.",
+    category: "أعمال إبداعية",
+  },
+};
 
 async function requirePlatformHost(): Promise<void> {
   const requestHeaders = await headers();
