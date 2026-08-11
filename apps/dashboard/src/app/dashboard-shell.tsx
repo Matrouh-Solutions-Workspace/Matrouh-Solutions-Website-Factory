@@ -5,27 +5,81 @@ import { usePathname } from "next/navigation";
 import { DashboardNav } from "@/app/dashboard-nav";
 import { Icon } from "@/app/icons";
 import { logoutAction } from "@/app/login/actions";
+import { LocalePreferenceLink } from "@/app/locale-preference-link";
 import { ThemeToggle } from "@/app/theme-toggle";
+import type { UiLocale } from "@/server/ui-locale";
 
-const titles: Record<string, string> = {
-  account: "My account",
-  billing: "Billing",
-  mail: "Mail",
-  clients: "Clients",
-  websites: "Websites",
-  templates: "Templates",
-  media: "Media library",
-  domains: "Domains",
-  monitoring: "Monitoring",
-  seo: "Search & social",
-  plugins: "Plugins",
-  settings: "Settings",
-};
+const copy = {
+  ar: {
+    clientPortal: "بوابة العميل",
+    signOut: "تسجيل الخروج",
+    myWebsites: "مواقعي",
+    viewLive: "فتح الموقع",
+    controlPanel: "لوحة التحكم",
+    overview: "نظرة عامة",
+    websiteFactory: "مصنع المواقع",
+    skip: "انتقل إلى المحتوى",
+    closeNavigation: "إغلاق القائمة",
+    openNavigation: "فتح القائمة",
+    closeOverlay: "إغلاق غطاء القائمة",
+    online: "لوحة التحكم متصلة",
+    attention: "لوحة التحكم تحتاج إلى متابعة",
+    checking: "جارٍ فحص لوحة التحكم",
+    account: "حسابي",
+    billing: "الفوترة",
+    mail: "البريد",
+    clients: "العملاء",
+    websites: "المواقع",
+    templates: "القوالب",
+    media: "مكتبة الوسائط",
+    domains: "النطاقات",
+    monitoring: "المراقبة",
+    seo: "البحث والشبكات",
+    plugins: "الإضافات",
+    settings: "الإعدادات",
+  },
+  en: {
+    clientPortal: "Client portal",
+    signOut: "Sign out",
+    myWebsites: "My websites",
+    viewLive: "View live website",
+    controlPanel: "Control panel",
+    overview: "Overview",
+    websiteFactory: "Website Factory",
+    skip: "Skip to content",
+    closeNavigation: "Close navigation",
+    openNavigation: "Open navigation",
+    closeOverlay: "Close navigation overlay",
+    online: "Control panel online",
+    attention: "Control panel needs attention",
+    checking: "Checking control panel",
+    account: "My account",
+    billing: "Billing",
+    mail: "Mail",
+    clients: "Clients",
+    websites: "Websites",
+    templates: "Templates",
+    media: "Media library",
+    domains: "Domains",
+    monitoring: "Monitoring",
+    seo: "Search & social",
+    plugins: "Plugins",
+    settings: "Settings",
+  },
+} as const;
 
-export function DashboardShell({ children }: { readonly children: React.ReactNode }) {
+export function DashboardShell({
+  children,
+  locale,
+}: {
+  readonly children: React.ReactNode;
+  readonly locale: UiLocale;
+}) {
   const pathname = usePathname();
   const appPathname = normalizeDashboardPathname(pathname);
   const [open, setOpen] = useState(false);
+  const text = copy[locale];
+  const alternateLocale = locale === "ar" ? "en" : "ar";
   if (
     appPathname === "/login" ||
     appPathname === "/forgot-password" ||
@@ -36,20 +90,29 @@ export function DashboardShell({ children }: { readonly children: React.ReactNod
   }
   if (appPathname.startsWith("/account")) {
     return (
-      <div className="appShell clientShell" dir="rtl">
+      <div className="appShell clientShell" dir={locale === "ar" ? "rtl" : "ltr"}>
         <div className="appFrame">
           <div className="topbar">
             <div className="brand">
               <img alt="Matrouh Solutions" src="/matrouh-logo.png" />
-              <strong>Client portal</strong>
+              <strong>{text.clientPortal}</strong>
             </div>
-            <form action={logoutAction}>
-              <button className="logoutButton" type="submit">
-                <Icon name="logout" />
-                <span>Sign out</span>
-              </button>
-            </form>
-            <ThemeToggle />
+            <div className="topbarActions">
+              <LocalePreferenceLink
+                className="localeToggle"
+                href={pathname}
+                locale={alternateLocale}
+              >
+                {alternateLocale === "ar" ? "العربية" : "English"}
+              </LocalePreferenceLink>
+              <ThemeToggle />
+              <form action={logoutAction}>
+                <button className="logoutButton" type="submit">
+                  <Icon name="logout" />
+                  <span>{text.signOut}</span>
+                </button>
+              </form>
+            </div>
           </div>
           <main id="dashboard-content">{children}</main>
         </div>
@@ -57,11 +120,13 @@ export function DashboardShell({ children }: { readonly children: React.ReactNod
     );
   }
   const segment = appPathname.split("/").filter(Boolean)[0];
-  const title = segment ? (titles[segment] ?? "Website Factory") : "Overview";
+  const title = segment
+    ? (text[segment as keyof typeof text] ?? text.websiteFactory)
+    : text.overview;
   return (
-    <div className="appShell" dir="rtl">
+    <div className="appShell" dir={locale === "ar" ? "rtl" : "ltr"}>
       <a className="skipLink" href="#dashboard-content">
-        Skip to content
+        {text.skip}
       </a>
       <aside className={open ? "sidebar sidebarOpen" : "sidebar"}>
         <div className="brand">
@@ -72,18 +137,18 @@ export function DashboardShell({ children }: { readonly children: React.ReactNod
           </div>
         </div>
         <button
-          aria-label="Close navigation"
+          aria-label={text.closeNavigation}
           className="mobileClose"
           onClick={() => setOpen(false)}
           type="button"
         >
           <Icon name="close" />
         </button>
-        <DashboardNav onNavigate={() => setOpen(false)} />
+        <DashboardNav locale={locale} onNavigate={() => setOpen(false)} />
       </aside>
       {open && (
         <button
-          aria-label="Close navigation overlay"
+          aria-label={text.closeOverlay}
           className="navScrim"
           onClick={() => setOpen(false)}
           type="button"
@@ -93,7 +158,7 @@ export function DashboardShell({ children }: { readonly children: React.ReactNod
         <div className="topbar">
           <button
             aria-expanded={open}
-            aria-label="Open navigation"
+            aria-label={text.openNavigation}
             className="menuButton"
             onClick={() => setOpen(true)}
             type="button"
@@ -101,13 +166,16 @@ export function DashboardShell({ children }: { readonly children: React.ReactNod
             <Icon name="menu" />
           </button>
           <div className="breadcrumb">
-            <span>Control panel</span>
+            <span>{text.controlPanel}</span>
             <Icon name="arrow" />
             <strong>{title}</strong>
           </div>
           <div className="topbarActions">
+            <LocalePreferenceLink className="localeToggle" href={pathname} locale={alternateLocale}>
+              {alternateLocale === "ar" ? "العربية" : "English"}
+            </LocalePreferenceLink>
             <ThemeToggle />
-            <SystemStatus />
+            <SystemStatus locale={locale} />
           </div>
         </div>
         <main id="dashboard-content">{children}</main>
@@ -122,7 +190,7 @@ function normalizeDashboardPathname(pathname: string): string {
   return pathname;
 }
 
-function SystemStatus() {
+function SystemStatus({ locale }: { readonly locale: UiLocale }) {
   const [status, setStatus] = useState<"checking" | "ready" | "unavailable">("checking");
   useEffect(() => {
     const controller = new AbortController();
@@ -133,12 +201,9 @@ function SystemStatus() {
       });
     return () => controller.abort();
   }, []);
+  const text = copy[locale];
   const label =
-    status === "ready"
-      ? "Control panel online"
-      : status === "unavailable"
-        ? "Control panel needs attention"
-        : "Checking control panel";
+    status === "ready" ? text.online : status === "unavailable" ? text.attention : text.checking;
   return (
     <div aria-live="polite" className={`systemStatus systemStatus--${status}`}>
       <span />

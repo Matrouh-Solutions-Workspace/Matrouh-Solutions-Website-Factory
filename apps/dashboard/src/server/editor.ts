@@ -5,6 +5,7 @@ import { discoverTemplates, loadTemplate } from "@factory/template-loader";
 import { dashboardDatabase } from "@/server/overview";
 import { requireClientAccountContext, requireDashboardContext } from "@/server/auth";
 import { dashboardMediaPath } from "@/server/media-storage";
+import { supportedTemplateLocales } from "@/server/template-locales";
 
 const templatesRoot = join(process.cwd(), "..", "..", "templates");
 
@@ -36,6 +37,7 @@ export interface WebsiteEditor {
     nodes: { id: string; labels: Record<string, string>; kind: string; revision: string }[];
   }[];
   availableTemplateVersions: string[];
+  supportedLocales: string[];
   pages: {
     id: string;
     title: string;
@@ -330,6 +332,7 @@ async function loadWebsiteEditorForContext(
           version.localeCompare(website.templateVersion, undefined, { numeric: true }) > 0,
       )
       .sort((left, right) => right.localeCompare(left, undefined, { numeric: true })),
+    supportedLocales: [...supportedTemplateLocales(template)],
     pages: editorData.pages.map((page) => {
       const pageDefinition = template.pages.find((item) => item.id === page.pageTypeId);
       const counts = new Map<string, number>();

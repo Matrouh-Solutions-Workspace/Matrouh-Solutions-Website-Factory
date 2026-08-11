@@ -41,6 +41,7 @@ import { renewalResumeStatus } from "@/server/subscriptions";
 import { defaultSubscriptionExpiry } from "@/server/subscription-dates";
 import { isSupportedWebsiteLocale, websiteLanguageSelection } from "@/server/website-languages";
 import { dashboardMediaPath, mediaStorageKey } from "@/server/media-storage";
+import { supportedTemplateLocales } from "@/server/template-locales";
 import { canReuseActivePublication } from "@/server/publication-toggle";
 
 const templatesRoot = resolve(workspaceRoot, dashboardConfig.FACTORY_TEMPLATE_DIRECTORY);
@@ -1043,9 +1044,10 @@ export async function createWebsiteClaimLinkAction(formData: FormData): Promise<
 export async function updateWebsiteBrandingAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const faviconAssetId = cleanText(formData.get("faviconAssetId"), 80) || null;
+  const updatesWhiteLabel = formData.has("whiteLabelEnabled");
   const whiteLabelEnabled = formData.get("whiteLabelEnabled") === "on";
   if (!websiteId) return;
-  const context = await requireDashboardContext("website.edit");
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   await withTenantTransaction(
     dashboardDatabase(),
     tenantActionContext(context, `website-branding:${websiteId}`),
@@ -1066,7 +1068,7 @@ export async function updateWebsiteBrandingAction(formData: FormData): Promise<v
         where: { id: websiteId, organizationId: context.organization.id, archivedAt: null },
         data: {
           faviconAssetId,
-          whiteLabelEnabled,
+          ...(updatesWhiteLabel ? { whiteLabelEnabled } : {}),
           draftRevision: { increment: 1 },
           revision: { increment: 1 },
         },
@@ -1089,14 +1091,14 @@ export async function updateWebsiteBrandingAction(formData: FormData): Promise<v
       }
     },
   );
-  revalidatePath(`/websites/${websiteId}`);
+  revalidateWebsiteEditor(websiteId);
 }
 
 export async function updateWebsiteLogoAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const logoMediaId = cleanText(formData.get("logoMediaId"), 80) || null;
   if (!websiteId) return;
-  const context = await requireDashboardContext("website.edit");
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   await withTenantTransaction(
     dashboardDatabase(),
     tenantActionContext(context, `website-logo:${websiteId}`),
@@ -1158,14 +1160,14 @@ export async function updateWebsiteLogoAction(formData: FormData): Promise<void>
       }
     },
   );
-  revalidatePath(`/websites/${websiteId}`);
+  revalidateWebsiteEditor(websiteId);
 }
 
 export async function updateWebsiteAppearanceAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const colorMode = cleanText(formData.get("colorMode"), 12);
   if (!websiteId || (colorMode !== "light" && colorMode !== "dark")) return;
-  const context = await requireDashboardContext("website.edit");
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   await withTenantTransaction(
     dashboardDatabase(),
     tenantActionContext(context, `website-appearance:${websiteId}`),
@@ -1196,7 +1198,7 @@ export async function updateWebsiteAppearanceAction(formData: FormData): Promise
       });
     },
   );
-  revalidatePath(`/websites/${websiteId}`);
+  revalidateWebsiteEditor(websiteId);
 }
 
 export async function saveWebsiteSubscriptionAction(formData: FormData): Promise<void> {
@@ -2641,7 +2643,7 @@ export async function updateSeoDraftAction(formData: FormData): Promise<void> {
     },
   );
   revalidatePath("/seo");
-  revalidatePath(`/websites/${websiteId}`);
+  revalidateWebsiteEditor(websiteId);
 }
 
 export async function updateOrganizationAction(formData: FormData): Promise<void> {
@@ -3029,6 +3031,9 @@ export async function addWebsiteLocaleAction(formData: FormData): Promise<void> 
   if (!website || website.locales.some((item) => item.locale === locale)) return;
   const template = await loadExactWebsiteTemplate(website.templateId, website.templateVersion);
   if (!template) throw new Error("TEMPLATE_NOT_FOUND");
+  if (!supportedTemplateLocales(template).includes(locale)) {
+    throw new Error("TEMPLATE_LOCALE_UNSUPPORTED");
+  }
   const sourcePages = website.pages.filter((page) => page.locale === website.defaultLocale);
   if (sourcePages.length === 0) throw new Error("DEFAULT_LOCALE_PAGES_MISSING");
   const pageIds = new Map(sourcePages.map((page) => [page.id, randomUUID()]));

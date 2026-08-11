@@ -1887,8 +1887,8 @@ input[type="file"] {
 }
 .appShell .brand > img,
 .appShell .workspaceIdentity > img {
-  border: 2px solid var(--primary);
-  box-shadow: 3px 3px 0 #5e3b05;
+  border: 0;
+  box-shadow: none;
 }
 .appShell .brand strong {
   font-size: 14px;
@@ -2044,7 +2044,7 @@ input[type="file"] {
 }
 
 .appShell .appFrame > main {
-  width: min(1320px, calc(100% - 48px));
+  width: calc(100% - 48px);
   max-width: none;
   margin: 0 auto;
   padding: 28px 0 60px;
@@ -4416,14 +4416,14 @@ input[type="file"] {
   gap: 20px;
 }
 .clientWebsiteManager {
-  padding: 28px;
+  padding: 0;
 }
 .clientContentWorkspace > .panelHead {
   padding: 0 4px;
 }
 @media (max-width: 700px) {
   .clientWebsiteManager {
-    padding: 18px;
+    padding: 0;
   }
   .loginShell .authCard {
     padding: 26px;
@@ -4453,7 +4453,58 @@ input[type="file"] {
   pointer-events: none;
 }
 .appShell .appFrame > main {
-  direction: ltr;
+  direction: inherit;
+}
+.appShell.clientShell .appFrame {
+  padding-right: 0;
+  padding-left: 0;
+}
+.appShell.clientShell .appFrame::before {
+  right: 0;
+}
+.appShell.clientShell .websiteEditorMeta {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.appShell .localeToggle {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  padding: 5px 9px;
+  border: 2px solid var(--ink);
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
+}
+.appShell .localeToggle:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.appShell .clientPublicationControl {
+  display: grid;
+  gap: 6px;
+}
+.appShell .clientPublicationFeedback {
+  max-width: 320px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.appShell .clientPublicationFeedback--success {
+  color: #15803d;
+}
+.appShell .clientPublicationFeedback--error {
+  color: var(--danger);
+}
+.appShell .sectionSeoForm {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid var(--line);
 }
 .appShell .topbar {
   box-shadow: 0 1px 0 rgba(17, 17, 17, 0.08);

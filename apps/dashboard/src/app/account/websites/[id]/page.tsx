@@ -1,15 +1,20 @@
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import {
   publishClientWebsiteUpdateAction,
+  updateSeoDraftAction,
   updateSectionDraftAction,
+  updateWebsiteBrandingAction,
   updateWebsiteIdentityAction,
+  updateWebsiteLogoAction,
 } from "@/app/actions";
+import { ClientPublicationAction } from "@/app/client-publication-action";
 import { CoordinatePickerFields, StructuredListField } from "@/app/structured-list-field";
 import { DraftEditorForm } from "@/app/draft-editor-form";
 import { MediaPicker } from "@/app/media-picker";
-import { PendingSubmit } from "@/app/pending-submit";
-import { loadClientWebsiteEditor } from "@/server/editor";
 import { dashboardConfig } from "@/server/config";
+import { loadClientWebsiteEditor } from "@/server/editor";
+import { UI_LOCALE_COOKIE, uiLocale } from "@/server/ui-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -17,25 +22,28 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
   const { id } = await params;
   const editor = await loadClientWebsiteEditor(id);
   if (!editor) notFound();
+
+  const locale = uiLocale((await cookies()).get(UI_LOCALE_COOKIE)?.value);
+  const copy = locale === "ar" ? arabic : english;
+
   return (
     <div className="clientWebsiteManager">
       <header className="websiteEditorHeader">
         <div>
-          <p className="eyebrow">Website manager</p>
+          <p className="eyebrow">{copy.websiteManager}</p>
           <h1>{editor.website.name}</h1>
           <p className="sub">
-            {editor.website.pendingUpdate
-              ? "Your changes are saved and waiting to be published."
-              : "Changes save automatically and will be marked for publishing."}
+            {editor.website.pendingUpdate ? copy.pendingChanges : copy.autosaveChanges}
           </p>
         </div>
         <div className="headerActions">
-          {editor.website.pendingUpdate ? (
-            <form action={publishClientWebsiteUpdateAction}>
-              <input name="websiteId" type="hidden" value={editor.website.id} />
-              <PendingSubmit pendingLabel="Publishing update…">Publish changes</PendingSubmit>
-            </form>
-          ) : null}
+          <ClientPublicationAction
+            action={publishClientWebsiteUpdateAction}
+            jobStatus={editor.latestPublishJob?.status ?? null}
+            locale={locale}
+            pendingUpdate={editor.website.pendingUpdate}
+            websiteId={editor.website.id}
+          />
           {editor.website.hostname ? (
             <a
               className="buttonLink secondaryButton"
@@ -43,28 +51,28 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
               rel="noreferrer"
               target="_blank"
             >
-              View live website
+              {copy.viewLive}
             </a>
           ) : null}
           <a className="textLink editorBackLink" href="/account">
-            ← My websites
+            {locale === "ar" ? "مواقعي ←" : "← My websites"}
           </a>
         </div>
       </header>
 
-      <section className="editorMetaBar websiteEditorMeta" aria-label="Website status">
+      <section className="editorMetaBar websiteEditorMeta" aria-label={copy.websiteStatus}>
         <div>
-          <span>Status</span>
+          <span>{copy.status}</span>
           <strong className="status">
-            {editor.website.pendingUpdate ? "pending update" : editor.website.status}
+            {editor.website.pendingUpdate ? copy.pendingUpdate : editor.website.status}
           </strong>
         </div>
         <div>
-          <span>Domain</span>
-          <strong>{editor.website.hostname ?? "Domain pending"}</strong>
+          <span>{copy.domain}</span>
+          <strong>{editor.website.hostname ?? copy.domainPending}</strong>
         </div>
         <div>
-          <span>Draft revision</span>
+          <span>{copy.draftRevision}</span>
           <strong>{editor.website.draftRevision}</strong>
         </div>
       </section>
@@ -73,25 +81,58 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
         <input name="websiteId" type="hidden" value={editor.website.id} />
         <div className="panelHead">
           <div>
-            <p className="eyebrow">Website identity</p>
-            <h2>Dashboard title</h2>
+            <p className="eyebrow">{copy.websiteIdentity}</p>
+            <h2>{copy.dashboardTitle}</h2>
           </div>
         </div>
         <label>
-          Website title
+          {copy.websiteTitle}
           <input defaultValue={editor.website.name} maxLength={200} name="name" required />
         </label>
       </DraftEditorForm>
 
+      <section className="panel editForm">
+        <div className="panelHead">
+          <div>
+            <p className="eyebrow">{copy.branding}</p>
+            <h2>{copy.brandingTitle}</h2>
+            <p className="sub">{copy.brandingDescription}</p>
+          </div>
+        </div>
+        <div className="inlineUploadGrid">
+          <DraftEditorForm action={updateWebsiteBrandingAction}>
+            <input name="websiteId" type="hidden" value={editor.website.id} />
+            <MediaPicker
+              assets={editor.mediaAssets}
+              defaultValue={editor.website.faviconAssetId ?? ""}
+              label={copy.favicon}
+              name="faviconAssetId"
+              noneLabel={copy.factoryDefault}
+              purpose="favicon"
+              websiteId={editor.website.id}
+            />
+          </DraftEditorForm>
+          <DraftEditorForm action={updateWebsiteLogoAction}>
+            <input name="websiteId" type="hidden" value={editor.website.id} />
+            <MediaPicker
+              assets={editor.mediaAssets}
+              defaultValue={settingsValue(editor.settings?.content, "logoMediaId") ?? ""}
+              label={copy.customLogo}
+              name="logoMediaId"
+              noneLabel={copy.templateDefault}
+              purpose="logo"
+              websiteId={editor.website.id}
+            />
+          </DraftEditorForm>
+        </div>
+      </section>
+
       <section className="clientContentWorkspace">
         <div className="panelHead">
           <div>
-            <p className="eyebrow">Content</p>
-            <h2>Edit your pages</h2>
-            <p className="sub">
-              Every change is autosaved. Select existing images or upload a new one from the image
-              picker.
-            </p>
+            <p className="eyebrow">{copy.content}</p>
+            <h2>{copy.editPages}</h2>
+            <p className="sub">{copy.autosaveDescription}</p>
           </div>
         </div>
         {editor.pages.map((page) => (
@@ -171,8 +212,8 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
                                 name={`jsonField:${field.name}`}
                                 required={field.required}
                               >
-                                <option value="true">Yes</option>
-                                <option value="false">No</option>
+                                <option value="true">{copy.yes}</option>
+                                <option value="false">{copy.no}</option>
                               </select>
                             ) : field.control === "number" ? (
                               <input
@@ -193,7 +234,7 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
                       )
                     ) : (
                       <label>
-                        Content JSON
+                        {copy.contentJson}
                         <textarea
                           defaultValue={JSON.stringify(section.content, null, 2)}
                           name="contentJson"
@@ -205,6 +246,48 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
                 </article>
               ))}
             </div>
+            <DraftEditorForm action={updateSeoDraftAction} className="sectionSeoForm">
+              <input name="websiteId" type="hidden" value={editor.website.id} />
+              <input name="pageId" type="hidden" value={page.id} />
+              <input
+                name="websiteDraftRevision"
+                type="hidden"
+                value={editor.website.draftRevision}
+              />
+              <div className="sectionEditorHead">
+                <div>
+                  <strong>{copy.searchVisibility}</strong>
+                  <p>{copy.searchVisibilityDescription}</p>
+                </div>
+              </div>
+              <label>
+                {copy.searchTitle}
+                <input defaultValue={page.seo.title} maxLength={200} name="title" />
+              </label>
+              <label>
+                {copy.searchDescription}
+                <textarea
+                  defaultValue={page.seo.description}
+                  maxLength={500}
+                  name="description"
+                  rows={3}
+                />
+              </label>
+              <label>
+                {copy.keywords}
+                <input defaultValue={page.seo.keywords.join(", ")} name="keywords" />
+              </label>
+              <div className="checkboxGroup">
+                <label className="checkboxLine">
+                  <input defaultChecked={page.seo.index} name="index" type="checkbox" />
+                  {copy.allowIndexing}
+                </label>
+                <label className="checkboxLine">
+                  <input defaultChecked={page.seo.follow} name="follow" type="checkbox" />
+                  {copy.allowFollowing}
+                </label>
+              </div>
+            </DraftEditorForm>
           </section>
         ))}
       </section>
@@ -219,3 +302,90 @@ function publicWebsiteUrl(hostname: string): string {
   dashboard.search = "";
   return dashboard.toString();
 }
+
+function settingsValue(content: string | undefined, key: string): string | null {
+  if (!content) return null;
+  try {
+    const parsed: unknown = JSON.parse(content);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const value = (parsed as Record<string, unknown>)[key];
+    return typeof value === "string" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+const english = {
+  websiteManager: "Website manager",
+  pendingChanges: "Your changes are saved and waiting to be published.",
+  autosaveChanges: "Changes save automatically and will be marked for publishing.",
+  viewLive: "View live website",
+  websiteStatus: "Website status",
+  status: "Status",
+  pendingUpdate: "pending update",
+  domain: "Domain",
+  domainPending: "Domain pending",
+  draftRevision: "Draft revision",
+  websiteIdentity: "Website identity",
+  dashboardTitle: "Dashboard title",
+  websiteTitle: "Website title",
+  branding: "Branding",
+  brandingTitle: "Logo and favicon",
+  brandingDescription:
+    "Choose an existing image or upload a new one from your website media folder.",
+  favicon: "Favicon",
+  factoryDefault: "Use the Factory default",
+  customLogo: "Custom logo",
+  templateDefault: "Use the template logo",
+  content: "Content",
+  editPages: "Edit your pages",
+  autosaveDescription:
+    "Every change is autosaved. Select existing images or upload a new one from the image picker.",
+  yes: "Yes",
+  no: "No",
+  contentJson: "Content JSON",
+  searchVisibility: "Search visibility",
+  searchVisibilityDescription: "Safe search and social settings for this page.",
+  searchTitle: "Search title",
+  searchDescription: "Search description",
+  keywords: "Keywords",
+  allowIndexing: "Allow search indexing",
+  allowFollowing: "Allow search engines to follow links",
+} as const;
+
+const arabic: Record<keyof typeof english, string> = {
+  websiteManager: "إدارة الموقع",
+  pendingChanges: "تم حفظ تغييراتك وهي بانتظار النشر.",
+  autosaveChanges: "تُحفظ التغييرات تلقائيًا وتُعلَّم للنشر.",
+  viewLive: "فتح الموقع",
+  websiteStatus: "حالة الموقع",
+  status: "الحالة",
+  pendingUpdate: "تحديث قيد الانتظار",
+  domain: "النطاق",
+  domainPending: "النطاق قيد التجهيز",
+  draftRevision: "مراجعة المسودة",
+  websiteIdentity: "هوية الموقع",
+  dashboardTitle: "عنوان لوحة التحكم",
+  websiteTitle: "عنوان الموقع",
+  branding: "الهوية البصرية",
+  brandingTitle: "الشعار والأيقونة",
+  brandingDescription: "اختر صورة موجودة أو ارفع صورة جديدة من مجلد وسائط موقعك.",
+  favicon: "أيقونة الموقع",
+  factoryDefault: "استخدم الإعداد الافتراضي",
+  customLogo: "شعار مخصص",
+  templateDefault: "استخدم شعار القالب",
+  content: "المحتوى",
+  editPages: "تعديل صفحاتك",
+  autosaveDescription:
+    "يتم حفظ كل تغيير تلقائيًا. اختر الصور الموجودة أو ارفع صورة جديدة من منتقي الصور.",
+  yes: "نعم",
+  no: "لا",
+  contentJson: "محتوى JSON",
+  searchVisibility: "الظهور في البحث",
+  searchVisibilityDescription: "إعدادات آمنة للبحث والمشاركة لهذه الصفحة.",
+  searchTitle: "عنوان البحث",
+  searchDescription: "وصف البحث",
+  keywords: "الكلمات المفتاحية",
+  allowIndexing: "السماح بالفهرسة",
+  allowFollowing: "السماح لمحركات البحث باتباع الروابط",
+};

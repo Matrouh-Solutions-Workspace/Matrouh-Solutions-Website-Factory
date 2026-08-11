@@ -4,38 +4,87 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "@/app/icons";
 import { logoutAction } from "@/app/login/actions";
+import type { UiLocale } from "@/server/ui-locale";
 
-const items = [
-  { label: "Overview", href: "/", icon: "overview", group: "Workspace" },
-  { label: "Websites", href: "/websites", icon: "websites", group: "Workspace" },
-  { label: "Clients", href: "/clients", icon: "clients", group: "Workspace" },
-  { label: "Billing", href: "/billing", icon: "settings", group: "Workspace" },
-  { label: "Mail", href: "/mail", icon: "mail", group: "Workspace" },
-  { label: "Templates", href: "/templates", icon: "templates", group: "Library" },
-  { label: "Media", href: "/media", icon: "media", group: "Library" },
-  { label: "Domains", href: "/domains", icon: "domains", group: "Optimize" },
-  { label: "Monitoring", href: "/monitoring", icon: "monitoring", group: "System" },
-  { label: "Plugins", href: "/plugins", icon: "plugins", group: "System" },
-  { label: "Settings", href: "/settings", icon: "settings", group: "System" },
-] satisfies readonly { label: string; href: string; icon: IconName; group: string }[];
+const itemDefinitions = [
+  { key: "overview", href: "/", icon: "overview", group: "workspace" },
+  { key: "websites", href: "/websites", icon: "websites", group: "workspace" },
+  { key: "clients", href: "/clients", icon: "clients", group: "workspace" },
+  { key: "billing", href: "/billing", icon: "settings", group: "workspace" },
+  { key: "mail", href: "/mail", icon: "mail", group: "workspace" },
+  { key: "templates", href: "/templates", icon: "templates", group: "library" },
+  { key: "media", href: "/media", icon: "media", group: "library" },
+  { key: "domains", href: "/domains", icon: "domains", group: "optimize" },
+  { key: "monitoring", href: "/monitoring", icon: "monitoring", group: "system" },
+  { key: "plugins", href: "/plugins", icon: "plugins", group: "system" },
+  { key: "settings", href: "/settings", icon: "settings", group: "system" },
+] satisfies readonly { key: string; href: string; icon: IconName; group: string }[];
 
-export function DashboardNav({ onNavigate }: { readonly onNavigate?: () => void }) {
+const copy = {
+  ar: {
+    overview: "نظرة عامة",
+    websites: "المواقع",
+    clients: "العملاء",
+    billing: "الفوترة",
+    mail: "البريد",
+    templates: "القوالب",
+    media: "مكتبة الوسائط",
+    domains: "النطاقات",
+    monitoring: "المراقبة",
+    plugins: "الإضافات",
+    settings: "الإعدادات",
+    workspace: "مساحة العمل",
+    library: "المكتبة",
+    optimize: "التحسين",
+    system: "النظام",
+    controlPanel: "لوحة التحكم",
+    signOut: "تسجيل الخروج",
+  },
+  en: {
+    overview: "Overview",
+    websites: "Websites",
+    clients: "Clients",
+    billing: "Billing",
+    mail: "Mail",
+    templates: "Templates",
+    media: "Media library",
+    domains: "Domains",
+    monitoring: "Monitoring",
+    plugins: "Plugins",
+    settings: "Settings",
+    workspace: "Workspace",
+    library: "Library",
+    optimize: "Optimize",
+    system: "System",
+    controlPanel: "Control panel",
+    signOut: "Sign out",
+  },
+} as const;
+
+export function DashboardNav({
+  locale,
+  onNavigate,
+}: {
+  readonly locale: UiLocale;
+  readonly onNavigate?: () => void;
+}) {
+  const text = copy[locale];
   const rawPathname = usePathname();
   const pathname = rawPathname.startsWith("/dashboard/")
     ? rawPathname.slice("/dashboard".length)
     : rawPathname === "/dashboard"
       ? "/"
       : rawPathname;
-  const groups = [...new Set(items.map((item) => item.group))];
+  const groups = [...new Set(itemDefinitions.map((item) => item.group))];
   return (
     <>
       <nav aria-label="Primary navigation" className="primaryNav">
         {groups.map((group) => (
           <div className="navGroup" key={group}>
-            <p>{group}</p>
-            {items
+            <p>{text[group as keyof typeof text]}</p>
+            {itemDefinitions
               .filter((item) => item.group === group)
-              .map(({ label, href, icon }) => {
+              .map(({ key, href, icon }) => {
                 const active = href === "/" ? pathname === href : pathname.startsWith(href);
                 const publicHref = href === "/" ? "/dashboard" : `/dashboard${href}`;
                 return (
@@ -49,7 +98,7 @@ export function DashboardNav({ onNavigate }: { readonly onNavigate?: () => void 
                     <span>
                       <Icon name={icon} />
                     </span>
-                    <b>{label}</b>
+                    <b>{text[key as keyof typeof text]}</b>
                     {active && <Icon className="navArrow" name="arrow" />}
                   </Link>
                 );
@@ -62,13 +111,13 @@ export function DashboardNav({ onNavigate }: { readonly onNavigate?: () => void 
           <img alt="" src="/matrouh-logo.png" />
           <div>
             <strong>Matrouh Solutions</strong>
-            <small>Control panel</small>
+            <small>{text.controlPanel}</small>
           </div>
         </Link>
         <form action={logoutAction}>
-          <button className="logoutButton" title="Sign out" type="submit">
+          <button className="logoutButton" title={text.signOut} type="submit">
             <Icon name="logout" />
-            <span>Sign out</span>
+            <span>{text.signOut}</span>
           </button>
         </form>
       </div>

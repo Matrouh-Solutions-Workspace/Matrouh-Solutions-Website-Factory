@@ -53,6 +53,9 @@ export default async function WebsiteEditorPage({
   if (!editor) notFound();
   const setupStep = draftSetupStep(requestedSetupStep);
   const publishPending = isActivePublicationJob(editor.latestPublishJob?.status);
+  const availableLocales = editor.supportedLocales.filter(
+    (locale) => !editor.website.locales.includes(locale),
+  );
 
   return (
     <div className="websiteEditorPage">
@@ -328,6 +331,10 @@ export default async function WebsiteEditorPage({
         <div>
           <p className="eyebrow">Languages</p>
           <h2>Website locales</h2>
+          <p className="formNotice">
+            This template supports:{" "}
+            {editor.supportedLocales.map((locale) => localeName(locale)).join(", ")}.
+          </p>
           <p>
             {editor.website.locales.join(", ")} · default {editor.website.defaultLocale}
           </p>
@@ -336,13 +343,22 @@ export default async function WebsiteEditorPage({
         <input name="websiteDraftRevision" type="hidden" value={editor.website.draftRevision} />
         <label>
           Add locale
-          <select name="locale" required>
-            <option value="">Choose language</option>
-            {!editor.website.locales.includes("en") && <option value="en">English</option>}
-            {!editor.website.locales.includes("ar") && <option value="ar">Arabic</option>}
+          <select disabled={availableLocales.length === 0} name="locale" required>
+            <option value="">
+              {availableLocales.length === 0
+                ? "All supported languages are enabled"
+                : "Choose language"}
+            </option>
+            {availableLocales.map((locale) => (
+              <option key={locale} value={locale}>
+                {localeName(locale)}
+              </option>
+            ))}
           </select>
         </label>
-        <PendingSubmit pendingLabel="Creating locale...">Add language</PendingSubmit>
+        <PendingSubmit disabled={availableLocales.length === 0} pendingLabel="Creating locale...">
+          Add language
+        </PendingSubmit>
       </form>
 
       {editor.website.locales.length > 1 && (
