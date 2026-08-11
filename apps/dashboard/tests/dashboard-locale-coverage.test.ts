@@ -9,6 +9,9 @@ const ignoredLiteralText = new Set([
   "generated/matrouh.template.manifest.json",
   "matrouh.template.json",
   "PDF",
+  // Brand names are intentionally invariant across dashboard locales.
+  "Matrouh",
+  "Matrouh Solutions",
   // Domain names and email addresses are technical examples, not UI copy.
   "clients.example.com",
   "my-clinic",
@@ -41,6 +44,11 @@ function accessibleAttributeLiterals(source: string): string[] {
 }
 
 describe("dashboard Arabic copy coverage", () => {
+  it("keeps Matrouh brand names invariant", () => {
+    expect(dashboardArabicCopy.Matrouh).toBeUndefined();
+    expect(dashboardArabicCopy["Matrouh Solutions"]).toBeUndefined();
+  });
+
   it("covers every static visible English dashboard label", async () => {
     const files = await tsxFiles(appRoot);
     const literals = (

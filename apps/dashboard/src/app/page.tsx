@@ -25,6 +25,7 @@ export default async function Dashboard() {
     loadDashboardOverview(),
     dashboardLocale(),
   ]);
+  const text = dashboardCopy(locale);
   const websites = overview.websites;
   const hasActivePublication = websites.some((website) =>
     isActivePublicationJob(website.latestPublishJob?.status),
@@ -42,25 +43,25 @@ export default async function Dashboard() {
     {
       label: "Websites",
       value: String(overview.stats.websites || websites.length),
-      note: `${overview.stats.publishedWebsites} published`,
+      note: text.publishedCount(overview.stats.publishedWebsites),
       icon: "websites",
     },
     {
       label: "Templates",
       value: String(overview.stats.templates || catalog.length),
-      note: "Validated catalog",
+      note: text.validatedCatalog,
       icon: "templates",
     },
     {
       label: "Domains",
       value: String(overview.stats.activeDomains),
-      note: "Active hostnames",
+      note: text.activeHostnames,
       icon: "domains",
     },
     {
       label: "Publish jobs",
       value: String(overview.stats.activePublishJobs),
-      note: `${overview.stats.failedPublishJobs} failed`,
+      note: text.failedCount(overview.stats.failedPublishJobs),
       icon: "monitoring",
     },
   ] satisfies readonly { label: string; value: string; note: string; icon: IconName }[];
@@ -140,17 +141,17 @@ export default async function Dashboard() {
                 <strong>{website.name}</strong>
                 <p>
                   {website.domains[0]?.hostname ?? "No domain"} | {website.templateVersion} |{" "}
-                  {website.pages} page{website.pages === 1 ? "" : "s"}
+                  {text.pageCount(website.pages)}
                 </p>
               </div>
               <div className="statusStack">
-                <span className="status">{website.status}</span>
+                <span className="status">{text.status(website.status)}</span>
                 {website.pendingUpdate && (
                   <span className="jobStatus retryable">pending update</span>
                 )}
                 {website.latestPublishJob && (
                   <span className={`jobStatus ${website.latestPublishJob.status}`}>
-                    {website.latestPublishJob.status}
+                    {text.status(website.latestPublishJob.status)}
                   </span>
                 )}
               </div>
@@ -219,7 +220,7 @@ export default async function Dashboard() {
                   {template.latestVersion ?? "No version"} | {template.category}
                 </p>
               </div>
-              <span>{template.lifecycleStatus}</span>
+              <span>{text.status(template.lifecycleStatus)}</span>
             </div>
           ))}
           {catalog.length === 0 && (
@@ -237,9 +238,9 @@ export default async function Dashboard() {
           {overview.publishJobs.slice(0, 6).map((job) => (
             <div className="jobRow" key={job.id}>
               <div>
-                <strong>{job.status}</strong>
+                <strong>{text.status(job.status)}</strong>
                 <p>
-                  {shortId(job.websiteId)} | attempt {job.attemptCount}/{job.maxAttempts}
+                  {shortId(job.websiteId)} | {text.attempt(job.attemptCount, job.maxAttempts)}
                 </p>
               </div>
               <small>{relativeDate(job.completedAt ?? job.createdAt, locale)}</small>
@@ -275,6 +276,36 @@ function headerDate(locale: "ar" | "en"): string {
     month: "long",
     day: "numeric",
   }).format(new Date());
+}
+
+function dashboardCopy(locale: "ar" | "en") {
+  const statusCopy: Readonly<Record<string, string>> =
+    locale === "ar"
+      ? {
+          archived: "مؤرشف",
+          disabled: "معطل",
+          draft: "مسودة",
+          failed: "فشل",
+          published: "منشور",
+          queued: "في الانتظار",
+          ready: "جاهز",
+          retryable: "قابل لإعادة المحاولة",
+          running: "قيد التنفيذ",
+          succeeded: "نجح",
+          unpublished: "غير منشور",
+        }
+      : {};
+  return {
+    activeHostnames: locale === "ar" ? "أسماء النطاقات النشطة" : "Active hostnames",
+    attempt: (count: number, max: number) =>
+      locale === "ar" ? `محاولة ${count}/${max}` : `attempt ${count}/${max}`,
+    failedCount: (count: number) => (locale === "ar" ? `${count} فاشلة` : `${count} failed`),
+    pageCount: (count: number) =>
+      locale === "ar" ? `${count} صفحة` : `${count} page${count === 1 ? "" : "s"}`,
+    publishedCount: (count: number) => (locale === "ar" ? `${count} منشورة` : `${count} published`),
+    status: (value: string) => statusCopy[value] ?? value,
+    validatedCatalog: locale === "ar" ? "كتالوج موثّق" : "Validated catalog",
+  };
 }
 
 function shortId(value: string): string {
