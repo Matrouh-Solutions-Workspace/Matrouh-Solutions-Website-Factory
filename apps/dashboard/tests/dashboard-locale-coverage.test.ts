@@ -1,7 +1,10 @@
 import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { dashboardArabicCopy } from "../src/app/dashboard-locale-bridge";
+import {
+  dashboardArabicCopy,
+  translateDashboardArabicText,
+} from "../src/app/dashboard-locale-bridge";
 
 const appRoot = resolve(process.cwd(), "src/app");
 const ignoredLiteralText = new Set([
@@ -47,6 +50,14 @@ describe("dashboard Arabic copy coverage", () => {
   it("keeps Matrouh brand names invariant", () => {
     expect(dashboardArabicCopy.Matrouh).toBeUndefined();
     expect(dashboardArabicCopy["Matrouh Solutions"]).toBeUndefined();
+  });
+
+  it("translates generated draft-editor UI without changing website content", () => {
+    expect(translateDashboardArabicText("Publish job: succeeded")).toBe("مهمة النشر: نجح");
+    expect(translateDashboardArabicText("Attempt 1/5")).toBe("محاولة 1/5");
+    expect(translateDashboardArabicText("3 sections")).toBe("3 أقسام");
+    expect(translateDashboardArabicText("Move item 2 down")).toBe("نقل العنصر 2 لأسفل");
+    expect(translateDashboardArabicText("Matrouh Solutions")).toBe("Matrouh Solutions");
   });
 
   it("covers every static visible English dashboard label", async () => {

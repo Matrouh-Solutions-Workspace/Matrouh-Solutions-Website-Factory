@@ -542,25 +542,25 @@ export const dashboardArabicCopy: Readonly<Record<string, string>> = {
   ...remainingArabicText,
 };
 
+export function translateDashboardArabicText(value: string): string {
+  const leadingWhitespace = value.match(/^\s*/)?.[0] ?? "";
+  const trailingWhitespace = value.match(/\s*$/)?.[0] ?? "";
+  const content = value.trim();
+  const translated = dashboardArabicCopy[content] ?? dynamicArabicText(content);
+  return translated ? `${leadingWhitespace}${translated}${trailingWhitespace}` : value;
+}
+
 export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale }) {
   useLayoutEffect(() => {
     if (locale !== "ar") return;
     const root = document.querySelector<HTMLElement>(".appShell");
     if (!root) return;
 
-    const translate = (value: string): string => {
-      const leadingWhitespace = value.match(/^\s*/)?.[0] ?? "";
-      const trailingWhitespace = value.match(/\s*$/)?.[0] ?? "";
-      const content = value.trim();
-      const translated = dashboardArabicCopy[content];
-      const dynamic = translated ?? dynamicArabicText(content);
-      return dynamic ? `${leadingWhitespace}${dynamic}${trailingWhitespace}` : value;
-    };
     const apply = (node: Node): void => {
       if (node.nodeType === Node.TEXT_NODE) {
         const parent = node.parentElement;
         if (!parent || ["SCRIPT", "STYLE", "TEXTAREA"].includes(parent.tagName)) return;
-        const translated = translate(node.textContent ?? "");
+        const translated = translateDashboardArabicText(node.textContent ?? "");
         if (translated !== node.textContent) node.textContent = translated;
         return;
       }
@@ -568,7 +568,7 @@ export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale })
       for (const attribute of ["placeholder", "title", "aria-label"] as const) {
         const value = node.getAttribute(attribute);
         if (!value) continue;
-        const translated = arabicAttributes[value] ?? translate(value);
+        const translated = arabicAttributes[value] ?? translateDashboardArabicText(value);
         if (translated !== value) node.setAttribute(attribute, translated);
       }
       node.childNodes.forEach(apply);
