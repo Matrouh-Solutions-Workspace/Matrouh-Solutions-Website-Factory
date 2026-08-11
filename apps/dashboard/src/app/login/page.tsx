@@ -1,13 +1,15 @@
 import { LoginForm } from "./login-form";
+import { cookies } from "next/headers";
 import { dashboardConfig } from "@/server/config";
+import { UI_LOCALE_COOKIE, uiLocale } from "@/server/ui-locale";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; next?: string; reset?: string; locale?: string }>;
+  searchParams: Promise<{ error?: string; next?: string; reset?: string }>;
 }) {
   const query = await searchParams;
-  const locale = query.locale === "en" ? "en" : "ar";
+  const locale = uiLocale((await cookies()).get(UI_LOCALE_COOKIE)?.value);
   return (
     <main className="loginShell" dir={locale === "ar" ? "rtl" : "ltr"} lang={locale}>
       <LoginForm

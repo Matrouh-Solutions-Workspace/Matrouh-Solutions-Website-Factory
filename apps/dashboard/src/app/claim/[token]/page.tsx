@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
+import { LocalePreferenceLink } from "@/app/locale-preference-link";
 import { getDashboardContext } from "@/server/auth";
+import { UI_LOCALE_COOKIE, uiLocale } from "@/server/ui-locale";
 import { findWebsiteClaim } from "@/server/website-claims";
 import { claimWebsiteAction, registerAndClaimWebsiteAction } from "./actions";
 
@@ -51,26 +54,29 @@ export default async function ClaimPage({
   searchParams,
 }: {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ error?: string; locale?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { token } = await params;
   const query = await searchParams;
-  const locale: ClaimLocale = query.locale === "en" ? "en" : "ar";
+  const locale: ClaimLocale = uiLocale((await cookies()).get(UI_LOCALE_COOKIE)?.value);
   const text = copy[locale];
   const claim = await findWebsiteClaim(token);
   if (!claim) notFound();
   const context = await getDashboardContext();
   const alternateLocale: ClaimLocale = locale === "ar" ? "en" : "ar";
-  const claimPath = (targetLocale: ClaimLocale) =>
-    `/claim/${token}?locale=${encodeURIComponent(targetLocale)}`;
-  const loginPath = new URLSearchParams({ next: `/claim/${token}`, locale });
+  const claimPath = `/dashboard/claim/${token}`;
+  const loginPath = new URLSearchParams({ next: `/claim/${token}` });
 
   return (
     <main className="loginShell" dir={locale === "ar" ? "rtl" : "ltr"} lang={locale}>
       <section className="panel loginCard authCard">
-        <a className="textLink loginLanguageLink" href={claimPath(alternateLocale)}>
+        <LocalePreferenceLink
+          className="textLink loginLanguageLink"
+          href={claimPath}
+          locale={alternateLocale}
+        >
           {text.switchLanguage}
-        </a>
+        </LocalePreferenceLink>
         <p className="eyebrow">{text.eyebrow}</p>
         <h1>{text.title(claim.websiteName)}</h1>
         <p>{text.description}</p>
@@ -81,7 +87,6 @@ export default async function ClaimPage({
         {context ? (
           <form action={claimWebsiteAction}>
             <input name="token" type="hidden" value={token} />
-            <input name="locale" type="hidden" value={locale} />
             <p>
               {text.signedInAs} <strong>{context.actor.email}</strong>
             </p>
@@ -94,7 +99,6 @@ export default async function ClaimPage({
             </a>
             <form action={registerAndClaimWebsiteAction} className="claimRegisterForm">
               <input name="token" type="hidden" value={token} />
-              <input name="locale" type="hidden" value={locale} />
               <label>
                 {text.name}
                 <input autoComplete="name" name="displayName" required />

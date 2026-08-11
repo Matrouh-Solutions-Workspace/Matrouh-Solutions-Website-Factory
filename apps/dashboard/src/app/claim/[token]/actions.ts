@@ -13,38 +13,36 @@ import { findWebsiteClaim } from "@/server/website-claims";
 
 export async function claimWebsiteAction(formData: FormData): Promise<void> {
   const token = textField(formData, "token", 128);
-  const locale = claimLocale(formData);
   const context = await getDashboardContext();
-  if (!context) redirect(loginClaimPath(token, locale));
+  if (!context) redirect(loginClaimPath(token));
   const claim = await findWebsiteClaim(token);
   if (!claim || claim.organizationId !== context.organization.id)
-    redirect(claimPath(token, locale, "invalid"));
+    redirect(claimPath(token, "invalid"));
   if (
     claim.intendedEmail &&
     claim.intendedEmail.toLowerCase() !== context.actor.email.toLowerCase()
   )
-    redirect(claimPath(token, locale, "email"));
+    redirect(claimPath(token, "email"));
   await assignClaim(claim, context.actor.id, context.actor.displayName, context.actor.email);
   redirect("/account");
 }
 
 export async function registerAndClaimWebsiteAction(formData: FormData): Promise<void> {
   const token = textField(formData, "token", 128);
-  const locale = claimLocale(formData);
   const displayName = textField(formData, "displayName", 200);
   const email = textField(formData, "email", 320).toLowerCase();
   const password = textField(formData, "password", 256);
   const confirmPassword = textField(formData, "confirmPassword", 256);
   const claim = await findWebsiteClaim(token);
   if (!claim || !displayName || !email || password.length < 10 || password !== confirmPassword)
-    redirect(claimPath(token, locale, "password"));
+    redirect(claimPath(token, "password"));
   if (claim.intendedEmail && claim.intendedEmail.toLowerCase() !== email)
-    redirect(claimPath(token, locale, "email"));
+    redirect(claimPath(token, "email"));
   const existing = await dashboardDatabase().user.findUnique({
     where: { normalizedEmail: email },
     select: { id: true },
   });
-  if (existing) redirect(loginClaimPath(token, locale));
+  if (existing) redirect(loginClaimPath(token));
 
   const userId = randomUUID();
   let oidcSubject: string | null = null;
@@ -111,8 +109,8 @@ export async function registerAndClaimWebsiteAction(formData: FormData): Promise
   } catch (error) {
     if (oidcSubject) await deleteOidcUser(oidcSubject).catch(() => undefined);
     if (error instanceof OidcAdminError) {
-      if (error.code === "conflict") redirect(loginClaimPath(token, locale));
-      redirect(claimPath(token, locale, "registration"));
+      if (error.code === "conflict") redirect(loginClaimPath(token));
+      redirect(claimPath(token, "registration"));
     }
     throw error;
   }
@@ -223,16 +221,10 @@ function textField(formData: FormData, key: string, maximum: number): string {
   return typeof value === "string" ? value.trim().slice(0, maximum) : "";
 }
 
-function claimLocale(formData: FormData): "ar" | "en" {
-  return formData.get("locale") === "en" ? "en" : "ar";
+function claimPath(token: string, error?: string): string {
+  return error ? `/claim/${token}?error=${encodeURIComponent(error)}` : `/claim/${token}`;
 }
 
-function claimPath(token: string, locale: "ar" | "en", error?: string): string {
-  const query = new URLSearchParams({ locale });
-  if (error) query.set("error", error);
-  return `/claim/${token}?${query.toString()}`;
-}
-
-function loginClaimPath(token: string, locale: "ar" | "en"): string {
-  return `/login?${new URLSearchParams({ next: `/claim/${token}`, locale }).toString()}`;
+function loginClaimPath(token: string): string {
+  return `/login?${new URLSearchParams({ next: `/claim/${token}` }).toString()}`;
 }

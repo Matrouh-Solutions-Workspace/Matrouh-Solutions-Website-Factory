@@ -15,10 +15,24 @@ export function middleware(request: NextRequest): NextResponse {
   if (host && host !== dashboardHost) return rendererRewrite(request, host);
 
   if (pathname === "/") {
-    return rendererRewrite(request, dashboardHost, "/matrouh-solutions");
+    const locale = request.cookies.get("factory_ui_locale")?.value === "en" ? "en" : "ar";
+    return rendererRewrite(
+      request,
+      dashboardHost,
+      locale === "en" ? "/en/matrouh-solutions" : "/matrouh-solutions",
+    );
   }
   if (pathname === "/matrouh-solutions" || pathname.startsWith("/en/matrouh-solutions")) {
-    return rendererRewrite(request, dashboardHost);
+    const locale = pathname.startsWith("/en/") ? "en" : "ar";
+    const response = rendererRewrite(request, dashboardHost);
+    response.cookies.set("factory_ui_locale", locale, {
+      httpOnly: true,
+      secure: request.nextUrl.protocol === "https:",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    return response;
   }
   if (pathname === "/matrouh-landing-motion.js") {
     return rendererRewrite(request, dashboardHost);

@@ -1,9 +1,9 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { LocalePreferenceLink } from "@/app/locale-preference-link";
+import type { UiLocale } from "@/server/ui-locale";
 import { loginAction } from "./actions";
-
-type UiLocale = "ar" | "en";
 
 const copy = {
   ar: {
@@ -50,17 +50,20 @@ export function LoginForm({
   readonly locale: UiLocale;
 }) {
   const text = copy[locale];
-  const signInUrl = new URLSearchParams({ locale });
+  const signInUrl = new URLSearchParams();
   if (next) signInUrl.set("next", next);
-  const localeUrl = new URLSearchParams({ locale: locale === "ar" ? "en" : "ar" });
-  if (next) localeUrl.set("next", next);
+  const alternateLocale: UiLocale = locale === "ar" ? "en" : "ar";
 
   if (authMode === "oidc") {
     return (
       <section className="panel loginCard authCard">
-        <a className="textLink loginLanguageLink" href={`/login?${localeUrl.toString()}`}>
+        <LocalePreferenceLink
+          className="textLink loginLanguageLink"
+          href="/dashboard/login"
+          locale={alternateLocale}
+        >
           {text.switchLanguage}
-        </a>
+        </LocalePreferenceLink>
         <img alt="Matrouh Solutions" className="loginLogo" src="/matrouh-logo.png" />
         <p className="eyebrow">Matrouh Solutions</p>
         <h1>{text.title}</h1>
@@ -74,7 +77,7 @@ export function LoginForm({
         <a className="buttonLink" href={`/api/auth/start?${signInUrl.toString()}`}>
           {text.signIn}
         </a>
-        <a className="textLink loginRecoveryLink" href={`/forgot-password?locale=${locale}`}>
+        <a className="textLink loginRecoveryLink" href="/dashboard/forgot-password">
           {text.forgotPassword}
         </a>
       </section>
@@ -83,9 +86,13 @@ export function LoginForm({
 
   return (
     <form action={loginAction} className="panel loginCard authCard">
-      <a className="textLink loginLanguageLink" href={`/login?${localeUrl.toString()}`}>
+      <LocalePreferenceLink
+        className="textLink loginLanguageLink"
+        href="/dashboard/login"
+        locale={alternateLocale}
+      >
         {text.switchLanguage}
-      </a>
+      </LocalePreferenceLink>
       <img alt="Matrouh Solutions" className="loginLogo" src="/matrouh-logo.png" />
       <p className="eyebrow">Matrouh Solutions</p>
       <h1>{text.title}</h1>
@@ -117,7 +124,7 @@ export function LoginForm({
       />
       {error ? <p role="alert">{text.invalidCredentials}</p> : null}
       <SubmitButton locale={locale} />
-      <a className="textLink loginRecoveryLink" href={`/forgot-password?locale=${locale}`}>
+      <a className="textLink loginRecoveryLink" href="/dashboard/forgot-password">
         {text.forgotPassword}
       </a>
       <small className="loginHint">{text.hint}</small>

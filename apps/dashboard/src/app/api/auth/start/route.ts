@@ -6,6 +6,7 @@ import { enforceRateLimit } from "@factory/database";
 import { dashboardConfig } from "@/server/config";
 import { dashboardDatabase } from "@/server/database";
 import { dashboardOidcClient } from "@/server/oidc";
+import { UI_LOCALE_COOKIE, uiLocale } from "@/server/ui-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +25,10 @@ export async function GET(request: NextRequest): Promise<Response> {
   const nonce = randomBytes(32).toString("base64url");
   const verifier = randomBytes(48).toString("base64url");
   const next = safeNext(request.nextUrl.searchParams.get("next"));
-  const uiLocales =
-    preferredUiLocale(request.nextUrl.searchParams.get("locale")) ??
-    preferredUiLocale(request.cookies.get("factory_ui_locale")?.value) ??
-    preferredUiLocale(request.headers.get("accept-language")) ??
-    "ar";
+  const uiLocales = uiLocale(
+    request.cookies.get(UI_LOCALE_COOKIE)?.value ??
+      preferredUiLocale(request.headers.get("accept-language")),
+  );
   const authorization = await dashboardOidcClient().authorizationUrl({
     state,
     nonce,
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   response.cookies.set("factory_oidc_state", state, options);
   response.cookies.set("factory_oidc_nonce", nonce, options);
   response.cookies.set("factory_oidc_verifier", verifier, options);
-  response.cookies.set("factory_ui_locale", uiLocales, {
+  response.cookies.set(UI_LOCALE_COOKIE, uiLocales, {
     httpOnly: true,
     secure: dashboardConfig.NODE_ENV === "production",
     sameSite: "lax",
