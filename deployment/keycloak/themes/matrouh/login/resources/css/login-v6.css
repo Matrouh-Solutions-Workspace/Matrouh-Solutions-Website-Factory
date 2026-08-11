@@ -1,0 +1,21 @@
+@import url("./login-v5.css");
+
+/* Use a new static file when changing Keycloak's login treatment. Its theme
+   resources are aggressively cached by browsers, and this avoids retaining an
+   older invalid-field icon image after a deployment. */
+#kc-form-login input#username,
+#kc-form-login input#password,
+#kc-form-login input#username[aria-invalid="true"],
+#kc-form-login input#password[aria-invalid="true"] {
+  background: var(--claim-surface-soft) !important;
+  background-image: none !important;
+  background-repeat: no-repeat !important;
+}
+
+/* Keycloak renders its own password button; Edge supplies the native reveal
+   affordance, so keeping both produces two eye controls. */
+#kc-form-login .pf-c-input-group > button[type="button"],
+#kc-form-login button[data-password-toggle],
+#kc-form-login button[aria-controls="password"] {
+  display: none !important;
+}

@@ -750,6 +750,74 @@ export async function toggleWebsitePublicationAction(formData: FormData): Promis
   revalidateWebsiteEditor(websiteId);
 }
 
+/** Lets a client publish the current revision of only their own website. */
+export async function publishClientWebsiteUpdateAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  if (!websiteId) return;
+  const client = dashboardDatabase();
+  const context = await requireWebsiteMutationContext(websiteId, "website.publish");
+  const result = await withTenantTransaction(
+    client,
+    tenantActionContext(context, `publish-client-update:${websiteId}`),
+    async (transaction) => {
+      const website = await transaction.website.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        include: {
+          subscription: true,
+          activePublication: { select: { status: true, sourceDraftRevision: true } },
+        },
+      });
+      const hasPendingUpdate =
+        website?.status === "published" &&
+        website.activePublication !== null &&
+        website.activePublication.sourceDraftRevision !== website.draftRevision;
+      if (!website || !hasPendingUpdate) return "unchanged" as const;
+      if (
+        website.subscription &&
+        (website.subscription.status !== "active" || website.subscription.expiresAt <= new Date())
+      ) {
+        throw new Error("SUBSCRIPTION_EXPIRED");
+      }
+      const activeJob = await transaction.job.findFirst({
+        where: {
+          organizationId: context.organization.id,
+          type: "publication.requested",
+          status: { in: ["queued", "running", "retryable"] },
+          payloadJson: { path: ["websiteId"], equals: websiteId },
+        },
+        select: { id: true },
+      });
+      if (activeJob) return "pending" as const;
+      if (
+        canReuseActivePublication({
+          activeStatus: website.activePublication?.status ?? null,
+          activeDraftRevision: website.activePublication?.sourceDraftRevision ?? null,
+          websiteDraftRevision: website.draftRevision,
+        })
+      ) {
+        await transaction.website.update({
+          where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+          data: { status: "published", revision: { increment: 1 } },
+        });
+        return "published" as const;
+      }
+      return "queue" as const;
+    },
+  );
+  if (result === "queue") {
+    await requestPublication(
+      new PrismaPublicationCommandRepository(client),
+      {
+        organizationId: context.organization.id,
+        actorId: context.actor.id,
+        correlationId: `publish-client-update:${websiteId}`,
+      },
+      { websiteId },
+    );
+  }
+  revalidateWebsiteEditor(websiteId);
+}
+
 export async function retryPublicationJobAction(formData: FormData): Promise<void> {
   const jobId = cleanText(formData.get("jobId"), 80);
   if (!jobId) return;

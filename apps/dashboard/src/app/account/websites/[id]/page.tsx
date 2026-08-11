@@ -1,8 +1,13 @@
 import { notFound } from "next/navigation";
-import { updateSectionDraftAction, updateWebsiteIdentityAction } from "@/app/actions";
+import {
+  publishClientWebsiteUpdateAction,
+  updateSectionDraftAction,
+  updateWebsiteIdentityAction,
+} from "@/app/actions";
 import { CoordinatePickerFields, StructuredListField } from "@/app/structured-list-field";
 import { DraftEditorForm } from "@/app/draft-editor-form";
 import { MediaPicker } from "@/app/media-picker";
+import { PendingSubmit } from "@/app/pending-submit";
 import { loadClientWebsiteEditor } from "@/server/editor";
 import { dashboardConfig } from "@/server/config";
 
@@ -25,6 +30,12 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
           </p>
         </div>
         <div className="headerActions">
+          {editor.website.pendingUpdate ? (
+            <form action={publishClientWebsiteUpdateAction}>
+              <input name="websiteId" type="hidden" value={editor.website.id} />
+              <PendingSubmit pendingLabel="Publishing update…">Publish changes</PendingSubmit>
+            </form>
+          ) : null}
           {editor.website.hostname ? (
             <a
               className="buttonLink secondaryButton"
