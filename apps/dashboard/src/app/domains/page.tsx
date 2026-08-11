@@ -56,7 +56,7 @@ export default async function DomainsPage() {
             </div>
           </div>
           {hostingDomains.map((domain) => (
-            <article className="dataRow" key={domain.id}>
+            <article className="dataRow hostingDomainRow" key={domain.id}>
               <div>
                 <strong>{domain.hostnameDisplay}</strong>
                 <p>

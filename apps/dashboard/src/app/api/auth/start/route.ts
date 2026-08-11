@@ -24,10 +24,12 @@ export async function GET(request: NextRequest): Promise<Response> {
   const nonce = randomBytes(32).toString("base64url");
   const verifier = randomBytes(48).toString("base64url");
   const next = safeNext(request.nextUrl.searchParams.get("next"));
+  const uiLocales = preferredUiLocale(request.headers.get("accept-language"));
   const authorization = await dashboardOidcClient().authorizationUrl({
     state,
     nonce,
     codeChallenge: await pkceChallenge(verifier),
+    ...(uiLocales ? { uiLocales } : {}),
   });
   const response = NextResponse.redirect(authorization);
   const options = {
@@ -46,4 +48,13 @@ export async function GET(request: NextRequest): Promise<Response> {
 
 function safeNext(value: string | null): string | null {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : null;
+}
+
+function preferredUiLocale(value: string | null): "ar" | "en" | undefined {
+  const locales = (value ?? "")
+    .split(",")
+    .map((item) => item.trim().split(";", 1)[0]?.toLowerCase())
+    .filter((item): item is string => Boolean(item));
+  const preferred = locales.find((locale) => locale.startsWith("ar") || locale.startsWith("en"));
+  return preferred?.startsWith("ar") ? "ar" : preferred?.startsWith("en") ? "en" : undefined;
 }

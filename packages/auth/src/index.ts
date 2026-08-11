@@ -72,10 +72,11 @@ export class OidcClient {
     state: string;
     nonce: string;
     codeChallenge: string;
+    uiLocales?: string;
   }): Promise<URL> {
     const discovery = await this.discovery();
     const url = new URL(discovery.authorization_endpoint);
-    url.search = new URLSearchParams({
+    const parameters = new URLSearchParams({
       client_id: this.options.clientId,
       redirect_uri: this.options.redirectUri,
       response_type: "code",
@@ -84,7 +85,9 @@ export class OidcClient {
       nonce: input.nonce,
       code_challenge: input.codeChallenge,
       code_challenge_method: "S256",
-    }).toString();
+    });
+    if (input.uiLocales) parameters.set("ui_locales", input.uiLocales);
+    url.search = parameters.toString();
     return url;
   }
 

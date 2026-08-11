@@ -5555,3 +5555,83 @@ input[type="file"] {
     grid-column: 1;
   }
 }
+
+/* Dark-mode corrections for the dashboard's final visual layer. These rules
+   deliberately come last because the workspace styles above use a handful of
+   light-only literals for high-contrast cards and actions. */
+:root[data-theme="dark"] .appShell .appFrame {
+  background-color: var(--canvas);
+  background-image:
+    linear-gradient(rgba(245, 246, 242, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 246, 242, 0.035) 1px, transparent 1px);
+}
+:root[data-theme="dark"] .appShell .topbar {
+  border-bottom-color: var(--primary);
+  background: rgba(26, 29, 25, 0.96);
+  color: var(--ink);
+  box-shadow: 0 1px 0 rgba(245, 246, 242, 0.08);
+}
+:root[data-theme="dark"] .appShell .breadcrumb,
+:root[data-theme="dark"] .appShell .breadcrumb strong {
+  color: var(--ink-soft);
+}
+:root[data-theme="dark"] .appShell .systemStatus {
+  border-color: var(--success);
+  background: var(--success-soft);
+  color: var(--success);
+}
+:root[data-theme="dark"] .appShell .secondaryButton,
+:root[data-theme="dark"] .appShell .buttonLink.secondaryButton {
+  border-color: var(--line-strong);
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+:root[data-theme="dark"] .appShell .secondaryButton:hover:not(:disabled),
+:root[data-theme="dark"] .appShell .buttonLink.secondaryButton:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--ink);
+}
+:root[data-theme="dark"] .appShell .websiteSummary article:first-child {
+  border-color: var(--primary);
+  background: #282d27;
+  color: var(--ink);
+}
+:root[data-theme="dark"] .appShell .websiteSummary article:first-child span {
+  color: var(--muted);
+}
+:root[data-theme="dark"] .appShell .websiteActions .websiteEditAction {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #171717;
+}
+:root[data-theme="dark"] .appShell .websiteActions .websiteEditAction:hover {
+  background: #ffdc57;
+  color: #171717;
+}
+:root[data-theme="dark"] .appShell .websiteEditorHeader .editorBackLink {
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+:root[data-theme="dark"] .appShell .addSectionBar {
+  border-color: var(--primary-dark);
+  background: var(--surface-tint);
+}
+:root[data-theme="dark"] .appShell .mediaLibraryStats article:last-child {
+  background: #282d27;
+}
+:root[data-theme="dark"] .appShell .mediaLibraryStats article:last-child p,
+:root[data-theme="dark"] .appShell .mediaLibraryStats article:last-child small {
+  color: var(--muted);
+}
+.appShell .hostingDomainRow {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.appShell .compactStats:not(.mediaLibraryStats) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 480px) {
+  .appShell .compactStats:not(.mediaLibraryStats) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

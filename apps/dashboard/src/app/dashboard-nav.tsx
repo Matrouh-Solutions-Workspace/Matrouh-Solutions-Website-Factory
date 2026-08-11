@@ -62,7 +62,7 @@ export function DashboardNav({ onNavigate }: { readonly onNavigate?: () => void 
           <img alt="" src="/matrouh-logo.png" />
           <div>
             <strong>Matrouh Solutions</strong>
-            <small>Demo workspace</small>
+            <small>Control panel</small>
           </div>
         </Link>
         <form action={logoutAction}>
