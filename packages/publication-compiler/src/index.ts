@@ -126,7 +126,7 @@ export function createLocalizedTemplateDraft(
                   id: `section-${identity}-${safeLocaleId(locale)}-${pageIndex}-${sectionIndex}`,
                   sectionTypeId: definition.id,
                   schemaVersion: definition.schema.version,
-                  content: section.content ?? definition.defaults,
+                  content: localizedCatalogContent(section.content ?? definition.defaults, locale),
                   orderKey: String(sectionIndex).padStart(4, "0"),
                 },
               ]
@@ -194,6 +194,214 @@ function localizedCatalogLabel(value: string, locale: string): string {
   };
   return labels[value] ?? value;
 }
+
+function localizedCatalogContent(value: JsonValue, locale: string): JsonValue {
+  if (!locale.toLowerCase().startsWith("ar")) return value;
+  if (typeof value === "string") return catalogArabicText[value] ?? value;
+  if (Array.isArray(value)) return value.map((item) => localizedCatalogContent(item, locale));
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, child]) => [key, localizedCatalogContent(child, locale)]),
+  ) as JsonValue;
+}
+
+/** Arabic catalog copy is deliberately stored beside the compiler so demos remain useful without mutable draft data. */
+const catalogArabicText: Readonly<Record<string, string>> = {
+  // Doctor
+  "Personal care": "رعاية شخصية",
+  "Care centered around you": "رعاية تتمحور حولك",
+  "Thoughtful medical care with time to listen.":
+    "رعاية طبية متأنية تمنحك الوقت الكافي للاستماع والفهم.",
+  "Book an appointment": "احجز موعدًا",
+  "How I can help": "كيف يمكنني مساعدتك",
+  "General consultation": "استشارة عامة",
+  "A careful assessment, clear explanation, and a practical plan tailored to you.":
+    "تقييم دقيق وشرح واضح وخطة عملية تناسب احتياجاتك.",
+  "Preventive care": "رعاية وقائية",
+  "Evidence-led screening and everyday guidance that helps you stay well.":
+    "فحوصات مبنية على الدليل وإرشاد يومي يساعدك على الحفاظ على صحتك.",
+  "Follow-up care": "رعاية متابعة",
+  "Continuity and thoughtful adjustments as your health needs change.":
+    "متابعة مستمرة وتعديلات مدروسة مع تغير احتياجاتك الصحية.",
+  "Meet the team": "تعرف إلى الفريق",
+  "Specialists who make care feel personal": "اختصاصيون يجعلون الرعاية أكثر قربًا وإنسانية",
+  "A coordinated team with clear expertise and one shared standard of care.":
+    "فريق متكامل بخبرات واضحة ومعيار موحد للرعاية.",
+  "Dr. Sarah Amin": "د. سارة أمين",
+  "Family Medicine": "طب الأسرة",
+  "Whole-person primary care, prevention, and long-term health planning.":
+    "رعاية أولية شاملة ووقاية وتخطيط صحي طويل الأمد.",
+  "Dr. Omar Nabil": "د. عمر نبيل",
+  "Internal Medicine": "الطب الباطني",
+  "Thoughtful diagnosis and coordinated care for complex adult health needs.":
+    "تشخيص متأنٍ ورعاية منسقة لاحتياجات البالغين الصحية المعقدة.",
+  "Patient experience": "تجربة المرضى",
+  "Trusted care, in patients' own words": "رعاية موثوقة بكلمات مرضانا",
+  "Every step was explained clearly. I left with a plan I could actually follow.":
+    "تم شرح كل خطوة بوضوح، وغادرت بخطة يمكنني الالتزام بها فعلًا.",
+  "M. Hassan": "م. حسن",
+  "General medicine patient": "مريض طب عام",
+  "The team was organised, kind, and respectful of my time from start to finish.":
+    "كان الفريق منظمًا ولطيفًا ويحترم وقتي من البداية إلى النهاية.",
+  "N. Adel": "ن. عادل",
+  "Preventive care patient": "مريض رعاية وقائية",
+  Appointments: "المواعيد",
+  "Let's plan your visit": "لنخطط لزيارتك",
+  "Contact the practice directly and our team will help you choose a suitable appointment.":
+    "تواصل مع العيادة مباشرة وسيساعدك فريقنا على اختيار الموعد المناسب.",
+  "Matrouh, Egypt": "مرسى مطروح، مصر",
+  "Saturday–Thursday · 9:00–18:00": "السبت–الخميس · ٩:٠٠–١٨:٠٠",
+
+  // Engineer
+  "Civil & structural engineering": "الهندسة المدنية والإنشائية",
+  "Engineering clarity into every decision": "وضوح هندسي في كل قرار",
+  "Independent technical leadership for resilient buildings, efficient delivery, and confident project teams.":
+    "قيادة فنية مستقلة لمبانٍ متينة وتنفيذ فعّال وفرق مشاريع واثقة.",
+  "Discuss a project": "ناقش مشروعك",
+  "MSc · Chartered Engineer · 12 years experience": "ماجستير · مهندس استشاري · خبرة ١٢ عامًا",
+  Expertise: "الخبرات",
+  "Technical depth, practical delivery": "عمق فني وتنفيذ عملي",
+  "Support from early feasibility through construction.":
+    "دعم من دراسة الجدوى المبكرة حتى مرحلة التنفيذ.",
+  "Structural design": "التصميم الإنشائي",
+  "Safe, efficient structural systems coordinated around architectural intent.":
+    "أنظمة إنشائية آمنة وفعالة تتكامل مع الرؤية المعمارية.",
+  Buildings: "المباني",
+  "Technical review": "مراجعة فنية",
+  "Independent design checks, risk reviews, and clear recommendations.":
+    "مراجعات تصميم مستقلة وتقييم للمخاطر وتوصيات واضحة.",
+  Assurance: "ضمان الجودة",
+  "Site engineering": "هندسة الموقع",
+  "Responsive construction support that resolves issues before they become delays.":
+    "دعم إنشائي سريع يحل المشكلات قبل أن تتحول إلى تأخيرات.",
+  Delivery: "التنفيذ",
+  "Selected work": "أعمال مختارة",
+  "Built results": "نتائج ملموسة",
+  "Representative commissions across commercial, residential, and infrastructure projects.":
+    "مشاريع مختارة عبر القطاعات التجارية والسكنية والبنية التحتية.",
+  "Coastal mixed-use development": "مشروع ساحلي متعدد الاستخدامات",
+  "Optimized the structural grid and foundation strategy for demanding marine conditions.":
+    "تحسين الشبكة الإنشائية واستراتيجية الأساسات لظروف بحرية صعبة.",
+  "18% material reduction": "خفض المواد بنسبة ١٨٪",
+  "Hospital expansion": "توسعة مستشفى",
+  "Phased engineering maintained live clinical operations throughout construction.":
+    "حافظت الهندسة المرحلية على استمرار العمليات الطبية أثناء التنفيذ.",
+  "Zero service interruption": "دون انقطاع للخدمة",
+  "Industrial retrofit": "تأهيل منشأة صناعية",
+  "Verified existing capacity and designed targeted strengthening for new production loads.":
+    "التحقق من القدرة القائمة وتصميم تدعيمات موجهة لأحمال الإنتاج الجديدة.",
+  "6-week delivery": "تنفيذ خلال ٦ أسابيع",
+  "Start a conversation": "لنبدأ الحديث",
+  "Bring the technical challenge": "اطرح التحدي الفني",
+  "Share the project stage, location, and decisions ahead. You will receive a clear response on fit and next steps.":
+    "شاركنا مرحلة المشروع وموقعه والقرارات القادمة، وستتلقى ردًا واضحًا حول الملاءمة والخطوات التالية.",
+  "New commissions from September": "مشاريع جديدة بدءًا من سبتمبر",
+
+  // Clinic
+  "Care for every stage of life": "رعاية لكل مراحل الحياة",
+  "Specialists working together around your needs.": "اختصاصيون يعملون معًا حول احتياجاتك.",
+  "Find a location": "اعثر على فرع",
+  "Care close to home": "رعاية قريبة من منزلك",
+  "Choose a clinic with coordinated specialists, modern diagnostics, and a team that knows your story.":
+    "اختر عيادة تضم اختصاصيين متكاملين وتشخيصًا حديثًا وفريقًا يعرف قصتك الصحية.",
+  "Matrouh Central": "مطروح المركزي",
+  "Primary care, pediatrics, diagnostics, and same-day appointments.":
+    "رعاية أولية وطب أطفال وتشخيصات ومواعيد في اليوم نفسه.",
+  "Marsa Matrouh, Matrouh, Egypt": "مرسى مطروح، مطروح، مصر",
+  "New Alamein": "العلمين الجديدة",
+  "Specialist consultations and advanced outpatient services.":
+    "استشارات اختصاصية وخدمات متقدمة للمرضى الخارجيين.",
+  "New Alamein, Matrouh, Egypt": "العلمين الجديدة، مطروح، مصر",
+  "Daily · 10:00–20:00": "يوميًا · ١٠:٠٠–٢٠:٠٠",
+  "North Coast": "الساحل الشمالي",
+  "Seasonal urgent care and family medicine near the coast.":
+    "رعاية عاجلة موسمية وطب أسرة بالقرب من الساحل.",
+  "North Coast, Matrouh, Egypt": "الساحل الشمالي، مطروح، مصر",
+  "Daily · 8:00–22:00": "يوميًا · ٨:٠٠–٢٢:٠٠",
+
+  // Creative
+  "Independent creative director / Cairo + worldwide": "مدير إبداعي مستقل / القاهرة والعالم",
+  "Omar Nassar": "عمر نصار",
+  "Ideas made unmistakable.": "أفكار لا تُنسى.",
+  "I shape identities, digital experiences, and campaigns for ambitious teams that want clarity without losing character.":
+    "أصنع هويات وتجارب رقمية وحملات لفرق طموحة تريد الوضوح من دون أن تفقد شخصيتها.",
+  "Explore selected work": "استكشف الأعمال المختارة",
+  "Booking select projects for Q4": "متاح لمشاريع مختارة في الربع الرابع",
+  "Omar Nassar standing in a sunlit design studio": "عمر نصار داخل استوديو تصميم مضاء بالشمس",
+  "In numbers": "بالأرقام",
+  "Small studio. Serious range.": "استوديو صغير. أثر كبير.",
+  "Senior thinking stays close to the work from first question to final release.":
+    "تفكير خبير يبقى قريبًا من العمل من السؤال الأول حتى الإطلاق النهائي.",
+  "brands launched across culture, technology, and hospitality":
+    "علامة أُطلقت عبر الثقافة والتقنية والضيافة",
+  Projects: "المشاريع",
+  "11 yrs": "١١ عامًا",
+  "turning complex offers into clear, magnetic stories":
+    "تحويل العروض المعقدة إلى قصص واضحة وجذابة",
+  Experience: "الخبرة",
+  "countries connected through long-term creative partnerships":
+    "دول ارتبطت بشراكات إبداعية طويلة الأمد",
+  Markets: "الأسواق",
+  "Selected work / 2023-2026": "أعمال مختارة / ٢٠٢٣–٢٠٢٦",
+  "A portfolio built around change, not decoration.": "ملف أعمال مبني على التغيير لا الزخرفة.",
+  "Identity systems and digital experiences designed to make the next move feel inevitable.":
+    "أنظمة هوية وتجارب رقمية صُممت لتجعل الخطوة التالية بديهية.",
+  "Northline House": "نورثلاين هاوس",
+  "A quiet-luxury identity and booking journey that turned a coastal retreat into a year-round destination.":
+    "هوية هادئة وفاخرة ورحلة حجز حوّلت منتجعًا ساحليًا إلى وجهة طوال العام.",
+  "Hospitality · Brand + Digital · +38% direct bookings":
+    "ضيافة · علامة وتجربة رقمية · +٣٨٪ حجوزات مباشرة",
+  "Common Ground": "كومون غراوند",
+  "A flexible cultural platform that gives artists, talks, and late-night programming one recognizable voice.":
+    "منصة ثقافية مرنة تمنح الفنانين والحوارات والبرامج الليلية صوتًا واحدًا مميزًا.",
+  "Culture · Strategy + Campaign · 4-city launch": "ثقافة · استراتيجية وحملة · إطلاق في ٤ مدن",
+  "Field Notes AI": "فيلد نوتس للذكاء الاصطناعي",
+  "Complex research software reframed as an approachable daily instrument for modern product teams.":
+    "برنامج بحثي معقد أُعيد تقديمه كأداة يومية سهلة لفرق المنتجات الحديثة.",
+  "Technology · Product story + Web · Series A": "تقنية · قصة منتج وموقع · جولة استثمار A",
+  "Ways to work together": "طرق العمل معًا",
+  "From first signal to a system people remember.": "من الإشارة الأولى إلى نظام يتذكره الناس.",
+  "Each engagement is shaped around the real decision ahead, then scaled with the right collaborators.":
+    "كل تعاون يتشكل حول القرار الحقيقي القادم ثم يتوسع مع الشركاء المناسبين.",
+  "Brand direction": "توجيه العلامة التجارية",
+  "Positioning, narrative, naming, identity systems, and practical guidance that teams can actually use.":
+    "تموضع وسرد وتسمية وأنظمة هوية وإرشاد عملي تستطيع الفرق استخدامه فعلًا.",
+  "01 · Define": "٠١ · تحديد",
+  "Digital experiences": "تجارب رقمية",
+  "Editorial websites and product stories with strong hierarchy, intuitive journeys, and expressive detail.":
+    "مواقع تحريرية وقصص منتجات بهرمية قوية ومسارات بديهية وتفاصيل معبّرة.",
+  "02 · Design": "٠٢ · تصميم",
+  "Campaign systems": "أنظمة الحملات",
+  "Launch concepts and modular content frameworks that stay coherent across channels and moments.":
+    "مفاهيم إطلاق وأطر محتوى مرنة تحافظ على التماسك عبر القنوات والمراحل.",
+  "03 · Move": "٠٣ · تحريك",
+  "The approach": "المنهج",
+  "Enough structure to move. Enough room to surprise.": "هيكل كافٍ للتحرك ومساحة كافية للمفاجأة.",
+  "The process keeps decisions visible and energy focused on what will make the work distinct.":
+    "تُبقي العملية القرارات واضحة والطاقة مركزة على ما يمنح العمل تميزه.",
+  "Find the tension": "اكتشف نقطة التوتر",
+  "Listen closely, map the context, and identify the sharpest opportunity the work can own.":
+    "نستمع بدقة ونرسم السياق ونحدد أقوى فرصة يمكن للعمل امتلاكها.",
+  Discover: "اكتشاف",
+  "Build the language": "ابنِ اللغة",
+  "Turn strategy into a visual and verbal world, then test it against real moments and audiences.":
+    "نحوّل الاستراتيجية إلى عالم بصري ولفظي ثم نختبره مع اللحظات والجمهور الحقيقي.",
+  Create: "ابتكار",
+  "Make it travel": "اجعله قابلًا للانتشار",
+  "Shape the system, document the logic, and equip the team to keep the idea coherent as it grows.":
+    "نصوغ النظام ونوثق منطقه ونمكّن الفريق من الحفاظ على تماسك الفكرة مع نموها.",
+  Activate: "تفعيل",
+  "The work did more than make us look established. It gave the whole team a sharper way to explain what makes us matter.":
+    "لم يجعلنا العمل نبدو أكثر رسوخًا فحسب، بل منح الفريق كله طريقة أوضح لشرح ما يجعلنا مهمين.",
+  "Maya El-Sayed": "مايا السيد",
+  "Co-founder, Northline House": "الشريكة المؤسسة، نورثلاين هاوس",
+  "Have a project in mind?": "هل لديك مشروع في ذهنك؟",
+  "Let's make the next move feel obvious.": "لنجعل الخطوة التالية بديهية.",
+  "Share the ambition, the tension, and where things stand. You will receive a considered response on fit, timing, and a useful first step.":
+    "شاركنا الطموح والتحدي والوضع الحالي، وستتلقى ردًا مدروسًا حول الملاءمة والتوقيت وأول خطوة مفيدة.",
+  "Cairo, Egypt / Working worldwide": "القاهرة، مصر / نعمل حول العالم",
+  "Currently booking select Q4 engagements": "متاح حاليًا لتعاقدات مختارة في الربع الرابع",
+};
 
 export function compilePublication(
   draft: DraftProjection,

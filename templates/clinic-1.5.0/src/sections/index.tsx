@@ -170,7 +170,13 @@ export const clinicSections: readonly SectionDefinition[] = [
               <span className="orbit orbit--one" />
               <span className="orbit orbit--two" />
               <strong>24</strong>
-              <small>Specialties, one care network</small>
+              <small>
+                {localeText(
+                  context.locale,
+                  "Specialties, one care network",
+                  "تخصصات متعددة، شبكة رعاية واحدة",
+                )}
+              </small>
             </div>
           )}
         </div>

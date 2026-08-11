@@ -36,6 +36,15 @@ const config: NextConfig = {
         ],
       },
       {
+        source: "/templates",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; ${scriptSrc}; frame-src 'self' https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`,
+          },
+        ],
+      },
+      {
         source: "/((?!preview(?:/|$)|template-preview(?:/|$)|api(?:/|$)).*)",
         headers: [
           {
