@@ -10,6 +10,7 @@ import {
 } from "./database";
 
 export const DASHBOARD_SESSION_COOKIE = "factory_dashboard_session";
+export const DASHBOARD_OIDC_ID_TOKEN_COOKIE = "factory_dashboard_oidc_id_token";
 
 export interface DashboardContext {
   readonly organization: {

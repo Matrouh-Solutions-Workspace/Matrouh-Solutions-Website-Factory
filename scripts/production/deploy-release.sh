@@ -48,6 +48,7 @@ if [ -d "$keycloak_theme_source" ]; then
 
   set -a
   source /etc/mportfolio/keycloak.env
+  source /etc/mportfolio/factory.env
   set +a
   /opt/keycloak/bin/kcadm.sh config credentials \
     --server "http://127.0.0.1:${KC_HTTP_PORT}" \
@@ -59,6 +60,13 @@ if [ -d "$keycloak_theme_source" ]; then
     -s internationalizationEnabled=true \
     -s defaultLocale=ar \
     -s 'supportedLocales=["ar","en"]'
+  keycloak_client_id="$FACTORY_OIDC_CLIENT_ID"
+  keycloak_client_uuid="$(/opt/keycloak/bin/kcadm.sh get clients -r factory -q "clientId=${keycloak_client_id}" --fields id --format csv --noquotes | tr -d '\r')"
+  if [ -n "$keycloak_client_uuid" ]; then
+    dashboard_logout_url="${FACTORY_DASHBOARD_PUBLIC_URL%/}/dashboard/login?loggedOut=1"
+    /opt/keycloak/bin/kcadm.sh update "clients/${keycloak_client_uuid}" -r factory \
+      -s "attributes.\"post.logout.redirect.uris\"=\"${dashboard_logout_url}\""
+  fi
 fi
 
 ln -sfn "$release" /opt/mportfolio/current.new

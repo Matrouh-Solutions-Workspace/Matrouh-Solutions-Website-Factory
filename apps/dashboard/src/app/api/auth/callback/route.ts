@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import type { OidcIdentity } from "@factory/auth";
 import { withTenantTransaction } from "@factory/database";
-import { DASHBOARD_SESSION_COOKIE } from "@/server/auth";
+import { DASHBOARD_OIDC_ID_TOKEN_COOKIE, DASHBOARD_SESSION_COOKIE } from "@/server/auth";
 import { dashboardConfig } from "@/server/config";
 import { dashboardDatabase } from "@/server/database";
 import { verifiedOidcInviteEmail } from "@/server/oidc-invites";
@@ -81,6 +81,13 @@ export async function GET(request: NextRequest): Promise<Response> {
       ),
     );
     response.cookies.set(DASHBOARD_SESSION_COOKIE, `${membership.organizationId}.${token}`, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: dashboardConfig.NODE_ENV === "production",
+      path: "/",
+      expires: expiresAt,
+    });
+    response.cookies.set(DASHBOARD_OIDC_ID_TOKEN_COOKIE, identity.idToken, {
       httpOnly: true,
       sameSite: "strict",
       secure: dashboardConfig.NODE_ENV === "production",

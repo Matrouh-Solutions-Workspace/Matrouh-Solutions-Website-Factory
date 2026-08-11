@@ -1,0 +1,10 @@
+@import url("./login-v4.css");
+
+#kc-header-wrapper::before {
+  width: 3.25rem;
+  height: 3.25rem;
+  border: 0;
+  background: url("../img/matrouh-logo.png") center / contain no-repeat;
+  box-shadow: none;
+  content: "";
+}

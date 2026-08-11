@@ -47,11 +47,13 @@ interface OidcDiscovery {
   readonly authorization_endpoint: string;
   readonly token_endpoint: string;
   readonly jwks_uri: string;
+  readonly end_session_endpoint?: string;
 }
 
 export interface OidcIdentity {
   readonly issuer: string;
   readonly subject: string;
+  readonly idToken: string;
   readonly email?: string;
   readonly emailVerified?: boolean;
   readonly name?: string;
@@ -122,12 +124,26 @@ export class OidcClient {
     return {
       issuer: discovery.issuer,
       subject: verified.payload.sub,
+      idToken: token.id_token,
       ...(typeof verified.payload.email === "string" ? { email: verified.payload.email } : {}),
       ...(typeof verified.payload.email_verified === "boolean"
         ? { emailVerified: verified.payload.email_verified }
         : {}),
       ...(typeof verified.payload.name === "string" ? { name: verified.payload.name } : {}),
     };
+  }
+
+  async endSessionUrl(input: {
+    readonly postLogoutRedirectUri: string;
+    readonly idTokenHint?: string;
+  }): Promise<URL | null> {
+    const discovery = await this.discovery();
+    if (!discovery.end_session_endpoint) return null;
+    const url = new URL(discovery.end_session_endpoint);
+    url.searchParams.set("client_id", this.options.clientId);
+    url.searchParams.set("post_logout_redirect_uri", input.postLogoutRedirectUri);
+    if (input.idTokenHint) url.searchParams.set("id_token_hint", input.idTokenHint);
+    return url;
   }
 
   private discovery(): Promise<OidcDiscovery> {

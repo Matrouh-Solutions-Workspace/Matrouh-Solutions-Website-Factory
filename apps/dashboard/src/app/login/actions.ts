@@ -6,9 +6,14 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { enforceRateLimit, withTenantTransaction } from "@factory/database";
 import { verifyPassword } from "@factory/auth";
-import { DASHBOARD_SESSION_COOKIE, getDashboardContext } from "@/server/auth";
+import {
+  DASHBOARD_OIDC_ID_TOKEN_COOKIE,
+  DASHBOARD_SESSION_COOKIE,
+  getDashboardContext,
+} from "@/server/auth";
 import { dashboardConfig } from "@/server/config";
 import { dashboardDatabase } from "@/server/database";
+import { dashboardOidcClient } from "@/server/oidc";
 
 export async function loginAction(formData: FormData): Promise<void> {
   if (dashboardConfig.FACTORY_AUTH_MODE !== "demo") redirect("/login?error=unavailable");
@@ -123,6 +128,23 @@ export async function logoutAction(): Promise<void> {
     );
   }
   cookieStore.delete(DASHBOARD_SESSION_COOKIE);
+  const oidcIdToken = cookieStore.get(DASHBOARD_OIDC_ID_TOKEN_COOKIE)?.value;
+  cookieStore.delete(DASHBOARD_OIDC_ID_TOKEN_COOKIE);
+  if (dashboardConfig.FACTORY_AUTH_MODE === "oidc") {
+    try {
+      const postLogoutRedirectUri = new URL(
+        "/dashboard/login?loggedOut=1",
+        dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL,
+      ).toString();
+      const endSessionUrl = await dashboardOidcClient().endSessionUrl({
+        postLogoutRedirectUri,
+        ...(oidcIdToken ? { idTokenHint: oidcIdToken } : {}),
+      });
+      if (endSessionUrl) redirect(endSessionUrl.toString());
+    } catch (error) {
+      console.error("OIDC logout failed", error);
+    }
+  }
   redirect("/dashboard/login");
 }
 
