@@ -1,0 +1,19 @@
+@import url("./login.css");
+
+html.login-pf {
+  background:
+    radial-gradient(circle at 80% 12%, rgb(31 131 197 / 14%), transparent 28rem),
+    radial-gradient(circle at 10% 92%, rgb(36 60 81 / 12%), transparent 26rem),
+    linear-gradient(145deg, #f8fafb 0%, var(--matrouh-sand) 100%) !important;
+}
+
+body,
+html.login-pf body {
+  background: transparent !important;
+  color: var(--matrouh-ink);
+  font-family: Cairo, Tahoma, Arial, sans-serif;
+}
+
+.login-pf-page {
+  background: transparent !important;
+}

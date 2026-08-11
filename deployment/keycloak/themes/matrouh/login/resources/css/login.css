@@ -8,15 +8,20 @@
 }
 
 html,
-body.login-pf {
+body {
   min-height: 100%;
 }
 
-body.login-pf {
+html.login-pf {
   background:
     radial-gradient(circle at 80% 12%, rgb(31 131 197 / 14%), transparent 28rem),
     radial-gradient(circle at 10% 92%, rgb(36 60 81 / 12%), transparent 26rem),
-    linear-gradient(145deg, #f8fafb 0%, var(--matrouh-sand) 100%);
+    linear-gradient(145deg, #f8fafb 0%, var(--matrouh-sand) 100%) !important;
+}
+
+body,
+html.login-pf body {
+  background: transparent !important;
   color: var(--matrouh-ink);
   font-family: Cairo, Tahoma, Arial, sans-serif;
 }
@@ -27,6 +32,7 @@ body.login-pf {
   justify-content: center;
   min-height: 100vh;
   padding: 2.5rem 1.25rem;
+  background: transparent !important;
 }
 
 #kc-header {

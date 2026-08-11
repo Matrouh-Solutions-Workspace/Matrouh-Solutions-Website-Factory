@@ -1,0 +1,64 @@
+@import url("./login-v2.css");
+
+#kc-locale {
+  align-self: flex-end;
+  width: auto;
+  margin: 0 0 0.8rem auto;
+}
+
+#kc-current-locale-link {
+  border: 1px solid var(--matrouh-line);
+  border-radius: 0.55rem;
+  background: #fff;
+  color: var(--matrouh-deep-blue);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.4rem 0.65rem;
+}
+
+#kc-locale-dropdown {
+  position: relative;
+}
+
+#kc-locale-dropdown ul {
+  display: none !important;
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.35rem);
+  inset-inline-end: 0;
+  min-width: 10.5rem;
+  margin: 0;
+  border: 1px solid var(--matrouh-line);
+  border-radius: 0.65rem;
+  background: #fff;
+  box-shadow: 0 0.75rem 1.75rem rgb(36 60 81 / 16%);
+  list-style: none;
+  overflow: hidden;
+  padding: 0.25rem;
+}
+
+#kc-locale-dropdown:hover ul,
+#kc-locale-dropdown:focus-within ul {
+  display: block !important;
+}
+
+#kc-locale-dropdown li,
+#kc-locale-dropdown a {
+  display: block;
+}
+
+#kc-locale-dropdown a {
+  border-radius: 0.4rem;
+  padding: 0.55rem 0.65rem;
+  text-decoration: none;
+}
+
+#kc-locale-dropdown a:hover,
+#kc-locale-dropdown a:focus {
+  background: var(--matrouh-mist);
+}
+
+[dir="rtl"] #kc-locale {
+  margin: 0 auto 0.8rem 0;
+}
