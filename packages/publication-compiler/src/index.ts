@@ -202,7 +202,7 @@ function localizedCatalogContent(value: JsonValue, locale: string): JsonValue {
   if (!value || typeof value !== "object") return value;
   return Object.fromEntries(
     Object.entries(value).map(([key, child]) => [key, localizedCatalogContent(child, locale)]),
-  ) as JsonValue;
+  );
 }
 
 /** Arabic catalog copy is deliberately stored beside the compiler so demos remain useful without mutable draft data. */
