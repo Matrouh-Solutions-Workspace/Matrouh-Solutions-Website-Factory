@@ -12,6 +12,12 @@ interface OidcPasswordUser {
   readonly password: string;
 }
 
+interface OidcUserLookup {
+  readonly id: string;
+  readonly email?: string;
+  readonly username?: string;
+}
+
 interface OidcAdminConfiguration {
   readonly issuer: string;
   readonly adminUsersUrl: URL;
@@ -80,6 +86,41 @@ export async function updateOidcPassword(subject: string, password: string): Pro
     },
   );
   if (!response.ok) throw new OidcAdminError("provider");
+}
+
+/** Resolves an existing provider user by their verified email address. */
+export async function findOidcUserByEmail(email: string): Promise<string | null> {
+  const configuration = oidcAdminConfiguration();
+  const accessToken = await adminAccessToken(configuration);
+  const normalizedEmail = email.trim().toLowerCase();
+  const byEmail = await findOidcUsers(configuration, accessToken, "email", normalizedEmail);
+  const users = byEmail.length
+    ? byEmail
+    : await findOidcUsers(configuration, accessToken, "username", normalizedEmail);
+  const user = users.find(
+    (candidate) =>
+      candidate.email?.trim().toLowerCase() === normalizedEmail ||
+      candidate.username?.trim().toLowerCase() === normalizedEmail,
+  );
+  return typeof user?.id === "string" && user.id.length > 0 ? user.id : null;
+}
+
+async function findOidcUsers(
+  configuration: OidcAdminConfiguration,
+  accessToken: string,
+  field: "email" | "username",
+  value: string,
+): Promise<OidcUserLookup[]> {
+  const url = new URL(configuration.adminUsersUrl);
+  url.searchParams.set(field, value);
+  url.searchParams.set("exact", "true");
+  url.searchParams.set("briefRepresentation", "true");
+  const response = await fetch(url, {
+    headers: { authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (!response.ok) throw new OidcAdminError("provider");
+  return (await response.json()) as OidcUserLookup[];
 }
 
 function oidcAdminConfiguration(): OidcAdminConfiguration {

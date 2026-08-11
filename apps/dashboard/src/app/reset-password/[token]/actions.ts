@@ -6,7 +6,12 @@ import { withTenantTransaction } from "@factory/database";
 import { redirect } from "next/navigation";
 import { dashboardConfig } from "@/server/config";
 import { dashboardDatabase } from "@/server/database";
-import { OidcAdminError, updateOidcPassword } from "@/server/oidc-admin";
+import {
+  createOidcPasswordUser,
+  findOidcUserByEmail,
+  OidcAdminError,
+  updateOidcPassword,
+} from "@/server/oidc-admin";
 import { findActivePasswordReset } from "@/server/password-resets";
 
 export async function resetPasswordAction(formData: FormData): Promise<void> {
@@ -38,8 +43,9 @@ export async function resetPasswordAction(formData: FormData): Promise<void> {
         }),
     );
     if (dashboardConfig.FACTORY_AUTH_MODE === "oidc") {
-      if (!identity) redirect(`/reset-password/${token}?error=invalid`);
-      await updateOidcPassword(identity.providerSubject, password);
+      const subject = identity?.providerSubject ?? (await recoverOidcIdentity(reset, password));
+      if (!subject) redirect(`/reset-password/${token}?error=invalid`);
+      await updateOidcPassword(subject, password);
     }
     const completed = await withTenantTransaction(
       dashboardDatabase(),
@@ -90,6 +96,54 @@ export async function resetPasswordAction(formData: FormData): Promise<void> {
     throw error;
   }
   redirect("/login?reset=1");
+}
+
+async function recoverOidcIdentity(
+  reset: { organizationId: string; userId: string },
+  password: string,
+): Promise<string | null> {
+  const user = await dashboardDatabase().user.findUnique({
+    where: { id: reset.userId },
+    select: { displayName: true, primaryEmail: true },
+  });
+  if (!user) return null;
+  const subject =
+    (await findOidcUserByEmail(user.primaryEmail)) ??
+    (await createOidcPasswordUser({
+      email: user.primaryEmail,
+      displayName: user.displayName,
+      password,
+    }));
+  const linked = await withTenantTransaction(
+    dashboardDatabase(),
+    {
+      organizationId: reset.organizationId,
+      actorId: reset.userId,
+      correlationId: `password-reset-link-identity:${reset.userId}`,
+    },
+    async (transaction) => {
+      const existing = await transaction.authIdentity.findUnique({
+        where: {
+          providerKey_providerSubject: {
+            providerKey: dashboardConfig.FACTORY_OIDC_ISSUER!,
+            providerSubject: subject,
+          },
+        },
+        select: { userId: true, providerSubject: true },
+      });
+      if (existing) return existing.userId === reset.userId ? existing.providerSubject : null;
+      await transaction.authIdentity.create({
+        data: {
+          id: randomUUID(),
+          userId: reset.userId,
+          providerKey: dashboardConfig.FACTORY_OIDC_ISSUER!,
+          providerSubject: subject,
+        },
+      });
+      return subject;
+    },
+  );
+  return linked;
 }
 
 function textField(formData: FormData, key: string, maximum: number): string {

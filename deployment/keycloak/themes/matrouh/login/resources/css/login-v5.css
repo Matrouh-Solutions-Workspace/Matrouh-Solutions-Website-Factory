@@ -8,3 +8,18 @@
   box-shadow: none;
   content: "";
 }
+
+/* Keep server-side errors readable: PatternFly's icon background otherwise
+   repeats across our deliberately flat inputs. Edge already supplies the one
+   password reveal control inside the field, so hide Keycloak's duplicate. */
+.pf-c-form-control[aria-invalid="true"],
+.form-control[aria-invalid="true"] {
+  background-image: none !important;
+  background-repeat: no-repeat !important;
+}
+
+button[data-password-toggle],
+#kc-form-password-visibility,
+button[aria-controls="password"] {
+  display: none !important;
+}
