@@ -2815,7 +2815,9 @@ export async function updateNavigationNodeAction(formData: FormData): Promise<vo
   const expectedRevision = parseRevision(formData.get("expectedRevision"));
   const websiteDraftRevision = parseRevision(formData.get("websiteDraftRevision"));
   if (!websiteId || !nodeId || !expectedRevision || !websiteDraftRevision) return;
-  const context = await requireDashboardContext("website.edit");
+  // Navigation copy is safe for the assigned client to manage. The scoped helper
+  // keeps the existing owner/admin behavior and verifies client ownership first.
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   await withTenantTransaction(
     dashboardDatabase(),
     tenantActionContext(context, `update-navigation-node:${nodeId}`),

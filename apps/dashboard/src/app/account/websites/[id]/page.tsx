@@ -7,6 +7,7 @@ import {
   updateWebsiteBrandingAction,
   updateWebsiteIdentityAction,
   updateWebsiteLogoAction,
+  updateNavigationNodeAction,
 } from "@/app/actions";
 import { ClientPublicationAction } from "@/app/client-publication-action";
 import { CoordinatePickerFields, StructuredListField } from "@/app/structured-list-field";
@@ -291,6 +292,65 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
           </section>
         ))}
       </section>
+
+      {editor.navigation.length > 0 ? (
+        <section className="panel followPanel">
+          <div className="panelHead">
+            <div>
+              <p className="eyebrow">{copy.navigation}</p>
+              <h2>{copy.navigationLabels}</h2>
+              <p className="sub">{copy.navigationDescription}</p>
+            </div>
+            <span>{copy.menuCount.replace("{count}", String(editor.navigation.length))}</span>
+          </div>
+          {editor.navigation.map((navigation) => {
+            const navigationLocales = navigation.locale
+              ? [navigation.locale]
+              : editor.website.locales;
+            return (
+              <div className="navigationEditor" key={navigation.id}>
+                <strong>
+                  {navigation.title}
+                  {navigation.locale ? ` — ${localeName(navigation.locale, locale)}` : ""}
+                </strong>
+                <div className="navigationNodeGrid">
+                  {navigation.nodes.map((node) => (
+                    <DraftEditorForm
+                      action={updateNavigationNodeAction}
+                      className="inlineEditForm"
+                      key={node.id}
+                    >
+                      <input name="websiteId" type="hidden" value={editor.website.id} />
+                      <input name="nodeId" type="hidden" value={node.id} />
+                      <input name="expectedRevision" type="hidden" value={node.revision} />
+                      <input
+                        name="websiteDraftRevision"
+                        type="hidden"
+                        value={editor.website.draftRevision}
+                      />
+                      <fieldset className="localizedNavigationLabels">
+                        <legend>{copy.navigationLabel}</legend>
+                        {navigationLocales.map((navigationLocale) => (
+                          <label key={navigationLocale}>
+                            {localeName(navigationLocale, locale)}
+                            <input
+                              defaultValue={node.labels[navigationLocale] ?? ""}
+                              dir={navigationLocale === "ar" ? "rtl" : "ltr"}
+                              lang={navigationLocale}
+                              name={`label:${navigationLocale}`}
+                              required
+                            />
+                          </label>
+                        ))}
+                      </fieldset>
+                    </DraftEditorForm>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -313,6 +373,12 @@ function settingsValue(content: string | undefined, key: string): string | null 
   } catch {
     return null;
   }
+}
+
+function localeName(value: string, dashboardLocale: "ar" | "en"): string {
+  if (value === "ar") return dashboardLocale === "ar" ? "العربية" : "Arabic";
+  if (value === "en") return dashboardLocale === "ar" ? "الإنجليزية" : "English";
+  return value;
 }
 
 const english = {
@@ -351,6 +417,11 @@ const english = {
   keywords: "Keywords",
   allowIndexing: "Allow search indexing",
   allowFollowing: "Allow search engines to follow links",
+  navigation: "Navigation",
+  navigationLabels: "Navigation labels",
+  navigationDescription: "Navigation labels are saved automatically for every website language.",
+  menuCount: "{count} menus",
+  navigationLabel: "Navigation label",
 } as const;
 
 const arabic: Record<keyof typeof english, string> = {
@@ -388,4 +459,9 @@ const arabic: Record<keyof typeof english, string> = {
   keywords: "الكلمات المفتاحية",
   allowIndexing: "السماح بالفهرسة",
   allowFollowing: "السماح لمحركات البحث باتباع الروابط",
+  navigation: "التنقل",
+  navigationLabels: "تسميات التنقل",
+  navigationDescription: "تُحفظ تسميات التنقل تلقائيًا لكل لغة في الموقع.",
+  menuCount: "{count} قوائم",
+  navigationLabel: "تسمية التنقل",
 };

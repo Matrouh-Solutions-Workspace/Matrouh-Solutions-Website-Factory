@@ -4556,6 +4556,48 @@ input[type="file"] {
   color: var(--ink);
   box-shadow: 3px 3px 0 #000000;
 }
+
+/* Keep the client portal full-width. It has no navigation rail, so its editor
+   must never inherit a desktop rail offset or a constrained content canvas. */
+.appShell.clientShell,
+.appShell.clientShell .appFrame {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+.appShell.clientShell .appFrame > main {
+  width: calc(100% - 48px);
+  max-width: none;
+  margin-inline: auto;
+}
+
+/* This intentionally comes after the visual layers above: English dashboards
+   always use a left rail, while Arabic dashboards retain the right rail. */
+.appShell[dir="ltr"]:not(.clientShell) .sidebar {
+  right: auto !important;
+  left: 0 !important;
+  border-right: 3px solid var(--primary);
+  border-left: 0;
+}
+.appShell[dir="ltr"]:not(.clientShell) .appFrame {
+  padding-right: 0 !important;
+  padding-left: 252px !important;
+}
+.appShell[dir="ltr"]:not(.clientShell) .appFrame::before {
+  right: 0;
+  left: 252px;
+}
+@media (max-width: 1100px) {
+  .appShell[dir="ltr"]:not(.clientShell) .sidebar {
+    transform: translateX(-110%);
+  }
+  .appShell[dir="ltr"]:not(.clientShell) .sidebarOpen {
+    transform: translateX(0);
+  }
+  .appShell[dir="ltr"]:not(.clientShell) .appFrame {
+    padding-left: 0 !important;
+  }
+}
 .appShell .topbar {
   box-shadow: 0 1px 0 rgba(17, 17, 17, 0.08);
 }
