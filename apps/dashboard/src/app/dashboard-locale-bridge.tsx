@@ -486,12 +486,19 @@ const remainingArabicText: Readonly<Record<string, string>> = {
   Governance: "الحوكمة",
   Menus: "القوائم",
   attempt: "محاولة",
+  admin: "مدير",
+  client: "عميل",
   member: "عضو",
+  monthly: "شهري",
+  owner: "مالك",
   page: "صفحة",
   pages: "صفحات",
+  ready: "جاهز",
   recent: "حديث",
   retained: "محتفظ به",
   revision: "مراجعة",
+  trial: "تجريبي",
+  yearly: "سنوي",
 };
 
 export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale }) {
