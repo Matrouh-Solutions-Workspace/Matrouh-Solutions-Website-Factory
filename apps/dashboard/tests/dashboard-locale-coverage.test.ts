@@ -90,7 +90,8 @@ describe("dashboard Arabic copy coverage", () => {
     expect(editorPage).toContain(
       "navigationNodeLabel(node.kind, navigationLocales.length, locale)",
     );
-    expect(editorPage).toContain('Page: "تسميات الصفحة"');
+    expect(editorPage).toContain('page: "تسميات الصفحة"');
+    expect(editorPage).toContain("labels[kind.toLowerCase()]");
     expect(editorPage).not.toContain("{node.kind} label{navigationLocales.length");
   });
 });

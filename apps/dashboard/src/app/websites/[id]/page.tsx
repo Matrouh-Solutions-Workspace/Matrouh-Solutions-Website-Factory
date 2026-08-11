@@ -888,11 +888,11 @@ function localeName(locale: string): string {
 function navigationNodeLabel(kind: string, localeCount: number, locale: "ar" | "en"): string {
   if (locale === "ar") {
     const labels: Readonly<Record<string, string>> = {
-      Page: "تسميات الصفحة",
-      Link: "تسميات الرابط",
-      Item: "تسميات العنصر",
+      page: "تسميات الصفحة",
+      link: "تسميات الرابط",
+      item: "تسميات العنصر",
     };
-    return labels[kind] ?? "تسميات العنصر";
+    return labels[kind.toLowerCase()] ?? "تسميات العنصر";
   }
   return `${kind} label${localeCount === 1 ? "" : "s"}`;
 }
