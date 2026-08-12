@@ -229,11 +229,11 @@ export const loadPublicTemplateCatalog = cache(
         JOIN LATERAL (
           SELECT template_version
           FROM template_versions
-          WHERE template_catalog_entry_id = entry.id
-            AND validation_status = 'valid'
-            AND lifecycle_status IN ('ready', 'deprecated')
-          ORDER BY discovered_at DESC
-          LIMIT 1
+            WHERE template_catalog_entry_id = entry.id
+              AND validation_status = 'valid'
+              AND lifecycle_status IN ('ready', 'deprecated')
+            ORDER BY string_to_array(template_version, '.')::int[] DESC
+            LIMIT 1
         ) AS version ON TRUE
         WHERE entry.lifecycle_status IN ('ready', 'deprecated')
         ORDER BY entry.display_name ASC

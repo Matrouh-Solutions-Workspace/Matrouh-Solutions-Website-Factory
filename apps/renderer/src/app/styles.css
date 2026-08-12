@@ -897,12 +897,16 @@ p {
   box-shadow: 6px 6px 0 var(--gallery-accent);
 }
 .templateGalleryVisual {
+  position: relative;
   overflow: hidden;
   aspect-ratio: 16 / 10;
   border-bottom: 1px solid var(--gallery-line);
   background: #eceae2;
 }
 .templateGalleryVisual iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
   width: 250%;
   height: 250%;
@@ -910,6 +914,11 @@ p {
   pointer-events: none;
   transform: scale(0.4);
   transform-origin: top left;
+}
+.templateGallery[dir="rtl"] .templateGalleryVisual iframe {
+  right: 0;
+  left: auto;
+  transform-origin: top right;
 }
 .templateGalleryCardBody {
   display: grid;
