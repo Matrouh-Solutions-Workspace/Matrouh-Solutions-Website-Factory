@@ -1,5 +1,8 @@
 node_modules/
 dist/
+!templates/food-menu-1.3.0/dist/
+templates/food-menu-1.3.0/dist/*
+!templates/food-menu-1.3.0/dist/index.js
 .next/
 coverage/
 .turbo/

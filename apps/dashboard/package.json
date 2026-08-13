@@ -13,8 +13,8 @@
   "dependencies": {
     "@factory/auth": "workspace:*",
     "@factory/component-registry": "workspace:*",
-    "@factory/content": "workspace:*",
     "@factory/config": "workspace:*",
+    "@factory/content": "workspace:*",
     "@factory/database": "workspace:*",
     "@factory/domains": "workspace:*",
     "@factory/media": "workspace:*",
@@ -26,10 +26,12 @@
     "@factory/template-sdk": "workspace:*",
     "@factory/template-validator": "workspace:*",
     "next": "^16.3.0",
+    "pdf-parse": "1.1.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@types/pdf-parse": "1.1.5",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7"
   }

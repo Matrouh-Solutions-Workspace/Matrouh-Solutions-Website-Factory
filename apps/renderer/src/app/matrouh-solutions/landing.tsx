@@ -1,6 +1,13 @@
 import type { CSSProperties } from "react";
 import styles from "./landing.module.css";
 import { LandingMotion } from "./landing-motion";
+import {
+  MATROUH_EMAIL,
+  MATROUH_EMAIL_URL,
+  MATROUH_FACEBOOK_URL,
+  MATROUH_WHATSAPP_NUMBER,
+  MATROUH_WHATSAPP_URL,
+} from "../public-contact-links";
 
 type Locale = "ar" | "en";
 
@@ -115,7 +122,7 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           phaseLabel: "مرحلة",
           processMeta: ["اكتشاف ومواءمة", "تصميم وهندسة", "إطلاق وتحسين"],
           contactLabel: "قناة المشاريع الجديدة",
-          emailLabel: "تواصل مباشرة مع فريقنا",
+          contactActionLabel: "تواصل مباشرة مع فريقنا عبر واتساب",
         }
       : {
           proofLabel: "Delivery standards",
@@ -128,7 +135,7 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           phaseLabel: "Phase",
           processMeta: ["Discovery & alignment", "Design & engineering", "Launch & optimization"],
           contactLabel: "New business desk",
-          emailLabel: "Speak directly with our team",
+          contactActionLabel: "Speak directly with our team on WhatsApp",
         };
   return (
     <div className={styles.page} data-landing-page dir={text.direction} lang={locale}>
@@ -336,13 +343,23 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
               <i aria-hidden="true" />
               {enterprise.contactLabel}
             </span>
-            <a href="mailto:matrouhsolutions@gmail.com">
+            <a href={MATROUH_WHATSAPP_URL} rel="noreferrer" target="_blank">
               <span>
-                <small>{enterprise.emailLabel}</small>
-                <strong>matrouhsolutions@gmail.com</strong>
+                <small>{enterprise.contactActionLabel}</small>
+                <strong dir="ltr">WhatsApp · {MATROUH_WHATSAPP_NUMBER}</strong>
               </span>
               <i aria-hidden="true">↗</i>
             </a>
+            <div className={styles.ctaContactChannels}>
+              <a href={MATROUH_FACEBOOK_URL} rel="noreferrer" target="_blank">
+                <span>Facebook</span>
+                <i aria-hidden="true">↗</i>
+              </a>
+              <a href={MATROUH_EMAIL_URL}>
+                <span>{locale === "ar" ? "البريد الإلكتروني" : "Email"}</span>
+                <i aria-hidden="true">↗</i>
+              </a>
+            </div>
             <small>{text.ctaNote}</small>
           </div>
         </section>
@@ -366,10 +383,31 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
             </div>
             <div className={styles.footerContact}>
               <span>{locale === "ar" ? "لديك مشروع في ذهنك؟" : "Have a project in mind?"}</span>
-              <a href="mailto:matrouhsolutions@gmail.com">
-                matrouhsolutions@gmail.com
-                <i aria-hidden="true">↗</i>
-              </a>
+              <div className={styles.footerContactChannels}>
+                <a href={MATROUH_WHATSAPP_URL} rel="noreferrer" target="_blank">
+                  <span>
+                    <small>WhatsApp</small>
+                    <strong dir="ltr">{MATROUH_WHATSAPP_NUMBER}</strong>
+                  </span>
+                  <i aria-hidden="true">↗</i>
+                </a>
+                <a href={MATROUH_FACEBOOK_URL} rel="noreferrer" target="_blank">
+                  <span>
+                    <small>Facebook</small>
+                    <strong>
+                      {locale === "ar" ? "صفحة مطروح سوليوشنز" : "Matrouh Solutions page"}
+                    </strong>
+                  </span>
+                  <i aria-hidden="true">↗</i>
+                </a>
+                <a href={MATROUH_EMAIL_URL}>
+                  <span>
+                    <small>{locale === "ar" ? "البريد الإلكتروني" : "Email"}</small>
+                    <strong dir="ltr">{MATROUH_EMAIL}</strong>
+                  </span>
+                  <i aria-hidden="true">↗</i>
+                </a>
+              </div>
             </div>
           </div>
           <div className={styles.footerBottom}>
@@ -382,6 +420,9 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
               ))}
               <a href={text.languageHref} hrefLang={locale === "ar" ? "en" : "ar"}>
                 {text.language}
+              </a>
+              <a href={MATROUH_FACEBOOK_URL} rel="noreferrer" target="_blank">
+                Facebook
               </a>
             </nav>
           </div>

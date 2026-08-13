@@ -26,6 +26,97 @@
   --shadow-md: 0 16px 36px rgba(16, 24, 40, 0.09);
 }
 
+/* Hierarchical catalog and reviewed-document authoring */
+.structuredNestedList,
+.structuredNestedGroup {
+  grid-column: 1 / -1;
+  margin: 0.6rem 0 0;
+  padding: 1rem;
+  border: 1px solid #c9c9c9;
+  background: #f7f7f7;
+}
+.structuredNestedList > legend,
+.structuredNestedGroup > legend,
+.documentImportField > legend {
+  padding: 0 0.45rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.structuredNestedList .structuredListItem {
+  background: #fff;
+  border-inline-start: 4px solid var(--accent, #f5a623);
+}
+.structuredNestedList .mediaPickerField {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--primary) 58%, var(--line));
+  border-radius: 10px;
+  background: var(--primary-soft);
+}
+.structuredNestedList .mediaPickerLabel {
+  color: var(--ink);
+  font-weight: 800;
+}
+.structuredNestedList .structuredNestedList {
+  background: #fffaf0;
+}
+.documentImportField {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+  border: 2px solid #1a1a1a;
+  background: #fff;
+}
+.documentImportSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+.documentImportSteps span {
+  padding: 0.65rem;
+  border: 1px solid #c9c9c9;
+  color: #6f6f6f;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.documentImportSteps span.active {
+  border-color: #f5a623;
+  background: #fff3d9;
+  color: #1a1a1a;
+}
+.documentImportSteps span.complete {
+  border-color: #15803d;
+  background: #ecfdf3;
+  color: #166534;
+}
+.documentImportUpload {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.45fr) minmax(14rem, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+.documentImportSource {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem;
+  border: 1px solid #c9c9c9;
+  background: #f6f6f6;
+}
+@media (max-width: 700px) {
+  .documentImportUpload {
+    grid-template-columns: 1fr;
+  }
+  .documentImportSteps span {
+    padding-inline: 0.3rem;
+    font-size: 0.62rem;
+  }
+}
+
 :root[data-theme="dark"] {
   color-scheme: dark;
   --canvas: #111310;
@@ -1479,8 +1570,7 @@ input[type="file"] {
 }
 .themeStudioLayout {
   display: grid;
-  grid-template-columns: minmax(250px, 0.78fr) minmax(300px, 1.22fr);
-  min-height: 540px;
+  grid-template-columns: minmax(0, 1fr);
   border-top: 1px solid var(--line);
 }
 .themeControls {
@@ -1488,7 +1578,7 @@ input[type="file"] {
   align-content: start;
   gap: 18px;
   padding: 18px;
-  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 .colorControlGrid {
   display: grid;
@@ -1561,38 +1651,42 @@ input[type="file"] {
   background: #e7e8e5;
   color: var(--live-text);
 }
-.themeActualPreview {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-width: 0;
-  min-height: 540px;
-  padding: 12px;
-  background: #e7e8e5;
-}
-.themePreviewBar {
+.themePreviewHandoff {
   display: flex;
-  min-height: 34px;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-start;
   gap: 12px;
-  padding: 0 11px;
-  border-radius: 10px 10px 0 0;
-  background: #252827;
-  color: #dfe3e1;
-  font-size: 9px;
+  margin: 0 18px 18px;
+  padding: 15px 16px;
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--primary);
+  background: var(--surface-soft);
 }
-.themePreviewBar a {
-  color: white;
-  font-weight: 700;
-  text-decoration: none;
+.themePreviewHandoff > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--ink);
+  background: var(--primary);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 900;
 }
-.themeActualPreview iframe {
-  width: 100%;
-  height: 100%;
-  min-height: 494px;
-  border: 0;
-  border-radius: 0 0 10px 10px;
-  background: white;
+.themePreviewHandoff > div {
+  display: grid;
+  gap: 4px;
+}
+.themePreviewHandoff strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+.themePreviewHandoff p {
+  max-width: 72ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.55;
 }
 .miniBrowserBar {
   display: flex;
@@ -1781,9 +1875,6 @@ input[type="file"] {
 @media (max-width: 1180px) {
   .editorConfiguration:has(.themeStudio) {
     grid-template-columns: 1fr;
-  }
-  .themeStudioLayout {
-    grid-template-columns: minmax(270px, 0.8fr) minmax(340px, 1.2fr);
   }
 }
 
@@ -2419,8 +2510,7 @@ input[type="file"] {
 }
 .appShell .sectionManage,
 .appShell .structuredListHead,
-.appShell .templatePreviewBar,
-.appShell .themePreviewBar {
+.appShell .templatePreviewBar {
   border-color: var(--ink);
 }
 .appShell .editorMetaBar {
@@ -2444,16 +2534,8 @@ input[type="file"] {
   font-weight: 900;
 }
 .appShell .themeStudio,
-.appShell .themeActualPreview,
 .appShell .themeControls {
   border-color: var(--ink);
-}
-.appShell .themeActualPreview {
-  background: #111111;
-}
-.appShell .themePreviewBar {
-  background: #111111;
-  color: #f5c842;
 }
 .appShell .colorInputRow input[type="color"] {
   border: 2px solid var(--ink);
@@ -3378,6 +3460,547 @@ input[type="file"] {
   color: var(--muted-light);
   font-size: 9px;
   white-space: nowrap;
+}
+.templatePageActions {
+  flex: 0 0 auto;
+}
+.templateCardListing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 16px;
+  border-top: 2px solid var(--primary);
+  background: var(--surface-soft);
+}
+.templateCardListing > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.templateCardListingEyebrow {
+  color: var(--primary-dark);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.templateCardListing strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+.templateCardListing small {
+  color: var(--muted);
+  font-size: 9px;
+}
+.templateCardListing .buttonLink {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 7px 11px;
+  font-size: 9px;
+}
+.templateCategoryEditor {
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.templateCategoryEditor > summary {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.templateCategoryEditor > summary::-webkit-details-marker {
+  display: none;
+}
+.templateCategoryEditor > summary:hover {
+  background: var(--surface-soft);
+}
+.templateCategoryEditor > summary > span:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.templateCategoryEditor > summary small {
+  color: var(--primary-dark);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.templateCategoryEditor > summary strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.templateCategoryEditLabel {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.templateCategoryEditLabel::after {
+  color: var(--primary-dark);
+  content: "+";
+  font-size: 18px;
+}
+.templateCategoryEditor[open] .templateCategoryEditLabel::after {
+  content: "−";
+}
+.templateCategoryForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 9px;
+  padding: 13px 16px 15px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+.templateCategoryForm label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.templateCategoryForm input {
+  width: 100%;
+  min-width: 0;
+  text-transform: none;
+}
+.templateCategoryForm button {
+  min-height: 42px;
+  white-space: nowrap;
+}
+.templateCategoryForm .formNotice {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.templatePublicCatalogStats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.templatePublicCatalogStats article {
+  display: grid;
+  min-height: 118px;
+  align-content: space-between;
+  gap: 4px;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--primary);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+}
+.templatePublicCatalogStats article:nth-child(2) {
+  border-top-color: var(--success);
+}
+.templatePublicCatalogStats article:nth-child(3) {
+  border-top-color: var(--danger);
+}
+.templatePublicCatalogStats span,
+.templatePublicCatalogStats small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.templatePublicCatalogStats strong {
+  color: var(--ink);
+  font-size: 28px;
+  line-height: 1;
+}
+.templatePublicCatalogWorkspace {
+  padding-bottom: 24px;
+}
+.templatePublicCatalogIntro {
+  max-width: 78ch;
+  margin: 14px 0 18px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.templatePublicListingStack {
+  display: grid;
+  gap: 10px;
+}
+.templatePublicListingEditor {
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+.templatePublicListingEditor[open] {
+  border-color: var(--ink);
+  box-shadow: 5px 5px 0 var(--primary);
+}
+.templatePublicListingEditor > summary {
+  display: flex;
+  min-height: 78px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.templatePublicListingEditor > summary::-webkit-details-marker {
+  display: none;
+}
+.templatePublicListingEditor > summary:hover {
+  background: var(--surface-soft);
+}
+.templatePublicListingIdentity,
+.templatePublicListingSummaryMeta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+.templatePublicListingIdentity > div,
+.templatePublicListingSummaryMeta > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.templatePublicListingIdentity strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.templatePublicListingIdentity small,
+.templatePublicListingSummaryMeta small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.templatePublicListingIndex {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 2px solid var(--ink);
+  background: var(--primary);
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 900;
+}
+.templatePublicListingSummaryMeta {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+.templatePublicListingSummaryMeta > div {
+  min-width: 94px;
+  text-align: end;
+}
+.templatePublicListingSummaryMeta > div strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+.templatePublicListingEditLabel {
+  display: inline-flex;
+  min-width: 92px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.templatePublicListingEditLabel::after {
+  color: var(--primary-dark);
+  content: "+";
+  font-size: 20px;
+  line-height: 1;
+}
+.templatePublicListingEditor[open] .templatePublicListingEditLabel::after {
+  content: "−";
+}
+.templatePublicListingEditor > .templateCatalogSettings {
+  border-top: 2px solid var(--ink);
+}
+.templatePublicListingEditor > .templateCatalogSettings .templateCatalogSettingsForm {
+  padding: 18px;
+}
+.templateCatalogSettings {
+  border-top: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+.templateCatalogSettings > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.templateCatalogSettings > summary::-webkit-details-marker {
+  display: none;
+}
+.templateCatalogSettings > summary::after {
+  color: var(--primary-dark);
+  content: "+";
+  font-size: 18px;
+}
+.templateCatalogSettings[open] > summary::after {
+  content: "−";
+}
+.templateCatalogSettings > summary small {
+  margin-inline-start: auto;
+  color: var(--muted-light);
+  font-size: 9px;
+  font-weight: 600;
+}
+.templateCatalogSettingsForm {
+  display: grid;
+  gap: 13px;
+  padding: 16px;
+  border-top: 1px solid var(--line);
+}
+.templateCatalogSettingsHead,
+.templateCatalogSwitch,
+.templateCatalogFeaturedCheck {
+  display: flex;
+  align-items: center;
+}
+.templateCatalogSettingsHead {
+  justify-content: space-between;
+  gap: 12px;
+}
+.templateCatalogSettingsHead > div {
+  display: grid;
+  gap: 2px;
+}
+.templateCatalogSettingsHead strong {
+  font-size: 12px;
+}
+.templateCatalogSettingsHead small,
+.templateCatalogSettingsForm label > small {
+  color: var(--muted-light);
+  font-size: 9px;
+}
+.templateCatalogSwitch,
+.templateCatalogFeaturedCheck {
+  gap: 7px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 650;
+}
+.templateCatalogSwitch input,
+.templateCatalogFeaturedCheck input {
+  width: 16px;
+  height: 16px;
+}
+.templateCatalogSettingsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.templateCatalogSettingsGrid label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.templateCatalogSettingsGrid input,
+.templateCatalogSettingsGrid select,
+.templateCatalogSettingsGrid textarea {
+  width: 100%;
+  min-width: 0;
+  text-transform: none;
+}
+.templateCatalogWideField {
+  grid-column: 1 / -1;
+}
+.templateCatalogSettingsForm > button {
+  justify-self: start;
+}
+.templateCatalogSettings {
+  border-top: 2px solid var(--primary);
+}
+.templateCatalogSettingsForm {
+  border-top: 0;
+}
+.templateCatalogSettingsHead strong {
+  font-size: 15px;
+}
+.templateCatalogSettingsEyebrow {
+  color: var(--primary-dark);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.templateCatalogQuickGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  align-items: end;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.templateCatalogQuickGrid > label:not(.templateCatalogSwitch) {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.templateCatalogQuickGrid input:not([type="checkbox"]),
+.templateCatalogQuickGrid select {
+  width: 100%;
+  min-width: 0;
+}
+.templateCatalogQuickGrid .templateCatalogSwitch {
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+.templateCatalogVisibilityControl {
+  border-color: color-mix(in srgb, var(--success) 35%, var(--line)) !important;
+  background: var(--success-soft) !important;
+}
+.templateCatalogQuickGrid > button {
+  min-height: 42px;
+}
+.templateCatalogQuickGrid > label:has(input[name="category"]),
+.templateCatalogQuickGrid > label:has(input[name="categoryAr"]) {
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--primary) 55%, var(--line));
+  border-radius: 6px;
+  background: var(--primary-soft);
+}
+.templateCatalogAdvancedSettings {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.templateCatalogAdvancedSettings > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.templateCatalogAdvancedSettings > summary::-webkit-details-marker {
+  display: none;
+}
+.templateCatalogAdvancedSettings > summary::before {
+  color: var(--primary-dark);
+  content: "+";
+  font-size: 17px;
+}
+.templateCatalogAdvancedSettings[open] > summary::before {
+  content: "−";
+}
+.templateCatalogAdvancedSettings > summary small {
+  margin-inline-start: auto;
+  color: var(--muted-light);
+  font-size: 9px;
+  font-weight: 500;
+}
+.templateCatalogAdvancedSettings .templateCatalogSettingsGrid {
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 720px) {
+  .templatePublicCatalogStats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .templatePublicListingEditor > summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .templatePublicListingSummaryMeta {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .templatePublicListingSummaryMeta > div {
+    margin-inline-start: auto;
+  }
+  .templatePublicListingEditLabel {
+    width: 100%;
+    padding-top: 9px;
+    border-top: 1px solid var(--line);
+  }
+  .templateCatalogQuickGrid,
+  .templateCatalogSettingsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .templateCatalogAdvancedSettings > summary small {
+    display: none;
+  }
+  .templateCategoryForm {
+    grid-template-columns: 1fr 1fr;
+  }
+  .templateCategoryForm button {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 480px) {
+  .templateCardListing {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .templateCardListing .buttonLink {
+    width: 100%;
+  }
+  .templatePublicCatalogStats,
+  .templateCatalogQuickGrid,
+  .templateCatalogSettingsGrid,
+  .templateCategoryForm {
+    grid-template-columns: 1fr;
+  }
+  .templateCategoryForm button {
+    grid-column: auto;
+  }
+  .templatePublicListingIdentity small {
+    white-space: normal;
+  }
 }
 .templateImportPanel {
   margin-top: 18px;
@@ -4418,12 +5041,74 @@ input[type="file"] {
 .clientWebsiteManager {
   padding: 0;
 }
+.clientMenuManager {
+  --menu-manager-accent: #bd3c22;
+  --menu-manager-green: #1d3528;
+}
+.menuManagerNav {
+  position: sticky;
+  z-index: 18;
+  top: 58px;
+  display: flex;
+  max-width: 100%;
+  gap: 6px;
+  padding: 7px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: 0 12px 30px rgba(28, 24, 20, 0.08);
+  backdrop-filter: blur(16px);
+}
+.menuManagerNav a {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 780;
+  text-decoration: none;
+}
+.menuManagerNav a:hover,
+.menuManagerNav a:focus-visible {
+  background: var(--menu-manager-green);
+  color: #fffaf1;
+}
+.clientMenuManager #menu-branding,
+.clientMenuManager #menu-languages,
+.clientMenuManager #menu-content {
+  scroll-margin-top: 132px;
+}
+.menuLanguageActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.menuLanguageActions form {
+  display: grid;
+  align-content: end;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+.clientMenuManager .structuredNestedList {
+  border-inline-start-color: var(--menu-manager-accent);
+}
 .clientContentWorkspace > .panelHead {
   padding: 0 4px;
 }
 @media (max-width: 700px) {
   .clientWebsiteManager {
     padding: 0;
+  }
+  .menuManagerNav {
+    top: 54px;
+    border-radius: 12px;
+  }
+  .menuLanguageActions {
+    grid-template-columns: 1fr;
   }
   .loginShell .authCard {
     padding: 26px;
@@ -5943,5 +6628,774 @@ input[type="file"] {
   }
   .appShell .monitoringStats {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Unified website editor studio — shared by administrators and client accounts. */
+.appShell .editorStudioPage {
+  width: 100%;
+  max-width: none;
+  gap: 12px;
+}
+.appShell .editorStudioPage .websiteEditorHeader {
+  position: sticky;
+  z-index: 20;
+  top: 68px;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  min-height: 82px;
+  padding: 15px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(17, 17, 17, 0.08);
+}
+.appShell .editorStudioPage .websiteEditorHeader::before {
+  display: none;
+}
+.appShell .editorStudioPage .websiteEditorHeader h1 {
+  overflow: hidden;
+  font-size: clamp(22px, 2vw, 30px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.appShell .editorStudioPage .websiteEditorHeader .sub {
+  margin-top: 6px;
+}
+.editorGlobalSaveState {
+  display: inline-flex;
+  min-width: max-content;
+  align-items: center;
+  gap: 8px;
+  padding-inline-start: 12px;
+  border-inline-start: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+}
+.editorGlobalSaveState > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1fad62;
+  box-shadow: 0 0 0 4px color-mix(in srgb, #1fad62 14%, transparent);
+}
+.editorGlobalSaveState strong {
+  font-size: 11px;
+  white-space: nowrap;
+}
+.editorGlobalSaveState kbd {
+  padding: 3px 5px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font: inherit;
+  font-size: 9px;
+}
+.editorGlobalSaveState--unsaved > span,
+.editorGlobalSaveState--saving > span {
+  background: var(--primary-dark);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+.editorGlobalSaveState--saving > span {
+  animation: editorSavePulse 900ms ease-in-out infinite alternate;
+}
+.editorGlobalSaveState--conflict > span,
+.editorGlobalSaveState--error > span {
+  background: var(--danger);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 14%, transparent);
+}
+@keyframes editorSavePulse {
+  to {
+    opacity: 0.35;
+    transform: scale(0.72);
+  }
+}
+
+.appShell .editorStudioWorkspace {
+  display: grid;
+  grid-template-columns: 228px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  min-width: 0;
+}
+.appShell .editorStudioSidebar {
+  position: sticky;
+  top: 164px;
+  z-index: 12;
+  display: grid;
+  max-height: calc(100vh - 184px);
+  gap: 12px;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 10px 28px rgba(17, 17, 17, 0.06);
+}
+.editorStudioSidebarIntro {
+  display: grid;
+  gap: 3px;
+  padding: 6px 6px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.editorStudioSidebarIntro span {
+  color: var(--primary-dark);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.editorStudioSidebarIntro strong {
+  font-size: 14px;
+}
+.appShell .editorStudioSidebar > nav:not(.draftSetupProgress),
+.appShell .editorStudioSidebar .draftSetupProgress ol {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+}
+.appShell .editorStudioSidebar > nav:not(.draftSetupProgress) a,
+.appShell .editorStudioSidebar .draftSetupProgress li a {
+  display: flex;
+  min-height: 43px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 760;
+  text-decoration: none;
+}
+.appShell .editorStudioSidebar > nav:not(.draftSetupProgress) a:hover,
+.appShell .editorStudioSidebar > nav:not(.draftSetupProgress) a:focus-visible,
+.appShell .editorStudioSidebar .draftSetupProgress li a:hover,
+.appShell .editorStudioSidebar .draftSetupProgress li.current a {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--line));
+  background: var(--primary-soft);
+  color: var(--ink);
+}
+.appShell .editorStudioSidebar > nav:not(.draftSetupProgress) a > span,
+.appShell .editorStudioSidebar .draftSetupProgress li a > span {
+  display: inline-grid;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 9px;
+}
+.appShell .editorStudioSidebar .draftSetupProgress {
+  position: static;
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.appShell .editorStudioSidebar .draftSetupHeader {
+  display: grid;
+  gap: 8px;
+}
+.appShell .editorStudioSidebar .draftSetupHeader > div:first-child {
+  display: none;
+}
+.appShell .editorStudioSidebar .draftSetupActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.appShell .editorStudioSidebar .draftSetupActions:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+.appShell .editorStudioSidebar .draftSetupActions a {
+  min-height: 34px;
+  justify-content: center;
+  padding: 6px;
+  font-size: 10px;
+}
+.editorStudioTip {
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+.editorStudioTip > span {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--surface);
+  font-weight: 850;
+}
+.editorStudioTip p {
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.6;
+}
+.appShell .editorStudioInspector {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+}
+.appShell .editorStudioInspector > .panel,
+.appShell .editorStudioInspector > form.panel,
+.appShell .editorStudioInspector > .workspaceGrid,
+.appShell .editorStudioInspector > .editorShell,
+.appShell .editorStudioInspector > .clientContentWorkspace {
+  margin: 0;
+}
+.appShell .editorStudioInspector > .editForm,
+.appShell .editorStudioInspector > .localeManager,
+.appShell .editorStudioInspector > .followPanel,
+.appShell .editorStudioInspector > .upgradeNotice {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  border-inline-start: 4px solid var(--primary);
+  box-shadow: 0 8px 24px rgba(17, 17, 17, 0.045);
+}
+.appShell .editorStudioInspector > .claimLinkManager {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 14px;
+  margin-bottom: 0;
+}
+.appShell .editorStudioInspector > .claimLinkManager > div:first-child {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.appShell .editorStudioInspector > .claimLinkManager > label {
+  width: 100%;
+  min-width: 0;
+}
+.appShell .editorStudioInspector > .claimLinkManager > button {
+  min-width: 150px;
+  white-space: nowrap;
+}
+.appShell .editorStudioInspector > form.localeManager:not(.claimLinkManager) {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 14px;
+  min-width: 0;
+}
+.appShell .editorStudioInspector > form.localeManager:not(.claimLinkManager) > div:first-child {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.appShell .editorStudioInspector > form.localeManager:not(.claimLinkManager) > label {
+  width: 100%;
+  min-width: 0;
+}
+.appShell .editorStudioInspector > form.localeManager:not(.claimLinkManager) > label select,
+.appShell .editorStudioInspector > form.localeManager:not(.claimLinkManager) > label input {
+  width: 100%;
+  min-width: 0;
+}
+.appShell .editorStudioInspector > form.localeManager:not(.claimLinkManager) > button {
+  min-width: 132px;
+  white-space: nowrap;
+}
+.appShell .editorStudioInspector > section.editorLocaleManager {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+.appShell .editorStudioInspector .inlineUploadGrid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.appShell .editorStudioInspector .inlineUploadGrid form {
+  min-width: 0;
+}
+.appShell .editorStudioInspector > .editorConfiguration:has(.themeStudio) {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+.appShell .editorStudioInspector > .editorConfiguration > * {
+  width: 100%;
+  min-width: 0;
+}
+.appShell .editorStudioInspector .codeEditorPanel .panelHead,
+.appShell .editorStudioInspector .themeStudioHead {
+  min-width: 0;
+}
+.appShell .editorStudioInspector .codeEditorPanel h2,
+.appShell .editorStudioInspector .themeStudioHead h2 {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.appShell .editorStudioInspector .themeStudioLayout {
+  grid-template-columns: minmax(0, 1fr);
+}
+.appShell .editorStudioInspector .themeControls {
+  min-width: 0;
+  border-right: 0;
+  border-bottom: 1px solid var(--line);
+}
+.appShell .editorStudioInspector [id] {
+  scroll-margin-top: 104px;
+}
+
+/* Content has a second navigation level (pages -> sections), so it needs a
+   wider working surface than the simpler identity, design, and review steps. */
+.appShell .editorStudioPage[data-editor-step="content"] .editorShell {
+  grid-template-columns: minmax(190px, 220px) minmax(0, 1fr);
+  min-width: 0;
+  gap: 14px;
+}
+.appShell .editorStudioPage[data-editor-step="content"] .pageListPanel,
+.appShell .editorStudioPage[data-editor-step="content"] .editorStack,
+.appShell .editorStudioPage[data-editor-step="content"] .editorStack > .panel,
+.appShell .editorStudioPage[data-editor-step="content"] .sectionStack,
+.appShell .editorStudioPage[data-editor-step="content"] .draggableSection,
+.appShell .editorStudioPage[data-editor-step="content"] .sectionEditor,
+.appShell .editorStudioPage[data-editor-step="content"] .sectionContentForm,
+.appShell .editorStudioPage[data-editor-step="content"] .sectionContentForm > label,
+.appShell .editorStudioPage[data-editor-step="content"] .mediaPickerField {
+  min-width: 0;
+  max-width: 100%;
+}
+.appShell .editorStudioPage[data-editor-step="content"] .sectionContentForm input,
+.appShell .editorStudioPage[data-editor-step="content"] .sectionContentForm select,
+.appShell .editorStudioPage[data-editor-step="content"] .sectionContentForm textarea,
+.appShell .editorStudioPage[data-editor-step="content"] .pageMetaForm input,
+.appShell .editorStudioPage[data-editor-step="content"] .pageMetaForm textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.appShell .editorStudioPage[data-editor-step="content"] .pageListPanel {
+  top: 164px;
+  padding: 14px;
+  border-radius: 12px;
+}
+.appShell .editorStudioPage[data-editor-step="content"] .pageChip {
+  border-radius: 7px;
+}
+.appShell .editorStudioPage[data-editor-step="content"] .pageChip:hover,
+.appShell .editorStudioPage[data-editor-step="content"] .pageChip:focus-visible {
+  background: var(--primary-soft);
+}
+.appShell .editorStudioPage[data-editor-step="content"] .editorStack > .panel {
+  padding: 16px;
+  border-radius: 12px;
+}
+.appShell .editorStudioPage[data-editor-step="content"] .sectionEditor {
+  border-radius: 9px;
+}
+
+.editorStudioPreview {
+  position: sticky;
+  top: 164px;
+  display: none;
+  min-width: 0;
+  height: calc(100vh - 184px);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #dedede;
+  box-shadow: 0 12px 34px rgba(17, 17, 17, 0.09);
+}
+.editorPreviewToolbar {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px 8px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.editorPreviewToolbar > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.editorPreviewToolbar span {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.editorPreviewToolbar strong {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editorPreviewActions,
+.editorViewportSwitch {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.editorPreviewActions button,
+.editorPreviewActions a {
+  display: grid;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-size: 14px;
+  text-decoration: none;
+}
+.editorPreviewActions svg,
+.editorPreviewEmpty svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+.editorViewportSwitch button:first-child svg {
+  width: 18px;
+}
+.editorPreviewActions button:hover,
+.editorPreviewActions a:hover {
+  border-color: var(--ink);
+  background: var(--surface);
+}
+.editorPreviewActions button:disabled {
+  cursor: progress;
+  opacity: 0.58;
+}
+.editorStudioPreview[aria-busy="true"] .editorPreviewRefresh svg {
+  animation: editorPreviewSpin 850ms linear infinite;
+}
+.editorPreviewActions button:focus-visible,
+.editorPreviewActions a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.editorPreviewActions button[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+.editorPreviewCanvas {
+  display: flex;
+  height: calc(100% - 52px);
+  align-items: stretch;
+  justify-content: center;
+  overflow: auto;
+  padding: 12px;
+  background:
+    linear-gradient(45deg, rgba(0, 0, 0, 0.035) 25%, transparent 25%) 0 0 / 18px 18px,
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.035) 25%, transparent 25%) 0 0 / 18px 18px,
+    #e8e8e8;
+}
+.editorPreviewFrame {
+  position: relative;
+  width: var(--preview-rendered-width);
+  height: var(--preview-rendered-height);
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  transition:
+    width 180ms ease,
+    height 180ms ease;
+}
+.editorPreviewFrame iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--preview-width);
+  height: var(--preview-height);
+  border: 0;
+  background: #fff;
+  transform: scale(var(--preview-scale));
+  transform-origin: top left;
+}
+.editorPreviewEmpty {
+  display: grid;
+  width: min(360px, 100%);
+  place-content: center;
+  place-items: center;
+  gap: 9px;
+  padding: 30px;
+  color: #606060;
+  text-align: center;
+}
+.editorPreviewEmpty > span {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border: 1px solid #aaa;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 24px;
+}
+.editorPreviewEmpty > span svg {
+  width: 26px;
+  height: 26px;
+}
+.editorPreviewEmpty strong {
+  color: #222;
+  font-size: 14px;
+}
+.editorPreviewEmpty p {
+  max-width: 280px;
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+@keyframes editorPreviewSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editorStudioPreview[aria-busy="true"] .editorPreviewRefresh svg {
+    animation: none;
+  }
+}
+
+@media (min-width: 1660px) {
+  .appShell .editorStudioWorkspace {
+    grid-template-columns: 220px minmax(440px, 560px) minmax(520px, 1fr);
+  }
+  .editorStudioPreview {
+    display: block;
+  }
+}
+@media (min-width: 1660px) and (max-width: 1879px) {
+  .appShell .editorStudioPage[data-editor-step="content"] .editorStudioWorkspace {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .appShell .editorStudioPage[data-editor-step="content"] .editorStudioPreview {
+    display: none;
+  }
+}
+@media (min-width: 1880px) {
+  .appShell .editorStudioPage[data-editor-step="content"] .editorStudioWorkspace {
+    grid-template-columns: 200px minmax(720px, 1.2fr) minmax(460px, 0.8fr);
+  }
+  .appShell .editorStudioPage[data-editor-step="content"] .editorShell {
+    grid-template-columns: minmax(185px, 210px) minmax(0, 1fr);
+  }
+}
+@media (max-width: 1180px) {
+  .appShell .editorStudioPage .websiteEditorHeader {
+    grid-template-columns: 1fr auto;
+  }
+  .appShell .editorStudioPage .websiteEditorHeader .headerActions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 1050px) {
+  .appShell .editorStudioPage[data-editor-step="content"] .editorShell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .appShell .editorStudioPage[data-editor-step="content"] .pageListPanel {
+    position: static;
+  }
+}
+@media (max-width: 820px) {
+  .appShell .editorStudioPage .websiteEditorHeader {
+    position: relative;
+    grid-template-columns: 1fr;
+  }
+  .editorGlobalSaveState {
+    grid-row: 2;
+    width: 100%;
+    padding: 9px 0 0;
+    border-top: 1px solid var(--line);
+    border-inline-start: 0;
+  }
+  .appShell .editorStudioPage .websiteEditorHeader .headerActions {
+    grid-row: 3;
+  }
+  .appShell .editorStudioWorkspace {
+    grid-template-columns: 1fr;
+  }
+  .appShell .editorStudioSidebar {
+    position: sticky;
+    top: 64px;
+    z-index: 25;
+    display: block;
+    max-height: none;
+    padding: 7px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .editorStudioSidebarIntro,
+  .editorStudioTip,
+  .appShell .editorStudioSidebar .draftSetupHeader {
+    display: none;
+  }
+  .appShell .editorStudioSidebar > nav:not(.draftSetupProgress),
+  .appShell .editorStudioSidebar .draftSetupProgress ol {
+    display: flex;
+    width: max-content;
+  }
+  .appShell .editorStudioSidebar > nav:not(.draftSetupProgress) a,
+  .appShell .editorStudioSidebar .draftSetupProgress li a {
+    min-height: 38px;
+    padding: 6px 10px;
+  }
+  .appShell .editorStudioInspector > .claimLinkManager {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .appShell .editorStudioInspector > .claimLinkManager > button {
+    width: 100%;
+  }
+  .appShell .editorStudioInspector > form.localeManager:not(.claimLinkManager) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .appShell .editorStudioInspector > form.localeManager:not(.claimLinkManager) > button {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .editorGlobalSaveState--saving > span {
+    animation: none;
+  }
+  .editorPreviewFrame,
+  .editorPreviewFrame iframe {
+    transition: none;
+  }
+}
+
+/* Persistent desktop rail control. Mobile continues to use the overlay menu. */
+.appShell .sidebarCollapseButton {
+  display: none;
+}
+@media (min-width: 1101px) {
+  .appShell:not(.clientShell) .sidebar,
+  .appShell:not(.clientShell) .appFrame {
+    transition:
+      width 180ms ease,
+      padding 180ms ease;
+  }
+  .appShell:not(.clientShell) .sidebarCollapseButton {
+    display: flex;
+    width: 100%;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 9px 0 0;
+    padding: 6px 9px;
+    border: 1px solid #464646;
+    border-radius: 0;
+    background: #191919;
+    color: #d7d7d7;
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: none;
+  }
+  .appShell:not(.clientShell) .sidebarCollapseButton:hover {
+    border-color: var(--primary);
+    background: #242424;
+    color: #ffffff;
+  }
+  .appShell:not(.clientShell) .sidebarCollapseButton svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    transition: transform 180ms ease;
+  }
+  .appShell[dir="ltr"]:not(.clientShell) .sidebarCollapseButton svg {
+    transform: rotate(180deg);
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .sidebar {
+    width: 78px;
+    padding-inline: 10px;
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .appFrame {
+    padding-right: 78px;
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .appFrame::before {
+    right: 78px;
+  }
+  .appShell[dir="ltr"].sidebarIsCollapsed:not(.clientShell) .appFrame {
+    padding-right: 0 !important;
+    padding-left: 78px !important;
+  }
+  .appShell[dir="ltr"].sidebarIsCollapsed:not(.clientShell) .appFrame::before {
+    right: 0;
+    left: 78px;
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .brand {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .brand > div,
+  .appShell.sidebarIsCollapsed:not(.clientShell) .navGroup > p,
+  .appShell.sidebarIsCollapsed:not(.clientShell) .navGroup > a b,
+  .appShell.sidebarIsCollapsed:not(.clientShell) .navArrow,
+  .appShell.sidebarIsCollapsed:not(.clientShell) .workspaceIdentity > div,
+  .appShell.sidebarIsCollapsed:not(.clientShell) .logoutButton > span,
+  .appShell.sidebarIsCollapsed:not(.clientShell) .sidebarCollapseButton > span {
+    display: none;
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .sidebarCollapseButton,
+  .appShell.sidebarIsCollapsed:not(.clientShell) .navGroup > a,
+  .appShell.sidebarIsCollapsed:not(.clientShell) .workspaceIdentity,
+  .appShell.sidebarIsCollapsed:not(.clientShell) .logoutButton {
+    width: 44px;
+    justify-content: center;
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .primaryNav {
+    gap: 11px;
+    margin-top: 12px;
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .navGroup {
+    gap: 5px;
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .navGroup > a {
+    min-height: 42px;
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .navGroup > a::before {
+    display: none;
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .sidebarFooter {
+    align-items: center;
+  }
+  .appShell.sidebarIsCollapsed:not(.clientShell) .workspaceIdentity {
+    border-top-color: transparent;
+  }
+  .appShell[dir="rtl"].sidebarIsCollapsed:not(.clientShell) .sidebarCollapseButton svg {
+    transform: rotate(180deg);
+  }
+  .appShell[dir="ltr"].sidebarIsCollapsed:not(.clientShell) .sidebarCollapseButton svg {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .appShell:not(.clientShell) .sidebar,
+  .appShell:not(.clientShell) .appFrame,
+  .appShell:not(.clientShell) .sidebarCollapseButton svg {
+    transition: none;
   }
 }

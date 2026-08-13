@@ -10,6 +10,8 @@ import { supportedTemplateLocales } from "@/server/template-locales";
 const templatesRoot = join(process.cwd(), "..", "..", "templates");
 
 export interface WebsiteEditor {
+  templateFeatures: string[];
+  templateCategory: string;
   website: {
     id: string;
     name: string;
@@ -23,6 +25,7 @@ export interface WebsiteEditor {
     pendingUpdate: boolean;
     hostname: string | null;
     clientId: string | null;
+    clientEmail: string | null;
     faviconAssetId: string | null;
     whiteLabelEnabled: boolean;
   };
@@ -127,7 +130,10 @@ async function loadWebsiteEditorForContext(
               }
             : {}),
         },
-        include: { activePublication: { select: { sourceDraftRevision: true } } },
+        include: {
+          activePublication: { select: { sourceDraftRevision: true } },
+          client: { select: { contactEmail: true } },
+        },
       });
       if (!website) return null;
 
@@ -269,6 +275,8 @@ async function loadWebsiteEditorForContext(
     select: { templateVersion: true },
   });
   return {
+    templateFeatures: [...(template.manifest.features ?? [])],
+    templateCategory: template.manifest.category,
     website: {
       id: website.id,
       name: website.name,
@@ -285,6 +293,7 @@ async function loadWebsiteEditorForContext(
         website.activePublication?.sourceDraftRevision !== website.draftRevision,
       hostname: editorData.domains[0]?.hostnameNormalized ?? null,
       clientId: website.clientId,
+      clientEmail: website.client?.contactEmail ?? null,
       faviconAssetId: website.faviconAssetId,
       whiteLabelEnabled: website.whiteLabelEnabled,
     },

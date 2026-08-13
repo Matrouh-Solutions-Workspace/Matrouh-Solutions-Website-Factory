@@ -1,0 +1,1038 @@
+{
+  "manifestFormatVersion": 1,
+  "manifest": {
+    "id": "com.matrouh.food-menu",
+    "version": "1.4.0",
+    "displayName": "Saffron — Food & Café Menu",
+    "author": "Matrouh Solutions",
+    "description": "A mobile-first bilingual digital menu for restaurants, cafés, bakeries, and food businesses",
+    "category": "food-and-hospitality",
+    "previewImage": "/templates/food-menu/food-cafe-hero.jpg",
+    "features": [
+      "digital-menu",
+      "menu-management",
+      "nested-categories",
+      "item-variants",
+      "localized-content",
+      "item-media",
+      "pdf-import-review",
+      "mobile-first",
+      "qr-ready",
+      "claim-ready",
+      "semantic-theme",
+      "seo"
+    ]
+  },
+  "compatibility": {
+    "sdkVersion": "1.0.0",
+    "minimumFactoryVersion": "0.1.0",
+    "minimumRendererVersion": "0.1.0",
+    "contentSchemaVersion": 1,
+    "themeSchemaVersion": 1,
+    "publicationSnapshotVersion": 1
+  },
+  "websiteSchema": {
+    "formatVersion": 1,
+    "typeName": "ZodObject",
+    "description": "Restaurant identity, language, currency, and menu display settings.",
+    "jsonSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "logoMediaId": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "colorMode": {
+          "default": "light",
+          "type": "string",
+          "const": "light"
+        },
+        "allowAppearanceToggle": {
+          "default": false,
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "schemaHash": "2cc5c804d9b35aa3c77e6d9e888daf25",
+    "fields": {
+      "/logoMediaId": {
+        "label": "Business logo",
+        "control": "media",
+        "order": 1,
+        "mediaKinds": [
+          "image"
+        ]
+      },
+      "/colorMode": {
+        "label": "Appearance",
+        "control": "text",
+        "order": 2,
+        "readOnlyWhen": {
+          "path": "/colorMode",
+          "operator": "present"
+        }
+      },
+      "/allowAppearanceToggle": {
+        "label": "Allow dark mode",
+        "control": "boolean",
+        "order": 3,
+        "readOnlyWhen": {
+          "path": "/allowAppearanceToggle",
+          "operator": "present"
+        }
+      }
+    }
+  },
+  "capabilities": [],
+  "routes": [
+    {
+      "id": "com.matrouh.food-menu/route/menu",
+      "pattern": "/:slug?",
+      "priority": 10,
+      "pageTypes": [
+        "com.matrouh.food-menu/page/menu"
+      ],
+      "localePolicy": "prefix-except-default",
+      "indexingPolicy": "inherit-page"
+    }
+  ],
+  "pages": [
+    {
+      "id": "com.matrouh.food-menu/page/menu",
+      "title": "Menu",
+      "slug": {
+        "kind": "fixed",
+        "defaultValue": "/",
+        "maximumLength": 1
+      },
+      "allowedSections": [
+        "com.matrouh.food-menu/section/identity",
+        "com.matrouh.food-menu/section/catalog",
+        "com.matrouh.food-menu/section/visit",
+        "com.matrouh.food-menu/section/import-review"
+      ],
+      "requiredSections": [
+        {
+          "sectionTypeId": "com.matrouh.food-menu/section/identity",
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "sectionTypeId": "com.matrouh.food-menu/section/catalog",
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "sectionTypeId": "com.matrouh.food-menu/section/visit",
+          "minimum": 1,
+          "maximum": 1
+        },
+        {
+          "sectionTypeId": "com.matrouh.food-menu/section/import-review",
+          "minimum": 1,
+          "maximum": 2
+        }
+      ],
+      "defaultSections": [
+        {
+          "sectionTypeId": "com.matrouh.food-menu/section/identity"
+        },
+        {
+          "sectionTypeId": "com.matrouh.food-menu/section/catalog"
+        },
+        {
+          "sectionTypeId": "com.matrouh.food-menu/section/visit"
+        },
+        {
+          "sectionTypeId": "com.matrouh.food-menu/section/import-review"
+        }
+      ],
+      "supportsSEO": true,
+      "supportsNavigation": false,
+      "supportsIndexing": true,
+      "editor": {
+        "description": "Mobile-first restaurant menu with categories, dishes, and size pricing",
+        "icon": "menu"
+      }
+    }
+  ],
+  "navigation": [],
+  "components": [
+    {
+      "id": "com.matrouh.food-menu/section/identity",
+      "kind": "section",
+      "title": "Business profile",
+      "description": "Restaurant name, welcome message, service status, and food photography.",
+      "category": "menu-identity",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "Restaurant welcome, service promise, and replaceable food photography.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "eyebrow": {
+              "type": "string",
+              "maxLength": 90
+            },
+            "headline": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
+            },
+            "introduction": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 700
+            },
+            "serviceNote": {
+              "type": "string",
+              "maxLength": 160
+            },
+            "openStatus": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "heroImageAlt": {
+              "type": "string",
+              "maxLength": 180
+            },
+            "heroMediaId": {
+              "default": null,
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "eyebrow",
+            "headline",
+            "introduction",
+            "serviceNote",
+            "openStatus",
+            "heroImageAlt"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "36730a3d88aa8fa4d38f978a733c1e33",
+        "fields": {
+          "/eyebrow": {
+            "label": "Menu eyebrow",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/headline": {
+            "label": "Welcome headline",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/introduction": {
+            "label": "Welcome message",
+            "control": "textarea",
+            "order": 3,
+            "localization": "value"
+          },
+          "/serviceNote": {
+            "label": "Service note",
+            "control": "text",
+            "order": 4,
+            "localization": "value"
+          },
+          "/openStatus": {
+            "label": "Opening status",
+            "control": "text",
+            "order": 5,
+            "localization": "value"
+          },
+          "/heroImageAlt": {
+            "label": "Hero image description",
+            "control": "text",
+            "order": 6,
+            "localization": "value"
+          },
+          "/heroMediaId": {
+            "label": "Hero food photograph",
+            "control": "media",
+            "order": 7,
+            "mediaKinds": [
+              "image"
+            ],
+            "aiHint": "Recommended 1600 × 1100 px landscape food photography"
+          }
+        }
+      },
+      "composedOf": [],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.food-menu/section/catalog",
+      "kind": "section",
+      "title": "Categories, items & sizes",
+      "description": "The complete menu hierarchy with item images, fixed prices, and size variants.",
+      "category": "menu-catalog",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "Hierarchical menu categories, items, images, availability, and size prices.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "eyebrow": {
+              "type": "string",
+              "maxLength": 90
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 140
+            },
+            "introduction": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "currency": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 12
+            },
+            "currencyBeforePrice": {
+              "default": false,
+              "type": "boolean"
+            },
+            "categories": {
+              "minItems": 1,
+              "maxItems": 24,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 320
+                  },
+                  "items": {
+                    "minItems": 1,
+                    "maxItems": 80,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 140
+                        },
+                        "description": {
+                          "type": "string",
+                          "maxLength": 700
+                        },
+                        "pricingMode": {
+                          "type": "string",
+                          "enum": [
+                            "fixed",
+                            "variants"
+                          ]
+                        },
+                        "price": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000
+                        },
+                        "imageMediaId": {
+                          "default": null,
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "badge": {
+                          "type": "string",
+                          "maxLength": 60
+                        },
+                        "additionalInfo": {
+                          "type": "string",
+                          "maxLength": 260
+                        },
+                        "available": {
+                          "default": true,
+                          "type": "boolean"
+                        },
+                        "featured": {
+                          "default": false,
+                          "type": "boolean"
+                        },
+                        "sizes": {
+                          "minItems": 1,
+                          "maxItems": 10,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 80
+                              },
+                              "price": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "price"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "description",
+                        "pricingMode",
+                        "price",
+                        "badge",
+                        "additionalInfo",
+                        "sizes"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "description",
+                  "items"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "eyebrow",
+            "title",
+            "introduction",
+            "currency",
+            "categories"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "5ffd8a431e8ad802326452edfe2d7dea",
+        "fields": {
+          "/eyebrow": {
+            "label": "Section eyebrow",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/title": {
+            "label": "Menu heading",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/introduction": {
+            "label": "Menu introduction",
+            "control": "textarea",
+            "order": 3,
+            "localization": "value"
+          },
+          "/currency": {
+            "label": "Currency",
+            "control": "text",
+            "order": 4
+          },
+          "/currencyBeforePrice": {
+            "label": "Show currency before price",
+            "control": "boolean",
+            "order": 5
+          },
+          "/categories": {
+            "label": "Menu categories",
+            "description": "Add and reorder categories, dishes, drinks, and price variants.",
+            "control": "list",
+            "order": 6,
+            "localization": "document"
+          }
+        }
+      },
+      "composedOf": [],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.food-menu/section/visit",
+      "kind": "section",
+      "title": "Visit, order & allergen details",
+      "description": "Practical business details and a direct phone or internal action.",
+      "category": "menu-details",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "Opening hours, address, ordering details, and dietary disclosure.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "eyebrow": {
+              "type": "string",
+              "maxLength": 90
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 140
+            },
+            "body": {
+              "type": "string",
+              "maxLength": 600
+            },
+            "hours": {
+              "type": "string",
+              "maxLength": 240
+            },
+            "address": {
+              "type": "string",
+              "maxLength": 240
+            },
+            "phone": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "actionLabel": {
+              "type": "string",
+              "maxLength": 70
+            },
+            "actionHref": {
+              "type": "string",
+              "maxLength": 240,
+              "pattern": "^(?:\\/(?:[a-z0-9/_-]*)|tel:\\+?[0-9 -]+|https:\\/\\/wa\\.me\\/[1-9][0-9]{7,14})$"
+            },
+            "dietaryNote": {
+              "type": "string",
+              "maxLength": 400
+            }
+          },
+          "required": [
+            "eyebrow",
+            "title",
+            "body",
+            "hours",
+            "address",
+            "phone",
+            "actionLabel",
+            "actionHref",
+            "dietaryNote"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "218c33a627d007bf3d1c67b48a4bf8b0",
+        "fields": {
+          "/eyebrow": {
+            "label": "Details eyebrow",
+            "control": "text",
+            "order": 1,
+            "localization": "value"
+          },
+          "/title": {
+            "label": "Details heading",
+            "control": "text",
+            "order": 2,
+            "localization": "value"
+          },
+          "/body": {
+            "label": "Details introduction",
+            "control": "textarea",
+            "order": 3,
+            "localization": "value"
+          },
+          "/hours": {
+            "label": "Opening hours",
+            "control": "textarea",
+            "order": 4,
+            "localization": "value"
+          },
+          "/address": {
+            "label": "Address",
+            "control": "textarea",
+            "order": 5,
+            "localization": "value"
+          },
+          "/phone": {
+            "label": "Phone",
+            "control": "text",
+            "order": 6
+          },
+          "/actionLabel": {
+            "label": "Action label",
+            "control": "text",
+            "order": 7,
+            "localization": "value"
+          },
+          "/actionHref": {
+            "label": "Action destination",
+            "control": "url",
+            "order": 8
+          },
+          "/dietaryNote": {
+            "label": "Dietary and allergen note",
+            "control": "textarea",
+            "order": 9,
+            "localization": "value"
+          }
+        }
+      },
+      "composedOf": [],
+      "capabilities": []
+    },
+    {
+      "id": "com.matrouh.food-menu/section/import-review",
+      "kind": "section",
+      "title": "PDF import & review",
+      "description": "Private authoring workflow; this section never renders on the public menu.",
+      "category": "menu-import",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "Optional PDF import source with extracted text and an explicit review gate.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "importDraft": {
+              "type": "object",
+              "properties": {
+                "sourcePdfMediaId": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sourceFilename": {
+                  "default": "",
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "locale": {
+                  "default": "en",
+                  "type": "string",
+                  "enum": [
+                    "ar",
+                    "en"
+                  ]
+                },
+                "status": {
+                  "default": "not_started",
+                  "type": "string",
+                  "enum": [
+                    "not_started",
+                    "review_required",
+                    "confirmed"
+                  ]
+                },
+                "extractedText": {
+                  "default": "",
+                  "type": "string",
+                  "maxLength": 40000
+                },
+                "reviewNotes": {
+                  "default": "",
+                  "type": "string",
+                  "maxLength": 4000
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "importDraft"
+          ],
+          "additionalProperties": false
+        },
+        "schemaHash": "7f2510f8ec04e59bcca24a3e3bdd9f3a",
+        "fields": {
+          "/importDraft": {
+            "label": "Import menu from PDF",
+            "description": "Upload, extract, review, and confirm before transferring content into categories.",
+            "control": "document-import",
+            "order": 1
+          }
+        }
+      },
+      "composedOf": [],
+      "capabilities": []
+    }
+  ],
+  "theme": {
+    "id": "com.matrouh.food-menu/theme/default",
+    "schemaVersion": 1,
+    "schema": {
+      "formatVersion": 1,
+      "typeName": "ZodObject",
+      "description": "Warm, accessible restaurant menu theme tokens.",
+      "jsonSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "colors": {
+            "type": "object",
+            "properties": {
+              "background": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "surface": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "surfaceVariant": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "primary": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "primaryForeground": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "secondary": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "accent": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "success": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "warning": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "danger": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "info": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "border": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "muted": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "heading": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              }
+            },
+            "required": [
+              "background",
+              "surface",
+              "surfaceVariant",
+              "primary",
+              "primaryForeground",
+              "secondary",
+              "accent",
+              "success",
+              "warning",
+              "danger",
+              "info",
+              "border",
+              "muted",
+              "text",
+              "heading"
+            ],
+            "additionalProperties": false
+          },
+          "layout": {
+            "type": "object",
+            "properties": {
+              "radii": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "shadows": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^[^;{}]+$"
+                }
+              },
+              "spacing": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "containerWidths": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "breakpoints": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              }
+            },
+            "required": [
+              "radii",
+              "shadows",
+              "spacing",
+              "containerWidths",
+              "breakpoints"
+            ],
+            "additionalProperties": false
+          },
+          "typography": {
+            "type": "object",
+            "properties": {
+              "fontFamilies": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^[^;{}]+$"
+                }
+              },
+              "fontSizes": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "fontWeights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 1000
+                }
+              },
+              "lineHeights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "number",
+                  "minimum": 0.8,
+                  "maximum": 3
+                }
+              }
+            },
+            "required": [
+              "fontFamilies",
+              "fontSizes",
+              "fontWeights",
+              "lineHeights"
+            ],
+            "additionalProperties": false
+          },
+          "motion": {
+            "type": "object",
+            "properties": {
+              "durations": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^\\d+(?:\\.\\d+)?(?:ms|s)$"
+                }
+              },
+              "curves": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100,
+                  "pattern": "^[^;{}]+$"
+                }
+              }
+            },
+            "required": [
+              "durations",
+              "curves"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "colors",
+          "layout",
+          "typography",
+          "motion"
+        ],
+        "additionalProperties": false
+      },
+      "schemaHash": "35816f87467157bae17e0e8404c713e8",
+      "fields": {}
+    }
+  },
+  "migrations": [],
+  "manifestHash": "0b775f0686430cbf9840ca41380e9cd0"
+}

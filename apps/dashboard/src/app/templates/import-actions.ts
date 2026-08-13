@@ -17,15 +17,9 @@ import { validateTemplate } from "@factory/template-validator";
 import { requireDashboardContext } from "@/server/auth";
 import { dashboardConfig, workspaceRoot } from "@/server/config";
 import { dashboardDatabase } from "@/server/database";
+import type { TemplateImportState } from "./import-action-state";
 
 const templatesRoot = resolve(workspaceRoot, dashboardConfig.FACTORY_TEMPLATE_DIRECTORY);
-
-export interface TemplateImportState {
-  readonly status: "idle" | "success" | "error";
-  readonly message: string;
-}
-
-export const initialTemplateImportState: TemplateImportState = { status: "idle", message: "" };
 
 export async function importTemplateAction(
   _previous: TemplateImportState,

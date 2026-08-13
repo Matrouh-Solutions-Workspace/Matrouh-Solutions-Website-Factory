@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { DRAFT_CONTENT_SAVED_EVENT, DRAFT_SAVE_STATUS_EVENT } from "@/app/editor-studio";
 import {
   incrementRevision,
   newestRevision,
@@ -22,11 +23,13 @@ export function DraftEditorForm({
   action,
   children,
   className,
+  id,
   autosaveDelay = 1_500,
 }: {
   readonly action: (formData: FormData) => Promise<void>;
   readonly children: ReactNode;
   readonly className?: string;
+  readonly id?: string;
   readonly autosaveDelay?: number;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -53,6 +56,26 @@ export function DraftEditorForm({
     },
     [],
   );
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent(DRAFT_SAVE_STATUS_EVENT, {
+        detail: { status },
+      }),
+    );
+  }, [status]);
+
+  useEffect(() => {
+    function saveFromKeyboard(event: KeyboardEvent) {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "s") return;
+      const form = formRef.current;
+      if (!form || !form.contains(document.activeElement)) return;
+      event.preventDefault();
+      form.requestSubmit();
+    }
+    document.addEventListener("keydown", saveFromKeyboard);
+    return () => document.removeEventListener("keydown", saveFromKeyboard);
+  }, []);
 
   useEffect(() => {
     if (status === "saving") {
@@ -88,11 +111,13 @@ export function DraftEditorForm({
     savingRef.current = true;
     setStatus("saving");
     try {
+      let savedWebsiteId: string | null = null;
       do {
         saveAgainRef.current = false;
         const submittedEditRevision = editRevisionRef.current;
         const websiteId = fieldValueByName(form, "websiteId");
         if (!websiteId) throw new Error("DRAFT_WEBSITE_ID_MISSING");
+        savedWebsiteId = websiteId;
 
         await serializeWebsiteSave(websiteId, async () => {
           const currentForm = formRef.current;
@@ -121,6 +146,13 @@ export function DraftEditorForm({
 
       router.refresh();
       setStatus("saved");
+      if (savedWebsiteId) {
+        window.dispatchEvent(
+          new CustomEvent(DRAFT_CONTENT_SAVED_EVENT, {
+            detail: { websiteId: savedWebsiteId },
+          }),
+        );
+      }
       undoRef.current = [];
       redoRef.current = [];
       setHistoryRevision((value) => value + 1);
@@ -207,6 +239,7 @@ export function DraftEditorForm({
     <form
       action={submit}
       className={className}
+      id={id}
       onFocusCapture={rememberCurrent}
       onInput={changed}
       ref={formRef}

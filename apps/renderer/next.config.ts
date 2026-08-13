@@ -4,6 +4,9 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 const scriptSrc = isDevelopment
   ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
   : "script-src 'self' 'unsafe-inline'";
+const dashboardFrameAncestor = new URL(
+  process.env.FACTORY_DASHBOARD_PUBLIC_URL ?? "http://localhost:3000",
+).origin;
 
 const config: NextConfig = {
   output: "standalone",
@@ -53,7 +56,7 @@ const config: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; ${scriptSrc}; frame-src https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`,
+            value: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; ${scriptSrc}; frame-src https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; frame-ancestors ${dashboardFrameAncestor}`,
           },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Content-Type-Options", value: "nosniff" },

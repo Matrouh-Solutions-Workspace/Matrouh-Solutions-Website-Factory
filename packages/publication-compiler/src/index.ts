@@ -11,6 +11,7 @@ import {
   snapshotHash,
   type PublicationSnapshot,
 } from "@factory/publication-contract";
+import { localizeTemplateDefault, localizedTemplateTitle } from "@factory/content";
 
 export interface DraftProjection {
   readonly organizationId: string;
@@ -184,25 +185,15 @@ function safeLocaleId(locale: string): string {
 }
 
 function localizedCatalogLabel(value: string, locale: string): string {
-  if (!locale.toLowerCase().startsWith("ar")) return value;
-  const labels: Readonly<Record<string, string>> = {
-    Home: "الرئيسية",
-    Contact: "تواصل معنا",
-    Locations: "الفروع",
-    Work: "الأعمال",
-    Services: "الخدمات",
-  };
-  return labels[value] ?? value;
+  return localizedTemplateTitle(value, locale);
 }
 
 function localizedCatalogContent(value: JsonValue, locale: string): JsonValue {
-  if (!locale.toLowerCase().startsWith("ar")) return value;
-  if (typeof value === "string") return catalogArabicText[value] ?? value;
-  if (Array.isArray(value)) return value.map((item) => localizedCatalogContent(item, locale));
-  if (!value || typeof value !== "object") return value;
-  return Object.fromEntries(
-    Object.entries(value).map(([key, child]) => [key, localizedCatalogContent(child, locale)]),
-  );
+  const localized = localizeTemplateDefault(value, locale);
+  if (localized !== value || typeof value !== "string" || !locale.toLowerCase().startsWith("ar")) {
+    return localized;
+  }
+  return catalogArabicText[value] ?? value;
 }
 
 /** Arabic catalog copy is deliberately stored beside the compiler so demos remain useful without mutable draft data. */

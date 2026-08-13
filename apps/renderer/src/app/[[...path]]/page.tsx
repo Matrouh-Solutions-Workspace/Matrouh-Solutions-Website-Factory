@@ -100,6 +100,7 @@ export default async function SitePage({ params }: PageProperties) {
           initialAppearance={appearance}
           items={navigation}
           locale={rendered.locale}
+          showAppearanceToggle={websiteSetting(site.snapshot, "allowAppearanceToggle") !== false}
           localeItems={localizedRoutes.map((item) => ({
             current: item.current,
             direction: textDirection(item.locale),

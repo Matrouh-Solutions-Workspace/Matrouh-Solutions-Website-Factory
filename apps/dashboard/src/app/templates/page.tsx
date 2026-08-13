@@ -1,11 +1,17 @@
 import { Icon } from "@/app/icons";
 import { loadTemplateCatalog } from "@/server/template-catalog";
+import { catalogBillingLabel, formatCatalogPrice, templateListingId } from "./catalog-display";
+import { TemplateCategoryForm } from "./template-category-form";
 import { TemplateImportForm } from "./template-import-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function TemplatesPage() {
   const templates = await loadTemplateCatalog();
+  const categorySuggestions = uniqueSorted(templates.map((template) => template.catalog.category));
+  const categoryArSuggestions = uniqueSorted(
+    templates.map((template) => template.catalog.categoryAr),
+  );
   return (
     <>
       <header>
@@ -13,12 +19,17 @@ export default async function TemplatesPage() {
           <p className="eyebrow">SDK catalog</p>
           <h1>Templates</h1>
           <p className="sub">
-            Preview real template pages, create editable drafts, and install trusted artifacts.
+            Preview and customize installed templates, or add a trusted template artifact.
           </p>
         </div>
-        <a className="buttonLink secondaryButton" href="#import-template">
-          <Icon name="spark" /> Import template
-        </a>
+        <div className="headerActions templatePageActions">
+          <a className="buttonLink" href="/dashboard/templates/public-listing">
+            <Icon name="settings" /> Public catalog
+          </a>
+          <a className="buttonLink secondaryButton" href="#import-template">
+            <Icon name="spark" /> Import template
+          </a>
+        </div>
       </header>
 
       <section className="panel templateCatalogPanel">
@@ -55,6 +66,10 @@ export default async function TemplatesPage() {
                 <div className="templateCardBody">
                   <div>
                     <span className="status">{template.lifecycleStatus}</span>
+                    <span className={template.catalog.visible ? "status active" : "status failed"}>
+                      {template.catalog.visible ? "Public" : "Hidden"}
+                    </span>
+                    <span className="mutedBadge">{template.catalog.category}</span>
                     <span className="mutedBadge">Arabic{" & "}English</span>
                     <span className="mutedBadge">Light{" & "}dark</span>
                     <span className="mutedBadge">v{latest?.version ?? "—"}</span>
@@ -69,6 +84,32 @@ export default async function TemplatesPage() {
                       {template.versions.length} version{template.versions.length === 1 ? "" : "s"}
                     </span>
                   </div>
+                </div>
+                <TemplateCategoryForm
+                  categoryArSuggestions={categoryArSuggestions}
+                  categorySuggestions={categorySuggestions}
+                  template={template}
+                />
+                <div className="templateCardListing">
+                  <div>
+                    <span className="templateCardListingEyebrow">Public listing</span>
+                    <strong>
+                      {template.catalog.visible
+                        ? formatCatalogPrice(template.catalog)
+                        : "Hidden from catalog"}
+                    </strong>
+                    <small>
+                      {template.catalog.visible
+                        ? catalogBillingLabel(template.catalog.billingPeriod)
+                        : "Customers cannot see this package"}
+                    </small>
+                  </div>
+                  <a
+                    className="buttonLink secondaryButton"
+                    href={`/dashboard/templates/public-listing?template=${encodeURIComponent(template.templateId)}#${templateListingId(template.templateId)}`}
+                  >
+                    Manage listing
+                  </a>
                 </div>
               </article>
             );
@@ -97,5 +138,11 @@ export default async function TemplatesPage() {
         <TemplateImportForm />
       </section>
     </>
+  );
+}
+
+function uniqueSorted(values: readonly string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort((left, right) =>
+    left.localeCompare(right),
   );
 }

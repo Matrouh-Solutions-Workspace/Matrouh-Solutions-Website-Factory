@@ -13,6 +13,12 @@ const itemDefinitions = [
   { key: "billing", href: "/billing", icon: "settings", group: "workspace" },
   { key: "mail", href: "/mail", icon: "mail", group: "workspace" },
   { key: "templates", href: "/templates", icon: "templates", group: "library" },
+  {
+    key: "publicCatalog",
+    href: "/templates/public-listing",
+    icon: "settings",
+    group: "library",
+  },
   { key: "media", href: "/media", icon: "media", group: "library" },
   { key: "domains", href: "/domains", icon: "domains", group: "optimize" },
   { key: "monitoring", href: "/monitoring", icon: "monitoring", group: "system" },
@@ -28,6 +34,7 @@ const copy = {
     billing: "الفوترة",
     mail: "البريد",
     templates: "القوالب",
+    publicCatalog: "الكتالوج العام",
     media: "مكتبة الوسائط",
     domains: "النطاقات",
     monitoring: "المراقبة",
@@ -47,6 +54,7 @@ const copy = {
     billing: "Billing",
     mail: "Mail",
     templates: "Templates",
+    publicCatalog: "Public catalog",
     media: "Media library",
     domains: "Domains",
     monitoring: "Monitoring",
@@ -85,7 +93,13 @@ export function DashboardNav({
             {itemDefinitions
               .filter((item) => item.group === group)
               .map(({ key, href, icon }) => {
-                const active = href === "/" ? pathname === href : pathname.startsWith(href);
+                const publicCatalogActive = pathname.startsWith("/templates/public-listing");
+                const active =
+                  href === "/"
+                    ? pathname === href
+                    : key === "templates"
+                      ? pathname.startsWith(href) && !publicCatalogActive
+                      : pathname.startsWith(href);
                 const publicHref = href === "/" ? "/dashboard" : `/dashboard${href}`;
                 return (
                   <Link
@@ -94,6 +108,7 @@ export function DashboardNav({
                     href={publicHref}
                     key={href}
                     onClick={() => onNavigate?.()}
+                    title={text[key as keyof typeof text]}
                   >
                     <span>
                       <Icon name={icon} />
