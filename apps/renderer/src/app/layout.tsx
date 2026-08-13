@@ -18,6 +18,9 @@ const cairo = Cairo({
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html className={`${tajawal.variable} ${cairo.variable} ${tajawal.className}`} lang="und">
+      <head>
+        <link href="/commerce-storefront.css" rel="stylesheet" />
+      </head>
       <body>{children}</body>
     </html>
   );

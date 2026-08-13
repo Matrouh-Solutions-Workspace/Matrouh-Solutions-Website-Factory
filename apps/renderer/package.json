@@ -13,6 +13,7 @@
   "dependencies": {
     "@factory/config": "workspace:*",
     "@factory/database": "workspace:*",
+    "@factory/ecommerce": "workspace:*",
     "@factory/domains": "workspace:*",
     "@factory/publication-compiler": "workspace:*",
     "@factory/publication-contract": "workspace:*",

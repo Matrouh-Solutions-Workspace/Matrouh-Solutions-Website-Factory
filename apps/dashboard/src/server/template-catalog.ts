@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import {
   loadCatalogedTemplateArtifact,
+  TemplateLoadError,
   type LoadedTemplateArtifact,
 } from "@factory/template-loader";
 import { requireDashboardContext } from "./auth";
@@ -130,9 +131,20 @@ export async function loadExactCatalogTemplate(
   ) {
     return null;
   }
-  const artifact = await loadCatalogedTemplateArtifact(templatesRoot, record.artifactUri, {
-    templateId,
-    templateVersion,
-  });
-  return artifact.artifactHash === record.artifactHash ? artifact : null;
+  try {
+    const artifact = await loadCatalogedTemplateArtifact(templatesRoot, record.artifactUri, {
+      templateId,
+      templateVersion,
+    });
+    return artifact.artifactHash === record.artifactHash ? artifact : null;
+  } catch (error) {
+    // The catalog is synchronized separately from the template workspace. A deployment or a
+    // local checkout can therefore briefly retain a valid catalog row whose compiled artifact
+    // has not been deployed or built yet. Treat that stale row as unavailable instead of
+    // turning a request for this route into a 500. The sync worker will quarantine or remove it.
+    if (error instanceof TemplateLoadError && error.code === "LOADER_ARTIFACT_MISSING") {
+      return null;
+    }
+    throw error;
+  }
 }

@@ -27,7 +27,12 @@ import {
   snapshotHash,
 } from "@factory/publication-contract";
 import type { JsonValue, TemplateDefinition } from "@factory/template-sdk";
-import { discoverTemplates, loadTemplate, loadTemplateArtifact } from "@factory/template-loader";
+import {
+  discoverTemplates,
+  loadCatalogedTemplateArtifact,
+  loadTemplate,
+  loadTemplateArtifact,
+} from "@factory/template-loader";
 import { instantiateTemplateRuntime } from "@factory/template-runtime";
 import { requestPublication } from "@factory/publishing";
 import { dashboardArtifactStore as artifactStore } from "@/server/artifact-store";
@@ -1345,13 +1350,32 @@ export async function createWebsiteDraftPreviewAction(
   );
   if (!data) return null;
 
-  const candidate = (await discoverTemplates(templatesRoot)).find(
-    (item) =>
-      item.discovery.templateId === data.templateId &&
-      item.discovery.templateVersion === data.templateVersion,
-  );
-  if (!candidate) return null;
-  const artifact = await loadTemplateArtifact(candidate);
+  const catalogVersion = await client.templateVersionRecord.findUnique({
+    where: {
+      templateId_templateVersion: {
+        templateId: data.templateId,
+        templateVersion: data.templateVersion,
+      },
+    },
+    select: {
+      artifactHash: true,
+      artifactUri: true,
+      lifecycleStatus: true,
+      validationStatus: true,
+    },
+  });
+  if (
+    !catalogVersion ||
+    catalogVersion.validationStatus !== "valid" ||
+    !["ready", "deprecated"].includes(catalogVersion.lifecycleStatus)
+  ) {
+    return null;
+  }
+  const artifact = await loadCatalogedTemplateArtifact(templatesRoot, catalogVersion.artifactUri, {
+    templateId: data.templateId,
+    templateVersion: data.templateVersion,
+  });
+  if (artifact.artifactHash !== catalogVersion.artifactHash) return null;
   const template = artifact.definition;
   const previewId = randomUUID();
   const result = compilePublication(

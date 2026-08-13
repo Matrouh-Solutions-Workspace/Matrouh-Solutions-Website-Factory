@@ -39,6 +39,17 @@ const config: NextConfig = {
         ],
       },
       {
+        source: "/commerce-template-preview/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          {
+            key: "Content-Security-Policy",
+            value: `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; ${scriptSrc}; frame-src https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; frame-ancestors *`,
+          },
+        ],
+      },
+      {
         source: "/templates",
         headers: [
           {
@@ -48,7 +59,7 @@ const config: NextConfig = {
         ],
       },
       {
-        source: "/((?!preview(?:/|$)|template-preview(?:/|$)|templates(?:/|$)|api(?:/|$)).*)",
+        source: "/((?!preview(?:/|$)|template-preview(?:/|$)|commerce-template-preview(?:/|$)|templates(?:/|$)|api(?:/|$)).*)",
         headers: [
           {
             key: "Cache-Control",

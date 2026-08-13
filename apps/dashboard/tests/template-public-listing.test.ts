@@ -61,13 +61,15 @@ describe("template public listing administration", () => {
     expect(catalog).toContain("category: row.catalogCategory || row.category");
   });
 
-  it("translates after hydration instead of mutating streamed markup early", async () => {
+  it("does not mutate React-owned markup before or after hydration", async () => {
     const source = await readFile(
       join(dashboardRoot, "src/app/dashboard-locale-bridge.tsx"),
       "utf8",
     );
 
-    expect(source).toContain('import { useEffect } from "react"');
+    expect(source).not.toContain('import { useEffect } from "react"');
     expect(source).not.toContain("useLayoutEffect");
+    expect(source).not.toContain("new MutationObserver");
+    expect(source).toContain("return null");
   });
 });
