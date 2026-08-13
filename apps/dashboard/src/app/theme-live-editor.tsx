@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PendingSubmit } from "@/app/pending-submit";
-import { applyPreviewColors } from "./theme-preview";
+import { DRAFT_CONTENT_SAVED_EVENT } from "./editor-studio";
+import { dispatchPreviewColors } from "./theme-preview";
 
 type ThemeTokens = {
   colors?: Record<string, string>;
@@ -26,8 +27,6 @@ export function ThemeLiveEditor({
   expectedRevision,
   websiteDraftRevision,
   initialTokens,
-  templateId,
-  templateVersion,
 }: {
   readonly action: (formData: FormData) => Promise<void>;
   readonly websiteId: string;
@@ -35,18 +34,23 @@ export function ThemeLiveEditor({
   readonly expectedRevision: string;
   readonly websiteDraftRevision: string;
   readonly initialTokens: string;
-  readonly templateId: string;
-  readonly templateVersion: string;
 }) {
   const parsedInitial = useMemo(() => parseTokens(initialTokens), [initialTokens]);
   const [tokens, setTokens] = useState<ThemeTokens>(parsedInitial);
   const [advancedJson, setAdvancedJson] = useState(() => JSON.stringify(parsedInitial, null, 2));
   const [jsonError, setJsonError] = useState("");
   const colors = tokens.colors ?? {};
-  const previewRef = useRef<HTMLIFrameElement>(null);
-  const previewUrl = `/dashboard/template-preview/${encodeURIComponent(templateId)}/${encodeURIComponent(templateVersion)}/`;
 
-  useEffect(() => applyPreviewColors(previewRef.current, colors), [colors]);
+  useEffect(() => dispatchPreviewColors(websiteId, colors), [colors, websiteId]);
+
+  async function saveTheme(formData: FormData) {
+    await action(formData);
+    window.dispatchEvent(
+      new CustomEvent(DRAFT_CONTENT_SAVED_EVENT, {
+        detail: { websiteId },
+      }),
+    );
+  }
 
   function updateColor(key: string, value: string) {
     const next = { ...tokens, colors: { ...colors, [key]: value } };
@@ -70,7 +74,7 @@ export function ThemeLiveEditor({
   }
 
   return (
-    <form action={action} className="panel themeStudio">
+    <form action={saveTheme} className="panel themeStudio">
       <input name="websiteId" type="hidden" value={websiteId} />
       <input name="themeId" type="hidden" value={themeId} />
       <input name="expectedRevision" type="hidden" value={expectedRevision} />
@@ -83,7 +87,7 @@ export function ThemeLiveEditor({
           <h2>Brand colors</h2>
           <p>Every color change appears in the preview immediately.</p>
         </div>
-        <span>Live preview</span>
+        <span>Draft preview</span>
       </div>
 
       <div className="themeStudioLayout">
@@ -136,19 +140,15 @@ export function ThemeLiveEditor({
           </div>
         </div>
 
-        <div className="themeActualPreview">
-          <div className="themePreviewBar">
-            <span>Actual template</span>
-            <a href={previewUrl} rel="noreferrer" target="_blank">
-              Open full preview
-            </a>
+        <div className="themePreviewHandoff" role="status">
+          <span aria-hidden="true">↗</span>
+          <div>
+            <strong>Previewing in the website canvas</strong>
+            <p>
+              Color changes now appear in the main draft preview. Save the theme to keep them in
+              this draft and refresh the complete website preview.
+            </p>
           </div>
-          <iframe
-            onLoad={() => applyPreviewColors(previewRef.current, colors)}
-            ref={previewRef}
-            src={previewUrl}
-            title="Live template color preview"
-          />
         </div>
       </div>
     </form>

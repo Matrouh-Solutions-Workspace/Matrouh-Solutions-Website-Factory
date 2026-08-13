@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MediaPicker, type MediaPickerAsset } from "@/app/media-picker";
 
-type ListItem = Record<string, string | number | boolean>;
+type StructuredValue = string | number | boolean | null | StructuredObject | StructuredValue[];
+type StructuredObject = { [key: string]: StructuredValue };
 
 export function CoordinatePickerFields({
   latitude,
@@ -67,11 +68,13 @@ export function StructuredListField({
     () => parseItems(initialJson).map((item) => (locationMode ? locationItem(item) : item)),
     [initialJson, locationMode],
   );
-  const [items, setItems] = useState<ListItem[]>(initialItems);
+  const blueprint = useRef<StructuredObject>(
+    cloneValue(initialItems[0] ?? { id: crypto.randomUUID(), title: "", body: "" }),
+  );
+  const [items, setItems] = useState<StructuredObject[]>(initialItems);
   const serializedItems = JSON.stringify(items);
   const serializedField = useRef<HTMLInputElement>(null);
   const didMount = useRef(false);
-  const editableKeys = useMemo(() => fieldKeys(items), [items]);
 
   useEffect(() => {
     if (!didMount.current) {
@@ -80,34 +83,6 @@ export function StructuredListField({
     }
     serializedField.current?.dispatchEvent(new Event("input", { bubbles: true }));
   }, [serializedItems]);
-
-  function update(index: number, key: string, value: string) {
-    setItems((current) =>
-      current.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, [key]: typedValue(item[key], value) } : item,
-      ),
-    );
-  }
-
-  function addItem() {
-    const sample = items[0];
-    let next: ListItem = sample
-      ? Object.fromEntries(
-          Object.entries(sample).map(([key, value]) => [
-            key,
-            key === "id"
-              ? crypto.randomUUID()
-              : typeof value === "number"
-                ? 0
-                : typeof value === "boolean"
-                  ? false
-                  : "",
-          ]),
-        )
-      : { id: crypto.randomUUID(), title: "", body: "" };
-    if (locationMode) next = locationItem(next);
-    setItems((current) => [...current, next]);
-  }
 
   return (
     <fieldset className="structuredList">
@@ -120,116 +95,241 @@ export function StructuredListField({
         type="hidden"
         value={serializedItems}
       />
-      <div className="structuredListItems">
-        {items.map((item, index) => (
-          <article className="structuredListItem" key={String(item.id ?? index)}>
-            <div className="structuredListHead">
-              <strong>Item {index + 1}</strong>
-              <div>
-                {index > 0 && (
-                  <button
-                    aria-label={`Move item ${index + 1} up`}
-                    className="textButton"
-                    onClick={() => setItems((current) => swap(current, index, index - 1))}
-                    type="button"
-                  >
-                    Move up
-                  </button>
-                )}
-                {index < items.length - 1 && (
-                  <button
-                    aria-label={`Move item ${index + 1} down`}
-                    className="textButton"
-                    onClick={() => setItems((current) => swap(current, index, index + 1))}
-                    type="button"
-                  >
-                    Move down
-                  </button>
-                )}
-                <button
-                  aria-label={`Remove item ${index + 1}`}
-                  className="textButton dangerButton"
-                  onClick={() => setItems((current) => current.filter((_, i) => i !== index))}
-                  type="button"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-            <div className="structuredListFields">
-              {editableKeys.map((key) =>
-                key.endsWith("MediaId") ? (
-                  <MediaPicker
-                    assets={mediaAssets}
-                    key={key}
-                    label={mediaFieldLabel(key)}
-                    onChange={(nextValue) => update(index, key, nextValue)}
-                    value={String(item[key] ?? "")}
-                    websiteId={websiteId}
-                  />
-                ) : (
-                  <label key={key}>
-                    {humanize(key)}
-                    {key === "body" || String(item[key] ?? "").length > 100 ? (
-                      <textarea
-                        onChange={(event) => update(index, key, event.target.value)}
-                        required
-                        rows={3}
-                        value={String(item[key] ?? "")}
-                      />
-                    ) : (
-                      <input
-                        inputMode={
-                          key === "latitude" || key === "longitude" ? "decimal" : undefined
-                        }
-                        onChange={(event) => update(index, key, event.target.value)}
-                        required={
-                          key !== "latitude" && key !== "longitude" && !key.endsWith("MediaId")
-                        }
-                        step={key === "latitude" || key === "longitude" ? "any" : undefined}
-                        type={key === "latitude" || key === "longitude" ? "number" : "text"}
-                        value={String(item[key] ?? "")}
-                      />
-                    )}
-                  </label>
-                ),
-              )}
-            </div>
-          </article>
-        ))}
-        {items.length === 0 && <p className="structuredListEmpty">No items in this section.</p>}
-      </div>
-      <button className="secondaryButton addListItem" onClick={addItem} type="button">
-        Add item
-      </button>
+      <StructuredObjectList
+        blueprint={blueprint.current}
+        items={items}
+        label={singular(label)}
+        mediaAssets={mediaAssets}
+        onChange={setItems}
+        websiteId={websiteId}
+      />
     </fieldset>
   );
 }
 
-function mediaFieldLabel(key: string): string {
-  const withoutInternalSuffix = key.replace(/MediaId$/, "");
-  return humanize(withoutInternalSuffix) || "Image";
+function StructuredObjectList({
+  blueprint,
+  items,
+  label,
+  mediaAssets,
+  onChange,
+  websiteId,
+}: {
+  readonly blueprint: StructuredObject;
+  readonly items: readonly StructuredObject[];
+  readonly label: string;
+  readonly mediaAssets: readonly MediaPickerAsset[];
+  readonly onChange: (items: StructuredObject[]) => void;
+  readonly websiteId: string;
+}) {
+  return (
+    <div className="structuredListItems">
+      {items.map((item, index) => (
+        <article
+          className="structuredListItem"
+          key={typeof item.id === "string" || typeof item.id === "number" ? item.id : index}
+        >
+          <div className="structuredListHead">
+            <strong>
+              {label} {index + 1}
+            </strong>
+            <div>
+              {index > 0 ? (
+                <button
+                  aria-label={`Move ${label.toLowerCase()} ${index + 1} up`}
+                  className="textButton"
+                  onClick={() => onChange(swap(items, index, index - 1))}
+                  type="button"
+                >
+                  Move up
+                </button>
+              ) : null}
+              {index < items.length - 1 ? (
+                <button
+                  aria-label={`Move ${label.toLowerCase()} ${index + 1} down`}
+                  className="textButton"
+                  onClick={() => onChange(swap(items, index, index + 1))}
+                  type="button"
+                >
+                  Move down
+                </button>
+              ) : null}
+              <button
+                aria-label={`Remove ${label.toLowerCase()} ${index + 1}`}
+                className="textButton dangerButton"
+                onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== index))}
+                type="button"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+          <div className="structuredListFields">
+            {orderedFields(item).flatMap(([key, value]) =>
+              key === "id"
+                ? []
+                : [
+                    <StructuredValueField
+                      blueprint={blueprint[key]}
+                      fieldKey={key}
+                      key={key}
+                      mediaAssets={mediaAssets}
+                      onChange={(next) =>
+                        onChange(
+                          items.map((candidate, itemIndex) =>
+                            itemIndex === index ? { ...candidate, [key]: next } : candidate,
+                          ),
+                        )
+                      }
+                      value={value}
+                      websiteId={websiteId}
+                    />,
+                  ],
+            )}
+          </div>
+        </article>
+      ))}
+      {items.length === 0 ? (
+        <p className="structuredListEmpty">No {label.toLowerCase()}s yet.</p>
+      ) : null}
+      <button
+        className="secondaryButton addListItem"
+        onClick={() => onChange([...items, blankValue(blueprint) as StructuredObject])}
+        type="button"
+      >
+        Add {label.toLowerCase()}
+      </button>
+    </div>
+  );
 }
 
-function parseItems(value: string): ListItem[] {
+function StructuredValueField({
+  blueprint,
+  fieldKey,
+  mediaAssets,
+  onChange,
+  value,
+  websiteId,
+}: {
+  readonly blueprint: StructuredValue | undefined;
+  readonly fieldKey: string;
+  readonly mediaAssets: readonly MediaPickerAsset[];
+  readonly onChange: (value: StructuredValue) => void;
+  readonly value: StructuredValue;
+  readonly websiteId: string;
+}) {
+  if (fieldKey.endsWith("MediaId")) {
+    return (
+      <MediaPicker
+        assets={mediaAssets}
+        label={mediaFieldLabel(fieldKey)}
+        noneLabel="Add an image"
+        onChange={onChange}
+        value={typeof value === "string" ? value : ""}
+        websiteId={websiteId}
+      />
+    );
+  }
+  if (Array.isArray(value)) {
+    const objectItems = value.filter(isStructuredObject);
+    const arrayBlueprint = Array.isArray(blueprint)
+      ? blueprint.find(isStructuredObject)
+      : undefined;
+    return (
+      <fieldset className="structuredNestedList">
+        <legend>{humanize(fieldKey)}</legend>
+        <StructuredObjectList
+          blueprint={arrayBlueprint ?? objectItems[0] ?? { id: crypto.randomUUID(), name: "" }}
+          items={objectItems}
+          label={singular(humanize(fieldKey))}
+          mediaAssets={mediaAssets}
+          onChange={onChange}
+          websiteId={websiteId}
+        />
+      </fieldset>
+    );
+  }
+  if (isStructuredObject(value)) {
+    return (
+      <fieldset className="structuredNestedGroup">
+        <legend>{humanize(fieldKey)}</legend>
+        {Object.entries(value).map(([key, child]) =>
+          key === "id" ? null : (
+            <StructuredValueField
+              blueprint={isStructuredObject(blueprint) ? blueprint[key] : undefined}
+              fieldKey={key}
+              key={key}
+              mediaAssets={mediaAssets}
+              onChange={(next) => onChange({ ...value, [key]: next })}
+              value={child}
+              websiteId={websiteId}
+            />
+          ),
+        )}
+      </fieldset>
+    );
+  }
+  if (typeof value === "boolean") {
+    return (
+      <label>
+        {humanize(fieldKey)}
+        <select onChange={(event) => onChange(event.target.value === "true")} value={String(value)}>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+      </label>
+    );
+  }
+  if (fieldKey === "pricingMode") {
+    return (
+      <label>
+        Pricing
+        <select onChange={(event) => onChange(event.target.value)} value={String(value)}>
+          <option value="fixed">One fixed price</option>
+          <option value="variants">Sizes / variants</option>
+        </select>
+      </label>
+    );
+  }
+  if (typeof value === "number") {
+    return (
+      <label>
+        {humanize(fieldKey)}
+        <input
+          min={fieldKey.toLowerCase().includes("price") ? 0 : undefined}
+          onChange={(event) => onChange(Number(event.target.value))}
+          step={fieldKey.toLowerCase().includes("price") ? "0.01" : "any"}
+          type="number"
+          value={value}
+        />
+      </label>
+    );
+  }
+  const textValue = typeof value === "string" ? value : "";
+  const multiline =
+    /description|body|note|information|extracted|review/i.test(fieldKey) || textValue.length > 100;
+  return (
+    <label>
+      {humanize(fieldKey)}
+      {multiline ? (
+        <textarea onChange={(event) => onChange(event.target.value)} rows={3} value={textValue} />
+      ) : (
+        <input onChange={(event) => onChange(event.target.value)} value={textValue} />
+      )}
+    </label>
+  );
+}
+
+function parseItems(value: string): StructuredObject[] {
   try {
     const parsed = JSON.parse(value) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item): item is ListItem => Boolean(item) && typeof item === "object" && !Array.isArray(item),
-    );
+    return Array.isArray(parsed) ? parsed.filter(isStructuredObject) : [];
   } catch {
     return [];
   }
 }
 
-function fieldKeys(items: readonly ListItem[]): string[] {
-  const keys = new Set(items.flatMap((item) => Object.keys(item)));
-  keys.delete("id");
-  return [...keys];
-}
-
-function locationItem(item: ListItem): ListItem {
+function locationItem(item: StructuredObject): StructuredObject {
   return {
     ...item,
     address: item.address ?? "",
@@ -240,13 +340,31 @@ function locationItem(item: ListItem): ListItem {
   };
 }
 
-function typedValue(previous: string | number | boolean | undefined, value: string) {
-  if (typeof previous === "number") return Number(value);
-  if (typeof previous === "boolean") return value === "true";
-  return value;
+function isStructuredObject(value: unknown): value is StructuredObject {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function swap(items: readonly ListItem[], from: number, to: number): ListItem[] {
+function cloneValue<T extends StructuredValue>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function blankValue(value: StructuredValue): StructuredValue {
+  if (typeof value === "string") return "";
+  if (typeof value === "number") return 0;
+  if (typeof value === "boolean") return value;
+  if (value === null) return null;
+  if (Array.isArray(value)) return value.length > 0 ? [blankValue(value[0]!)] : [];
+  return Object.fromEntries(
+    Object.entries(value).map(([key, child]) => {
+      if (key === "id") return [key, crypto.randomUUID()];
+      if (/^(pricingMode|locale|status|currency)$/i.test(key)) return [key, cloneValue(child)];
+      if (/^(name|title)$/i.test(key)) return [key, "New item"];
+      return [key, blankValue(child)];
+    }),
+  );
+}
+
+function swap(items: readonly StructuredObject[], from: number, to: number): StructuredObject[] {
   const next = [...items];
   const source = next[from];
   const target = next[to];
@@ -254,6 +372,27 @@ function swap(items: readonly ListItem[], from: number, to: number): ListItem[] 
   next[from] = target;
   next[to] = source;
   return next;
+}
+
+function mediaFieldLabel(key: string): string {
+  if (key === "imageMediaId") return "Menu item photo";
+  return humanize(key.replace(/MediaId$/, "")) || "Image";
+}
+
+function orderedFields(item: StructuredObject): [string, StructuredValue][] {
+  const priority = (key: string): number => {
+    if (/^(name|title)$/i.test(key)) return 0;
+    if (key.endsWith("MediaId")) return 1;
+    return 2;
+  };
+  return Object.entries(item).sort(([left], [right]) => priority(left) - priority(right));
+}
+
+function singular(value: string): string {
+  if (/ies$/i.test(value)) return value.replace(/ies$/i, "y");
+  if (/ses$/i.test(value)) return value.replace(/es$/i, "");
+  if (/s$/i.test(value)) return value.slice(0, -1);
+  return value || "Item";
 }
 
 function humanize(value: string): string {

@@ -10,8 +10,14 @@ import { LocalePreferenceLink } from "@/app/locale-preference-link";
 import { ThemeToggle } from "@/app/theme-toggle";
 import type { UiLocale } from "@/server/ui-locale";
 
+const sidebarPreferenceKey = "factory-dashboard-sidebar-collapsed";
+
 const copy = {
   ar: {
+    collapseSidebar:
+      "\u0637\u064a \u0627\u0644\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u062c\u0627\u0646\u0628\u064a\u0629",
+    expandSidebar:
+      "\u062a\u0648\u0633\u064a\u0639 \u0627\u0644\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u062c\u0627\u0646\u0628\u064a\u0629",
     clientPortal: "بوابة العميل",
     signOut: "تسجيل الخروج",
     myWebsites: "مواقعي",
@@ -40,6 +46,8 @@ const copy = {
     settings: "الإعدادات",
   },
   en: {
+    collapseSidebar: "Collapse sidebar",
+    expandSidebar: "Expand sidebar",
     clientPortal: "Client portal",
     signOut: "Sign out",
     myWebsites: "My websites",
@@ -79,8 +87,16 @@ export function DashboardShell({
   const pathname = usePathname();
   const appPathname = normalizeDashboardPathname(pathname);
   const [open, setOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const text = copy[locale];
   const alternateLocale = locale === "ar" ? "en" : "ar";
+  useEffect(() => {
+    try {
+      setSidebarCollapsed(window.localStorage.getItem(sidebarPreferenceKey) === "true");
+    } catch {
+      // The expanded sidebar is the safe fallback when storage is unavailable.
+    }
+  }, []);
   if (
     appPathname === "/login" ||
     appPathname === "/forgot-password" ||
@@ -126,7 +142,11 @@ export function DashboardShell({
     ? (text[segment as keyof typeof text] ?? text.websiteFactory)
     : text.overview;
   return (
-    <div className="appShell" dir={locale === "ar" ? "rtl" : "ltr"} lang={locale}>
+    <div
+      className={sidebarCollapsed ? "appShell sidebarIsCollapsed" : "appShell"}
+      dir={locale === "ar" ? "rtl" : "ltr"}
+      lang={locale}
+    >
       <DashboardLocaleBridge locale={locale} />
       <a className="skipLink" href="#dashboard-content">
         {text.skip}
@@ -146,6 +166,25 @@ export function DashboardShell({
           type="button"
         >
           <Icon name="close" />
+        </button>
+        <button
+          aria-expanded={!sidebarCollapsed}
+          aria-label={sidebarCollapsed ? text.expandSidebar : text.collapseSidebar}
+          className="sidebarCollapseButton"
+          onClick={() => {
+            const next = !sidebarCollapsed;
+            setSidebarCollapsed(next);
+            try {
+              window.localStorage.setItem(sidebarPreferenceKey, String(next));
+            } catch {
+              // Keep the in-memory preference when storage is unavailable.
+            }
+          }}
+          title={sidebarCollapsed ? text.expandSidebar : text.collapseSidebar}
+          type="button"
+        >
+          <Icon name="arrow" />
+          <span>{sidebarCollapsed ? text.expandSidebar : text.collapseSidebar}</span>
         </button>
         <DashboardNav locale={locale} onNavigate={() => setOpen(false)} />
       </aside>

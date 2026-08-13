@@ -25,7 +25,23 @@ export interface PublicTemplateCatalogItem {
   readonly displayName: string;
   readonly description: string;
   readonly category: string;
+  readonly categoryAr: string | null;
   readonly version: string;
+  readonly features: readonly string[];
+  readonly supportsDarkMode: boolean;
+  readonly priceMinor: number;
+  readonly currency: string;
+  readonly billingPeriod: "month" | "year" | "one-time" | "custom";
+  readonly featured: boolean;
+  readonly badge: string | null;
+  readonly badgeAr: string | null;
+  readonly ctaLabel: string | null;
+  readonly ctaLabelAr: string | null;
+  readonly ctaHref: string | null;
+  readonly salesDescription: string | null;
+  readonly salesDescriptionAr: string | null;
+  readonly highlights: readonly string[];
+  readonly highlightsAr: readonly string[];
 }
 
 export interface LoadedSite {
@@ -220,14 +236,37 @@ export const loadPublicTemplateCatalog = cache(
           display_name: string;
           description: string;
           category: string;
+          catalog_category: string | null;
+          catalog_category_ar: string | null;
           template_version: string;
+          artifact_uri: string;
+          catalog_price_minor: number;
+          catalog_currency: string;
+          catalog_billing_period: string;
+          catalog_featured: boolean;
+          catalog_badge: string | null;
+          catalog_badge_ar: string | null;
+          catalog_cta_label: string | null;
+          catalog_cta_label_ar: string | null;
+          catalog_cta_href: string | null;
+          catalog_sales_description: string | null;
+          catalog_sales_description_ar: string | null;
+          catalog_highlights_json: unknown;
+          catalog_highlights_ar_json: unknown;
         }[]
       >`
         SELECT entry.template_id, entry.display_name, entry.description, entry.category,
-               version.template_version
+               entry.catalog_category, entry.catalog_category_ar,
+               entry.catalog_price_minor, entry.catalog_currency, entry.catalog_billing_period,
+               entry.catalog_featured, entry.catalog_badge, entry.catalog_badge_ar,
+               entry.catalog_cta_label, entry.catalog_cta_label_ar,
+               entry.catalog_cta_href, entry.catalog_sales_description,
+               entry.catalog_sales_description_ar, entry.catalog_highlights_json,
+               entry.catalog_highlights_ar_json,
+               version.template_version, version.artifact_uri
         FROM template_catalog_entries AS entry
         JOIN LATERAL (
-          SELECT template_version
+          SELECT template_version, artifact_uri
           FROM template_versions
             WHERE template_catalog_entry_id = entry.id
               AND validation_status = 'valid'
@@ -236,15 +275,50 @@ export const loadPublicTemplateCatalog = cache(
             LIMIT 1
         ) AS version ON TRUE
         WHERE entry.lifecycle_status IN ('ready', 'deprecated')
-        ORDER BY entry.display_name ASC
+          AND entry.catalog_visible = true
+        ORDER BY entry.catalog_featured DESC, entry.catalog_sort_order ASC, entry.display_name ASC
       `;
-      return rows.map((row) => ({
-        templateId: row.template_id,
-        displayName: row.display_name,
-        description: row.description,
-        category: row.category,
-        version: row.template_version,
-      }));
+      return Promise.all(
+        rows.map(async (row) => {
+          const artifact = await loadCatalogedTemplateArtifact(templatesRoot(), row.artifact_uri, {
+            templateId: row.template_id,
+            templateVersion: row.template_version,
+          });
+          const defaultSettings = artifact.definition.websiteSchema.parse({});
+          const settingsRecord =
+            defaultSettings &&
+            typeof defaultSettings === "object" &&
+            !Array.isArray(defaultSettings)
+              ? defaultSettings
+              : {};
+          return {
+            templateId: row.template_id,
+            displayName: row.display_name,
+            description: row.description,
+            category: row.catalog_category || row.category,
+            categoryAr: row.catalog_category_ar,
+            version: row.template_version,
+            features: [...(artifact.definition.manifest.features ?? [])],
+            supportsDarkMode: artifact.definition.websiteSchema.safeParse({
+              ...settingsRecord,
+              colorMode: "dark",
+            }).success,
+            priceMinor: row.catalog_price_minor,
+            currency: row.catalog_currency,
+            billingPeriod: billingPeriod(row.catalog_billing_period),
+            featured: row.catalog_featured,
+            badge: row.catalog_badge,
+            badgeAr: row.catalog_badge_ar,
+            ctaLabel: row.catalog_cta_label,
+            ctaLabelAr: row.catalog_cta_label_ar,
+            ctaHref: row.catalog_cta_href,
+            salesDescription: row.catalog_sales_description,
+            salesDescriptionAr: row.catalog_sales_description_ar,
+            highlights: stringArray(row.catalog_highlights_json),
+            highlightsAr: stringArray(row.catalog_highlights_ar_json),
+          };
+        }),
+      );
     } catch (error) {
       if (rendererConfig.FACTORY_DEPLOYMENT_MODE !== "local") throw error;
       // Local previews should remain usable while a developer is rebuilding the catalog database.
@@ -259,14 +333,22 @@ const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
     displayName: "Clinic",
     description: "A calm, connected clinic experience for teams, specialties, and locations.",
     category: "Healthcare",
+    categoryAr: "الرعاية الصحية",
     version: "2.0.0",
+    features: ["localized-content"],
+    supportsDarkMode: true,
+    ...localCatalogPricing(),
   },
   {
     templateId: "com.matrouh.creative",
     displayName: "Creative portfolio",
     description: "An editorial portfolio for studios, independent creatives, and selected work.",
     category: "Portfolio",
+    categoryAr: "ملفات الأعمال",
     version: "1.0.0",
+    features: ["localized-content"],
+    supportsDarkMode: true,
+    ...localCatalogPricing(),
   },
   {
     templateId: "com.matrouh.doctor",
@@ -274,16 +356,65 @@ const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
     description:
       "A personal medical practice with services, trust signals, and appointment details.",
     category: "Healthcare",
+    categoryAr: "الرعاية الصحية",
     version: "2.0.0",
+    features: ["localized-content"],
+    supportsDarkMode: true,
+    ...localCatalogPricing(),
   },
   {
     templateId: "com.matrouh.engineer",
     displayName: "Engineer",
     description: "A precise, project-focused portfolio for engineering and architecture practices.",
     category: "Portfolio",
+    categoryAr: "ملفات الأعمال",
     version: "2.0.0",
+    features: ["localized-content"],
+    supportsDarkMode: true,
+    ...localCatalogPricing(),
+  },
+  {
+    templateId: "com.matrouh.food-menu",
+    displayName: "Saffron — Food & Café Menu",
+    description:
+      "A mobile-first bilingual digital menu for restaurants, cafés, bakeries, and food businesses.",
+    category: "Food & Hospitality",
+    categoryAr: "المطاعم والمقاهي",
+    version: "1.0.0",
+    features: ["localized-content", "digital-menu", "mobile-first"],
+    supportsDarkMode: false,
+    ...localCatalogPricing({ featured: true, badge: "New" }),
   },
 ];
+
+function billingPeriod(value: string): PublicTemplateCatalogItem["billingPeriod"] {
+  return value === "year" || value === "one-time" || value === "custom" ? value : "month";
+}
+
+function stringArray(value: unknown): readonly string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function localCatalogPricing(overrides: Partial<PublicTemplateCatalogItem> = {}) {
+  return {
+    priceMinor: 25000,
+    currency: "EGP",
+    billingPeriod: "month" as const,
+    featured: false,
+    badge: null,
+    badgeAr: null,
+    ctaLabel: null,
+    ctaLabelAr: null,
+    ctaHref: null,
+    salesDescription: null,
+    salesDescriptionAr: null,
+    highlights: [] as readonly string[],
+    highlightsAr: [] as readonly string[],
+    ...overrides,
+  };
+}
 
 export async function listPublicRoutes(hostname: string): Promise<string[]> {
   const site = await loadSite(hostname);

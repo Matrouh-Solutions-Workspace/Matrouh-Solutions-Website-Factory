@@ -1,5 +1,9 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { applyPreviewColors } from "../src/app/theme-preview";
+
+const dashboardRoot = join(import.meta.dirname, "..");
 
 describe("theme live editor", () => {
   it("applies draft colors to the site root instead of Next.js framework elements", () => {
@@ -36,5 +40,18 @@ describe("theme live editor", () => {
       "--text": "#173b36",
       "--primary": "#a4cbc1",
     });
+  });
+
+  it("uses the shared draft preview instead of rendering a legacy template iframe", async () => {
+    const [themeEditor, previewPane] = await Promise.all([
+      readFile(join(dashboardRoot, "src/app/theme-live-editor.tsx"), "utf8"),
+      readFile(join(dashboardRoot, "src/app/editor-studio.tsx"), "utf8"),
+    ]);
+
+    expect(themeEditor).not.toContain("<iframe");
+    expect(themeEditor).toContain("dispatchPreviewColors");
+    expect(themeEditor).toContain("DRAFT_CONTENT_SAVED_EVENT");
+    expect(previewPane).toContain("THEME_PREVIEW_COLORS_EVENT");
+    expect(previewPane).toContain("applyPreviewColors(previewFrameRef.current");
   });
 });

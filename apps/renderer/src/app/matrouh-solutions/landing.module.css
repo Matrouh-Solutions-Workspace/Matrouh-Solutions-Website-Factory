@@ -408,6 +408,70 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+.footerContactChannels {
+  display: grid;
+}
+.footerContactChannels > a {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 17px 0;
+  border-bottom: 1px solid #555a64;
+  color: white;
+  text-decoration: none;
+  transition:
+    border-color 180ms ease,
+    color 180ms ease,
+    padding-inline 180ms ease;
+}
+.footerContactChannels > a:first-child {
+  padding-top: 20px;
+}
+.footerContactChannels > a:hover {
+  padding-inline: 8px;
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+.footerContactChannels > a > span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+.footerContactChannels small {
+  color: #8f949e;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+.footerContactChannels strong {
+  overflow: hidden;
+  font-size: clamp(1rem, 1.65vw, 1.38rem);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.footerContactChannels > a:first-child strong {
+  font-size: clamp(1.25rem, 2.2vw, 1.85rem);
+}
+.footerContactChannels i {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 1rem;
+  font-style: normal;
+  transition: transform 180ms ease;
+}
+.footerContactChannels > a:hover i {
+  transform: rotate(45deg);
+}
 .footerContact > a {
   display: flex;
   align-items: center;
@@ -556,6 +620,13 @@
   }
   .footerContact > a {
     overflow-wrap: anywhere;
+  }
+  .footerContactChannels strong {
+    font-size: 0.98rem;
+    white-space: normal;
+  }
+  .footerContactChannels > a:first-child strong {
+    font-size: 1.2rem;
   }
   .footerBottom {
     align-items: flex-start;
@@ -914,6 +985,43 @@
 }
 .ctaContactCard > a:hover > i {
   transform: rotate(45deg);
+}
+.ctaContactChannels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: -20px;
+}
+.ctaContactChannels a {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid #454951;
+  color: #d7dae0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition:
+    border-color 180ms ease,
+    color 180ms ease,
+    background 180ms ease;
+}
+.ctaContactChannels a:hover {
+  border-color: var(--yellow);
+  background: rgba(255, 204, 0, 0.08);
+  color: var(--yellow);
+}
+.ctaContactChannels span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ctaContactChannels i {
+  color: var(--yellow);
+  font-style: normal;
 }
 .ctaContactCard > small {
   color: #9297a1;

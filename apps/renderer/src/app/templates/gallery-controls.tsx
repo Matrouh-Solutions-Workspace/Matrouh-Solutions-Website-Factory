@@ -1,51 +1,22 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
 export function GalleryAppearanceToggle({ locale }: { readonly locale: "ar" | "en" }) {
-  const [theme, setTheme] = useState<"dark" | "light">("light");
-  const isArabic = locale === "ar";
+  const labels =
+    locale === "ar"
+      ? { dark: "الوضع الداكن", light: "الوضع الفاتح" }
+      : { dark: "Dark mode", light: "Light mode" };
 
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("factory:public-template-gallery:appearance");
-      if (saved === "dark" || saved === "light") setTheme(saved);
-    } catch {
-      // The gallery still works without local storage.
-    }
-  }, []);
-
-  useEffect(() => {
-    document.querySelector(".templateGallery")?.setAttribute("data-theme", theme);
-  }, [theme]);
-
-  function toggleTheme() {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    try {
-      window.localStorage.setItem("factory:public-template-gallery:appearance", next);
-    } catch {
-      // The visual preference is optional; the current view has already changed.
-    }
-  }
-
-  const label =
-    theme === "dark"
-      ? isArabic
-        ? "الوضع الفاتح"
-        : "Light mode"
-      : isArabic
-        ? "الوضع الداكن"
-        : "Dark mode";
   return (
     <button
-      aria-label={label}
+      aria-label={labels.dark}
       className="templateGalleryThemeToggle"
-      onClick={toggleTheme}
+      data-dark-label={labels.dark}
+      data-gallery-theme-toggle
+      data-light-label={labels.light}
       type="button"
     >
-      <span aria-hidden>{theme === "dark" ? "☀" : "◐"}</span>
-      {label}
+      <span aria-hidden data-gallery-theme-icon>
+        ◐
+      </span>
+      <span data-gallery-theme-label>{labels.dark}</span>
     </button>
   );
 }

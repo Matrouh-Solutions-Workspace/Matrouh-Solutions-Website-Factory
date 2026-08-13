@@ -974,7 +974,7 @@ export async function updateWebsiteIdentityAction(formData: FormData): Promise<v
 
 export async function createWebsiteClaimLinkAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
-  const intendedEmail = cleanText(formData.get("intendedEmail"), 320).toLowerCase() || null;
+  const requestedEmail = cleanText(formData.get("intendedEmail"), 320).toLowerCase() || null;
   if (!websiteId) return;
   const context = await requireDashboardContext("website.edit");
   const token = randomBytes(32).toString("base64url");
@@ -987,12 +987,22 @@ export async function createWebsiteClaimLinkAction(formData: FormData): Promise<
         where: {
           id: websiteId,
           organizationId: context.organization.id,
-          clientId: null,
           archivedAt: null,
         },
-        select: { id: true, name: true },
+        select: {
+          id: true,
+          name: true,
+          clientId: true,
+          client: { select: { contactEmail: true } },
+        },
       });
-      if (!website) throw new Error("WEBSITE_ALREADY_HAS_OWNER");
+      if (!website) throw new Error("WEBSITE_NOT_FOUND");
+      const assignedEmail = website.client?.contactEmail?.trim().toLowerCase() || null;
+      if (assignedEmail && requestedEmail && assignedEmail !== requestedEmail) {
+        throw new Error("CLAIM_EMAIL_MUST_MATCH_ASSIGNED_CLIENT");
+      }
+      const intendedEmail = assignedEmail ?? requestedEmail;
+      if (website.clientId && !intendedEmail) throw new Error("CLIENT_EMAIL_REQUIRED");
       await transaction.websiteClaim.updateMany({
         where: { organizationId: context.organization.id, websiteId, status: "pending" },
         data: { status: "revoked" },
@@ -1044,8 +1054,10 @@ export async function createWebsiteClaimLinkAction(formData: FormData): Promise<
 export async function updateWebsiteBrandingAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const faviconAssetId = cleanText(formData.get("faviconAssetId"), 80) || null;
-  const updatesWhiteLabel = formData.has("whiteLabelEnabled");
-  const whiteLabelEnabled = formData.get("whiteLabelEnabled") === "on";
+  const updatesWhiteLabel = formData.has("updatesWhiteLabel") || formData.has("whiteLabelEnabled");
+  const whiteLabelEnabled = formData.has("updatesWhiteLabel")
+    ? formData.get("showWatermark") !== "on"
+    : formData.get("whiteLabelEnabled") === "on";
   if (!websiteId) return;
   const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   await withTenantTransaction(
@@ -1280,8 +1292,17 @@ export async function saveWebsiteSubscriptionAction(formData: FormData): Promise
 export async function previewWebsiteAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   if (!websiteId) return;
+  const previewUrl = await createWebsiteDraftPreviewAction(websiteId);
+  if (previewUrl) redirect(previewUrl);
+}
+
+export async function createWebsiteDraftPreviewAction(
+  websiteIdInput: string,
+): Promise<string | null> {
+  const websiteId = cleanText(websiteIdInput, 80);
+  if (!websiteId) return null;
   const client = dashboardDatabase();
-  const context = await requireDashboardContext("website.preview");
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   await enforceRateLimit(client, `preview:${context.organization.id}:${context.actor.id}`, 30, 60);
   const organization = context.organization;
   const actorId = context.actor.id;
@@ -1322,14 +1343,14 @@ export async function previewWebsiteAction(formData: FormData): Promise<void> {
       return { ...website, mediaReferences };
     },
   );
-  if (!data) return;
+  if (!data) return null;
 
   const candidate = (await discoverTemplates(templatesRoot)).find(
     (item) =>
       item.discovery.templateId === data.templateId &&
       item.discovery.templateVersion === data.templateVersion,
   );
-  if (!candidate) return;
+  if (!candidate) return null;
   const artifact = await loadTemplateArtifact(candidate);
   const template = artifact.definition;
   const previewId = randomUUID();
@@ -1339,7 +1360,7 @@ export async function previewWebsiteAction(formData: FormData): Promise<void> {
     artifact.artifactHash,
     artifact.manifest.manifestHash,
   );
-  if (!result.success) return;
+  if (!result.success) return null;
 
   const runtime = instantiateTemplateRuntime(
     {
@@ -1412,7 +1433,7 @@ export async function previewWebsiteAction(formData: FormData): Promise<void> {
 
   const gatewayUrl = new URL("/preview/", dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL);
   gatewayUrl.searchParams.set("token", token);
-  redirect(gatewayUrl.toString());
+  return gatewayUrl.toString();
 }
 
 export async function rollbackPublicationAction(formData: FormData): Promise<void> {
@@ -2167,6 +2188,55 @@ export async function uploadMediaForPickerAction(
 ): Promise<{ assetId: string; url: string } | null> {
   const assetId = await uploadMedia(formData);
   return assetId ? { assetId, url: dashboardMediaPath(assetId) } : null;
+}
+
+export async function uploadDocumentForImportAction(formData: FormData): Promise<{
+  assetId: string;
+  extractedText: string;
+  filename: string;
+  pageCount: number;
+  warning?: string;
+} | null> {
+  const upload = formData.get("file");
+  if (!(upload instanceof File) || upload.type !== "application/pdf") return null;
+  const bytes = Buffer.from(await upload.arrayBuffer());
+  const assetId = await uploadMedia(formData);
+  if (!assetId) return null;
+
+  try {
+    const { default: parsePdf } = await import("pdf-parse");
+    const parsed = await parsePdf(bytes, { max: 50 });
+    const extractedText = normalizeExtractedPdfText(parsed.text).slice(0, 40_000);
+    return {
+      assetId,
+      extractedText,
+      filename: upload.name.slice(0, 255) || "menu.pdf",
+      pageCount: parsed.numpages,
+      ...(extractedText
+        ? {}
+        : {
+            warning:
+              "The PDF was uploaded, but it appears to contain scanned images rather than selectable text. Review it manually and enter the menu items below.",
+          }),
+    };
+  } catch {
+    return {
+      assetId,
+      extractedText: "",
+      filename: upload.name.slice(0, 255) || "menu.pdf",
+      pageCount: 0,
+      warning:
+        "The PDF is stored safely, but automatic text extraction was not possible. Use it as a reference while building the menu manually.",
+    };
+  }
+}
+
+function normalizeExtractedPdfText(value: string): string {
+  return value
+    .replaceAll("\u0000", "")
+    .replace(/[\t ]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 async function uploadMedia(formData: FormData): Promise<string | undefined> {
@@ -3005,7 +3075,7 @@ export async function addWebsiteLocaleAction(formData: FormData): Promise<void> 
   const locale = canonicalLocale(cleanText(formData.get("locale"), 35));
   const websiteDraftRevision = parseRevision(formData.get("websiteDraftRevision"));
   if (!websiteId || !locale || !isSupportedWebsiteLocale(locale) || !websiteDraftRevision) return;
-  const context = await requireDashboardContext("website.edit");
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   const client = dashboardDatabase();
   const website = await withTenantTransaction(
     client,
@@ -3215,7 +3285,7 @@ export async function updateWebsiteDefaultLocaleAction(formData: FormData): Prom
   )
     return;
 
-  const context = await requireDashboardContext("website.edit");
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   await withTenantTransaction(
     dashboardDatabase(),
     tenantActionContext(context, `set-default-locale:${websiteId}:${defaultLocale}`),
@@ -3766,18 +3836,22 @@ export async function updateSectionDraftAction(formData: FormData): Promise<void
       });
       if (sectionUpdate.count !== 1) throw new Error("DRAFT_REVISION_CONFLICT");
 
-      const referencedMediaIds = collectMediaIds(validated.value);
+      const referencedMedia = collectMediaReferences(validated.value);
+      const referencedMediaIds = [...new Set(referencedMedia.map((item) => item.id))];
       if (referencedMediaIds.length > 0) {
         const readyAssets = await transaction.mediaAsset.findMany({
           where: {
             organizationId: organization.id,
-            id: { in: [...new Set(referencedMediaIds)] },
-            kind: "image",
+            id: { in: referencedMediaIds },
             status: "ready",
           },
-          select: { id: true },
+          select: { id: true, kind: true },
         });
-        if (readyAssets.length !== new Set(referencedMediaIds).size) {
+        const readyById = new Map(readyAssets.map((asset) => [asset.id, asset.kind]));
+        if (
+          readyAssets.length !== referencedMediaIds.length ||
+          referencedMedia.some((reference) => readyById.get(reference.id) !== reference.kind)
+        ) {
           throw new Error("SECTION_MEDIA_NOT_READY");
         }
       }
@@ -4170,12 +4244,21 @@ function mergeSectionContent(current: unknown, formData: FormData): unknown {
   return base;
 }
 
-function collectMediaIds(value: unknown): string[] {
-  if (Array.isArray(value)) return value.flatMap(collectMediaIds);
+function collectMediaReferences(
+  value: unknown,
+): { readonly id: string; readonly kind: "document" | "image" }[] {
+  if (Array.isArray(value)) return value.flatMap(collectMediaReferences);
   if (!value || typeof value !== "object") return [];
   return Object.entries(value).flatMap(([key, child]) => [
-    ...(key.endsWith("MediaId") && typeof child === "string" && child ? [child] : []),
-    ...collectMediaIds(child),
+    ...(key.endsWith("MediaId") && typeof child === "string" && child
+      ? [
+          {
+            id: child,
+            kind: key.toLowerCase().includes("pdf") ? ("document" as const) : ("image" as const),
+          },
+        ]
+      : []),
+    ...collectMediaReferences(child),
   ]);
 }
 

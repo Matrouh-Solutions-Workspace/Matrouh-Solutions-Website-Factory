@@ -37,6 +37,9 @@ export function middleware(request: NextRequest): NextResponse {
   if (pathname === "/matrouh-landing-motion.js") {
     return rendererRewrite(request, dashboardHost);
   }
+  if (pathname === "/template-gallery-motion.js") {
+    return rendererRewrite(request, dashboardHost);
+  }
   if (pathname === "/preview" || pathname.startsWith("/preview/")) {
     return rendererRewrite(request, dashboardHost);
   }

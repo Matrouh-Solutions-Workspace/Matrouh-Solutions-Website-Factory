@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { importTemplateAction, initialTemplateImportState } from "./import-actions";
+import { initialTemplateImportState } from "./import-action-state";
+import { importTemplateAction } from "./import-actions";
 
 export function TemplateImportForm() {
   const [state, action, pending] = useActionState(importTemplateAction, initialTemplateImportState);

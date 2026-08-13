@@ -539,16 +539,33 @@ model SeoDraft {
 }
 
 model TemplateCatalogEntry {
-  id              String                  @id @db.Uuid
-  templateId      String                  @unique @map("template_id") @db.VarChar(160)
-  displayName     String                  @map("display_name") @db.VarChar(200)
-  author          String                  @db.VarChar(200)
-  description     String                  @db.Text
-  category        String                  @db.VarChar(80)
-  lifecycleStatus String                  @map("lifecycle_status") @db.VarChar(24)
-  createdAt       DateTime                @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime                @updatedAt @map("updated_at") @db.Timestamptz
-  versions        TemplateVersionRecord[]
+  id                      String                  @id @db.Uuid
+  templateId              String                  @unique @map("template_id") @db.VarChar(160)
+  displayName             String                  @map("display_name") @db.VarChar(200)
+  author                  String                  @db.VarChar(200)
+  description             String                  @db.Text
+  category                String                  @db.VarChar(80)
+  lifecycleStatus         String                  @map("lifecycle_status") @db.VarChar(24)
+  catalogVisible          Boolean                 @default(true) @map("catalog_visible")
+  catalogPriceMinor       Int                     @default(25000) @map("catalog_price_minor")
+  catalogCurrency         String                  @default("EGP") @map("catalog_currency") @db.VarChar(8)
+  catalogBillingPeriod    String                  @default("month") @map("catalog_billing_period") @db.VarChar(24)
+  catalogFeatured         Boolean                 @default(false) @map("catalog_featured")
+  catalogSortOrder        Int                     @default(0) @map("catalog_sort_order")
+  catalogCategory         String?                 @map("catalog_category") @db.VarChar(80)
+  catalogCategoryAr       String?                 @map("catalog_category_ar") @db.VarChar(80)
+  catalogBadge            String?                 @map("catalog_badge") @db.VarChar(80)
+  catalogBadgeAr          String?                 @map("catalog_badge_ar") @db.VarChar(80)
+  catalogCtaLabel         String?                 @map("catalog_cta_label") @db.VarChar(80)
+  catalogCtaLabelAr       String?                 @map("catalog_cta_label_ar") @db.VarChar(80)
+  catalogCtaHref          String?                 @map("catalog_cta_href") @db.Text
+  catalogSalesDescription String?                 @map("catalog_sales_description") @db.Text
+  catalogSalesDescriptionAr String?               @map("catalog_sales_description_ar") @db.Text
+  catalogHighlightsJson   Json                    @default("[]") @map("catalog_highlights_json") @db.JsonB
+  catalogHighlightsArJson Json                    @default("[]") @map("catalog_highlights_ar_json") @db.JsonB
+  createdAt               DateTime                @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime                @updatedAt @map("updated_at") @db.Timestamptz
+  versions                TemplateVersionRecord[]
 
   @@map("template_catalog_entries")
 }

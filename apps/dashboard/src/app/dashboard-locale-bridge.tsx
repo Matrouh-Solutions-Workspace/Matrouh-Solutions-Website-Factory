@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect } from "react";
+import { useEffect } from "react";
 import type { UiLocale } from "@/server/ui-locale";
 
 const arabicText: Readonly<Record<string, string>> = {
@@ -23,6 +23,7 @@ const arabicText: Readonly<Record<string, string>> = {
   "Connect domain": "ربط نطاق",
   Content: "المحتوى",
   Create: "إنشاء",
+  "Ctrl S": "Ctrl S",
   "Custom logo": "شعار مخصص",
   Dark: "داكن",
   Default: "افتراضي",
@@ -345,6 +346,66 @@ const supplementalArabicText: Readonly<Record<string, string>> = {
    it here lets the selected dashboard locale cover every shared route while the
    individual screens are gradually moved to source-level dictionaries. */
 const remainingArabicText: Readonly<Record<string, string>> = {
+  "All packages": "كل الباقات",
+  "Catalog packages": "باقات الكتالوج",
+  Categories: "التصنيفات",
+  Change: "تغيير",
+  "Category (English)": "التصنيف بالإنجليزية",
+  "Category (Arabic)": "التصنيف بالعربية",
+  "Draft preview": "معاينة المسودة",
+  "Choose a listing to edit": "اختر باقة لتعديلها",
+  "Customer-facing groups": "مجموعات ظاهرة للعملاء",
+  "Customers cannot see this package": "لا يمكن للعملاء رؤية هذه الباقة",
+  "Edit listing": "تعديل العرض",
+  Featured: "مميز",
+  "Hidden from catalog": "مخفي من الكتالوج",
+  "Installed and ready": "مثبتة وجاهزة",
+  "Kept out of the catalog": "غير معروضة في الكتالوج",
+  "Listing controls": "إدارة العرض العام",
+  "Manage listing": "إدارة العرض",
+  "Previewing in the website canvas": "تظهر المعاينة في لوحة الموقع",
+  "Color changes now appear in the main draft preview. Save the theme to keep them in this draft and refresh the complete website preview.":
+    "تظهر تغييرات الألوان الآن في معاينة المسودة الرئيسية. احفظ المظهر للاحتفاظ بها في هذه المسودة وتحديث معاينة الموقع الكاملة.",
+  "Template category": "تصنيف القالب",
+  "Manage package visibility, pricing, order, and sales content in one focused workspace.":
+    "أدر ظهور الباقات وأسعارها وترتيبها ومحتواها التسويقي من مساحة عمل واحدة.",
+  "Packages are shown in their current public sort order. Open one package to edit its public listing without loading every form at once.":
+    "تظهر الباقات حسب ترتيبها الحالي في الكتالوج. افتح باقة واحدة لتعديل عرضها دون تحميل كل النماذج معًا.",
+  "Preview and customize installed templates, or add a trusted template artifact.":
+    "عاين القوالب المثبتة وخصصها، أو أضف حزمة قالب موثوقة.",
+  "Promoted packages": "الباقات المروّجة",
+  "Public catalog overview": "نظرة عامة على الكتالوج العام",
+  "Public listing": "العرض العام",
+  "Shown to customers": "ظاهرة للعملاء",
+  "Template library": "مكتبة القوالب",
+  "View public catalog": "عرض الكتالوج العام",
+  "No installed templates are available to list publicly.":
+    "لا توجد قوالب مثبتة متاحة للعرض العام.",
+  "https://wa.me/201284289997 or another HTTPS link":
+    "رابط واتساب https://wa.me/201284289997 أو رابط HTTPS آخر",
+  "per month": "شهريًا",
+  "per year": "سنويًا",
+  "one-time": "دفعة واحدة",
+  "custom period": "مدة مخصصة",
+  "Changes appear on the public /templates page.": "تظهر التغييرات في صفحة /templates العامة.",
+  Custom: "مخصص",
+  "Feature this package with stronger visual emphasis": "ميّز هذه الباقة بإبراز بصري أقوى",
+  "Most popular": "الأكثر طلباً",
+  "One benefit per line, up to 8.": "ميزة واحدة في كل سطر، بحد أقصى 8.",
+  "One-time": "دفعة واحدة",
+  "Public catalog": "الكتالوج العام",
+  "Public catalog settings": "إعدادات الكتالوج العام",
+  "Public listing controls": "عناصر تحكم العرض العام",
+  "Price &amp; visibility": "السعر والظهور",
+  "Show publicly": "إظهار للعامة",
+  "Featured package": "باقة مميزة",
+  "Advanced listing content": "محتوى العرض المتقدم",
+  "Badges, buttons, descriptions and package highlights":
+    "الشارات والأزرار والأوصاف وأبرز مزايا الباقة",
+  "Request this template": "اطلب هذا القالب",
+  "Short public description of what this package includes.": "وصف عام قصير لما تتضمنه هذه الباقة.",
+  Visible: "ظاهر",
+  Hidden: "مخفي",
   "A clear view of your websites, delivery status, and recent work.":
     "نظرة واضحة على مواقعك وحالة النشر وأحدث الأعمال.",
   "404 · Not found": "404 · غير موجود",
@@ -366,6 +427,8 @@ const remainingArabicText: Readonly<Record<string, string>> = {
   "Creating locale...": "جارٍ إنشاء اللغة…",
   "Creation progress": "تقدم الإنشاء",
   "Choose from this website or upload a new image": "اختر من الموقع أو ارفع صورة جديدة",
+  "Menu item photo": "صورة الصنف",
+  "Add an image": "أضف صورة",
   "Client communication": "التواصل مع العملاء",
   "Comma-separated, up to 30": "مفصولة بفواصل، بحد أقصى 30",
   "Compatible artifact available": "تتوفر حزمة متوافقة",
@@ -550,6 +613,13 @@ export const dashboardArabicCopy: Readonly<Record<string, string>> = {
   ...remainingArabicText,
   "Arabic & English": "العربية والإنجليزية",
   "Light & dark": "الوضع الفاتح والداكن",
+  "Needs review": "يحتاج إلى مراجعة",
+  "One fixed price": "سعر ثابت واحد",
+  "PDF import workflow": "خطوات استيراد ملف PDF",
+  "Record unclear prices, missing images, or corrections still needed.":
+    "سجّل الأسعار غير الواضحة أو الصور المفقودة أو التصحيحات المتبقية.",
+  "Reviewed and confirmed": "تمت المراجعة والتأكيد",
+  "Sizes / variants": "الأحجام والخيارات",
   "Arabic, English &amp; light/dark controls are available inside the preview.":
     "تتوفر عناصر التحكم بالعربية والإنجليزية والوضع الفاتح والداكن داخل المعاينة.",
 };
@@ -563,7 +633,7 @@ export function translateDashboardArabicText(value: string): string {
 }
 
 export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale }) {
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (locale !== "ar") return;
     const root = document.querySelector<HTMLElement>(".appShell");
     if (!root) return;
@@ -586,15 +656,40 @@ export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale })
       node.childNodes.forEach(apply);
     };
 
-    apply(root);
+    const queuedNodes = new Set<Node>();
+    let translationTimer: ReturnType<typeof setTimeout> | undefined;
+    let translationIdleCallback: number | undefined;
+    const flush = (): void => {
+      translationTimer = undefined;
+      translationIdleCallback = undefined;
+      const batch = [...queuedNodes];
+      queuedNodes.clear();
+      batch.forEach(apply);
+    };
+    const schedule = (node: Node): void => {
+      queuedNodes.add(node);
+      if (translationTimer || translationIdleCallback) return;
+      if ("requestIdleCallback" in window) {
+        translationIdleCallback = window.requestIdleCallback(flush, { timeout: 500 });
+        return;
+      }
+      translationTimer = setTimeout(flush, 50);
+    };
+
+    schedule(root);
     const observer = new MutationObserver((records) => {
       records.forEach((record) => {
-        if (record.type === "characterData") apply(record.target);
-        record.addedNodes.forEach(apply);
+        if (record.type === "characterData") schedule(record.target);
+        record.addedNodes.forEach(schedule);
       });
     });
     observer.observe(root, { characterData: true, childList: true, subtree: true });
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (translationTimer) clearTimeout(translationTimer);
+      if (translationIdleCallback) window.cancelIdleCallback(translationIdleCallback);
+      queuedNodes.clear();
+    };
   }, [locale]);
 
   return null;

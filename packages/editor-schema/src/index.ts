@@ -145,6 +145,7 @@ function inferredControl(type: string, enumValues: boolean): EditorControlId {
 
 function compatibleControl(control: EditorControlId, type: string): boolean {
   if (type === "unknown") return true;
+  if (control === "document-import") return type === "object";
   if (control === "group") return type === "object";
   if (control === "list") return type === "array";
   if (control === "boolean") return type === "boolean";

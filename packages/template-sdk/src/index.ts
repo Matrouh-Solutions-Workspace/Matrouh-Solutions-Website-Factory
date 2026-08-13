@@ -123,7 +123,8 @@ export type EditorControlId =
   | "url"
   | "color"
   | "group"
-  | "list";
+  | "list"
+  | "document-import";
 
 export interface PortableCondition {
   readonly path: string;

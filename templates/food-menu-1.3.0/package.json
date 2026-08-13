@@ -1,0 +1,16 @@
+{
+  "name": "@templates/food-menu-v1-3",
+  "version": "1.3.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@factory/template-sdk": "workspace:*",
+    "@templates/shared": "workspace:*",
+    "react": "^19.1.1"
+  }
+}

@@ -22,6 +22,7 @@ export function SiteNavigation({
   items,
   locale,
   localeItems = [],
+  showAppearanceToggle = true,
 }: {
   readonly ariaLabel: string;
   readonly appearanceStorageKey: string;
@@ -29,6 +30,7 @@ export function SiteNavigation({
   readonly items: readonly NavigationItem[];
   readonly locale: string;
   readonly localeItems?: readonly LocaleItem[];
+  readonly showAppearanceToggle?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const navigationId = useId();
@@ -69,11 +71,13 @@ export function SiteNavigation({
             ))}
           </span>
         )}
-        <AppearanceToggle
-          initialAppearance={initialAppearance}
-          locale={locale}
-          storageKey={appearanceStorageKey}
-        />
+        {showAppearanceToggle ? (
+          <AppearanceToggle
+            initialAppearance={initialAppearance}
+            locale={locale}
+            storageKey={appearanceStorageKey}
+          />
+        ) : null}
       </nav>
     </div>
   );

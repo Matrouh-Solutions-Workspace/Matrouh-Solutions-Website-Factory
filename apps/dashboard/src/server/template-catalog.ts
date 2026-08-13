@@ -16,6 +16,25 @@ export interface TemplateCatalogItem {
   readonly description: string;
   readonly category: string;
   readonly lifecycleStatus: string;
+  readonly catalog: {
+    readonly visible: boolean;
+    readonly priceMinor: number;
+    readonly currency: string;
+    readonly billingPeriod: string;
+    readonly featured: boolean;
+    readonly sortOrder: number;
+    readonly category: string;
+    readonly categoryAr: string;
+    readonly badge: string;
+    readonly badgeAr: string;
+    readonly ctaLabel: string;
+    readonly ctaLabelAr: string;
+    readonly ctaHref: string;
+    readonly salesDescription: string;
+    readonly salesDescriptionAr: string;
+    readonly highlights: readonly string[];
+    readonly highlightsAr: readonly string[];
+  };
   readonly versions: readonly {
     readonly version: string;
     readonly lifecycleStatus: string;
@@ -50,6 +69,25 @@ export async function loadTemplateCatalog(): Promise<readonly TemplateCatalogIte
       description: row.description,
       category: row.category,
       lifecycleStatus: row.lifecycleStatus,
+      catalog: {
+        visible: row.catalogVisible ?? true,
+        priceMinor: row.catalogPriceMinor ?? 25000,
+        currency: row.catalogCurrency || "EGP",
+        billingPeriod: row.catalogBillingPeriod || "month",
+        featured: row.catalogFeatured ?? false,
+        sortOrder: row.catalogSortOrder ?? 0,
+        category: row.catalogCategory || row.category,
+        categoryAr: row.catalogCategoryAr ?? "",
+        badge: row.catalogBadge ?? "",
+        badgeAr: row.catalogBadgeAr ?? "",
+        ctaLabel: row.catalogCtaLabel ?? "",
+        ctaLabelAr: row.catalogCtaLabelAr ?? "",
+        ctaHref: row.catalogCtaHref ?? "",
+        salesDescription: row.catalogSalesDescription ?? "",
+        salesDescriptionAr: row.catalogSalesDescriptionAr ?? "",
+        highlights: stringArray(row.catalogHighlightsJson),
+        highlightsAr: stringArray(row.catalogHighlightsArJson),
+      },
       versions: row.versions
         .map((version) => ({
           version: version.templateVersion,
@@ -64,6 +102,11 @@ export async function loadTemplateCatalog(): Promise<readonly TemplateCatalogIte
         ),
     }))
     .filter((row) => row.versions.length > 0);
+}
+
+function stringArray(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string");
 }
 
 export async function loadExactCatalogTemplate(

@@ -16,6 +16,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@factory/content": "workspace:*",
     "@factory/publication-contract": "workspace:*",
     "@factory/template-sdk": "workspace:*"
   }

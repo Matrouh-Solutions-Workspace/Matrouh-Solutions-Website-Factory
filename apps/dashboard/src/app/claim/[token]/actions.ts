@@ -133,16 +133,45 @@ async function assignClaim(
       correlationId: `claim-website:${claim.claimId}`,
     },
     async (transaction) => {
-      const existingClient = await transaction.client.findFirst({
+      const website = await transaction.website.findUnique({
         where: {
-          organizationId: claim.organizationId,
-          contactEmail: { equals: email, mode: "insensitive" },
-          archivedAt: null,
+          organizationId_id: {
+            organizationId: claim.organizationId,
+            id: claim.websiteId,
+          },
+        },
+        select: {
+          clientId: true,
+          client: { select: { id: true, contactEmail: true, archivedAt: true } },
         },
       });
-      const client =
-        existingClient ??
-        (await transaction.client.create({
+      if (!website) throw new Error("WEBSITE_NOT_FOUND");
+
+      let client = website.client;
+      if (client) {
+        if (client.archivedAt) throw new Error("CLIENT_ARCHIVED");
+        if (client.contactEmail && client.contactEmail.toLowerCase() !== email.toLowerCase()) {
+          throw new Error("CLAIM_EMAIL_MUST_MATCH_ASSIGNED_CLIENT");
+        }
+        if (!client.contactEmail) {
+          client = await transaction.client.update({
+            where: {
+              organizationId_id: { organizationId: claim.organizationId, id: client.id },
+            },
+            data: { contactEmail: email },
+            select: { id: true, contactEmail: true, archivedAt: true },
+          });
+        }
+      } else {
+        client = await transaction.client.findFirst({
+          where: {
+            organizationId: claim.organizationId,
+            contactEmail: { equals: email, mode: "insensitive" },
+            archivedAt: null,
+          },
+          select: { id: true, contactEmail: true, archivedAt: true },
+        });
+        client ??= await transaction.client.create({
           data: {
             id: randomUUID(),
             organizationId: claim.organizationId,
@@ -150,7 +179,9 @@ async function assignClaim(
             contactName: displayName,
             contactEmail: email,
           },
-        }));
+          select: { id: true, contactEmail: true, archivedAt: true },
+        });
+      }
       const membership = await transaction.membership.findFirst({
         where: { organizationId: claim.organizationId, userId, status: "active" },
       });
@@ -178,11 +209,13 @@ async function assignClaim(
           },
         });
       }
-      const assigned = await transaction.website.updateMany({
-        where: { organizationId: claim.organizationId, id: claim.websiteId, clientId: null },
-        data: { clientId: client.id, revision: { increment: 1 } },
-      });
-      if (assigned.count !== 1) throw new Error("WEBSITE_ALREADY_CLAIMED");
+      if (!website.clientId) {
+        const assigned = await transaction.website.updateMany({
+          where: { organizationId: claim.organizationId, id: claim.websiteId, clientId: null },
+          data: { clientId: client.id, revision: { increment: 1 } },
+        });
+        if (assigned.count !== 1) throw new Error("WEBSITE_ALREADY_CLAIMED");
+      }
       await transaction.websiteClaim.update({
         where: { id: claim.claimId },
         data: { status: "claimed", claimedByUserId: userId, claimedAt: new Date() },

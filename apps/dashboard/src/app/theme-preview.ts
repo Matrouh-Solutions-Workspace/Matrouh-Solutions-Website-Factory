@@ -12,3 +12,18 @@ export function applyPreviewColors(
   if (colors.text) root.style.setProperty("--text", colors.text);
   if (colors.primary) root.style.setProperty("--primary", colors.primary);
 }
+
+export const THEME_PREVIEW_COLORS_EVENT = "factory:theme-preview-colors";
+
+export interface ThemePreviewColorsEvent {
+  readonly websiteId: string;
+  readonly colors: Record<string, string>;
+}
+
+export function dispatchPreviewColors(websiteId: string, colors: Record<string, string>) {
+  window.dispatchEvent(
+    new CustomEvent<ThemePreviewColorsEvent>(THEME_PREVIEW_COLORS_EVENT, {
+      detail: { websiteId, colors },
+    }),
+  );
+}
