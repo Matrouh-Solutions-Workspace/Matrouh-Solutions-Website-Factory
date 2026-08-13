@@ -47,124 +47,124 @@ export async function createEcommerceStoreAction(formData: FormData): Promise<vo
         correlationId: `ecommerce:create-store:${storeId}`,
       },
       async (transaction) => {
-      const templateVersion = await transaction.ecommerceTemplateVersion.findFirst({
-        where: { id: templateVersionId, status: "ready" },
-        include: { template: true },
-      });
-      if (!templateVersion) throw new Error("ECOMMERCE_TEMPLATE_NOT_READY");
-      await transaction.website.create({
-        data: {
-          id: websiteId,
-          organizationId: context.organization.id,
-          name,
-          kind: "ecommerce",
-          status: "draft",
-          templateId: `ecommerce:${templateVersion.template.slug}`,
-          templateVersion: templateVersion.version,
-          defaultLocale,
-          locales: {
-            create: [
-              {
-                locale: defaultLocale,
-                isDefault: true,
+        const templateVersion = await transaction.ecommerceTemplateVersion.findFirst({
+          where: { id: templateVersionId, status: "ready" },
+          include: { template: true },
+        });
+        if (!templateVersion) throw new Error("ECOMMERCE_TEMPLATE_NOT_READY");
+        await transaction.website.create({
+          data: {
+            id: websiteId,
+            organizationId: context.organization.id,
+            name,
+            kind: "ecommerce",
+            status: "draft",
+            templateId: `ecommerce:${templateVersion.template.slug}`,
+            templateVersion: templateVersion.version,
+            defaultLocale,
+            locales: {
+              create: [
+                {
+                  locale: defaultLocale,
+                  isDefault: true,
+                },
+                {
+                  locale: defaultLocale === "en" ? "ar" : "en",
+                  isDefault: false,
+                  fallbackLocale: defaultLocale,
+                },
+              ],
+            },
+            domains: {
+              create: {
+                id: randomUUID(),
+                hostnameNormalized: hostname,
+                hostnameDisplay: hostname,
+                kind: hostname.endsWith(".localhost") ? "subdomain" : "custom",
+                status: "active",
               },
-              {
-                locale: defaultLocale === "en" ? "ar" : "en",
-                isDefault: false,
-                fallbackLocale: defaultLocale,
-              },
-            ],
-          },
-          domains: {
-            create: {
-              id: randomUUID(),
-              hostnameNormalized: hostname,
-              hostnameDisplay: hostname,
-              kind: hostname.endsWith(".localhost") ? "subdomain" : "custom",
-              status: "active",
             },
           },
-        },
-      });
-      await transaction.ecommerceStore.create({
-        data: {
-          id: storeId,
-          organizationId: context.organization.id,
-          websiteId,
-          ecommerceTemplateVersionId: templateVersion.id,
-          name,
-          slug,
-          defaultLocale,
-          currency,
-          contactPhone,
-          locales: {
-            create: [
-              {
-                locale: "en",
-                isDefault: defaultLocale === "en",
-                storeName: name,
-              },
-              {
-                locale: "ar",
-                isDefault: defaultLocale === "ar",
-                storeName: name,
-              },
-            ],
+        });
+        await transaction.ecommerceStore.create({
+          data: {
+            id: storeId,
+            organizationId: context.organization.id,
+            websiteId,
+            ecommerceTemplateVersionId: templateVersion.id,
+            name,
+            slug,
+            defaultLocale,
+            currency,
+            contactPhone,
+            locales: {
+              create: [
+                {
+                  locale: "en",
+                  isDefault: defaultLocale === "en",
+                  storeName: name,
+                },
+                {
+                  locale: "ar",
+                  isDefault: defaultLocale === "ar",
+                  storeName: name,
+                },
+              ],
+            },
+            paymentMethods: {
+              create: [
+                {
+                  id: randomUUID(),
+                  key: "cash_on_delivery",
+                  displayName: "Cash on delivery",
+                  enabled: true,
+                  position: 0,
+                },
+                {
+                  id: randomUUID(),
+                  key: "bank_transfer",
+                  displayName: "Bank transfer",
+                  enabled: false,
+                  position: 1,
+                },
+              ],
+            },
+            shippingMethods: {
+              create: [
+                {
+                  id: randomUUID(),
+                  key: "standard_delivery",
+                  displayName: "Standard delivery",
+                  enabled: true,
+                  position: 0,
+                  priceMinor: 0,
+                },
+                {
+                  id: randomUUID(),
+                  key: "store_pickup",
+                  displayName: "Store pickup",
+                  enabled: true,
+                  position: 1,
+                  priceMinor: 0,
+                },
+              ],
+            },
           },
-          paymentMethods: {
-            create: [
-              {
-                id: randomUUID(),
-                key: "cash_on_delivery",
-                displayName: "Cash on delivery",
-                enabled: true,
-                position: 0,
-              },
-              {
-                id: randomUUID(),
-                key: "bank_transfer",
-                displayName: "Bank transfer",
-                enabled: false,
-                position: 1,
-              },
-            ],
+        });
+        await transaction.auditEvent.create({
+          data: {
+            id: randomUUID(),
+            organizationId: context.organization.id,
+            actorType: "user",
+            actorId: context.actor.id,
+            action: "ecommerce.store_created",
+            resourceType: "ecommerce_store",
+            resourceId: storeId,
+            correlationId: `ecommerce:create-store:${storeId}`,
+            metadataJson: { websiteId, hostname, templateVersionId },
+            retentionClass: "standard",
           },
-          shippingMethods: {
-            create: [
-              {
-                id: randomUUID(),
-                key: "standard_delivery",
-                displayName: "Standard delivery",
-                enabled: true,
-                position: 0,
-                priceMinor: 0,
-              },
-              {
-                id: randomUUID(),
-                key: "store_pickup",
-                displayName: "Store pickup",
-                enabled: true,
-                position: 1,
-                priceMinor: 0,
-              },
-            ],
-          },
-        },
-      });
-      await transaction.auditEvent.create({
-        data: {
-          id: randomUUID(),
-          organizationId: context.organization.id,
-          actorType: "user",
-          actorId: context.actor.id,
-          action: "ecommerce.store_created",
-          resourceType: "ecommerce_store",
-          resourceId: storeId,
-          correlationId: `ecommerce:create-store:${storeId}`,
-          metadataJson: { websiteId, hostname, templateVersionId },
-          retentionClass: "standard",
-        },
-      });
+        });
       },
     );
   } catch (error) {
@@ -245,7 +245,9 @@ export async function switchEcommerceTemplateAction(formData: FormData): Promise
         select: { websiteId: true },
       });
       await transaction.website.update({
-        where: { organizationId_id: { organizationId: context.organization.id, id: store.websiteId } },
+        where: {
+          organizationId_id: { organizationId: context.organization.id, id: store.websiteId },
+        },
         data: {
           templateId: `ecommerce:${template.template.slug}`,
           templateVersion: template.version,
@@ -411,10 +413,12 @@ export async function createEcommerceCouponAction(formData: FormData): Promise<v
   const { context } = await requireEcommerceStoreContext(storeId);
   const code = normalizeCouponCode(text(formData, "code", 80));
   const type = text(formData, "type", 20) === "percentage" ? "percentage" : "fixed";
-  const value = type === "percentage"
-    ? Math.round(Number(text(formData, "value", 20)) * 100)
-    : amountField(formData, "value");
-  if (!Number.isSafeInteger(value) || value <= 0 || (type === "percentage" && value > 10_000)) return;
+  const value =
+    type === "percentage"
+      ? Math.round(Number(text(formData, "value", 20)) * 100)
+      : amountField(formData, "value");
+  if (!Number.isSafeInteger(value) || value <= 0 || (type === "percentage" && value > 10_000))
+    return;
   await withTenantTransaction(
     dashboardDatabase(),
     tenant(context, `ecommerce:create-coupon:${code}`),
@@ -511,8 +515,19 @@ function optionalAmountField(formData: FormData, key: string): number | null {
 }
 
 function normalizeHostname(value: string): string | null {
-  const normalized = value.trim().toLowerCase().replace(/^https?:\/\//, "").split("/")[0] ?? "";
-  if (normalized.length > 253 || !/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,62}$/.test(normalized)) return null;
+  const normalized =
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .split("/")[0] ?? "";
+  if (
+    normalized.length > 253 ||
+    !/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,62}$/.test(
+      normalized,
+    )
+  )
+    return null;
   return normalized;
 }
 

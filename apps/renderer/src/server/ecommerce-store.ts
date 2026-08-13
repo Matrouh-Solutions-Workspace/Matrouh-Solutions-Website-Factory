@@ -42,11 +42,26 @@ export interface EcommerceStorefrontData {
   readonly branding: Readonly<Record<string, unknown>>;
   readonly settings: Readonly<Record<string, unknown>>;
   readonly presentation: Readonly<Record<string, unknown>>;
-  readonly template: { readonly slug: string; readonly version: string; readonly rendererKey: string };
-  readonly categories: readonly { id: string; slug: string; name: string; description: string; parentId: string | null }[];
+  readonly template: {
+    readonly slug: string;
+    readonly version: string;
+    readonly rendererKey: string;
+  };
+  readonly categories: readonly {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    parentId: string | null;
+  }[];
   readonly products: readonly StorefrontProduct[];
   readonly paymentMethods: readonly { id: string; key: string; name: string }[];
-  readonly shippingMethods: readonly { id: string; key: string; name: string; priceMinor: number }[];
+  readonly shippingMethods: readonly {
+    id: string;
+    key: string;
+    name: string;
+    priceMinor: number;
+  }[];
 }
 
 const shared = globalThis as unknown as { ecommerceRendererDatabase?: DatabaseClient };

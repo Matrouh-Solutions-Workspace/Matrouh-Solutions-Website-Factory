@@ -29,7 +29,10 @@ export async function requireCommerceAdministrator() {
   return context;
 }
 
-export async function requireEcommerceStoreContext(storeId: string, permission = "ecommerce.write") {
+export async function requireEcommerceStoreContext(
+  storeId: string,
+  permission = "ecommerce.write",
+) {
   const context = await requireDashboardContext();
   const administrator = isCommerceAdministrator(context.roleKeys);
   const store = await withTenantTransaction(
@@ -125,9 +128,10 @@ export async function loadEcommerceStores() {
         id: row.id,
         name: row.name,
         status: row.status,
-        owner: row.ownerDisplayName && row.ownerPrimaryEmail
-          ? { displayName: row.ownerDisplayName, primaryEmail: row.ownerPrimaryEmail }
-          : null,
+        owner:
+          row.ownerDisplayName && row.ownerPrimaryEmail
+            ? { displayName: row.ownerDisplayName, primaryEmail: row.ownerPrimaryEmail }
+            : null,
         templateVersion: {
           version: row.templateVersion,
           template: { id: row.templateId, name: row.templateName },
@@ -181,7 +185,9 @@ export async function loadEcommerceStoreDashboard(storeId: string) {
         include: {
           locales: { orderBy: { locale: "asc" } },
           templateVersion: { include: { template: true } },
-          website: { include: { domains: { where: { releasedAt: null }, orderBy: { createdAt: "asc" } } } },
+          website: {
+            include: { domains: { where: { releasedAt: null }, orderBy: { createdAt: "asc" } } },
+          },
           paymentMethods: { orderBy: { position: "asc" } },
           shippingMethods: { orderBy: { position: "asc" } },
         },
@@ -190,49 +196,49 @@ export async function loadEcommerceStoreDashboard(storeId: string) {
       // The development pg adapter may use a single connection, so keep prepared
       // tenant queries sequential inside the transaction.
       const products = await transaction.ecommerceProduct.findMany({
-          where: { organizationId: context.organization.id, storeId, archivedAt: null },
-          orderBy: { updatedAt: "desc" },
-          include: {
-            translations: true,
-            variants: { orderBy: { position: "asc" } },
-            categories: { include: { category: { include: { translations: true } } } },
-          },
-        });
+        where: { organizationId: context.organization.id, storeId, archivedAt: null },
+        orderBy: { updatedAt: "desc" },
+        include: {
+          translations: true,
+          variants: { orderBy: { position: "asc" } },
+          categories: { include: { category: { include: { translations: true } } } },
+        },
+      });
       const categories = await transaction.ecommerceCategory.findMany({
-          where: { organizationId: context.organization.id, storeId },
-          orderBy: [{ position: "asc" }, { createdAt: "asc" }],
-          include: { translations: true, _count: { select: { products: true } } },
-        });
+        where: { organizationId: context.organization.id, storeId },
+        orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+        include: { translations: true, _count: { select: { products: true } } },
+      });
       const orders = await transaction.ecommerceOrder.findMany({
-          where: { organizationId: context.organization.id, storeId },
-          orderBy: { createdAt: "desc" },
-          take: 100,
-          include: { items: true, payments: { include: { paymentMethod: true } } },
-        });
+        where: { organizationId: context.organization.id, storeId },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+        include: { items: true, payments: { include: { paymentMethod: true } } },
+      });
       const customers = await transaction.ecommerceCustomer.findMany({
-          where: { organizationId: context.organization.id, storeId },
-          orderBy: { createdAt: "desc" },
-          take: 100,
-          include: { _count: { select: { orders: true } } },
-        });
+        where: { organizationId: context.organization.id, storeId },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+        include: { _count: { select: { orders: true } } },
+      });
       const coupons = await transaction.ecommerceCoupon.findMany({
-          where: { organizationId: context.organization.id, storeId },
-          orderBy: { code: "asc" },
-        });
+        where: { organizationId: context.organization.id, storeId },
+        orderBy: { code: "asc" },
+      });
       const sales = await transaction.ecommerceOrder.aggregate({
-          where: {
-            organizationId: context.organization.id,
-            storeId,
-            paymentStatus: { in: ["paid", "partially_refunded"] },
-          },
-          _sum: { totalMinor: true },
-          _count: { _all: true },
-        });
+        where: {
+          organizationId: context.organization.id,
+          storeId,
+          paymentStatus: { in: ["paid", "partially_refunded"] },
+        },
+        _sum: { totalMinor: true },
+        _count: { _all: true },
+      });
       const eventCounts = await transaction.ecommerceAnalyticsEvent.groupBy({
-          by: ["eventType"],
-          where: { organizationId: context.organization.id, storeId },
-          _count: { _all: true },
-        });
+        by: ["eventType"],
+        where: { organizationId: context.organization.id, storeId },
+        _count: { _all: true },
+      });
       return { store, products, categories, orders, customers, coupons, sales, eventCounts };
     },
   );

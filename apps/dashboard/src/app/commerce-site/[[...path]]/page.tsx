@@ -18,9 +18,8 @@ export async function generateMetadata({
   const store = await loadPublicEcommerceStorefront(host, (await searchParams).lang);
   if (!store) return { robots: { index: false, follow: false } };
   const { path = [] } = await params;
-  const product = path[0] === "products"
-    ? store.products.find((item) => item.slug === path[1])
-    : undefined;
+  const product =
+    path[0] === "products" ? store.products.find((item) => item.slug === path[1]) : undefined;
   return {
     title: product ? `${product.name} · ${store.name}` : store.name,
     description: product?.shortDescription || store.description,
@@ -28,10 +27,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function StorefrontPage({
-  params,
-  searchParams,
-}: StorefrontPageProperties) {
+export default async function StorefrontPage({ params, searchParams }: StorefrontPageProperties) {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-factory-site-host") ?? requestHeaders.get("host") ?? "";
   const store = await loadPublicEcommerceStorefront(host, (await searchParams).lang);

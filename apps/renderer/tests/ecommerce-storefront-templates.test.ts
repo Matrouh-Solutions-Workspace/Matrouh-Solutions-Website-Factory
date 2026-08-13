@@ -4,11 +4,14 @@ import { describe, expect, it } from "vitest";
 
 describe("commerce storefront templates", () => {
   it("renders distinct fashion, trade hardware, and PC-component experiences", async () => {
-    const source = await readFile(resolve(process.cwd(), "src/app/ecommerce-storefront.tsx"), "utf8");
+    const source = await readFile(
+      resolve(process.cwd(), "src/app/ecommerce-storefront.tsx"),
+      "utf8",
+    );
 
     expect(source).toContain('key.includes("pc")');
     expect(source).toContain('key.includes("hardware")');
-    expect(source).toContain('shopTheme--${kind}');
+    expect(source).toContain("shopTheme--${kind}");
     expect(source).toContain("searchHardware");
     expect(source).toContain("searchFashion");
     expect(source).toContain("compatibility");
@@ -18,14 +21,17 @@ describe("commerce storefront templates", () => {
   });
 
   it("supports product search, visible filters, sorting, RTL, dark mode, and accessible manual sliders", async () => {
-    const source = await readFile(resolve(process.cwd(), "src/app/ecommerce-storefront.tsx"), "utf8");
+    const source = await readFile(
+      resolve(process.cwd(), "src/app/ecommerce-storefront.tsx"),
+      "utf8",
+    );
     const styles = await readFile(resolve(process.cwd(), "public/commerce-storefront.css"), "utf8");
 
     expect(source).toContain('role="search"');
     expect(source).toContain("activeFilters");
     expect(source).toContain('sort === "price-low"');
     expect(source).toContain('dir={rtl ? "rtl" : "ltr"}');
-    expect(source).toContain('data-theme={theme}');
+    expect(source).toContain("data-theme={theme}");
     expect(source).toContain('aria-roledescription="carousel"');
     expect(source).not.toContain("setInterval(");
     expect(styles).toContain("prefers-reduced-motion: reduce");
@@ -34,19 +40,24 @@ describe("commerce storefront templates", () => {
     expect(styles).toContain("var(--font-tajawal)");
     expect(styles).toContain("var(--font-cairo)");
     expect(styles).toContain(".commercePublicRoot > main");
-    expect(styles).toContain(".shopHeader { position: sticky; top: 0; z-index: 40; display: block; margin: 0;");
+    expect(styles).toMatch(
+      /\.shopHeader\s*\{[^}]*position:\s*sticky;[^}]*top:\s*0;[^}]*z-index:\s*40;[^}]*display:\s*block;[^}]*margin:\s*0;/s,
+    );
     expect(styles).toContain("@media (max-width: 980px)");
-    expect(styles).toContain(".shopNav.isOpen { display: grid; }");
+    expect(styles).toMatch(/\.shopNav\.isOpen\s*\{\s*display:\s*grid;\s*\}/s);
   });
 
   it("uses one WhatsApp order flow without advertising an online gateway", async () => {
-    const source = await readFile(resolve(process.cwd(), "src/app/ecommerce-storefront.tsx"), "utf8");
+    const source = await readFile(
+      resolve(process.cwd(), "src/app/ecommerce-storefront.tsx"),
+      "utf8",
+    );
 
     expect(source).toContain("buildWhatsAppOrderUrl");
     expect(source).toContain("Send complete order on WhatsApp");
     expect(source).toContain("إرسال الطلب كاملاً عبر واتساب");
     expect(source).toContain('className="shopPrimaryButton shopWhatsAppButton"');
     expect(source).not.toContain('name="paymentMethodId"');
-    expect(source).not.toContain('copy.payment}</label>');
+    expect(source).not.toContain("copy.payment}</label>");
   });
 });

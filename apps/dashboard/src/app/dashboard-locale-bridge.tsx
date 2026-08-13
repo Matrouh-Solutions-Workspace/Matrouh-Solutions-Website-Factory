@@ -664,6 +664,7 @@ const commerceArabicText: Readonly<Record<string, string>> = {
   "Paid orders": "الطلبات المدفوعة",
   Paused: "متوقف مؤقتًا",
   Payment: "الدفع",
+  "Offline payment and shipping": "الدفع والشحن دون اتصال",
   "Payment and shipping": "الدفع والشحن",
   Percentage: "نسبة مئوية",
   "Presentation template": "قالب العرض",
