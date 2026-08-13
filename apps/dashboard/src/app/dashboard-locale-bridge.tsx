@@ -1,6 +1,3 @@
-"use client";
-
-import { useEffect } from "react";
 import type { UiLocale } from "@/server/ui-locale";
 
 const arabicText: Readonly<Record<string, string>> = {
@@ -606,11 +603,117 @@ const remainingArabicText: Readonly<Record<string, string>> = {
   yearly: "سنوي",
 };
 
+const commerceArabicText: Readonly<Record<string, string>> = {
+  Action: "الإجراء",
+  "Add category": "إضافة فئة",
+  "Add product": "إضافة منتج",
+  "Add to cart": "إضافة إلى السلة",
+  Adjust: "تعديل",
+  "All stores": "كل المتاجر",
+  Analytics: "التحليلات",
+  "Arabic name": "الاسم بالعربية",
+  "Audited adjustments": "تعديلات موثقة",
+  "Back to stores": "العودة إلى المتاجر",
+  Catalog: "الكتالوج",
+  Category: "الفئة",
+  "Checkout started": "بدء إتمام الطلب",
+  "Claim link:": "رابط الاستلام:",
+  Code: "الكود",
+  "Commerce control center": "مركز إدارة المتجر",
+  "Commerce presentation library": "مكتبة واجهات المتاجر",
+  "Commerce sections": "أقسام المتجر",
+  "Commerce templates": "قوالب المتاجر",
+  "Commerce template": "قالب متجر",
+  "Live storefront preview": "معاينة مباشرة للمتجر",
+  Configuration: "الإعدادات",
+  "Contact email": "بريد التواصل",
+  "Contact phone": "هاتف التواصل",
+  Coupons: "كوبونات الخصم",
+  "Create a commerce store": "إنشاء متجر إلكتروني",
+  "Create coupon": "إنشاء كوبون",
+  "Create independent store": "إنشاء متجر مستقل",
+  "Create owner claim link": "إنشاء رابط استلام للمالك",
+  Created: "تاريخ الإنشاء",
+  Currency: "العملة",
+  Customer: "العميل",
+  Customers: "العملاء",
+  Discounts: "الخصومات",
+  "E-commerce": "التجارة الإلكترونية",
+  "E-commerce templates": "قوالب التجارة الإلكترونية",
+  "EGP — Egyptian pound": "جنيه مصري — EGP",
+  "EUR — Euro": "يورو — EUR",
+  "English name": "الاسم بالإنجليزية",
+  "Fixed amount": "قيمة ثابتة",
+  Fulfillment: "تنفيذ الطلبات",
+  Hostname: "اسم النطاق",
+  "Independent commerce platform": "منصة تجارة إلكترونية مستقلة",
+  "Initial stock": "المخزون الأولي",
+  Items: "العناصر",
+  "Low stock": "مخزون منخفض",
+  "Manage store": "إدارة المتجر",
+  "Minimum order": "الحد الأدنى للطلب",
+  "New store": "متجر جديد",
+  "Next order status": "حالة الطلب التالية",
+  "No commerce stores are assigned yet.": "لم يتم تعيين متاجر إلكترونية بعد.",
+  "Open storefront": "فتح واجهة المتجر",
+  Order: "الطلب",
+  Orders: "الطلبات",
+  "Owner email": "بريد المالك",
+  "Owner not claimed": "لم يستلم المالك المتجر بعد",
+  "Page views": "مشاهدات الصفحة",
+  "Paid orders": "الطلبات المدفوعة",
+  Paused: "متوقف مؤقتًا",
+  Payment: "الدفع",
+  "Payment and shipping": "الدفع والشحن",
+  Percentage: "نسبة مئوية",
+  "Presentation template": "قالب العرض",
+  "Presentation-only templates. Store catalog and orders remain unchanged when templates switch.":
+    "قوالب للعرض فقط؛ يبقى كتالوج المتجر وطلباته دون تغيير عند تبديل القالب.",
+  Price: "السعر",
+  Product: "المنتج",
+  "Product views": "مشاهدات المنتج",
+  Products: "المنتجات",
+  "Products and categories": "المنتجات والفئات",
+  "Promotion engine": "نظام العروض",
+  Provisioning: "التجهيز",
+  "Quantity adjustment": "تعديل الكمية",
+  Reason: "السبب",
+  Relationships: "علاقات العملاء",
+  Revenue: "الإيرادات",
+  SKU: "رمز المخزون",
+  SUMMER26: "SUMMER26",
+  "Save store settings": "حفظ إعدادات المتجر",
+  Stock: "المخزون",
+  "Store activity": "نشاط المتجر",
+  "Store name": "اسم المتجر",
+  "Store overview": "نظرة عامة على المتجر",
+  "Store portfolio": "مجموعة المتاجر",
+  "Store settings": "إعدادات المتجر",
+  "Store slug": "مسار المتجر",
+  Stores: "المتاجر",
+  "Stores, catalog, orders, customers, checkout, and analytics.":
+    "المتاجر والكتالوج والطلبات والعملاء والدفع والتحليلات.",
+  "Switch presentation": "تبديل واجهة العرض",
+  "Switching presentation never copies, resets, or deletes products, orders, customers, or settings.":
+    "تبديل الواجهة لا ينسخ المنتجات أو الطلبات أو العملاء أو الإعدادات ولا يعيد ضبطها أو يحذفها.",
+  Total: "الإجمالي",
+  Type: "النوع",
+  "USD — US dollar": "دولار أمريكي — USD",
+  Uncategorized: "غير مصنف",
+  Update: "تحديث",
+  "Usage limit": "حد الاستخدام",
+  Value: "القيمة",
+  Variants: "الخيارات",
+  "market.localhost": "market.localhost",
+  "matrouh-market": "matrouh-market",
+};
+
 export const dashboardArabicCopy: Readonly<Record<string, string>> = {
   ...arabicText,
   ...arabicAttributes,
   ...supplementalArabicText,
   ...remainingArabicText,
+  ...commerceArabicText,
   "Arabic & English": "العربية والإنجليزية",
   "Light & dark": "الوضع الفاتح والداكن",
   "Needs review": "يحتاج إلى مراجعة",
@@ -633,65 +736,10 @@ export function translateDashboardArabicText(value: string): string {
 }
 
 export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale }) {
-  useEffect(() => {
-    if (locale !== "ar") return;
-    const root = document.querySelector<HTMLElement>(".appShell");
-    if (!root) return;
-
-    const apply = (node: Node): void => {
-      if (node.nodeType === Node.TEXT_NODE) {
-        const parent = node.parentElement;
-        if (!parent || ["SCRIPT", "STYLE", "TEXTAREA"].includes(parent.tagName)) return;
-        const translated = translateDashboardArabicText(node.textContent ?? "");
-        if (translated !== node.textContent) node.textContent = translated;
-        return;
-      }
-      if (!(node instanceof HTMLElement)) return;
-      for (const attribute of ["placeholder", "title", "aria-label"] as const) {
-        const value = node.getAttribute(attribute);
-        if (!value) continue;
-        const translated = arabicAttributes[value] ?? translateDashboardArabicText(value);
-        if (translated !== value) node.setAttribute(attribute, translated);
-      }
-      node.childNodes.forEach(apply);
-    };
-
-    const queuedNodes = new Set<Node>();
-    let translationTimer: ReturnType<typeof setTimeout> | undefined;
-    let translationIdleCallback: number | undefined;
-    const flush = (): void => {
-      translationTimer = undefined;
-      translationIdleCallback = undefined;
-      const batch = [...queuedNodes];
-      queuedNodes.clear();
-      batch.forEach(apply);
-    };
-    const schedule = (node: Node): void => {
-      queuedNodes.add(node);
-      if (translationTimer || translationIdleCallback) return;
-      if ("requestIdleCallback" in window) {
-        translationIdleCallback = window.requestIdleCallback(flush, { timeout: 500 });
-        return;
-      }
-      translationTimer = setTimeout(flush, 50);
-    };
-
-    schedule(root);
-    const observer = new MutationObserver((records) => {
-      records.forEach((record) => {
-        if (record.type === "characterData") schedule(record.target);
-        record.addedNodes.forEach(schedule);
-      });
-    });
-    observer.observe(root, { characterData: true, childList: true, subtree: true });
-    return () => {
-      observer.disconnect();
-      if (translationTimer) clearTimeout(translationTimer);
-      if (translationIdleCallback) window.cancelIdleCallback(translationIdleCallback);
-      queuedNodes.clear();
-    };
-  }, [locale]);
-
+  // Locale must be reflected in React's server/client render, never by mutating React-owned DOM.
+  // A prior MutationObserver translated text before nested Client Components hydrated, producing
+  // hydration mismatches such as "Item" being changed to "العنصر".
+  void locale;
   return null;
 }
 

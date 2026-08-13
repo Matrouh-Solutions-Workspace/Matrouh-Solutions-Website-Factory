@@ -65,6 +65,9 @@ importers:
       '@factory/domains':
         specifier: workspace:*
         version: link:../../packages/domains
+      '@factory/ecommerce':
+        specifier: workspace:*
+        version: link:../../packages/ecommerce
       '@factory/media':
         specifier: workspace:*
         version: link:../../packages/media
@@ -138,6 +141,9 @@ importers:
       '@factory/domains':
         specifier: workspace:*
         version: link:../../packages/domains
+      '@factory/ecommerce':
+        specifier: workspace:*
+        version: link:../../packages/ecommerce
       '@factory/publication-compiler':
         specifier: workspace:*
         version: link:../../packages/publication-compiler
@@ -317,6 +323,8 @@ importers:
   packages/domain: {}
 
   packages/domains: {}
+
+  packages/ecommerce: {}
 
   packages/editor-schema:
     dependencies:
@@ -852,6 +860,7 @@ importers:
       react:
         specifier: ^19.1.1
         version: 19.2.8
+
   templates/shared:
     dependencies:
       '@factory/template-sdk':

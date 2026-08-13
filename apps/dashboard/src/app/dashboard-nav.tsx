@@ -9,6 +9,7 @@ import type { UiLocale } from "@/server/ui-locale";
 const itemDefinitions = [
   { key: "overview", href: "/", icon: "overview", group: "workspace" },
   { key: "websites", href: "/websites", icon: "websites", group: "workspace" },
+  { key: "ecommerce", href: "/ecommerce", icon: "templates", group: "commerce" },
   { key: "clients", href: "/clients", icon: "clients", group: "workspace" },
   { key: "billing", href: "/billing", icon: "settings", group: "workspace" },
   { key: "mail", href: "/mail", icon: "mail", group: "workspace" },
@@ -30,6 +31,7 @@ const copy = {
   ar: {
     overview: "نظرة عامة",
     websites: "المواقع",
+    ecommerce: "المتاجر الإلكترونية",
     clients: "العملاء",
     billing: "الفوترة",
     mail: "البريد",
@@ -41,6 +43,7 @@ const copy = {
     plugins: "الإضافات",
     settings: "الإعدادات",
     workspace: "مساحة العمل",
+    commerce: "التجارة الإلكترونية",
     library: "المكتبة",
     optimize: "التحسين",
     system: "النظام",
@@ -50,6 +53,7 @@ const copy = {
   en: {
     overview: "Overview",
     websites: "Websites",
+    ecommerce: "E-commerce",
     clients: "Clients",
     billing: "Billing",
     mail: "Mail",
@@ -61,6 +65,7 @@ const copy = {
     plugins: "Plugins",
     settings: "Settings",
     workspace: "Workspace",
+    commerce: "Commerce",
     library: "Library",
     optimize: "Optimize",
     system: "System",
