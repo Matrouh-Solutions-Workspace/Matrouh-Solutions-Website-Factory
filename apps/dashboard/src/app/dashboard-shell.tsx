@@ -91,7 +91,7 @@ export function DashboardShell({
   }
   if (appPathname.startsWith("/account")) {
     return (
-      <div className="appShell clientShell" dir={locale === "ar" ? "rtl" : "ltr"}>
+      <div className="appShell clientShell" dir={locale === "ar" ? "rtl" : "ltr"} lang={locale}>
         <DashboardLocaleBridge locale={locale} />
         <div className="appFrame">
           <div className="topbar">
@@ -126,7 +126,7 @@ export function DashboardShell({
     ? (text[segment as keyof typeof text] ?? text.websiteFactory)
     : text.overview;
   return (
-    <div className="appShell" dir={locale === "ar" ? "rtl" : "ltr"}>
+    <div className="appShell" dir={locale === "ar" ? "rtl" : "ltr"} lang={locale}>
       <DashboardLocaleBridge locale={locale} />
       <a className="skipLink" href="#dashboard-content">
         {text.skip}

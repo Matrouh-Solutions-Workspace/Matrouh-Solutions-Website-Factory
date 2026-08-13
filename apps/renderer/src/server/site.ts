@@ -20,6 +20,14 @@ const maximumArtifactBytes = 2_000_000;
 const domainCacheTtlMs = 1_000;
 const negativeCacheTtlMs = 3_000;
 
+export interface PublicTemplateCatalogItem {
+  readonly templateId: string;
+  readonly displayName: string;
+  readonly description: string;
+  readonly category: string;
+  readonly version: string;
+}
+
 export interface LoadedSite {
   readonly organizationId: string;
   readonly snapshot: PublicationSnapshot;
@@ -201,6 +209,81 @@ export async function loadCatalogTemplateArtifact(
   });
   return artifact.artifactHash === version.artifact_hash ? artifact : null;
 }
+
+/** The public gallery exposes only validated, released catalog artifacts. */
+export const loadPublicTemplateCatalog = cache(
+  async (): Promise<readonly PublicTemplateCatalogItem[]> => {
+    try {
+      const rows = await database().$queryRaw<
+        {
+          template_id: string;
+          display_name: string;
+          description: string;
+          category: string;
+          template_version: string;
+        }[]
+      >`
+        SELECT entry.template_id, entry.display_name, entry.description, entry.category,
+               version.template_version
+        FROM template_catalog_entries AS entry
+        JOIN LATERAL (
+          SELECT template_version
+          FROM template_versions
+            WHERE template_catalog_entry_id = entry.id
+              AND validation_status = 'valid'
+              AND lifecycle_status IN ('ready', 'deprecated')
+            ORDER BY string_to_array(template_version, '.')::int[] DESC
+            LIMIT 1
+        ) AS version ON TRUE
+        WHERE entry.lifecycle_status IN ('ready', 'deprecated')
+        ORDER BY entry.display_name ASC
+      `;
+      return rows.map((row) => ({
+        templateId: row.template_id,
+        displayName: row.display_name,
+        description: row.description,
+        category: row.category,
+        version: row.template_version,
+      }));
+    } catch (error) {
+      if (rendererConfig.FACTORY_DEPLOYMENT_MODE !== "local") throw error;
+      // Local previews should remain usable while a developer is rebuilding the catalog database.
+      return localTemplateCatalog;
+    }
+  },
+);
+
+const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
+  {
+    templateId: "com.matrouh.clinic",
+    displayName: "Clinic",
+    description: "A calm, connected clinic experience for teams, specialties, and locations.",
+    category: "Healthcare",
+    version: "2.0.0",
+  },
+  {
+    templateId: "com.matrouh.creative",
+    displayName: "Creative portfolio",
+    description: "An editorial portfolio for studios, independent creatives, and selected work.",
+    category: "Portfolio",
+    version: "1.0.0",
+  },
+  {
+    templateId: "com.matrouh.doctor",
+    displayName: "Doctor",
+    description:
+      "A personal medical practice with services, trust signals, and appointment details.",
+    category: "Healthcare",
+    version: "2.0.0",
+  },
+  {
+    templateId: "com.matrouh.engineer",
+    displayName: "Engineer",
+    description: "A precise, project-focused portfolio for engineering and architecture practices.",
+    category: "Portfolio",
+    version: "2.0.0",
+  },
+];
 
 export async function listPublicRoutes(hostname: string): Promise<string[]> {
   const site = await loadSite(hostname);

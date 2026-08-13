@@ -152,7 +152,7 @@ export const engineerSections: readonly SectionDefinition[] = [
           {field(value, "heroMediaId") ? (
             <div className="heroVisual">
               <img
-                alt="Featured engineering project"
+                alt={localeText(context.locale, "Featured engineering project", "مشروع هندسي مميز")}
                 src={context.media.url(field(value, "heroMediaId"))}
               />
             </div>
@@ -160,11 +160,11 @@ export const engineerSections: readonly SectionDefinition[] = [
             <div aria-hidden className="heroVisual">
               <span className="doctorPortraitMark">01</span>
               <strong>
-                Plan.
+                {localeText(context.locale, "Plan.", "خطط.")}
                 <br />
-                Prove.
+                {localeText(context.locale, "Prove.", "تحقق.")}
                 <br />
-                Build.
+                {localeText(context.locale, "Build.", "نفّذ.")}
               </strong>
               <small>{localeText(context.locale, "Engineering with intent", "هندسة هادفة")}</small>
             </div>

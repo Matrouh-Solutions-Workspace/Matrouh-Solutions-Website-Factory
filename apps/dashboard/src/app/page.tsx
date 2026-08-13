@@ -6,6 +6,7 @@ import { Icon, type IconName } from "@/app/icons";
 import { PendingSubmit } from "@/app/pending-submit";
 import { PublicationStatusRefresh } from "@/app/publication-status-refresh";
 import { loadDashboardOverview } from "@/server/overview";
+import { dashboardLocale } from "@/server/dashboard-locale";
 import { isActivePublicationJob } from "@/server/publication-jobs";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,12 @@ async function templateCatalog() {
 }
 
 export default async function Dashboard() {
-  const [templates, overview] = await Promise.all([templateCatalog(), loadDashboardOverview()]);
+  const [templates, overview, locale] = await Promise.all([
+    templateCatalog(),
+    loadDashboardOverview(),
+    dashboardLocale(),
+  ]);
+  const text = dashboardCopy(locale);
   const websites = overview.websites;
   const hasActivePublication = websites.some((website) =>
     isActivePublicationJob(website.latestPublishJob?.status),
@@ -37,25 +43,25 @@ export default async function Dashboard() {
     {
       label: "Websites",
       value: String(overview.stats.websites || websites.length),
-      note: `${overview.stats.publishedWebsites} published`,
+      note: text.publishedCount(overview.stats.publishedWebsites),
       icon: "websites",
     },
     {
       label: "Templates",
       value: String(overview.stats.templates || catalog.length),
-      note: "Validated catalog",
+      note: text.validatedCatalog,
       icon: "templates",
     },
     {
       label: "Domains",
       value: String(overview.stats.activeDomains),
-      note: "Active hostnames",
+      note: text.activeHostnames,
       icon: "domains",
     },
     {
       label: "Publish jobs",
       value: String(overview.stats.activePublishJobs),
-      note: `${overview.stats.failedPublishJobs} failed`,
+      note: text.failedCount(overview.stats.failedPublishJobs),
       icon: "monitoring",
     },
   ] satisfies readonly { label: string; value: string; note: string; icon: IconName }[];
@@ -66,7 +72,7 @@ export default async function Dashboard() {
       <header className="overviewHero">
         <div>
           <div className="overviewMeta">
-            <p className="eyebrow">{headerDate()}</p>
+            <p className="eyebrow">{headerDate(locale)}</p>
             <span>
               <i /> Live workspace
             </span>
@@ -135,17 +141,17 @@ export default async function Dashboard() {
                 <strong>{website.name}</strong>
                 <p>
                   {website.domains[0]?.hostname ?? "No domain"} | {website.templateVersion} |{" "}
-                  {website.pages} page{website.pages === 1 ? "" : "s"}
+                  {text.pageCount(website.pages)}
                 </p>
               </div>
               <div className="statusStack">
-                <span className="status">{website.status}</span>
+                <span className="status">{text.status(website.status)}</span>
                 {website.pendingUpdate && (
                   <span className="jobStatus retryable">pending update</span>
                 )}
                 {website.latestPublishJob && (
                   <span className={`jobStatus ${website.latestPublishJob.status}`}>
-                    {website.latestPublishJob.status}
+                    {text.status(website.latestPublishJob.status)}
                   </span>
                 )}
               </div>
@@ -185,7 +191,7 @@ export default async function Dashboard() {
                     Preview
                   </PendingSubmit>
                 </form>
-                <small>{relativeDate(website.updatedAt)}</small>
+                <small>{relativeDate(website.updatedAt, locale)}</small>
               </div>
             </div>
           ))}
@@ -214,7 +220,7 @@ export default async function Dashboard() {
                   {template.latestVersion ?? "No version"} | {template.category}
                 </p>
               </div>
-              <span>{template.lifecycleStatus}</span>
+              <span>{text.status(template.lifecycleStatus)}</span>
             </div>
           ))}
           {catalog.length === 0 && (
@@ -232,12 +238,12 @@ export default async function Dashboard() {
           {overview.publishJobs.slice(0, 6).map((job) => (
             <div className="jobRow" key={job.id}>
               <div>
-                <strong>{job.status}</strong>
+                <strong>{text.status(job.status)}</strong>
                 <p>
-                  {shortId(job.websiteId)} | attempt {job.attemptCount}/{job.maxAttempts}
+                  {shortId(job.websiteId)} | {text.attempt(job.attemptCount, job.maxAttempts)}
                 </p>
               </div>
-              <small>{relativeDate(job.completedAt ?? job.createdAt)}</small>
+              <small>{relativeDate(job.completedAt ?? job.createdAt, locale)}</small>
             </div>
           ))}
           {overview.publishJobs.length === 0 && (
@@ -264,10 +270,42 @@ export default async function Dashboard() {
   );
 }
 
-function headerDate(): string {
-  return new Intl.DateTimeFormat("en", { weekday: "long", month: "long", day: "numeric" }).format(
-    new Date(),
-  );
+function headerDate(locale: "ar" | "en"): string {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(new Date());
+}
+
+function dashboardCopy(locale: "ar" | "en") {
+  const statusCopy: Readonly<Record<string, string>> =
+    locale === "ar"
+      ? {
+          archived: "مؤرشف",
+          disabled: "معطل",
+          draft: "مسودة",
+          failed: "فشل",
+          published: "منشور",
+          queued: "في الانتظار",
+          ready: "جاهز",
+          retryable: "قابل لإعادة المحاولة",
+          running: "قيد التنفيذ",
+          succeeded: "نجح",
+          unpublished: "غير منشور",
+        }
+      : {};
+  return {
+    activeHostnames: locale === "ar" ? "أسماء النطاقات النشطة" : "Active hostnames",
+    attempt: (count: number, max: number) =>
+      locale === "ar" ? `محاولة ${count}/${max}` : `attempt ${count}/${max}`,
+    failedCount: (count: number) => (locale === "ar" ? `${count} فاشلة` : `${count} failed`),
+    pageCount: (count: number) =>
+      locale === "ar" ? `${count} صفحة` : `${count} page${count === 1 ? "" : "s"}`,
+    publishedCount: (count: number) => (locale === "ar" ? `${count} منشورة` : `${count} published`),
+    status: (value: string) => statusCopy[value] ?? value,
+    validatedCatalog: locale === "ar" ? "كتالوج موثّق" : "Validated catalog",
+  };
 }
 
 function shortId(value: string): string {
@@ -284,8 +322,10 @@ function initials(value: string): string {
     .toUpperCase();
 }
 
-function relativeDate(value: Date): string {
-  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+function relativeDate(value: Date, locale: "ar" | "en"): string {
+  const formatter = new Intl.RelativeTimeFormat(locale === "ar" ? "ar-EG" : "en", {
+    numeric: "auto",
+  });
   const seconds = Math.round((value.getTime() - Date.now()) / 1000);
   const units: readonly [Intl.RelativeTimeFormatUnit, number][] = [
     ["year", 31_536_000],
@@ -297,5 +337,5 @@ function relativeDate(value: Date): string {
   for (const [unit, size] of units) {
     if (Math.abs(seconds) >= size) return formatter.format(Math.round(seconds / size), unit);
   }
-  return "just now";
+  return locale === "ar" ? "الآن" : "just now";
 }

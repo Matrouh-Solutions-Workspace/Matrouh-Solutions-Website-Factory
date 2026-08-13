@@ -4,7 +4,7 @@ import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
 import { SiteNavigation } from "@/app/site-navigation";
 import { loadCatalogPreview } from "@/server/catalog-preview";
-import { localizedPageRoute, textDirection } from "@/server/locale-navigation";
+import { localeLinks, localizedPageRoute, textDirection } from "@/server/locale-navigation";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -21,17 +21,20 @@ interface CatalogPreviewProperties {
 export async function generateMetadata({ params }: CatalogPreviewProperties): Promise<Metadata> {
   const { templateId, version, path = [] } = await params;
   const preview = await safePreview(templateId, version, `/${path.join("/")}`);
+  const text = previewText(preview?.rendered.locale);
   return {
-    title: preview ? `${preview.rendered.title} · Template preview` : "Template preview",
+    title: preview ? `${preview.rendered.title} ${text.titleSuffix}` : text.title,
     robots: { index: false, follow: false, noarchive: true, noimageindex: true },
   };
 }
 
 export default async function CatalogPreviewPage({ params }: CatalogPreviewProperties) {
   const { templateId, version, path = [] } = await params;
-  const preview = await safePreview(templateId, version, `/${path.join("/")}`);
+  const pathname = `/${path.join("/")}`;
+  const preview = await safePreview(templateId, version, pathname);
   if (!preview) notFound();
   const navigation = navigationLinks(preview.snapshot, preview.rendered.locale);
+  const localizedRoutes = localeLinks(preview.snapshot, pathname);
   const settings = preview.snapshot.website.settings;
   const appearance =
     settings &&
@@ -40,6 +43,7 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
     (settings as Record<string, unknown>).colorMode === "dark"
       ? "dark"
       : "light";
+  const text = previewText(preview.rendered.locale);
   return (
     <div
       className="siteRoot"
@@ -54,7 +58,7 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
       lang={preview.rendered.locale}
       style={themeVariables(preview.snapshot.theme)}
     >
-      <aside className="previewBanner">Template preview · default content</aside>
+      <aside className="previewBanner">{text.banner}</aside>
       <header className="siteHeader">
         <a className="siteBrand" href={`${preview.prefix}/`}>
           <img alt="" className="siteBrandMark" src="/matrouh-logo.png" />
@@ -62,19 +66,27 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
         </a>
         <SiteNavigation
           appearanceStorageKey={`factory:appearance:template:${preview.snapshot.template.id}:${preview.snapshot.template.version}`}
-          ariaLabel="Preview navigation"
+          ariaLabel={text.navigation}
           initialAppearance={appearance}
           items={navigation.map((item) => ({ ...item, href: `${preview.prefix}${item.href}` }))}
           locale={preview.rendered.locale}
+          localeItems={localizedRoutes.map((item) => ({
+            current: item.current,
+            direction: textDirection(item.locale),
+            href: `${preview.prefix}${item.href}`,
+            id: item.locale,
+            label: localeLabel(item.locale),
+            locale: item.locale,
+          }))}
         />
       </header>
       <main>{preview.rendered.node}</main>
       <footer className="siteFooter">
         <div>
           <strong>{preview.snapshot.website.name}</strong>
-          <p>Default template content. Create a draft to customize it.</p>
+          <p>{text.footerDescription}</p>
         </div>
-        <nav aria-label="Preview footer navigation">
+        <nav aria-label={text.footerNavigation}>
           {navigation.map((item) => (
             <a href={`${preview.prefix}${item.href}`} key={item.id}>
               {item.label}
@@ -84,6 +96,26 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
       </footer>
     </div>
   );
+}
+
+function previewText(locale: string | undefined) {
+  return locale?.toLowerCase().startsWith("ar")
+    ? {
+        title: "معاينة القالب",
+        titleSuffix: "· معاينة القالب",
+        banner: "معاينة القالب · محتوى افتراضي",
+        navigation: "تنقل المعاينة",
+        footerDescription: "محتوى افتراضي للقالب. أنشئ مسودة لتخصيصه.",
+        footerNavigation: "تنقل تذييل المعاينة",
+      }
+    : {
+        title: "Template preview",
+        titleSuffix: "· Template preview",
+        banner: "Template preview · default content",
+        navigation: "Preview navigation",
+        footerDescription: "Default template content. Create a draft to customize it.",
+        footerNavigation: "Preview footer navigation",
+      };
 }
 
 function premiumTemplateId(templateId: string, version: string): string | undefined {
@@ -123,18 +155,26 @@ function navigationNodeLink(value: unknown, snapshot: PublicationSnapshot, local
   if (!value || typeof value !== "object" || Array.isArray(value)) return [];
   const node = value as Record<string, unknown>;
   if (node.kind !== "page" || typeof node.pageId !== "string") return [];
-  const labels = node.label;
-  const label =
-    labels && typeof labels === "object" && !Array.isArray(labels)
-      ? Object.values(labels).find((item): item is string => typeof item === "string")
-      : undefined;
   return [
     {
       id: typeof node.id === "string" ? node.id : node.pageId,
       href: routeForPage(snapshot, node.pageId, locale),
-      label: label ?? "Page",
+      label: navigationLabel(node.label, locale),
     },
   ];
+}
+
+function navigationLabel(value: unknown, locale: string): string {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "Page";
+  const labels = value as Record<string, unknown>;
+  const label = labels[locale] ?? Object.values(labels).find((item) => typeof item === "string");
+  return typeof label === "string" ? label : "Page";
+}
+
+function localeLabel(locale: string): string {
+  if (locale.toLowerCase().startsWith("ar")) return "العربية";
+  if (locale.toLowerCase().startsWith("en")) return "English";
+  return locale;
 }
 
 function routeForPage(snapshot: PublicationSnapshot, pageId: string, locale: string): string {

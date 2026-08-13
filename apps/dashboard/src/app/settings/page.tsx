@@ -1,12 +1,15 @@
 import { updateOrganizationAction } from "@/app/actions";
 import { PendingSubmit } from "@/app/pending-submit";
 import { loadOrganizationSettings } from "@/server/control-data";
+import { dashboardLocale } from "@/server/dashboard-locale";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const { organization, memberships, auditEvents, actor, roleKeys } =
-    await loadOrganizationSettings();
+  const [{ organization, memberships, auditEvents, actor, roleKeys }, locale] = await Promise.all([
+    loadOrganizationSettings(),
+    dashboardLocale(),
+  ]);
   if (!organization) return null;
   return (
     <>
@@ -67,7 +70,7 @@ export default async function SettingsPage() {
               </div>
               <div>
                 <dt>Last updated</dt>
-                <dd>{formatDate(organization.updatedAt)}</dd>
+                <dd>{formatDate(organization.updatedAt, locale)}</dd>
               </div>
             </dl>
           </section>
@@ -111,7 +114,9 @@ export default async function SettingsPage() {
             </div>
             <div className="publicationActions">
               <small>{event.actorType}</small>
-              <time dateTime={event.occurredAt.toISOString()}>{formatDate(event.occurredAt)}</time>
+              <time dateTime={event.occurredAt.toISOString()}>
+                {formatDate(event.occurredAt, locale)}
+              </time>
             </div>
           </div>
         ))}
@@ -121,6 +126,9 @@ export default async function SettingsPage() {
   );
 }
 
-function formatDate(value: Date): string {
-  return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(value);
+function formatDate(value: Date, locale: "ar" | "en"): string {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(value);
 }

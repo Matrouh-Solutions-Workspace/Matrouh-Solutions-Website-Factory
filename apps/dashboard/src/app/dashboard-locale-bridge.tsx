@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import type { UiLocale } from "@/server/ui-locale";
 
 const arabicText: Readonly<Record<string, string>> = {
@@ -58,6 +58,7 @@ const arabicText: Readonly<Record<string, string>> = {
   Publish: "نشر",
   "Publish changes": "نشر التغييرات",
   "Publish jobs": "مهام النشر",
+  "Publish job:": "مهمة النشر:",
   Published: "منشور",
   "Publishing…": "جارٍ النشر…",
   Retry: "إعادة المحاولة",
@@ -212,6 +213,8 @@ const arabicText: Readonly<Record<string, string>> = {
   Workspace: "مساحة العمل",
   "Active hostnames": "أسماء النطاقات النشطة",
   "All websites": "كل المواقع",
+  "← All websites": "← كل المواقع",
+  Attempt: "محاولة",
   "Arabic only": "العربية فقط",
   "Before activation": "قبل التفعيل",
   "Connected to content": "مرتبطة بالمحتوى",
@@ -260,6 +263,7 @@ const arabicText: Readonly<Record<string, string>> = {
 };
 
 const arabicAttributes: Readonly<Record<string, string>> = {
+  "North Coast Clinic": "عيادة الساحل الشمالي",
   "Search name, email, phone, or domain": "ابحث بالاسم أو البريد أو الهاتف أو النطاق",
   "Search name or domain": "ابحث بالاسم أو النطاق",
   "Use light mode": "استخدم الوضع الفاتح",
@@ -302,6 +306,19 @@ const supplementalArabicText: Readonly<Record<string, string>> = {
   "Remove all content references before deleting.": "أزل كل مراجع المحتوى قبل الحذف.",
   "Refreshes every 15 seconds": "يتحدث كل 15 ثانية",
   "Run pnpm seed:demo to populate the catalog.": "شغّل pnpm seed:demo لملء الكتالوج.",
+  Saved: "تم الحفظ",
+  "Saved successfully": "تم الحفظ بنجاح",
+  "Saving...": "جارٍ الحفظ…",
+  "Saving changes…": "جارٍ حفظ التغييرات…",
+  "Save failed — retry": "تعذّر الحفظ — أعد المحاولة",
+  Undo: "تراجع",
+  Redo: "إعادة",
+  "Unsaved changes": "تغييرات غير محفوظة",
+  "This section changed elsewhere": "تم تعديل هذا القسم في مكان آخر",
+  "Refreshing latest revision...": "جارٍ تحديث أحدث مراجعة…",
+  "Refreshing...": "جارٍ التحديث…",
+  "Refresh & retry": "حدّث وأعد المحاولة",
+  Retry: "أعد المحاولة",
   "Search by filename or narrow the library by folder.":
     "ابحث باسم الملف أو ضيّق المكتبة حسب المجلد.",
   "Serving traffic": "يخدم الزيارات",
@@ -324,26 +341,247 @@ const supplementalArabicText: Readonly<Record<string, string>> = {
     "بياناتك آمنة. أعد المحاولة أو ارجع إلى النظرة العامة.",
 };
 
+/* Route-specific copy that is still rendered by older server components. Keeping
+   it here lets the selected dashboard locale cover every shared route while the
+   individual screens are gradually moved to source-level dictionaries. */
+const remainingArabicText: Readonly<Record<string, string>> = {
+  "A clear view of your websites, delivery status, and recent work.":
+    "نظرة واضحة على مواقعك وحالة النشر وأحدث الأعمال.",
+  "404 · Not found": "404 · غير موجود",
+  "Active members": "الأعضاء النشطون",
+  "Actual template": "القالب الفعلي",
+  "Advanced theme JSON": "JSON متقدم للمظهر",
+  "All websites": "كل المواقع",
+  Author: "المؤلف",
+  "Artifact hash": "بصمة الحزمة",
+  "Available now": "متاح الآن",
+  "Before activation": "قبل التفعيل",
+  Back: "رجوع",
+  "Back to overview": "العودة إلى النظرة العامة",
+  "Brand colors": "ألوان الهوية",
+  "Changing this updates public URL prefixes after the next publish.":
+    "سيؤدي هذا إلى تحديث بادئات روابط الموقع العامة بعد عملية النشر التالية.",
+  "Checking…": "جارٍ الفحص…",
+  "Close image picker": "إغلاق منتقي الصور",
+  "Creating locale...": "جارٍ إنشاء اللغة…",
+  "Creation progress": "تقدم الإنشاء",
+  "Choose from this website or upload a new image": "اختر من الموقع أو ارفع صورة جديدة",
+  "Client communication": "التواصل مع العملاء",
+  "Comma-separated, up to 30": "مفصولة بفواصل، بحد أقصى 30",
+  "Compatible artifact available": "تتوفر حزمة متوافقة",
+  Continue: "متابعة",
+  Compose: "إنشاء رسالة",
+  "Confirm this action": "تأكيد هذا الإجراء",
+  "Content media": "وسائط المحتوى",
+  "Create claim link": "إنشاء رابط مطالبة",
+  "Create, inspect, and publish template-driven websites.":
+    "أنشئ مواقع مبنية على القوالب وراجعها وانشرها.",
+  "Creates a draft": "ينشئ مسودة",
+  "Create your first draft from a validated template.": "أنشئ أول مسودة من قالب تم التحقق منه.",
+  "Default language": "اللغة الافتراضية",
+  "Deleting…": "جارٍ الحذف…",
+  "Deferred by architecture": "مؤجل حسب البنية",
+  "Delete website": "حذف الموقع",
+  "Destructive action": "إجراء لا يمكن التراجع عنه",
+  "Direct uploads": "رفع مباشر",
+  "Disabling…": "جارٍ التعطيل…",
+  "Disconnecting…": "جارٍ فصل الربط…",
+  "Design studio": "استوديو التصميم",
+  "Favicon image": "صورة أيقونة الموقع",
+  Filename: "اسم الملف",
+  "Filter by status": "تصفية حسب الحالة",
+  "General details": "تفاصيل عامة",
+  "Global content": "المحتوى العام",
+  Inventory: "فهرس المواقع",
+  Identity: "الهوية",
+  "It may have moved, been removed, or belong to another workspace.":
+    "ربما تم نقلها أو حذفها أو أنها تتبع مساحة عمل أخرى.",
+  "Jump directly to the tools you use most.": "انتقل مباشرةً إلى الأدوات التي تستخدمها أكثر.",
+  Keywords: "الكلمات المفتاحية",
+  "Media overview": "نظرة عامة على الوسائط",
+  "Media tools": "أدوات الوسائط",
+  Messages: "الرسائل",
+  Monthly: "شهري",
+  "Monitored systems": "الأنظمة المراقبة",
+  "New website": "موقع جديد",
+  "No client": "بدون عميل",
+  "No matching images in this website's folder.": "لا توجد صور مطابقة في مجلد هذا الموقع.",
+  "No owner yet — create a claim link later": "لا يوجد مالك بعد — أنشئ رابط مطالبة لاحقًا",
+  "No subscription yet": "لا يوجد اشتراك بعد",
+  "No websites yet": "لا توجد مواقع بعد",
+  Organization: "المؤسسة",
+  Organize: "تنظيم",
+  Ownership: "الملكية",
+  Pending: "قيد الانتظار",
+  "Plugin pilot": "تجربة الإضافات",
+  "Primary language": "اللغة الأساسية",
+  Publications: "عمليات النشر",
+  "Publish jobs appear here after you press Publish.": "تظهر مهام النشر هنا بعد الضغط على نشر.",
+  "Preparing preview…": "جارٍ إعداد المعاينة…",
+  "Preview footer navigation": "تنقل تذييل المعاينة",
+  "Primary navigation": "التنقل الرئيسي",
+  "Queueing...": "جارٍ وضعه في القائمة…",
+  "Removing…": "جارٍ الإزالة…",
+  "Rolling back…": "جارٍ التراجع…",
+  "Rotating…": "جارٍ التدوير…",
+  "Retry publish": "إعادة محاولة النشر",
+  "Route each hostname to exactly one published website.":
+    "وجّه كل اسم نطاق إلى موقع منشور واحد فقط.",
+  "Routing table": "جدول التوجيه",
+  "Search preview": "معاينة البحث",
+  "Search client, website, or subdomain": "ابحث عن عميل أو موقع أو نطاق فرعي",
+  "Search images…": "ابحث في الصور…",
+  "Search website images": "البحث في صور الموقع",
+  "Search subscriptions": "البحث في الاشتراكات",
+  "Search websites": "البحث في المواقع",
+  "Send a claim link": "إرسال رابط مطالبة",
+  "Setup workflow": "خطوات الإعداد",
+  "Site structure": "هيكل الموقع",
+  "Review & publish": "المراجعة والنشر",
+  "Return to overview": "العودة إلى النظرة العامة",
+  "Template lifecycle": "دورة حياة القالب",
+  "Template ID": "معرّف القالب",
+  "SDK catalog": "كتالوج SDK",
+  "SDK version": "إصدار SDK",
+  Sections: "الأقسام",
+  Systems: "الأنظمة",
+  "Starting worker…": "جارٍ تشغيل العامل…",
+  "The control starts a fresh local worker process.": "يبدأ هذا التحكم عملية عامل محلية جديدة.",
+  "This template supports:": "يدعم هذا القالب:",
+  "Try again": "حاول مرة أخرى",
+  "Unpublishing…": "جارٍ إلغاء النشر…",
+  "Updating default...": "جارٍ تحديث الافتراضي…",
+  "Validating upgrade...": "جارٍ التحقق من الترقية…",
+  Unpublish: "إلغاء النشر",
+  "Upgrade template": "ترقية القالب",
+  "View websites": "عرض المواقع",
+  "Website details": "تفاصيل الموقع",
+  "Website overview": "نظرة عامة على الموقع",
+  "Website setup progress": "تقدم إعداد الموقع",
+  "Working…": "جارٍ التنفيذ…",
+  "Website media": "وسائط الموقع",
+  "View live": "عرض الموقع الحي",
+  "White label this website (hide the Matrouh Solutions watermark)":
+    "استخدم العلامة البيضاء لهذا الموقع (إخفاء علامة Matrouh Solutions المائية)",
+  Yearly: "سنوي",
+  "Your editable draft is ready to be generated.": "مسودتك القابلة للتعديل جاهزة للإنشاء.",
+  "Customize this template": "تخصيص هذا القالب",
+  "Edit history": "سجل التعديلات",
+  "Live template color preview": "معاينة ألوان القالب المباشرة",
+  "Loading dashboard": "جارٍ تحميل لوحة التحكم",
+  "Monthly — one month": "شهري — شهر واحد",
+  "Navigation labels": "تسميات التنقل",
+  "New website image": "صورة الموقع الجديد",
+  "PNG, JPEG, WebP, or GIF. It will be filed under this website.":
+    "PNG أو JPEG أو WebP أو GIF. سيُحفظ في مجلد هذا الموقع.",
+  "Ready to create": "جاهز للإنشاء",
+  "Saving SEO…": "جارٍ حفظ إعدادات SEO…",
+  "Saving settings...": "جارٍ حفظ الإعدادات…",
+  "Saving settings…": "جارٍ حفظ الإعدادات…",
+  "Saving theme...": "جارٍ حفظ المظهر…",
+  "Saving…": "جارٍ الحفظ…",
+  "Scan, organize, and safely reuse assets across your websites.":
+    "افحص الوسائط ونظّمها وأعد استخدامها بأمان عبر مواقعك.",
+  "Template preview pages": "صفحات معاينة القالب",
+  "Upload an image": "رفع صورة",
+  "Yearly — one year": "سنوي — سنة واحدة",
+  "Action destination": "وجهة الإجراء",
+  "Action label": "نص الإجراء",
+  "Add item": "إضافة عنصر",
+  "Add section": "إضافة قسم",
+  Address: "العنوان",
+  Body: "المحتوى",
+  "Care team": "فريق الرعاية",
+  Contact: "التواصل",
+  "Contact controls": "عناصر التحكم في التواصل",
+  "Doctor portrait": "صورة الطبيب",
+  Detail: "التفاصيل",
+  Eyebrow: "عنوان تمهيدي",
+  Headline: "العنوان الرئيسي",
+  Hero: "القسم الرئيسي",
+  "Hero controls": "عناصر التحكم في القسم الرئيسي",
+  Introduction: "المقدمة",
+  Latitude: "خط العرض",
+  Longitude: "خط الطول",
+  "Main navigation": "التنقل الرئيسي",
+  Name: "الاسم",
+  "Move down": "نقل لأسفل",
+  "Move up": "نقل لأعلى",
+  "Opening hours": "ساعات العمل",
+  "Page labels": "تسميات الصفحة",
+  "Page title": "عنوان الصفحة",
+  "Patient stories": "قصص المرضى",
+  Item: "العنصر",
+  Remove: "إزالة",
+  menus: "قوائم",
+  sections: "أقسام",
+  "| revision": "| مراجعة",
+  "Patient testimonials": "آراء المرضى",
+  Phone: "الهاتف",
+  Quote: "الاقتباس",
+  "Section title": "عنوان القسم",
+  Services: "الخدمات",
+  "Services controls": "عناصر التحكم في الخدمات",
+  Slug: "المسار",
+  Title: "العنوان",
+  "Extension boundary": "حدود الإضافة",
+  Governance: "الحوكمة",
+  Menus: "القوائم",
+  attempt: "محاولة",
+  admin: "مدير",
+  client: "عميل",
+  member: "عضو",
+  monthly: "شهري",
+  owner: "مالك",
+  page: "صفحة",
+  pages: "صفحات",
+  ready: "جاهز",
+  recent: "حديث",
+  retained: "محتفظ به",
+  revision: "مراجعة",
+  trial: "تجريبي",
+  yearly: "سنوي",
+};
+
+export const dashboardArabicCopy: Readonly<Record<string, string>> = {
+  ...arabicText,
+  ...arabicAttributes,
+  ...supplementalArabicText,
+  ...remainingArabicText,
+  "Arabic & English": "العربية والإنجليزية",
+  "Light & dark": "الوضع الفاتح والداكن",
+  "Arabic, English &amp; light/dark controls are available inside the preview.":
+    "تتوفر عناصر التحكم بالعربية والإنجليزية والوضع الفاتح والداكن داخل المعاينة.",
+};
+
+export function translateDashboardArabicText(value: string): string {
+  const leadingWhitespace = value.match(/^\s*/)?.[0] ?? "";
+  const trailingWhitespace = value.match(/\s*$/)?.[0] ?? "";
+  const content = value.trim();
+  const translated = dashboardArabicCopy[content] ?? dynamicArabicText(content);
+  return translated ? `${leadingWhitespace}${translated}${trailingWhitespace}` : value;
+}
+
 export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale }) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (locale !== "ar") return;
     const root = document.querySelector<HTMLElement>(".appShell");
     if (!root) return;
 
-    const translate = (value: string): string =>
-      supplementalArabicText[value.trim()] ?? arabicText[value.trim()] ?? value;
     const apply = (node: Node): void => {
       if (node.nodeType === Node.TEXT_NODE) {
         const parent = node.parentElement;
         if (!parent || ["SCRIPT", "STYLE", "TEXTAREA"].includes(parent.tagName)) return;
-        const translated = translate(node.textContent ?? "");
+        const translated = translateDashboardArabicText(node.textContent ?? "");
         if (translated !== node.textContent) node.textContent = translated;
         return;
       }
       if (!(node instanceof HTMLElement)) return;
       for (const attribute of ["placeholder", "title", "aria-label"] as const) {
         const value = node.getAttribute(attribute);
-        if (value && arabicAttributes[value]) node.setAttribute(attribute, arabicAttributes[value]);
+        if (!value) continue;
+        const translated = arabicAttributes[value] ?? translateDashboardArabicText(value);
+        if (translated !== value) node.setAttribute(attribute, translated);
       }
       node.childNodes.forEach(apply);
     };
@@ -360,4 +598,56 @@ export function DashboardLocaleBridge({ locale }: { readonly locale: UiLocale })
   }, [locale]);
 
   return null;
+}
+
+function dynamicArabicText(value: string): string | undefined {
+  const translateSubject = (subject: string): string => dashboardArabicCopy[subject] ?? subject;
+  const publicationJob = value.match(/^Publish job: (.+)$/);
+  if (publicationJob) return `مهمة النشر: ${translateStatus(publicationJob[1] ?? "")}`;
+
+  const attempt = value.match(/^Attempt (\d+\/\d+)$/);
+  if (attempt) return `محاولة ${attempt[1]}`;
+
+  const revision = value.match(/^revision (\d+)$/);
+  if (revision) return `مراجعة ${revision[1]}`;
+
+  const count = value.match(/^(\d+) (menus|sections)$/);
+  if (count) return `${count[1]} ${count[2] === "menus" ? "قوائم" : "أقسام"}`;
+
+  const item = value.match(/^Item (\d+)$/);
+  if (item) return `العنصر ${item[1]}`;
+
+  const select = value.match(/^Select (.+)$/);
+  if (select) return `اختيار ${select[1]}`;
+
+  const move = value.match(/^Move item (\d+) (up|down)$/);
+  if (move) return `نقل العنصر ${move[1]} ${move[2] === "up" ? "لأعلى" : "لأسفل"}`;
+
+  const removeItem = value.match(/^Remove item (\d+)$/);
+  if (removeItem) return `إزالة العنصر ${removeItem[1]}`;
+
+  const colorPicker = value.match(/^(.+) color picker$/);
+  if (colorPicker) return `منتقي لون ${translateSubject(colorPicker[1] ?? "")}`;
+
+  const colorValue = value.match(/^(.+) hex value$/);
+  if (colorValue) return `قيمة اللون السداسية لـ${translateSubject(colorValue[1] ?? "")}`;
+
+  const controls = value.match(/^(.+) controls$/);
+  if (controls) return `عناصر التحكم في ${translateSubject(controls[1] ?? "")}`;
+
+  const unpublish = value.match(
+    /^Unpublish [“"](.+)[”"]\? The current live version will stop receiving public traffic\.$/,
+  );
+  if (unpublish)
+    return `هل تريد إلغاء نشر «${unpublish[1]}»؟ سيتوقف الإصدار الحالي عن استقبال الزيارات العامة.`;
+  const remove = value.match(
+    /^Delete [“"](.+)[”"] permanently\? Its domains, drafts, previews, and publication history will also be deleted\. This cannot be undone\.$/,
+  );
+  if (remove)
+    return `هل تريد حذف «${remove[1]}» نهائيًا؟ سيُحذف أيضًا نطاقاته ومسوداته ومعايناته وسجل نشره. لا يمكن التراجع عن ذلك.`;
+  return undefined;
+}
+
+function translateStatus(value: string): string {
+  return dashboardArabicCopy[value] ?? value;
 }
