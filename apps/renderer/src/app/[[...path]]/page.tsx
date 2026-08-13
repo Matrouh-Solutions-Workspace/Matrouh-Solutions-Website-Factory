@@ -16,13 +16,17 @@ interface PageProperties {
   readonly searchParams: Promise<{ readonly lang?: string }>;
 }
 
-export async function generateMetadata({ params, searchParams }: PageProperties): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PageProperties): Promise<Metadata> {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-factory-site-host") ?? requestHeaders.get("host") ?? "";
   const commerce = await loadEcommerceStorefront(host, (await searchParams).lang);
   if (commerce) {
     const { path = [] } = await params;
-    const product = path[0] === "products" ? commerce.products.find((item) => item.slug === path[1]) : null;
+    const product =
+      path[0] === "products" ? commerce.products.find((item) => item.slug === path[1]) : null;
     return {
       title: product ? `${product.name} · ${commerce.name}` : commerce.name,
       description: product?.shortDescription || commerce.description,

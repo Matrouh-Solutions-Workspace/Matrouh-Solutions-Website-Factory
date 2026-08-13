@@ -71,7 +71,8 @@ export function lineTotal(line: PricedLine): number {
 export function orderSubtotal(lines: readonly PricedLine[]): number {
   return lines.reduce((total, line) => {
     const next = total + lineTotal(line);
-    if (!Number.isSafeInteger(next)) throw new RangeError("order subtotal exceeds safe integer range");
+    if (!Number.isSafeInteger(next))
+      throw new RangeError("order subtotal exceeds safe integer range");
     return next;
   }, 0);
 }
@@ -85,12 +86,24 @@ export function calculateCouponDiscount(
   if (!coupon.enabled) return 0;
   if (coupon.startsAt && coupon.startsAt > now) return 0;
   if (coupon.expiresAt && coupon.expiresAt <= now) return 0;
-  if (coupon.usageLimit !== null && coupon.usageLimit !== undefined && coupon.usedCount >= coupon.usageLimit) return 0;
-  if (coupon.minimumOrderMinor !== null && coupon.minimumOrderMinor !== undefined && subtotal < coupon.minimumOrderMinor) return 0;
-  if (!Number.isSafeInteger(coupon.value) || coupon.value <= 0) throw new RangeError("coupon value must be a positive integer");
+  if (
+    coupon.usageLimit !== null &&
+    coupon.usageLimit !== undefined &&
+    coupon.usedCount >= coupon.usageLimit
+  )
+    return 0;
+  if (
+    coupon.minimumOrderMinor !== null &&
+    coupon.minimumOrderMinor !== undefined &&
+    subtotal < coupon.minimumOrderMinor
+  )
+    return 0;
+  if (!Number.isSafeInteger(coupon.value) || coupon.value <= 0)
+    throw new RangeError("coupon value must be a positive integer");
 
   if (coupon.type === "percentage") {
-    if (coupon.value > 10000) throw new RangeError("percentage coupon uses basis points and cannot exceed 10000");
+    if (coupon.value > 10000)
+      throw new RangeError("percentage coupon uses basis points and cannot exceed 10000");
     return Math.min(subtotal, Math.floor((subtotal * coupon.value) / 10000));
   }
   return Math.min(subtotal, coupon.value);
@@ -101,7 +114,8 @@ export function canTransitionOrder(from: OrderStatus, to: OrderStatus): boolean 
 }
 
 export function assertOrderTransition(from: OrderStatus, to: OrderStatus): void {
-  if (!canTransitionOrder(from, to)) throw new Error(`Invalid order status transition: ${from} -> ${to}`);
+  if (!canTransitionOrder(from, to))
+    throw new Error(`Invalid order status transition: ${from} -> ${to}`);
 }
 
 export function effectivePrice(basePriceMinor: number, salePriceMinor?: number | null): number {
@@ -125,7 +139,8 @@ export function normalizeStoreSlug(value: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 120);
-  if (normalized.length < 2) throw new Error("Store slug must contain at least two letters or numbers");
+  if (normalized.length < 2)
+    throw new Error("Store slug must contain at least two letters or numbers");
   return normalized;
 }
 

@@ -28,34 +28,85 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
       ? ["Graphics cards", "Processors", "Motherboards", "Memory", "Cooling", "Displays"]
       : ["Power tools", "Hand tools", "Cutting", "Fasteners", "Paint", "Storage"];
   const productNames = fashion
-    ? ["Dune linen shirt", "Coastal wrap dress", "Knit polo", "Woven market tote", "Sea glass overshirt", "Leather sandal"]
+    ? [
+        "Dune linen shirt",
+        "Coastal wrap dress",
+        "Knit polo",
+        "Woven market tote",
+        "Sea glass overshirt",
+        "Leather sandal",
+      ]
     : pc
-      ? ["RTX 5070 graphics card", "Ryzen 7 processor", "B850 gaming motherboard", "32GB DDR5 memory", "850W modular PSU", "360mm liquid cooler"]
-      : ["18V impact driver", "Brushless drill kit", "Precision hand-tool set", "Circular saw", "Laser measure", "Modular toolbox"];
+      ? [
+          "RTX 5070 graphics card",
+          "Ryzen 7 processor",
+          "B850 gaming motherboard",
+          "32GB DDR5 memory",
+          "850W modular PSU",
+          "360mm liquid cooler",
+        ]
+      : [
+          "18V impact driver",
+          "Brushless drill kit",
+          "Precision hand-tool set",
+          "Circular saw",
+          "Laser measure",
+          "Modular toolbox",
+        ];
   const categories = categoryNames.map((name, index) => ({
     id: `preview-category-${index}`,
     slug: name.toLowerCase().replaceAll(" ", "-"),
     name,
-    description: fashion ? "A considered seasonal selection" : pc ? "Build-ready components and upgrades" : "Professional workshop essentials",
+    description: fashion
+      ? "A considered seasonal selection"
+      : pc
+        ? "Build-ready components and upgrades"
+        : "Professional workshop essentials",
     parentId: null,
   }));
   const products: StorefrontProduct[] = productNames.map((name, index) => ({
     id: `preview-product-${index}`,
     slug: name.toLowerCase().replaceAll(" ", "-"),
     name,
-    shortDescription: fashion ? "Considered materials with an effortless modern shape." : pc ? "Clear specifications and verified build compatibility." : "Reliable performance with practical technical specifications.",
+    shortDescription: fashion
+      ? "Considered materials with an effortless modern shape."
+      : pc
+        ? "Clear specifications and verified build compatibility."
+        : "Reliable performance with practical technical specifications.",
     description: "Preview catalog product.",
     priceMinor: (index + 2) * (pc ? 329900 : fashion ? 64900 : 119900),
     salePriceMinor: index === 1 ? (index + 2) * (pc ? 289900 : fashion ? 54900 : 99900) : null,
     currency: "EGP",
     sku: `PREVIEW-${index + 1}`,
     attributes: fashion
-      ? { brand: "Nexus Studio", material: "Premium fabric", badge: index === 0 ? "New" : undefined }
+      ? {
+          brand: "Nexus Studio",
+          material: "Premium fabric",
+          badge: index === 0 ? "New" : undefined,
+        }
       : pc
-        ? { brand: ["NVIDIA", "AMD", "ASUS", "Kingston", "Corsair", "Arctic"][index], socket: index === 1 ? "AM5" : undefined, memory: index === 3 ? "DDR5" : undefined, compatibility: "Build verified" }
-        : { brand: "Forge Pro", power: index < 2 ? "18V" : undefined, compatibility: "Trade standard" },
+        ? {
+            brand: ["NVIDIA", "AMD", "ASUS", "Kingston", "Corsair", "Arctic"][index],
+            socket: index === 1 ? "AM5" : undefined,
+            memory: index === 3 ? "DDR5" : undefined,
+            compatibility: "Build verified",
+          }
+        : {
+            brand: "Forge Pro",
+            power: index < 2 ? "18V" : undefined,
+            compatibility: "Trade standard",
+          },
     images: [],
-    variants: [{ id: `preview-variant-${index}`, title: "Standard", sku: `PREVIEW-${index + 1}`, priceMinor: null, salePriceMinor: null, stockQuantity: 12 + index }],
+    variants: [
+      {
+        id: `preview-variant-${index}`,
+        title: "Standard",
+        sku: `PREVIEW-${index + 1}`,
+        priceMinor: null,
+        salePriceMinor: null,
+        stockQuantity: 12 + index,
+      },
+    ],
     categoryIds: [categories[index]?.id ?? categories[0]!.id],
   }));
   return {
@@ -63,8 +114,16 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
     storeId: `preview-${rendererKey}`,
     websiteId: `preview-${rendererKey}`,
     name: fashion ? "Maison Preview" : pc ? "Nexus PC" : "Forge Supply",
-    description: fashion ? "Modern pieces for considered wardrobes." : pc ? "PC components and custom-build expertise." : "Tools and hardware for serious work.",
-    footerText: fashion ? "Quiet style, lasting quality." : pc ? "Better parts. Balanced builds. Expert support." : "Reliable tools, genuine stock, practical support.",
+    description: fashion
+      ? "Modern pieces for considered wardrobes."
+      : pc
+        ? "PC components and custom-build expertise."
+        : "Tools and hardware for serious work.",
+    footerText: fashion
+      ? "Quiet style, lasting quality."
+      : pc
+        ? "Better parts. Balanced builds. Expert support."
+        : "Reliable tools, genuine stock, practical support.",
     locale,
     defaultLocale: "en",
     currency: "EGP",
@@ -84,6 +143,8 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
     categories,
     products,
     paymentMethods: [{ id: "preview-payment", key: "cash_on_delivery", name: "Cash on delivery" }],
-    shippingMethods: [{ id: "preview-shipping", key: "standard", name: "Standard delivery", priceMinor: 7500 }],
+    shippingMethods: [
+      { id: "preview-shipping", key: "standard", name: "Standard delivery", priceMinor: 7500 },
+    ],
   };
 }

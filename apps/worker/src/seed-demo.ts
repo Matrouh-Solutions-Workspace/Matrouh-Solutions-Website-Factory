@@ -184,14 +184,21 @@ try {
     },
   );
 
-  const candidates = process.env.FACTORY_SEED_COMMERCE_ONLY === "true" ? [] : (await discoverTemplates(templatesRoot)).sort(
-    (left, right) =>
-      left.discovery.templateId.localeCompare(right.discovery.templateId) ||
-      left.discovery.templateVersion.localeCompare(right.discovery.templateVersion, undefined, {
-        numeric: true,
-        sensitivity: "base",
-      }),
-  );
+  const candidates =
+    process.env.FACTORY_SEED_COMMERCE_ONLY === "true"
+      ? []
+      : (await discoverTemplates(templatesRoot)).sort(
+          (left, right) =>
+            left.discovery.templateId.localeCompare(right.discovery.templateId) ||
+            left.discovery.templateVersion.localeCompare(
+              right.discovery.templateVersion,
+              undefined,
+              {
+                numeric: true,
+                sensitivity: "base",
+              },
+            ),
+        );
   for (const candidate of candidates) {
     const artifact = await loadTemplateArtifact(candidate);
     const template = artifact.definition;
@@ -753,13 +760,34 @@ try {
         await transaction.websiteLocale.upsert({
           where: { websiteId_locale: { websiteId: commerceWebsiteId, locale } },
           update: { isDefault: locale === "en", fallbackLocale: locale === "en" ? null : "en" },
-          create: { organizationId, websiteId: commerceWebsiteId, locale, isDefault: locale === "en", fallbackLocale: locale === "en" ? null : "en" },
+          create: {
+            organizationId,
+            websiteId: commerceWebsiteId,
+            locale,
+            isDefault: locale === "en",
+            fallbackLocale: locale === "en" ? null : "en",
+          },
         });
       }
       await transaction.domain.upsert({
         where: { id: stableUuid("domain:shop.localhost") },
-        update: { organizationId, websiteId: commerceWebsiteId, hostnameNormalized: "shop.localhost", hostnameDisplay: "shop.localhost", status: "active", releasedAt: null },
-        create: { id: stableUuid("domain:shop.localhost"), organizationId, websiteId: commerceWebsiteId, hostnameNormalized: "shop.localhost", hostnameDisplay: "shop.localhost", kind: "subdomain", status: "active" },
+        update: {
+          organizationId,
+          websiteId: commerceWebsiteId,
+          hostnameNormalized: "shop.localhost",
+          hostnameDisplay: "shop.localhost",
+          status: "active",
+          releasedAt: null,
+        },
+        create: {
+          id: stableUuid("domain:shop.localhost"),
+          organizationId,
+          websiteId: commerceWebsiteId,
+          hostnameNormalized: "shop.localhost",
+          hostnameDisplay: "shop.localhost",
+          kind: "subdomain",
+          status: "active",
+        },
       });
       await transaction.ecommerceStore.upsert({
         where: { organizationId_id: { organizationId, id: commerceStoreId } },
@@ -801,8 +829,14 @@ try {
             organizationId,
             isDefault: locale === "en",
             storeName: locale === "ar" ? "ميزون مطروح" : "Maison Matrouh",
-            description: locale === "ar" ? "قطع عصرية مختارة بعناية لحياة الساحل والمدينة." : "Considered modern pieces for coastal days and city nights.",
-            footerText: locale === "ar" ? "أناقة هادئة، وجودة تدوم، وخدمة محلية." : "Quiet style, lasting quality, and local service.",
+            description:
+              locale === "ar"
+                ? "قطع عصرية مختارة بعناية لحياة الساحل والمدينة."
+                : "Considered modern pieces for coastal days and city nights.",
+            footerText:
+              locale === "ar"
+                ? "أناقة هادئة، وجودة تدوم، وخدمة محلية."
+                : "Quiet style, lasting quality, and local service.",
           },
           create: {
             organizationId,
@@ -810,18 +844,60 @@ try {
             locale,
             isDefault: locale === "en",
             storeName: locale === "ar" ? "ميزون مطروح" : "Maison Matrouh",
-            description: locale === "ar" ? "قطع عصرية مختارة بعناية لحياة الساحل والمدينة." : "Considered modern pieces for coastal days and city nights.",
-            footerText: locale === "ar" ? "أناقة هادئة، وجودة تدوم، وخدمة محلية." : "Quiet style, lasting quality, and local service.",
+            description:
+              locale === "ar"
+                ? "قطع عصرية مختارة بعناية لحياة الساحل والمدينة."
+                : "Considered modern pieces for coastal days and city nights.",
+            footerText:
+              locale === "ar"
+                ? "أناقة هادئة، وجودة تدوم، وخدمة محلية."
+                : "Quiet style, lasting quality, and local service.",
           },
         });
       }
       const demoCategories = [
-        { key: "women", en: "Women", ar: "نساء", enDescription: "Refined everyday layers", arDescription: "طبقات يومية راقية" },
-        { key: "men", en: "Men", ar: "رجال", enDescription: "Relaxed modern tailoring", arDescription: "تفصيل عصري مريح" },
-        { key: "accessories", en: "Accessories", ar: "إكسسوارات", enDescription: "Finishing details", arDescription: "تفاصيل تكمل الإطلالة" },
-        { key: "summer-edit", en: "Summer edit", ar: "تشكيلة الصيف", enDescription: "Made for warm days", arDescription: "مصممة للأيام الدافئة" },
-        { key: "occasion", en: "Occasion", ar: "المناسبات", enDescription: "Modern evening pieces", arDescription: "قطع عصرية للمساء" },
-        { key: "essentials", en: "Essentials", ar: "الأساسيات", enDescription: "The foundation of a wardrobe", arDescription: "أساس خزانة الملابس" },
+        {
+          key: "women",
+          en: "Women",
+          ar: "نساء",
+          enDescription: "Refined everyday layers",
+          arDescription: "طبقات يومية راقية",
+        },
+        {
+          key: "men",
+          en: "Men",
+          ar: "رجال",
+          enDescription: "Relaxed modern tailoring",
+          arDescription: "تفصيل عصري مريح",
+        },
+        {
+          key: "accessories",
+          en: "Accessories",
+          ar: "إكسسوارات",
+          enDescription: "Finishing details",
+          arDescription: "تفاصيل تكمل الإطلالة",
+        },
+        {
+          key: "summer-edit",
+          en: "Summer edit",
+          ar: "تشكيلة الصيف",
+          enDescription: "Made for warm days",
+          arDescription: "مصممة للأيام الدافئة",
+        },
+        {
+          key: "occasion",
+          en: "Occasion",
+          ar: "المناسبات",
+          enDescription: "Modern evening pieces",
+          arDescription: "قطع عصرية للمساء",
+        },
+        {
+          key: "essentials",
+          en: "Essentials",
+          ar: "الأساسيات",
+          enDescription: "The foundation of a wardrobe",
+          arDescription: "أساس خزانة الملابس",
+        },
       ] as const;
       const categoryIds = new Map<string, string>();
       for (const [position, item] of demoCategories.entries()) {
@@ -830,7 +906,13 @@ try {
         await transaction.ecommerceCategory.upsert({
           where: { storeId_slug: { storeId: commerceStoreId, slug: item.key } },
           update: { visible: true, position },
-          create: { id: categoryId, organizationId, storeId: commerceStoreId, slug: item.key, position },
+          create: {
+            id: categoryId,
+            organizationId,
+            storeId: commerceStoreId,
+            slug: item.key,
+            position,
+          },
         });
         for (const locale of ["en", "ar"] as const) {
           const name = locale === "ar" ? item.ar : item.en;
@@ -847,14 +929,176 @@ try {
         data: { visible: false },
       });
       const demoProducts = [
-        { key: "sand-linen-shirt", en: "Sand linen shirt", ar: "قميص كتان رملي", shortEn: "Airy European linen with a relaxed, structured cut.", shortAr: "كتان أوروبي خفيف بقصة مريحة ومنظمة.", descriptionEn: "A breathable long-sleeve shirt cut from washed linen, finished with shell-effect buttons and a softly structured collar.", descriptionAr: "قميص طويل الأكمام من الكتان المغسول بأزرار لؤلؤية وياقة ناعمة ومنظمة.", price: 189900, sale: null, sku: "MM-LIN-01", stock: 18, category: "men", attributes: { brand: "Maison Matrouh", material: "100% linen", color: "Sand", fit: "Relaxed", badge: "Bestseller", featured: true } },
-        { key: "dune-wrap-dress", en: "Dune wrap dress", ar: "فستان ديون ملفوف", shortEn: "A fluid midi silhouette for effortless day-to-evening dressing.", shortAr: "قصة ميدي انسيابية تناسب النهار والمساء بسهولة.", descriptionEn: "A fluid wrap dress with an adjustable waist, softly gathered shoulder, and breathable matte finish.", descriptionAr: "فستان ملفوف انسيابي بخصر قابل للتعديل وكتف مجمع بلطف ولمسة نهائية مريحة.", price: 279900, sale: 239900, sku: "MM-DRS-02", stock: 9, category: "women", attributes: { brand: "Noura Studio", material: "Tencel blend", color: "Terracotta", fit: "Regular", badge: "Limited", featured: true } },
-        { key: "coast-knit-polo", en: "Coast knit polo", ar: "بولو كوست محبوك", shortEn: "Textured cotton knit with a clean open collar.", shortAr: "نسيج قطني بارز بياقة مفتوحة نظيفة.", descriptionEn: "A mid-weight cotton knit polo designed with a straight hem and refined open neckline.", descriptionAr: "قميص بولو قطني متوسط الوزن بحافة مستقيمة وياقة مفتوحة راقية.", price: 169900, sale: null, sku: "MM-POL-03", stock: 14, category: "men", attributes: { brand: "Harbor", material: "Cotton knit", color: "Ecru", fit: "Regular", featured: true } },
-        { key: "woven-market-tote", en: "Woven market tote", ar: "حقيبة سوق منسوجة", shortEn: "A generous hand-finished tote for city and coast.", shortAr: "حقيبة واسعة مصنوعة يدوياً للمدينة والساحل.", descriptionEn: "A structured natural-fiber tote with reinforced handles and a removable cotton pouch.", descriptionAr: "حقيبة منظمة من ألياف طبيعية بمقابض معززة وجراب قطني قابل للإزالة.", price: 119900, sale: 99900, sku: "MM-BAG-04", stock: 22, category: "accessories", attributes: { brand: "Siwa Made", material: "Palm fiber", color: "Natural", badge: "Artisan" } },
-        { key: "sea-glass-overshirt", en: "Sea glass overshirt", ar: "قميص سي جلاس خارجي", shortEn: "A soft utility layer in garment-dyed cotton twill.", shortAr: "طبقة عملية ناعمة من القطن المصبوغ بعد الخياطة.", descriptionEn: "A versatile cotton-twill overshirt with patch pockets, tonal buttons, and an easy unisex shape.", descriptionAr: "قميص خارجي متعدد الاستخدامات بجيوب خارجية وأزرار متناغمة وقصة للجميع.", price: 219900, sale: null, sku: "MM-OVR-05", stock: 7, category: "summer-edit", attributes: { brand: "Maison Matrouh", material: "Cotton twill", color: "Sea glass", fit: "Oversized" } },
-        { key: "midnight-column-dress", en: "Midnight column dress", ar: "فستان ميدنايت مستقيم", shortEn: "Minimal evening tailoring with a sculpted neckline.", shortAr: "تفصيل مسائي بسيط بياقة منحوتة.", descriptionEn: "A clean column silhouette with subtle stretch, a sculpted neckline, and a back vent for movement.", descriptionAr: "قصة مستقيمة نظيفة بمرونة خفيفة وياقة منحوتة وفتحة خلفية للحركة.", price: 349900, sale: null, sku: "MM-EVE-06", stock: 5, category: "occasion", attributes: { brand: "Noura Studio", material: "Crepe", color: "Midnight", fit: "Column", badge: "New" } },
-        { key: "everyday-rib-tank", en: "Everyday rib tank", ar: "توب يومي مضلع", shortEn: "A compact cotton foundation with a flattering neckline.", shortAr: "قطعة قطنية أساسية متماسكة بياقة أنيقة.", descriptionEn: "A close-fitting rib tank in soft compact cotton, designed to layer cleanly or wear alone.", descriptionAr: "توب مضلع بقصة قريبة من الجسم من القطن الناعم، مناسب للطبقات أو بمفرده.", price: 69900, sale: null, sku: "MM-BAS-07", stock: 31, category: "essentials", attributes: { brand: "Base Form", material: "Rib cotton", color: "Ivory", fit: "Slim" } },
-        { key: "leather-loop-sandal", en: "Leather loop sandal", ar: "صندل جلدي بحلقات", shortEn: "Hand-finished leather with a cushioned everyday sole.", shortAr: "جلد مشطب يدوياً بنعل مريح للاستخدام اليومي.", descriptionEn: "A minimal slip-on sandal made by local artisans with a cushioned footbed and vegetable-tanned leather.", descriptionAr: "صندل بسيط سهل الارتداء من صنع حرفيين محليين بفرش مبطن وجلد مدبوغ نباتياً.", price: 139900, sale: 119900, sku: "MM-SND-08", stock: 12, category: "accessories", attributes: { brand: "Marsa Craft", material: "Leather", color: "Cognac", badge: "Handmade" } },
+        {
+          key: "sand-linen-shirt",
+          en: "Sand linen shirt",
+          ar: "قميص كتان رملي",
+          shortEn: "Airy European linen with a relaxed, structured cut.",
+          shortAr: "كتان أوروبي خفيف بقصة مريحة ومنظمة.",
+          descriptionEn:
+            "A breathable long-sleeve shirt cut from washed linen, finished with shell-effect buttons and a softly structured collar.",
+          descriptionAr: "قميص طويل الأكمام من الكتان المغسول بأزرار لؤلؤية وياقة ناعمة ومنظمة.",
+          price: 189900,
+          sale: null,
+          sku: "MM-LIN-01",
+          stock: 18,
+          category: "men",
+          attributes: {
+            brand: "Maison Matrouh",
+            material: "100% linen",
+            color: "Sand",
+            fit: "Relaxed",
+            badge: "Bestseller",
+            featured: true,
+          },
+        },
+        {
+          key: "dune-wrap-dress",
+          en: "Dune wrap dress",
+          ar: "فستان ديون ملفوف",
+          shortEn: "A fluid midi silhouette for effortless day-to-evening dressing.",
+          shortAr: "قصة ميدي انسيابية تناسب النهار والمساء بسهولة.",
+          descriptionEn:
+            "A fluid wrap dress with an adjustable waist, softly gathered shoulder, and breathable matte finish.",
+          descriptionAr: "فستان ملفوف انسيابي بخصر قابل للتعديل وكتف مجمع بلطف ولمسة نهائية مريحة.",
+          price: 279900,
+          sale: 239900,
+          sku: "MM-DRS-02",
+          stock: 9,
+          category: "women",
+          attributes: {
+            brand: "Noura Studio",
+            material: "Tencel blend",
+            color: "Terracotta",
+            fit: "Regular",
+            badge: "Limited",
+            featured: true,
+          },
+        },
+        {
+          key: "coast-knit-polo",
+          en: "Coast knit polo",
+          ar: "بولو كوست محبوك",
+          shortEn: "Textured cotton knit with a clean open collar.",
+          shortAr: "نسيج قطني بارز بياقة مفتوحة نظيفة.",
+          descriptionEn:
+            "A mid-weight cotton knit polo designed with a straight hem and refined open neckline.",
+          descriptionAr: "قميص بولو قطني متوسط الوزن بحافة مستقيمة وياقة مفتوحة راقية.",
+          price: 169900,
+          sale: null,
+          sku: "MM-POL-03",
+          stock: 14,
+          category: "men",
+          attributes: {
+            brand: "Harbor",
+            material: "Cotton knit",
+            color: "Ecru",
+            fit: "Regular",
+            featured: true,
+          },
+        },
+        {
+          key: "woven-market-tote",
+          en: "Woven market tote",
+          ar: "حقيبة سوق منسوجة",
+          shortEn: "A generous hand-finished tote for city and coast.",
+          shortAr: "حقيبة واسعة مصنوعة يدوياً للمدينة والساحل.",
+          descriptionEn:
+            "A structured natural-fiber tote with reinforced handles and a removable cotton pouch.",
+          descriptionAr: "حقيبة منظمة من ألياف طبيعية بمقابض معززة وجراب قطني قابل للإزالة.",
+          price: 119900,
+          sale: 99900,
+          sku: "MM-BAG-04",
+          stock: 22,
+          category: "accessories",
+          attributes: {
+            brand: "Siwa Made",
+            material: "Palm fiber",
+            color: "Natural",
+            badge: "Artisan",
+          },
+        },
+        {
+          key: "sea-glass-overshirt",
+          en: "Sea glass overshirt",
+          ar: "قميص سي جلاس خارجي",
+          shortEn: "A soft utility layer in garment-dyed cotton twill.",
+          shortAr: "طبقة عملية ناعمة من القطن المصبوغ بعد الخياطة.",
+          descriptionEn:
+            "A versatile cotton-twill overshirt with patch pockets, tonal buttons, and an easy unisex shape.",
+          descriptionAr: "قميص خارجي متعدد الاستخدامات بجيوب خارجية وأزرار متناغمة وقصة للجميع.",
+          price: 219900,
+          sale: null,
+          sku: "MM-OVR-05",
+          stock: 7,
+          category: "summer-edit",
+          attributes: {
+            brand: "Maison Matrouh",
+            material: "Cotton twill",
+            color: "Sea glass",
+            fit: "Oversized",
+          },
+        },
+        {
+          key: "midnight-column-dress",
+          en: "Midnight column dress",
+          ar: "فستان ميدنايت مستقيم",
+          shortEn: "Minimal evening tailoring with a sculpted neckline.",
+          shortAr: "تفصيل مسائي بسيط بياقة منحوتة.",
+          descriptionEn:
+            "A clean column silhouette with subtle stretch, a sculpted neckline, and a back vent for movement.",
+          descriptionAr: "قصة مستقيمة نظيفة بمرونة خفيفة وياقة منحوتة وفتحة خلفية للحركة.",
+          price: 349900,
+          sale: null,
+          sku: "MM-EVE-06",
+          stock: 5,
+          category: "occasion",
+          attributes: {
+            brand: "Noura Studio",
+            material: "Crepe",
+            color: "Midnight",
+            fit: "Column",
+            badge: "New",
+          },
+        },
+        {
+          key: "everyday-rib-tank",
+          en: "Everyday rib tank",
+          ar: "توب يومي مضلع",
+          shortEn: "A compact cotton foundation with a flattering neckline.",
+          shortAr: "قطعة قطنية أساسية متماسكة بياقة أنيقة.",
+          descriptionEn:
+            "A close-fitting rib tank in soft compact cotton, designed to layer cleanly or wear alone.",
+          descriptionAr: "توب مضلع بقصة قريبة من الجسم من القطن الناعم، مناسب للطبقات أو بمفرده.",
+          price: 69900,
+          sale: null,
+          sku: "MM-BAS-07",
+          stock: 31,
+          category: "essentials",
+          attributes: { brand: "Base Form", material: "Rib cotton", color: "Ivory", fit: "Slim" },
+        },
+        {
+          key: "leather-loop-sandal",
+          en: "Leather loop sandal",
+          ar: "صندل جلدي بحلقات",
+          shortEn: "Hand-finished leather with a cushioned everyday sole.",
+          shortAr: "جلد مشطب يدوياً بنعل مريح للاستخدام اليومي.",
+          descriptionEn:
+            "A minimal slip-on sandal made by local artisans with a cushioned footbed and vegetable-tanned leather.",
+          descriptionAr:
+            "صندل بسيط سهل الارتداء من صنع حرفيين محليين بفرش مبطن وجلد مدبوغ نباتياً.",
+          price: 139900,
+          sale: 119900,
+          sku: "MM-SND-08",
+          stock: 12,
+          category: "accessories",
+          attributes: {
+            brand: "Marsa Craft",
+            material: "Leather",
+            color: "Cognac",
+            badge: "Handmade",
+          },
+        },
       ] as const;
       const activeDemoSlugs = demoProducts.map((item) => item.key);
       await transaction.ecommerceProduct.updateMany({
@@ -865,21 +1109,59 @@ try {
         const productId = stableUuid(`ecommerce-product:matrouh-market:${item.key}`);
         const product = await transaction.ecommerceProduct.upsert({
           where: { storeId_slug: { storeId: commerceStoreId, slug: item.key } },
-          update: { status: "published", visibility: "public", basePriceMinor: item.price, salePriceMinor: item.sale, currency: "EGP", sku: item.sku, attributesJson: jsonInput(item.attributes), archivedAt: null },
-          create: { id: productId, organizationId, storeId: commerceStoreId, slug: item.key, status: "published", visibility: "public", basePriceMinor: item.price, salePriceMinor: item.sale, currency: "EGP", sku: item.sku, attributesJson: jsonInput(item.attributes) },
+          update: {
+            status: "published",
+            visibility: "public",
+            basePriceMinor: item.price,
+            salePriceMinor: item.sale,
+            currency: "EGP",
+            sku: item.sku,
+            attributesJson: jsonInput(item.attributes),
+            archivedAt: null,
+          },
+          create: {
+            id: productId,
+            organizationId,
+            storeId: commerceStoreId,
+            slug: item.key,
+            status: "published",
+            visibility: "public",
+            basePriceMinor: item.price,
+            salePriceMinor: item.sale,
+            currency: "EGP",
+            sku: item.sku,
+            attributesJson: jsonInput(item.attributes),
+          },
         });
         for (const locale of ["en", "ar"] as const) {
           const name = locale === "ar" ? item.ar : item.en;
           await transaction.ecommerceProductTranslation.upsert({
             where: { productId_locale: { productId: product.id, locale } },
-            update: { name, shortDescription: locale === "ar" ? item.shortAr : item.shortEn, description: locale === "ar" ? item.descriptionAr : item.descriptionEn },
-            create: { productId: product.id, locale, name, shortDescription: locale === "ar" ? item.shortAr : item.shortEn, description: locale === "ar" ? item.descriptionAr : item.descriptionEn },
+            update: {
+              name,
+              shortDescription: locale === "ar" ? item.shortAr : item.shortEn,
+              description: locale === "ar" ? item.descriptionAr : item.descriptionEn,
+            },
+            create: {
+              productId: product.id,
+              locale,
+              name,
+              shortDescription: locale === "ar" ? item.shortAr : item.shortEn,
+              description: locale === "ar" ? item.descriptionAr : item.descriptionEn,
+            },
           });
         }
         await transaction.ecommerceProductVariant.upsert({
           where: { productId_sku: { productId: product.id, sku: item.sku } },
           update: { title: "Standard", stockQuantity: item.stock, active: true },
-          create: { id: stableUuid(`ecommerce-variant:${item.key}`), organizationId, productId: product.id, sku: item.sku, title: "Standard", stockQuantity: item.stock },
+          create: {
+            id: stableUuid(`ecommerce-variant:${item.key}`),
+            organizationId,
+            productId: product.id,
+            sku: item.sku,
+            title: "Standard",
+            stockQuantity: item.stock,
+          },
         });
         const categoryId = categoryIds.get(item.category);
         if (!categoryId) throw new Error(`ECOMMERCE_DEMO_CATEGORY_MISSING:${item.category}`);
@@ -896,7 +1178,14 @@ try {
         await transaction.ecommercePaymentMethod.upsert({
           where: { storeId_key: { storeId: commerceStoreId, key: method.key } },
           update: { displayName: method.name, enabled: method.enabled },
-          create: { id: stableUuid(`ecommerce-payment:${method.key}`), organizationId, storeId: commerceStoreId, key: method.key, displayName: method.name, enabled: method.enabled },
+          create: {
+            id: stableUuid(`ecommerce-payment:${method.key}`),
+            organizationId,
+            storeId: commerceStoreId,
+            key: method.key,
+            displayName: method.name,
+            enabled: method.enabled,
+          },
         });
       }
       for (const method of [
@@ -906,7 +1195,15 @@ try {
         await transaction.ecommerceShippingMethod.upsert({
           where: { storeId_key: { storeId: commerceStoreId, key: method.key } },
           update: { displayName: method.name, enabled: true, priceMinor: method.price },
-          create: { id: stableUuid(`ecommerce-shipping:${method.key}`), organizationId, storeId: commerceStoreId, key: method.key, displayName: method.name, enabled: true, priceMinor: method.price },
+          create: {
+            id: stableUuid(`ecommerce-shipping:${method.key}`),
+            organizationId,
+            storeId: commerceStoreId,
+            key: method.key,
+            displayName: method.name,
+            enabled: true,
+            priceMinor: method.price,
+          },
         });
       }
     },
@@ -925,83 +1222,476 @@ try {
     async (transaction) => {
       await transaction.website.upsert({
         where: { organizationId_id: { organizationId, id: hardwareWebsiteId } },
-        update: { clientId: demoClientId, name: "Matrouh Forge", kind: "ecommerce", status: "published", templateId: `ecommerce:${hardwareTemplate.template.slug}`, templateVersion: hardwareTemplate.version, defaultLocale: "en" },
-        create: { id: hardwareWebsiteId, organizationId, clientId: demoClientId, name: "Matrouh Forge", kind: "ecommerce", status: "published", templateId: `ecommerce:${hardwareTemplate.template.slug}`, templateVersion: hardwareTemplate.version, defaultLocale: "en" },
+        update: {
+          clientId: demoClientId,
+          name: "Matrouh Forge",
+          kind: "ecommerce",
+          status: "published",
+          templateId: `ecommerce:${hardwareTemplate.template.slug}`,
+          templateVersion: hardwareTemplate.version,
+          defaultLocale: "en",
+        },
+        create: {
+          id: hardwareWebsiteId,
+          organizationId,
+          clientId: demoClientId,
+          name: "Matrouh Forge",
+          kind: "ecommerce",
+          status: "published",
+          templateId: `ecommerce:${hardwareTemplate.template.slug}`,
+          templateVersion: hardwareTemplate.version,
+          defaultLocale: "en",
+        },
       });
       for (const locale of ["en", "ar"] as const) {
         await transaction.websiteLocale.upsert({
           where: { websiteId_locale: { websiteId: hardwareWebsiteId, locale } },
           update: { isDefault: locale === "en", fallbackLocale: locale === "en" ? null : "en" },
-          create: { organizationId, websiteId: hardwareWebsiteId, locale, isDefault: locale === "en", fallbackLocale: locale === "en" ? null : "en" },
+          create: {
+            organizationId,
+            websiteId: hardwareWebsiteId,
+            locale,
+            isDefault: locale === "en",
+            fallbackLocale: locale === "en" ? null : "en",
+          },
         });
       }
       await transaction.domain.upsert({
         where: { id: stableUuid("domain:tools.localhost") },
-        update: { organizationId, websiteId: hardwareWebsiteId, hostnameNormalized: "tools.localhost", hostnameDisplay: "tools.localhost", status: "active", releasedAt: null },
-        create: { id: stableUuid("domain:tools.localhost"), organizationId, websiteId: hardwareWebsiteId, hostnameNormalized: "tools.localhost", hostnameDisplay: "tools.localhost", kind: "subdomain", status: "active" },
+        update: {
+          organizationId,
+          websiteId: hardwareWebsiteId,
+          hostnameNormalized: "tools.localhost",
+          hostnameDisplay: "tools.localhost",
+          status: "active",
+          releasedAt: null,
+        },
+        create: {
+          id: stableUuid("domain:tools.localhost"),
+          organizationId,
+          websiteId: hardwareWebsiteId,
+          hostnameNormalized: "tools.localhost",
+          hostnameDisplay: "tools.localhost",
+          kind: "subdomain",
+          status: "active",
+        },
       });
       await transaction.ecommerceStore.upsert({
         where: { organizationId_id: { organizationId, id: hardwareStoreId } },
-        update: { websiteId: hardwareWebsiteId, ownerUserId: demoClientUserId, ecommerceTemplateVersionId: hardwareTemplate.id, name: "Matrouh Forge", slug: "matrouh-forge", status: "active", defaultLocale: "en", currency: "EGP", contactEmail: "trade@matrouh.local", contactPhone: demoCommercePhone, brandingJson: jsonInput({ primary: "#111619", accent: "#ffb000" }), settingsJson: jsonInput({ allowAppearanceToggle: true }) },
-        create: { id: hardwareStoreId, organizationId, websiteId: hardwareWebsiteId, ownerUserId: demoClientUserId, ecommerceTemplateVersionId: hardwareTemplate.id, name: "Matrouh Forge", slug: "matrouh-forge", status: "active", defaultLocale: "en", currency: "EGP", contactEmail: "trade@matrouh.local", contactPhone: demoCommercePhone, brandingJson: jsonInput({ primary: "#111619", accent: "#ffb000" }), settingsJson: jsonInput({ allowAppearanceToggle: true }) },
+        update: {
+          websiteId: hardwareWebsiteId,
+          ownerUserId: demoClientUserId,
+          ecommerceTemplateVersionId: hardwareTemplate.id,
+          name: "Matrouh Forge",
+          slug: "matrouh-forge",
+          status: "active",
+          defaultLocale: "en",
+          currency: "EGP",
+          contactEmail: "trade@matrouh.local",
+          contactPhone: demoCommercePhone,
+          brandingJson: jsonInput({ primary: "#111619", accent: "#ffb000" }),
+          settingsJson: jsonInput({ allowAppearanceToggle: true }),
+        },
+        create: {
+          id: hardwareStoreId,
+          organizationId,
+          websiteId: hardwareWebsiteId,
+          ownerUserId: demoClientUserId,
+          ecommerceTemplateVersionId: hardwareTemplate.id,
+          name: "Matrouh Forge",
+          slug: "matrouh-forge",
+          status: "active",
+          defaultLocale: "en",
+          currency: "EGP",
+          contactEmail: "trade@matrouh.local",
+          contactPhone: demoCommercePhone,
+          brandingJson: jsonInput({ primary: "#111619", accent: "#ffb000" }),
+          settingsJson: jsonInput({ allowAppearanceToggle: true }),
+        },
       });
       for (const locale of ["en", "ar"] as const) {
         await transaction.ecommerceStoreLocale.upsert({
           where: { storeId_locale: { storeId: hardwareStoreId, locale } },
-          update: { organizationId, isDefault: locale === "en", storeName: locale === "ar" ? "مطروح فورج" : "Matrouh Forge", description: locale === "ar" ? "أدوات احترافية ومعدات أصلية ودعم فني واضح." : "Professional tools, genuine hardware, and straight-talking technical support.", footerText: locale === "ar" ? "معدات موثوقة للمحترفين وصنّاع المشاريع." : "Reliable equipment for tradespeople and serious makers." },
-          create: { organizationId, storeId: hardwareStoreId, locale, isDefault: locale === "en", storeName: locale === "ar" ? "مطروح فورج" : "Matrouh Forge", description: locale === "ar" ? "أدوات احترافية ومعدات أصلية ودعم فني واضح." : "Professional tools, genuine hardware, and straight-talking technical support.", footerText: locale === "ar" ? "معدات موثوقة للمحترفين وصنّاع المشاريع." : "Reliable equipment for tradespeople and serious makers." },
+          update: {
+            organizationId,
+            isDefault: locale === "en",
+            storeName: locale === "ar" ? "مطروح فورج" : "Matrouh Forge",
+            description:
+              locale === "ar"
+                ? "أدوات احترافية ومعدات أصلية ودعم فني واضح."
+                : "Professional tools, genuine hardware, and straight-talking technical support.",
+            footerText:
+              locale === "ar"
+                ? "معدات موثوقة للمحترفين وصنّاع المشاريع."
+                : "Reliable equipment for tradespeople and serious makers.",
+          },
+          create: {
+            organizationId,
+            storeId: hardwareStoreId,
+            locale,
+            isDefault: locale === "en",
+            storeName: locale === "ar" ? "مطروح فورج" : "Matrouh Forge",
+            description:
+              locale === "ar"
+                ? "أدوات احترافية ومعدات أصلية ودعم فني واضح."
+                : "Professional tools, genuine hardware, and straight-talking technical support.",
+            footerText:
+              locale === "ar"
+                ? "معدات موثوقة للمحترفين وصنّاع المشاريع."
+                : "Reliable equipment for tradespeople and serious makers.",
+          },
         });
       }
       const hardwareCategories = [
-        { key: "power-tools", en: "Power tools", ar: "أدوات كهربائية", enDescription: "Cordless and corded performance", arDescription: "أداء لاسلكي وسلكي" },
-        { key: "hand-tools", en: "Hand tools", ar: "أدوات يدوية", enDescription: "Workshop essentials", arDescription: "أساسيات الورشة" },
-        { key: "fasteners", en: "Fasteners", ar: "مثبتات", enDescription: "Fixings for every material", arDescription: "تثبيت لكل خامة" },
-        { key: "cutting", en: "Cutting", ar: "القطع", enDescription: "Blades, saws, and accessories", arDescription: "شفرات ومناشير وملحقات" },
-        { key: "paint", en: "Paint & finish", ar: "دهانات وتشطيب", enDescription: "Prepare, coat, and finish", arDescription: "تجهيز وطلاء وتشطيب" },
-        { key: "storage", en: "Storage", ar: "التخزين", enDescription: "Organize the jobsite", arDescription: "نظّم موقع العمل" },
+        {
+          key: "power-tools",
+          en: "Power tools",
+          ar: "أدوات كهربائية",
+          enDescription: "Cordless and corded performance",
+          arDescription: "أداء لاسلكي وسلكي",
+        },
+        {
+          key: "hand-tools",
+          en: "Hand tools",
+          ar: "أدوات يدوية",
+          enDescription: "Workshop essentials",
+          arDescription: "أساسيات الورشة",
+        },
+        {
+          key: "fasteners",
+          en: "Fasteners",
+          ar: "مثبتات",
+          enDescription: "Fixings for every material",
+          arDescription: "تثبيت لكل خامة",
+        },
+        {
+          key: "cutting",
+          en: "Cutting",
+          ar: "القطع",
+          enDescription: "Blades, saws, and accessories",
+          arDescription: "شفرات ومناشير وملحقات",
+        },
+        {
+          key: "paint",
+          en: "Paint & finish",
+          ar: "دهانات وتشطيب",
+          enDescription: "Prepare, coat, and finish",
+          arDescription: "تجهيز وطلاء وتشطيب",
+        },
+        {
+          key: "storage",
+          en: "Storage",
+          ar: "التخزين",
+          enDescription: "Organize the jobsite",
+          arDescription: "نظّم موقع العمل",
+        },
       ] as const;
       const hardwareCategoryIds = new Map<string, string>();
       for (const [position, item] of hardwareCategories.entries()) {
         const categoryId = stableUuid(`ecommerce-category:matrouh-forge:${item.key}`);
         hardwareCategoryIds.set(item.key, categoryId);
-        await transaction.ecommerceCategory.upsert({ where: { storeId_slug: { storeId: hardwareStoreId, slug: item.key } }, update: { visible: true, position }, create: { id: categoryId, organizationId, storeId: hardwareStoreId, slug: item.key, position } });
+        await transaction.ecommerceCategory.upsert({
+          where: { storeId_slug: { storeId: hardwareStoreId, slug: item.key } },
+          update: { visible: true, position },
+          create: {
+            id: categoryId,
+            organizationId,
+            storeId: hardwareStoreId,
+            slug: item.key,
+            position,
+          },
+        });
         for (const locale of ["en", "ar"] as const) {
           const name = locale === "ar" ? item.ar : item.en;
           const description = locale === "ar" ? item.arDescription : item.enDescription;
-          await transaction.ecommerceCategoryTranslation.upsert({ where: { categoryId_locale: { categoryId, locale } }, update: { name, description }, create: { categoryId, locale, name, description } });
+          await transaction.ecommerceCategoryTranslation.upsert({
+            where: { categoryId_locale: { categoryId, locale } },
+            update: { name, description },
+            create: { categoryId, locale, name, description },
+          });
         }
       }
       const hardwareProducts = [
-        { key: "voltmax-brushless-drill", en: "18V brushless drill driver", ar: "مثقاب لاسلكي ١٨ فولت بدون فرش", shortEn: "Compact high-torque drill with two batteries and hard case.", shortAr: "مثقاب مدمج بعزم قوي مع بطاريتين وحقيبة صلبة.", descriptionEn: "A professional brushless drill driver with 65 Nm torque, all-metal chuck, two 4.0 Ah batteries, and rapid charger.", descriptionAr: "مثقاب احترافي بدون فرش بعزم ٦٥ نيوتن متر وظرف معدني وبطاريتين ٤ أمبير وشاحن سريع.", price: 649900, sale: 589900, sku: "VMX-DD18-65", stock: 16, category: "power-tools", attributes: { brand: "VoltMax", power: "18V · 65 Nm", compatibility: "VMX 18V", warranty: "3 years", badge: "Trade deal", featured: true } },
-        { key: "titan-angle-grinder", en: "125mm angle grinder", ar: "صاروخ قطع ١٢٥ مم", shortEn: "Slim-body 1,100W grinder with restart protection.", shortAr: "صاروخ ١١٠٠ وات بجسم نحيف وحماية من إعادة التشغيل.", descriptionEn: "A durable 125 mm grinder with a 1,100W motor, tool-free guard, anti-vibration handle, and restart protection.", descriptionAr: "صاروخ متين ١٢٥ مم بمحرك ١١٠٠ وات وواقي سريع ومقبض مضاد للاهتزاز وحماية إعادة التشغيل.", price: 389900, sale: null, sku: "TTN-AG125", stock: 11, category: "power-tools", attributes: { brand: "Titan Pro", power: "1,100W", compatibility: "125mm discs", warranty: "2 years", featured: true } },
-        { key: "forge-ratchet-set", en: "72-tooth ratchet set", ar: "طقم راشيت ٧٢ سنة", shortEn: "Chrome vanadium socket set in a fitted case.", shortAr: "طقم لقم كروم فاناديوم في حقيبة منظمة.", descriptionEn: "A 46-piece metric socket set with a fine 72-tooth ratchet, extension bars, and precision bits.", descriptionAr: "طقم لقم متري ٤٦ قطعة براشيت دقيق ٧٢ سنة ووصلات ولقم مفكات.", price: 249900, sale: 219900, sku: "FRG-RS46", stock: 24, category: "hand-tools", attributes: { brand: "Forge", material: "Cr-V steel", compatibility: "1/4 inch", warranty: "Lifetime", badge: "Bestseller" } },
-        { key: "impact-screw-pack", en: "Structural screw trade pack", ar: "عبوة مسامير إنشائية للمحترفين", shortEn: "High-load zinc-coated screws for timber construction.", shortAr: "مسامير مطلية بالزنك للأحمال العالية في الأخشاب.", descriptionEn: "A 100-piece pack of 8 × 120 mm structural screws with self-cutting tip and corrosion-resistant coating.", descriptionAr: "عبوة ١٠٠ مسمار إنشائي ٨ × ١٢٠ مم بطرف ذاتي القطع وطلاء مقاوم للتآكل.", price: 119900, sale: null, sku: "FIX-8120-Z", stock: 42, category: "fasteners", attributes: { brand: "FixRight", material: "Zinc steel", compatibility: "Timber", packSize: "100 pcs" } },
-        { key: "carbide-circular-blade", en: "Carbide circular saw blade", ar: "شفرة منشار دائري كربيد", shortEn: "Precision 60-tooth blade for clean timber and laminate cuts.", shortAr: "شفرة دقيقة ٦٠ سنة لقطع نظيف للخشب واللامينيت.", descriptionEn: "A 190 × 30 mm tungsten-carbide blade engineered for low-vibration, fine crosscuts in timber and laminate.", descriptionAr: "شفرة تنجستن كربيد ١٩٠ × ٣٠ مم منخفضة الاهتزاز للقطع العرضي الدقيق في الخشب واللامينيت.", price: 139900, sale: 119900, sku: "CUT-190-60T", stock: 19, category: "cutting", attributes: { brand: "EdgeCraft", material: "TCT", compatibility: "190 × 30mm", bladeTeeth: "60T" } },
-        { key: "profinish-wall-paint", en: "ProFinish washable wall paint", ar: "دهان حوائط برو فينيش قابل للغسيل", shortEn: "Low-odor interior emulsion with durable matte coverage.", shortAr: "دهان داخلي منخفض الرائحة بتغطية مطفية متينة.", descriptionEn: "A premium 10-liter washable interior paint with low VOC, high opacity, and smooth matte finish.", descriptionAr: "دهان داخلي فاخر ١٠ لترات قابل للغسيل ومنخفض المركبات العضوية بتغطية عالية وتشطيب مطفي.", price: 279900, sale: null, sku: "PFT-MAT-10", stock: 27, category: "paint", attributes: { brand: "ProFinish", material: "Water based", compatibility: "Interior walls", coverage: "120 m²" } },
-        { key: "stack-system-toolbox", en: "Modular rolling toolbox", ar: "صندوق أدوات متحرك معياري", shortEn: "IP65 modular storage with reinforced wheels and handle.", shortAr: "تخزين معياري IP65 بعجلات ومقبض معززين.", descriptionEn: "A weather-sealed rolling toolbox with removable tray, metal latches, and compatibility with Stack System modules.", descriptionAr: "صندوق أدوات متحرك محكم ضد الطقس بدرج قابل للإزالة وأقفال معدنية ومتوافق مع وحدات ستاك سيستم.", price: 449900, sale: 399900, sku: "STK-ROLL-01", stock: 8, category: "storage", attributes: { brand: "Stack System", material: "Impact polymer", compatibility: "Stack System", rating: "IP65", badge: "New" } },
-        { key: "engineer-claw-hammer", en: "Anti-vibration claw hammer", ar: "شاكوش مخلب مضاد للاهتزاز", shortEn: "One-piece forged steel with a balanced 20oz head.", shortAr: "فولاذ مطروق من قطعة واحدة برأس متوازن ٢٠ أونصة.", descriptionEn: "A one-piece forged hammer with magnetic nail starter, milled face, and vibration-reducing grip.", descriptionAr: "شاكوش مطروق من قطعة واحدة بمثبت مسمار مغناطيسي ووجه محزز ومقبض يقلل الاهتزاز.", price: 169900, sale: null, sku: "ENG-HM20", stock: 33, category: "hand-tools", attributes: { brand: "Engineer", material: "Forged steel", weight: "20 oz", warranty: "Lifetime" } },
+        {
+          key: "voltmax-brushless-drill",
+          en: "18V brushless drill driver",
+          ar: "مثقاب لاسلكي ١٨ فولت بدون فرش",
+          shortEn: "Compact high-torque drill with two batteries and hard case.",
+          shortAr: "مثقاب مدمج بعزم قوي مع بطاريتين وحقيبة صلبة.",
+          descriptionEn:
+            "A professional brushless drill driver with 65 Nm torque, all-metal chuck, two 4.0 Ah batteries, and rapid charger.",
+          descriptionAr:
+            "مثقاب احترافي بدون فرش بعزم ٦٥ نيوتن متر وظرف معدني وبطاريتين ٤ أمبير وشاحن سريع.",
+          price: 649900,
+          sale: 589900,
+          sku: "VMX-DD18-65",
+          stock: 16,
+          category: "power-tools",
+          attributes: {
+            brand: "VoltMax",
+            power: "18V · 65 Nm",
+            compatibility: "VMX 18V",
+            warranty: "3 years",
+            badge: "Trade deal",
+            featured: true,
+          },
+        },
+        {
+          key: "titan-angle-grinder",
+          en: "125mm angle grinder",
+          ar: "صاروخ قطع ١٢٥ مم",
+          shortEn: "Slim-body 1,100W grinder with restart protection.",
+          shortAr: "صاروخ ١١٠٠ وات بجسم نحيف وحماية من إعادة التشغيل.",
+          descriptionEn:
+            "A durable 125 mm grinder with a 1,100W motor, tool-free guard, anti-vibration handle, and restart protection.",
+          descriptionAr:
+            "صاروخ متين ١٢٥ مم بمحرك ١١٠٠ وات وواقي سريع ومقبض مضاد للاهتزاز وحماية إعادة التشغيل.",
+          price: 389900,
+          sale: null,
+          sku: "TTN-AG125",
+          stock: 11,
+          category: "power-tools",
+          attributes: {
+            brand: "Titan Pro",
+            power: "1,100W",
+            compatibility: "125mm discs",
+            warranty: "2 years",
+            featured: true,
+          },
+        },
+        {
+          key: "forge-ratchet-set",
+          en: "72-tooth ratchet set",
+          ar: "طقم راشيت ٧٢ سنة",
+          shortEn: "Chrome vanadium socket set in a fitted case.",
+          shortAr: "طقم لقم كروم فاناديوم في حقيبة منظمة.",
+          descriptionEn:
+            "A 46-piece metric socket set with a fine 72-tooth ratchet, extension bars, and precision bits.",
+          descriptionAr: "طقم لقم متري ٤٦ قطعة براشيت دقيق ٧٢ سنة ووصلات ولقم مفكات.",
+          price: 249900,
+          sale: 219900,
+          sku: "FRG-RS46",
+          stock: 24,
+          category: "hand-tools",
+          attributes: {
+            brand: "Forge",
+            material: "Cr-V steel",
+            compatibility: "1/4 inch",
+            warranty: "Lifetime",
+            badge: "Bestseller",
+          },
+        },
+        {
+          key: "impact-screw-pack",
+          en: "Structural screw trade pack",
+          ar: "عبوة مسامير إنشائية للمحترفين",
+          shortEn: "High-load zinc-coated screws for timber construction.",
+          shortAr: "مسامير مطلية بالزنك للأحمال العالية في الأخشاب.",
+          descriptionEn:
+            "A 100-piece pack of 8 × 120 mm structural screws with self-cutting tip and corrosion-resistant coating.",
+          descriptionAr: "عبوة ١٠٠ مسمار إنشائي ٨ × ١٢٠ مم بطرف ذاتي القطع وطلاء مقاوم للتآكل.",
+          price: 119900,
+          sale: null,
+          sku: "FIX-8120-Z",
+          stock: 42,
+          category: "fasteners",
+          attributes: {
+            brand: "FixRight",
+            material: "Zinc steel",
+            compatibility: "Timber",
+            packSize: "100 pcs",
+          },
+        },
+        {
+          key: "carbide-circular-blade",
+          en: "Carbide circular saw blade",
+          ar: "شفرة منشار دائري كربيد",
+          shortEn: "Precision 60-tooth blade for clean timber and laminate cuts.",
+          shortAr: "شفرة دقيقة ٦٠ سنة لقطع نظيف للخشب واللامينيت.",
+          descriptionEn:
+            "A 190 × 30 mm tungsten-carbide blade engineered for low-vibration, fine crosscuts in timber and laminate.",
+          descriptionAr:
+            "شفرة تنجستن كربيد ١٩٠ × ٣٠ مم منخفضة الاهتزاز للقطع العرضي الدقيق في الخشب واللامينيت.",
+          price: 139900,
+          sale: 119900,
+          sku: "CUT-190-60T",
+          stock: 19,
+          category: "cutting",
+          attributes: {
+            brand: "EdgeCraft",
+            material: "TCT",
+            compatibility: "190 × 30mm",
+            bladeTeeth: "60T",
+          },
+        },
+        {
+          key: "profinish-wall-paint",
+          en: "ProFinish washable wall paint",
+          ar: "دهان حوائط برو فينيش قابل للغسيل",
+          shortEn: "Low-odor interior emulsion with durable matte coverage.",
+          shortAr: "دهان داخلي منخفض الرائحة بتغطية مطفية متينة.",
+          descriptionEn:
+            "A premium 10-liter washable interior paint with low VOC, high opacity, and smooth matte finish.",
+          descriptionAr:
+            "دهان داخلي فاخر ١٠ لترات قابل للغسيل ومنخفض المركبات العضوية بتغطية عالية وتشطيب مطفي.",
+          price: 279900,
+          sale: null,
+          sku: "PFT-MAT-10",
+          stock: 27,
+          category: "paint",
+          attributes: {
+            brand: "ProFinish",
+            material: "Water based",
+            compatibility: "Interior walls",
+            coverage: "120 m²",
+          },
+        },
+        {
+          key: "stack-system-toolbox",
+          en: "Modular rolling toolbox",
+          ar: "صندوق أدوات متحرك معياري",
+          shortEn: "IP65 modular storage with reinforced wheels and handle.",
+          shortAr: "تخزين معياري IP65 بعجلات ومقبض معززين.",
+          descriptionEn:
+            "A weather-sealed rolling toolbox with removable tray, metal latches, and compatibility with Stack System modules.",
+          descriptionAr:
+            "صندوق أدوات متحرك محكم ضد الطقس بدرج قابل للإزالة وأقفال معدنية ومتوافق مع وحدات ستاك سيستم.",
+          price: 449900,
+          sale: 399900,
+          sku: "STK-ROLL-01",
+          stock: 8,
+          category: "storage",
+          attributes: {
+            brand: "Stack System",
+            material: "Impact polymer",
+            compatibility: "Stack System",
+            rating: "IP65",
+            badge: "New",
+          },
+        },
+        {
+          key: "engineer-claw-hammer",
+          en: "Anti-vibration claw hammer",
+          ar: "شاكوش مخلب مضاد للاهتزاز",
+          shortEn: "One-piece forged steel with a balanced 20oz head.",
+          shortAr: "فولاذ مطروق من قطعة واحدة برأس متوازن ٢٠ أونصة.",
+          descriptionEn:
+            "A one-piece forged hammer with magnetic nail starter, milled face, and vibration-reducing grip.",
+          descriptionAr:
+            "شاكوش مطروق من قطعة واحدة بمثبت مسمار مغناطيسي ووجه محزز ومقبض يقلل الاهتزاز.",
+          price: 169900,
+          sale: null,
+          sku: "ENG-HM20",
+          stock: 33,
+          category: "hand-tools",
+          attributes: {
+            brand: "Engineer",
+            material: "Forged steel",
+            weight: "20 oz",
+            warranty: "Lifetime",
+          },
+        },
       ] as const;
       for (const item of hardwareProducts) {
         const productId = stableUuid(`ecommerce-product:matrouh-forge:${item.key}`);
         const product = await transaction.ecommerceProduct.upsert({
           where: { storeId_slug: { storeId: hardwareStoreId, slug: item.key } },
-          update: { status: "published", visibility: "public", basePriceMinor: item.price, salePriceMinor: item.sale, currency: "EGP", sku: item.sku, attributesJson: jsonInput(item.attributes), archivedAt: null },
-          create: { id: productId, organizationId, storeId: hardwareStoreId, slug: item.key, status: "published", visibility: "public", basePriceMinor: item.price, salePriceMinor: item.sale, currency: "EGP", sku: item.sku, attributesJson: jsonInput(item.attributes) },
+          update: {
+            status: "published",
+            visibility: "public",
+            basePriceMinor: item.price,
+            salePriceMinor: item.sale,
+            currency: "EGP",
+            sku: item.sku,
+            attributesJson: jsonInput(item.attributes),
+            archivedAt: null,
+          },
+          create: {
+            id: productId,
+            organizationId,
+            storeId: hardwareStoreId,
+            slug: item.key,
+            status: "published",
+            visibility: "public",
+            basePriceMinor: item.price,
+            salePriceMinor: item.sale,
+            currency: "EGP",
+            sku: item.sku,
+            attributesJson: jsonInput(item.attributes),
+          },
         });
         for (const locale of ["en", "ar"] as const) {
           const name = locale === "ar" ? item.ar : item.en;
-          await transaction.ecommerceProductTranslation.upsert({ where: { productId_locale: { productId: product.id, locale } }, update: { name, shortDescription: locale === "ar" ? item.shortAr : item.shortEn, description: locale === "ar" ? item.descriptionAr : item.descriptionEn }, create: { productId: product.id, locale, name, shortDescription: locale === "ar" ? item.shortAr : item.shortEn, description: locale === "ar" ? item.descriptionAr : item.descriptionEn } });
+          await transaction.ecommerceProductTranslation.upsert({
+            where: { productId_locale: { productId: product.id, locale } },
+            update: {
+              name,
+              shortDescription: locale === "ar" ? item.shortAr : item.shortEn,
+              description: locale === "ar" ? item.descriptionAr : item.descriptionEn,
+            },
+            create: {
+              productId: product.id,
+              locale,
+              name,
+              shortDescription: locale === "ar" ? item.shortAr : item.shortEn,
+              description: locale === "ar" ? item.descriptionAr : item.descriptionEn,
+            },
+          });
         }
-        await transaction.ecommerceProductVariant.upsert({ where: { productId_sku: { productId: product.id, sku: item.sku } }, update: { title: "Standard", stockQuantity: item.stock, active: true }, create: { id: stableUuid(`ecommerce-variant:matrouh-forge:${item.key}`), organizationId, productId: product.id, sku: item.sku, title: "Standard", stockQuantity: item.stock } });
+        await transaction.ecommerceProductVariant.upsert({
+          where: { productId_sku: { productId: product.id, sku: item.sku } },
+          update: { title: "Standard", stockQuantity: item.stock, active: true },
+          create: {
+            id: stableUuid(`ecommerce-variant:matrouh-forge:${item.key}`),
+            organizationId,
+            productId: product.id,
+            sku: item.sku,
+            title: "Standard",
+            stockQuantity: item.stock,
+          },
+        });
         const categoryId = hardwareCategoryIds.get(item.category);
         if (!categoryId) throw new Error(`ECOMMERCE_HARDWARE_CATEGORY_MISSING:${item.category}`);
-        await transaction.ecommerceProductCategory.upsert({ where: { productId_categoryId: { productId: product.id, categoryId } }, update: {}, create: { productId: product.id, categoryId } });
+        await transaction.ecommerceProductCategory.upsert({
+          where: { productId_categoryId: { productId: product.id, categoryId } },
+          update: {},
+          create: { productId: product.id, categoryId },
+        });
       }
-      for (const method of [{ key: "cash_on_delivery", name: "Cash on delivery" }, { key: "bank_transfer", name: "Bank transfer" }]) {
-        await transaction.ecommercePaymentMethod.upsert({ where: { storeId_key: { storeId: hardwareStoreId, key: method.key } }, update: { displayName: method.name, enabled: true }, create: { id: stableUuid(`ecommerce-payment:matrouh-forge:${method.key}`), organizationId, storeId: hardwareStoreId, key: method.key, displayName: method.name, enabled: true } });
+      for (const method of [
+        { key: "cash_on_delivery", name: "Cash on delivery" },
+        { key: "bank_transfer", name: "Bank transfer" },
+      ]) {
+        await transaction.ecommercePaymentMethod.upsert({
+          where: { storeId_key: { storeId: hardwareStoreId, key: method.key } },
+          update: { displayName: method.name, enabled: true },
+          create: {
+            id: stableUuid(`ecommerce-payment:matrouh-forge:${method.key}`),
+            organizationId,
+            storeId: hardwareStoreId,
+            key: method.key,
+            displayName: method.name,
+            enabled: true,
+          },
+        });
       }
-      for (const method of [{ key: "express_cairo", name: "Express Cairo delivery", price: 12500 }, { key: "trade_pickup", name: "Trade counter pickup", price: 0 }]) {
-        await transaction.ecommerceShippingMethod.upsert({ where: { storeId_key: { storeId: hardwareStoreId, key: method.key } }, update: { displayName: method.name, enabled: true, priceMinor: method.price }, create: { id: stableUuid(`ecommerce-shipping:matrouh-forge:${method.key}`), organizationId, storeId: hardwareStoreId, key: method.key, displayName: method.name, enabled: true, priceMinor: method.price } });
+      for (const method of [
+        { key: "express_cairo", name: "Express Cairo delivery", price: 12500 },
+        { key: "trade_pickup", name: "Trade counter pickup", price: 0 },
+      ]) {
+        await transaction.ecommerceShippingMethod.upsert({
+          where: { storeId_key: { storeId: hardwareStoreId, key: method.key } },
+          update: { displayName: method.name, enabled: true, priceMinor: method.price },
+          create: {
+            id: stableUuid(`ecommerce-shipping:matrouh-forge:${method.key}`),
+            organizationId,
+            storeId: hardwareStoreId,
+            key: method.key,
+            displayName: method.name,
+            enabled: true,
+            priceMinor: method.price,
+          },
+        });
       }
     },
   );

@@ -12,7 +12,12 @@ import {
 describe("commerce pricing", () => {
   it("keeps all arithmetic in integer minor units", () => {
     expect(lineTotal({ unitPriceMinor: 1299, quantity: 3, discountMinor: 97 })).toBe(3800);
-    expect(orderSubtotal([{ unitPriceMinor: 1299, quantity: 3 }, { unitPriceMinor: 500, quantity: 2 }])).toBe(4897);
+    expect(
+      orderSubtotal([
+        { unitPriceMinor: 1299, quantity: 3 },
+        { unitPriceMinor: 500, quantity: 2 },
+      ]),
+    ).toBe(4897);
     expect(effectivePrice(1200, 900)).toBe(900);
   });
 

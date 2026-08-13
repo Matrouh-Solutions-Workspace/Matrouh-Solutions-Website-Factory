@@ -10,7 +10,8 @@ const copy = {
   en: {
     eyebrow: "Independent commerce platform",
     title: "E-commerce",
-    description: "Run storefronts, products, orders, customers, checkout, and analytics from one workspace.",
+    description:
+      "Run storefronts, products, orders, customers, checkout, and analytics from one workspace.",
     newStore: "New store",
     browseTemplates: "Browse templates",
     stores: "Stores",
@@ -34,7 +35,8 @@ const copy = {
     manageStore: "Manage store",
     provisioning: "Provisioning",
     createStore: "Create a commerce store",
-    createDescription: "Creates a separate commerce workspace. Templates only control presentation; business data remains independent.",
+    createDescription:
+      "Creates a separate commerce workspace. Templates only control presentation; business data remains independent.",
     storeName: "Store name",
     storeNameHint: "The customer-facing store name",
     storeNamePlaceholder: "Matrouh Market",
@@ -89,7 +91,8 @@ const copy = {
     manageStore: "إدارة المتجر",
     provisioning: "إنشاء متجر",
     createStore: "إنشاء متجر إلكتروني",
-    createDescription: "ينشئ مساحة تجارة مستقلة. تتحكم القوالب في العرض فقط وتبقى بيانات النشاط منفصلة.",
+    createDescription:
+      "ينشئ مساحة تجارة مستقلة. تتحكم القوالب في العرض فقط وتبقى بيانات النشاط منفصلة.",
     storeName: "اسم المتجر",
     storeNameHint: "الاسم الذي يظهر للعملاء",
     storeNamePlaceholder: "متجر مطروح",
@@ -179,7 +182,13 @@ export default async function EcommercePage({
         </article>
       </section>
 
-      <div className={administrator ? "commerceOverviewGrid" : "commerceOverviewGrid commerceOverviewGrid--single"}>
+      <div
+        className={
+          administrator
+            ? "commerceOverviewGrid"
+            : "commerceOverviewGrid commerceOverviewGrid--single"
+        }
+      >
         <section className="panel commercePortfolioPanel">
           <div className="panelHead commercePanelHead">
             <div>
@@ -199,38 +208,68 @@ export default async function EcommercePage({
             <div className="commerceStoreGrid">
               {stores.map((store) => {
                 const hostname = store.website.domains[0]?.hostnameDisplay;
-                const statusLabel = text[store.status as "active" | "draft" | "paused"] ?? store.status;
+                const statusLabel =
+                  text[store.status as "active" | "draft" | "paused"] ?? store.status;
                 return (
                   <article className="commerceStoreCard" key={store.id}>
                     <div className="commerceStoreCardHead">
                       <div>
                         <span className={`status ${store.status}`}>{statusLabel}</span>
                         <h3>{store.name}</h3>
-                        <p>{text.generalTemplate}: {store.templateVersion.template.name} · {store.templateVersion.version}</p>
+                        <p>
+                          {text.generalTemplate}: {store.templateVersion.template.name} ·{" "}
+                          {store.templateVersion.version}
+                        </p>
                       </div>
-                      <span aria-hidden="true" className="commerceStoreMark">{store.name.slice(0, 1).toUpperCase()}</span>
+                      <span aria-hidden="true" className="commerceStoreMark">
+                        {store.name.slice(0, 1).toUpperCase()}
+                      </span>
                     </div>
 
                     <dl className="commerceStoreMetrics">
-                      <div><dt>{text.products}</dt><dd>{store._count.products}</dd></div>
-                      <div><dt>{text.orders}</dt><dd>{store._count.orders}</dd></div>
-                      <div><dt>{text.customers}</dt><dd>{store._count.customers}</dd></div>
+                      <div>
+                        <dt>{text.products}</dt>
+                        <dd>{store._count.products}</dd>
+                      </div>
+                      <div>
+                        <dt>{text.orders}</dt>
+                        <dd>{store._count.orders}</dd>
+                      </div>
+                      <div>
+                        <dt>{text.customers}</dt>
+                        <dd>{store._count.customers}</dd>
+                      </div>
                     </dl>
 
                     <div className="commerceStoreOwner">
                       <span>{text.owner}</span>
                       {store.owner ? (
-                        <div><strong>{store.owner.displayName}</strong><small>{store.owner.primaryEmail}</small></div>
-                      ) : <strong>{text.ownerNotClaimed}</strong>}
+                        <div>
+                          <strong>{store.owner.displayName}</strong>
+                          <small>{store.owner.primaryEmail}</small>
+                        </div>
+                      ) : (
+                        <strong>{text.ownerNotClaimed}</strong>
+                      )}
                     </div>
 
                     <div className="commerceStoreActions">
                       {hostname ? (
-                        <a className="commerceStorefrontLink" href={`http://${hostname}:3000`} rel="noreferrer" target="_blank">
-                          <span>{text.viewStorefront}</span><small dir="ltr">{hostname} ↗</small>
+                        <a
+                          className="commerceStorefrontLink"
+                          href={`http://${hostname}:3000`}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          <span>{text.viewStorefront}</span>
+                          <small dir="ltr">{hostname} ↗</small>
                         </a>
-                      ) : <span />}
-                      <Link className="buttonLink" href={`/ecommerce/stores/${store.id}`}>{text.manageStore}</Link>
+                      ) : (
+                        <span />
+                      )}
+                      <Link className="buttonLink" href={`/ecommerce/stores/${store.id}`}>
+                        {text.manageStore}
+                      </Link>
                     </div>
                   </article>
                 );
@@ -259,39 +298,86 @@ export default async function EcommercePage({
                 </p>
               ) : null}
               <label>
-                <span>{text.storeName}</span><small>{text.storeNameHint}</small>
-                <input defaultValue={text.storeNamePlaceholder} maxLength={200} name="name" required />
+                <span>{text.storeName}</span>
+                <small>{text.storeNameHint}</small>
+                <input
+                  defaultValue={text.storeNamePlaceholder}
+                  maxLength={200}
+                  name="name"
+                  required
+                />
               </label>
               <label>
-                <span>{text.storeSlug}</span><small>{text.storeSlugHint}</small>
-                <input autoCapitalize="none" defaultValue={text.storeSlugPlaceholder} dir="ltr" maxLength={120} name="slug" spellCheck={false} />
+                <span>{text.storeSlug}</span>
+                <small>{text.storeSlugHint}</small>
+                <input
+                  autoCapitalize="none"
+                  defaultValue={text.storeSlugPlaceholder}
+                  dir="ltr"
+                  maxLength={120}
+                  name="slug"
+                  spellCheck={false}
+                />
               </label>
               <label>
-                <span>{text.hostname}</span><small>{text.hostnameHint}</small>
-                <input autoCapitalize="none" defaultValue={text.hostnamePlaceholder} dir="ltr" maxLength={253} name="hostname" spellCheck={false} />
+                <span>{text.hostname}</span>
+                <small>{text.hostnameHint}</small>
+                <input
+                  autoCapitalize="none"
+                  defaultValue={text.hostnamePlaceholder}
+                  dir="ltr"
+                  maxLength={253}
+                  name="hostname"
+                  spellCheck={false}
+                />
               </label>
               <label>
-                <span>{text.whatsapp}</span><small>{text.whatsappHint}</small>
-                <input autoComplete="tel" defaultValue={text.whatsappPlaceholder} dir="ltr" inputMode="tel" maxLength={50} name="contactPhone" required />
+                <span>{text.whatsapp}</span>
+                <small>{text.whatsappHint}</small>
+                <input
+                  autoComplete="tel"
+                  defaultValue={text.whatsappPlaceholder}
+                  dir="ltr"
+                  inputMode="tel"
+                  maxLength={50}
+                  name="contactPhone"
+                  required
+                />
               </label>
               <label>
                 <span>{text.template}</span>
                 <select disabled={readyVersions.length === 0} name="templateVersionId" required>
-                  {readyVersions.length === 0 ? <option value="">{text.templatesUnavailable}</option> : null}
-                  {readyVersions.map((version) => <option key={version.id} value={version.id}>{version.templateName} {version.version}</option>)}
+                  {readyVersions.length === 0 ? (
+                    <option value="">{text.templatesUnavailable}</option>
+                  ) : null}
+                  {readyVersions.map((version) => (
+                    <option key={version.id} value={version.id}>
+                      {version.templateName} {version.version}
+                    </option>
+                  ))}
                 </select>
               </label>
               <div className="commerceCreateFormRow">
                 <label>
                   <span>{text.defaultLanguage}</span>
-                  <select defaultValue="en" name="defaultLocale"><option value="en">{text.english}</option><option value="ar">{text.arabic}</option></select>
+                  <select defaultValue="en" name="defaultLocale">
+                    <option value="en">{text.english}</option>
+                    <option value="ar">{text.arabic}</option>
+                  </select>
                 </label>
                 <label>
                   <span>{text.currency}</span>
-                  <select defaultValue="EGP" name="currency"><option value="EGP">{text.egyptianPound}</option><option value="USD">{text.usDollar}</option><option value="EUR">{text.euro}</option></select>
+                  <select defaultValue="EGP" name="currency">
+                    <option value="EGP">{text.egyptianPound}</option>
+                    <option value="USD">{text.usDollar}</option>
+                    <option value="EUR">{text.euro}</option>
+                  </select>
                 </label>
               </div>
-              <PendingSubmit disabled={readyVersions.length === 0} pendingLabel={text.creatingStore}>
+              <PendingSubmit
+                disabled={readyVersions.length === 0}
+                pendingLabel={text.creatingStore}
+              >
                 {text.createIndependentStore}
               </PendingSubmit>
             </form>

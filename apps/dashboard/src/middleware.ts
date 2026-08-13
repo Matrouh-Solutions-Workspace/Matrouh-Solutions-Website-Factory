@@ -36,9 +36,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     }
     const acceptsDocument = request.headers.get("accept")?.includes("text/html") ?? false;
     const knownCommerceHost = request.cookies.get("factory_commerce_zone")?.value === "1";
-    const commerce = acceptsDocument || !knownCommerceHost
-      ? await resolvesToCommerceStore(host)
-      : knownCommerceHost;
+    const commerce =
+      acceptsDocument || !knownCommerceHost
+        ? await resolvesToCommerceStore(host)
+        : knownCommerceHost;
     if (commerce) return rewriteCommerceStorefront(request, host);
     return rendererProxy(request, host);
   }
@@ -75,7 +76,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   if (pathname === "/template-preview" || pathname.startsWith("/template-preview/")) {
     return rendererProxy(request, dashboardHost);
   }
-  if (pathname === "/commerce-template-preview" || pathname.startsWith("/commerce-template-preview/")) {
+  if (
+    pathname === "/commerce-template-preview" ||
+    pathname.startsWith("/commerce-template-preview/")
+  ) {
     return rendererProxy(request, dashboardHost);
   }
   if (pathname === "/commerce-storefront.css") {

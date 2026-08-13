@@ -59,7 +59,8 @@ const config: NextConfig = {
         ],
       },
       {
-        source: "/((?!preview(?:/|$)|template-preview(?:/|$)|commerce-template-preview(?:/|$)|templates(?:/|$)|api(?:/|$)).*)",
+        source:
+          "/((?!preview(?:/|$)|template-preview(?:/|$)|commerce-template-preview(?:/|$)|templates(?:/|$)|api(?:/|$)).*)",
         headers: [
           {
             key: "Cache-Control",

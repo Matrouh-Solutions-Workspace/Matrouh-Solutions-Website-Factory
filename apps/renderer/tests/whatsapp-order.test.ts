@@ -17,14 +17,16 @@ const order: WhatsAppOrderDetails = {
   address: { line1: "12 Corniche Road", city: "Matrouh", notes: "Call on arrival" },
   shipping: { name: "Standard delivery", priceMinor: 7500 },
   couponCode: "WELCOME10",
-  lines: [{
-    name: "Cordless drill",
-    variant: "18V kit",
-    sku: "DRILL-18V",
-    quantity: 2,
-    unitPriceMinor: 250000,
-    totalMinor: 500000,
-  }],
+  lines: [
+    {
+      name: "Cordless drill",
+      variant: "18V kit",
+      sku: "DRILL-18V",
+      quantity: 2,
+      unitPriceMinor: 250000,
+      totalMinor: 500000,
+    },
+  ],
   subtotalMinor: 500000,
   discountMinor: 50000,
   totalMinor: 457500,
@@ -55,7 +57,8 @@ describe("WhatsApp commerce orders", () => {
       order.lines[0]!.sku!,
       order.storefrontUrl,
       "Final total",
-    ]) expect(message).toContain(value);
+    ])
+      expect(message).toContain(value);
   });
 
   it("builds an encoded click-to-chat URL and supports Arabic copy", () => {

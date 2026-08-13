@@ -59,7 +59,8 @@ export function buildWhatsAppContactUrl(phone: string | null): string | null {
 
 export function buildWhatsAppOrderMessage(order: WhatsAppOrderDetails): string {
   const money = (minor: number) => formatMoney(minor, order.currency, order.locale);
-  const optional = (value: string) => value || (order.locale === "ar" ? "غير مضاف" : "Not provided");
+  const optional = (value: string) =>
+    value || (order.locale === "ar" ? "غير مضاف" : "Not provided");
   const itemLines = order.lines.flatMap((line, index) => [
     `*${index + 1}. ${line.name}*`,
     `${order.locale === "ar" ? "الخيار" : "Variant"}: ${line.variant}`,
