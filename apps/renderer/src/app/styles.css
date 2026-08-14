@@ -1,6 +1,10 @@
 * {
   box-sizing: border-box;
 }
+:root {
+  --font-cairo: "Cairo";
+  --font-tajawal: "Tajawal";
+}
 
 /* Public template gallery -------------------------------------------------- */
 .templateGallery {
@@ -4620,7 +4624,7 @@
     .portfolioQuote blockquote,
     .portfolioContact h1
   ) {
-  font-family: Tahoma, Arial, sans-serif;
+  font-family: var(--font-cairo), Cairo, var(--font-tajawal), Tajawal, Arial, sans-serif;
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.15;
@@ -4802,5 +4806,73 @@
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 1ms !important;
+  }
+}
+
+/* Clinic 2.0 final title scale. This must remain last so it is authoritative
+   over the older clinic presentation and responsive layers above. */
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .heroCopy
+  h1 {
+  max-width: 12.5ch;
+  font-size: clamp(2.75rem, 4vw, 4.5rem);
+  line-height: 1.04;
+  overflow-wrap: normal;
+  text-wrap: balance;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .sectionHeading
+  h2 {
+  max-width: 16ch;
+  font-size: clamp(2.1rem, 3.2vw, 3.5rem);
+  line-height: 1.08;
+  overflow-wrap: normal;
+  text-wrap: balance;
+}
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  :is(.hero--clinic .heroCopy h1, .sectionHeading h2) {
+  max-width: 14ch;
+  letter-spacing: 0;
+  line-height: 1.16;
+  word-break: normal;
+}
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .heroCopy
+  h1 {
+  font-size: clamp(2.65rem, 3.65vw, 4.15rem);
+}
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .sectionHeading
+  h2 {
+  font-size: clamp(2rem, 2.9vw, 3.25rem);
+}
+@media (max-width: 760px) {
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .hero--clinic
+    .heroCopy
+    h1 {
+    max-width: 13ch;
+    font-size: clamp(2.35rem, 8vw, 3.3rem);
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .sectionHeading
+    h2 {
+    max-width: 17ch;
+    font-size: clamp(1.9rem, 7vw, 2.8rem);
+  }
+}
+@media (max-width: 420px) {
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .hero--clinic
+    .heroCopy
+    h1 {
+    font-size: clamp(2.15rem, 10.5vw, 2.85rem);
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .sectionHeading
+    h2 {
+    font-size: clamp(1.7rem, 8.5vw, 2.4rem);
   }
 }

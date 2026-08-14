@@ -24,7 +24,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       forwarded.set("x-factory-site-host", host);
       return NextResponse.next({ request: { headers: forwarded } });
     }
-    if (pathname === "/commerce-storefront.css") {
+    if (
+      pathname === "/commerce-storefront.css" ||
+      pathname === "/matrouh-logo.png" ||
+      pathname.startsWith("/commerce-heroes/")
+    ) {
       return rendererProxy(request, host);
     }
     if (
@@ -88,7 +92,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   ) {
     return rendererProxy(request, dashboardHost);
   }
-  if (pathname === "/commerce-storefront.css") {
+  if (
+    pathname === "/commerce-storefront.css" ||
+    pathname === "/matrouh-logo.png" ||
+    pathname.startsWith("/commerce-heroes/")
+  ) {
     return rendererProxy(request, dashboardHost);
   }
   if (pathname === "/templates") {

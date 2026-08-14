@@ -1,22 +1,19 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import { Cairo, Tajawal } from "next/font/google";
+import "@fontsource/cairo/400.css";
+import "@fontsource/cairo/500.css";
+import "@fontsource/cairo/600.css";
+import "@fontsource/cairo/700.css";
+import "@fontsource/cairo/800.css";
+import "@fontsource/cairo/900.css";
+import "@fontsource/tajawal/400.css";
+import "@fontsource/tajawal/500.css";
+import "@fontsource/tajawal/700.css";
+import "@fontsource/tajawal/800.css";
+import "@fontsource/tajawal/900.css";
 import { DashboardShell } from "@/app/dashboard-shell";
 import { UI_LOCALE_COOKIE, uiLocale } from "@/server/ui-locale";
 import "./styles.css";
-
-const cairo = Cairo({
-  subsets: ["arabic", "latin"],
-  display: "swap",
-  variable: "--font-cairo",
-});
-
-const tajawal = Tajawal({
-  subsets: ["arabic", "latin"],
-  display: "swap",
-  variable: "--font-tajawal",
-  weight: ["400", "500", "700", "800", "900"],
-});
 
 export const metadata: Metadata = {
   title: { default: "Website Factory", template: "%s · Website Factory" },
@@ -27,7 +24,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
   const requestHeaders = await headers();
   if (requestHeaders.has("x-factory-site-host")) {
     return (
-      <html className={`${tajawal.variable} ${cairo.variable}`} lang="und">
+      <html lang="und">
         <body>{children}</body>
       </html>
     );
@@ -35,7 +32,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
   const locale = uiLocale((await cookies()).get(UI_LOCALE_COOKIE)?.value);
   return (
     <html dir={locale === "ar" ? "rtl" : "ltr"} lang={locale} suppressHydrationWarning>
-      <body className={cairo.variable}>
+      <body>
         <DashboardShell locale={locale}>{children}</DashboardShell>
       </body>
     </html>

@@ -33,6 +33,22 @@
 .commercePublicRoot[lang="ar"].shopTheme--pc {
   font-family: var(--font-cairo), Tahoma, Arial, sans-serif;
 }
+.commercePublicRoot[lang="ar"]
+  :is(
+    .shopHeroCopy h1,
+    .shopSectionHeading h2,
+    .shopEditorial h2,
+    .shopStoryGrid h2,
+    .shopNewsletter h2,
+    .commerceProductInfo h1,
+    .commerceCartPage h1
+  ) {
+  font-family: var(--font-cairo), Cairo, var(--font-tajawal), Tajawal, Arial, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.12;
+  text-transform: none;
+}
 .commercePublicRoot[data-theme="dark"] {
   --shop-bg: #111210;
   --shop-surface: #181a17;
@@ -157,6 +173,12 @@
   font-size: 1.15rem;
   font-weight: 800;
 }
+.shopBrandMark img {
+  display: block;
+  width: 1.8rem;
+  height: 1.8rem;
+  object-fit: contain;
+}
 .shopTheme--hardware .shopBrandMark {
   border: 2px solid var(--shop-accent);
   border-radius: 4px;
@@ -164,6 +186,11 @@
   color: var(--shop-accent);
   font-family: inherit;
   font-size: 0.95rem;
+}
+.shopTheme--hardware .shopBrandMark img,
+.shopTheme--pc .shopBrandMark img {
+  width: 1.9rem;
+  height: 1.9rem;
 }
 .shopBrand > span:last-child {
   display: grid;
@@ -335,8 +362,8 @@
 
 .shopHero {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(380px, 1.05fr);
-  min-height: min(735px, calc(100vh - 140px));
+  grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
+  min-height: clamp(620px, calc(100svh - 140px), 760px);
   overflow: hidden;
   background: var(--shop-surface-2);
 }
@@ -345,7 +372,7 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  padding: clamp(3rem, 8vw, 8.5rem);
+  padding: clamp(3rem, 6vw, 6.5rem);
   animation: shopReveal 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .shopHeroCopy h1 {
@@ -497,17 +524,35 @@
 .shopHeroVisual::before,
 .shopHeroVisual::after {
   position: absolute;
+  z-index: 1;
   content: "";
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  border-radius: 50%;
+}
+.shopHeroPhoto {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .shopHeroVisual::before {
-  width: 75%;
-  aspect-ratio: 1;
+  z-index: 1;
+  inset: 0;
+  width: auto;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(135deg, transparent 46%, rgba(15, 15, 15, 0.28));
 }
 .shopHeroVisual::after {
-  width: 51%;
-  aspect-ratio: 1;
+  z-index: 1;
+  width: 46%;
+}
+.shopHeroVisual[data-slide="1"] .shopHeroPhoto,
+.shopHeroVisual[data-slide="2"] .shopHeroPhoto {
+  transform: scale(1.035);
 }
 .shopHeroVisual[data-slide="1"] {
   background: #6e7d72;
@@ -521,7 +566,7 @@
 .shopHeroShape {
   position: relative;
   z-index: 2;
-  display: grid;
+  display: none;
   place-items: center;
   width: min(63%, 530px);
   aspect-ratio: 0.74;
@@ -2585,28 +2630,102 @@ section.hero::before {
   border-top: 1px solid var(--shop-border);
 }
 .shopTheme--pc .shopHero {
-  background-image:
-    linear-gradient(rgba(0, 168, 232, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 168, 232, 0.045) 1px, transparent 1px);
-  background-size: 30px 30px;
+  position: relative;
+  isolation: isolate;
+  display: block;
+  width: min(calc(100% - 3rem), 1500px);
+  min-height: clamp(560px, calc(100svh - 210px), 720px);
+  margin: 2rem auto 1rem;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(72, 198, 255, 0.38);
+  border-radius: 24px;
+  background: #07111f;
+  box-shadow:
+    0 32px 85px rgba(3, 15, 30, 0.28),
+    0 0 0 7px rgba(0, 168, 232, 0.05);
+}
+.shopTheme--pc .shopHeroCopy {
+  position: relative;
+  z-index: 3;
+  width: min(53%, 720px);
+  min-height: inherit;
+  padding: clamp(3.5rem, 5vw, 6rem);
+  color: #f2f8ff;
+  background: linear-gradient(
+    90deg,
+    #07111f 0%,
+    rgba(7, 17, 31, 0.98) 62%,
+    rgba(7, 17, 31, 0.72) 82%,
+    transparent 100%
+  );
+}
+.shopTheme--pc[dir="rtl"] .shopHeroCopy {
+  margin-inline: 0 auto;
+  background: linear-gradient(
+    270deg,
+    #07111f 0%,
+    rgba(7, 17, 31, 0.98) 62%,
+    rgba(7, 17, 31, 0.72) 82%,
+    transparent 100%
+  );
 }
 .shopTheme--pc .shopHeroCopy h1 {
-  max-width: 13ch;
+  max-width: 12ch;
   font-family: var(--font-cairo), sans-serif;
   font-weight: 850;
-  line-height: 0.98;
-  letter-spacing: -0.055em;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.shopTheme--pc .shopHeroCopy > p:not(.shopEyebrow) {
+  max-width: 54ch;
+  color: #b9c9da;
+}
+.shopTheme--pc .shopHeroCopy .shopEyebrow {
+  color: #61dcff;
+}
+.shopTheme--pc .shopHeroCopy .shopPrimaryButton {
+  border-color: #eff8ff;
+  color: #07111f;
+  background: #eff8ff;
+}
+.shopTheme--pc .shopHeroCopy .shopSecondaryButton {
+  border-color: rgba(209, 236, 255, 0.38);
+  color: #eff8ff;
+  background: rgba(7, 17, 31, 0.58);
+  backdrop-filter: blur(12px);
+}
+.shopTheme--pc .shopHeroCopy .shopHeroControls {
+  color: #d9edff;
 }
 .shopTheme--pc .shopHeroVisual {
-  background:
-    radial-gradient(circle at 72% 22%, rgba(113, 72, 232, 0.62), transparent 30%),
-    radial-gradient(circle at 22% 78%, rgba(0, 168, 232, 0.52), transparent 33%), #07111f;
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  min-height: 0;
+  background: #07111f;
+}
+.shopTheme--pc .shopHeroPhoto {
+  object-position: center;
 }
 .shopTheme--pc .shopHeroVisual::before {
-  background-image:
-    linear-gradient(rgba(92, 218, 255, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(92, 218, 255, 0.1) 1px, transparent 1px);
-  background-size: 24px 24px;
+  z-index: 1;
+  background:
+    linear-gradient(0deg, rgba(4, 10, 19, 0.24), transparent 42%),
+    linear-gradient(90deg, rgba(7, 17, 31, 0.68), transparent 64%);
+}
+.shopTheme--pc[dir="rtl"] .shopHeroVisual::before {
+  background:
+    linear-gradient(0deg, rgba(4, 10, 19, 0.24), transparent 42%),
+    linear-gradient(270deg, rgba(7, 17, 31, 0.68), transparent 64%);
+}
+.shopTheme--pc[dir="rtl"] .shopHeroPhoto {
+  transform: scaleX(-1);
+}
+.shopTheme--pc[dir="rtl"] .shopHeroVisual[data-slide="1"] .shopHeroPhoto,
+.shopTheme--pc[dir="rtl"] .shopHeroVisual[data-slide="2"] .shopHeroPhoto {
+  transform: scaleX(-1) scale(1.035);
 }
 .shopTheme--pc .shopHeroShape {
   width: min(66%, 540px);
@@ -2640,6 +2759,125 @@ section.hero::before {
   font-style: normal;
   font-weight: 850;
   letter-spacing: -0.08em;
+}
+.shopTheme--pc .shopHeroBadge,
+.shopTheme--pc .shopHeroNumber {
+  display: none;
+}
+.shopPcQuickLinks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: min(calc(100% - 3rem), 1500px);
+  margin: 0 auto 2.5rem;
+  overflow: hidden;
+  border: 1px solid var(--shop-border);
+  border-radius: 14px;
+  background: var(--shop-surface);
+  box-shadow: 0 18px 50px rgba(11, 45, 76, 0.09);
+}
+.shopPcQuickLinks button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 78px;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem 1.2rem;
+  border: 0;
+  border-inline-end: 1px solid var(--shop-border);
+  color: var(--shop-ink);
+  background: transparent;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+.shopPcQuickLinks button:last-child {
+  border-inline-end: 0;
+}
+.shopPcQuickLinks button:hover {
+  color: #06111f;
+  background: linear-gradient(135deg, #8de9ff, #32c8f6);
+}
+.shopPcQuickLinks button > span {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  place-items: center;
+  border-radius: 8px;
+  color: #74ddff;
+  background: #0d2237;
+}
+.shopPcQuickLinks svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.shopTheme--pc[dir="rtl"] .shopPcQuickLinks button > svg {
+  transform: rotate(180deg);
+}
+@media (max-width: 960px) {
+  .shopTheme--pc .shopHero {
+    width: min(calc(100% - 2rem), 1500px);
+    min-height: 680px;
+    margin-top: 1rem;
+  }
+  .shopTheme--pc .shopHeroCopy,
+  .shopTheme--pc[dir="rtl"] .shopHeroCopy {
+    width: 100%;
+    min-height: 680px;
+    justify-content: flex-start;
+    padding: 3.25rem 2rem 15rem;
+    background: linear-gradient(
+      180deg,
+      #07111f 0%,
+      rgba(7, 17, 31, 0.96) 44%,
+      rgba(7, 17, 31, 0.44) 70%,
+      rgba(7, 17, 31, 0.7) 100%
+    );
+  }
+  .shopTheme--pc .shopHeroPhoto {
+    object-position: 61% center;
+  }
+  .shopTheme--pc[dir="rtl"] .shopHeroPhoto {
+    object-position: 61% center;
+  }
+  .shopPcQuickLinks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(calc(100% - 2rem), 1500px);
+  }
+  .shopPcQuickLinks button:nth-child(2) {
+    border-inline-end: 0;
+  }
+  .shopPcQuickLinks button:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--shop-border);
+  }
+}
+@media (max-width: 560px) {
+  .shopTheme--pc .shopHero {
+    min-height: 650px;
+    border-radius: 16px;
+  }
+  .shopTheme--pc .shopHeroCopy,
+  .shopTheme--pc[dir="rtl"] .shopHeroCopy {
+    min-height: 650px;
+    padding: 2.5rem 1.25rem 13rem;
+  }
+  .shopTheme--pc .shopHeroActions {
+    align-items: stretch;
+  }
+  .shopTheme--pc .shopHeroActions a {
+    justify-content: center;
+  }
+  .shopPcQuickLinks button {
+    min-height: 68px;
+    gap: 0.55rem;
+    padding: 0.75rem;
+  }
+  .shopPcQuickLinks button > span {
+    width: 2rem;
+    height: 2rem;
+  }
 }
 .shopTheme--pc .shopCategoryCard,
 .shopTheme--pc .commerceProductCard {
@@ -3109,6 +3347,63 @@ p {
 @media (max-width: 900px) {
   .siteRoot[dir="rtl"] .locationPortfolio {
     padding-left: 0;
+  }
+}
+
+/* Keep storefront display titles bold without letting them overwhelm the
+   product or navigation UI on wide monitors. Arabic needs a slightly calmer
+   scale and more line height because its glyphs are naturally taller. */
+.commercePublicRoot .shopHeroCopy h1 {
+  max-width: 12ch;
+  font-size: clamp(2.8rem, 5vw, 5.6rem);
+  line-height: 0.98;
+}
+.commercePublicRoot.shopTheme--hardware .shopHeroCopy h1,
+.commercePublicRoot.shopTheme--pc .shopHeroCopy h1 {
+  font-size: clamp(2.8rem, 4.7vw, 5.2rem);
+}
+.commercePublicRoot[dir="rtl"] .shopHeroCopy h1 {
+  max-width: 13ch;
+  font-size: clamp(2.65rem, 3.8vw, 4.35rem);
+  line-height: 1.08;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.commercePublicRoot[dir="rtl"] :is(.shopSectionHeading h2, .shopEditorial h2, .shopStoryGrid h2) {
+  font-size: clamp(2.25rem, 3.6vw, 4rem);
+}
+.commercePublicRoot .shopSectionHeading h2,
+.commercePublicRoot .shopStoryGrid h2 {
+  max-width: 15ch;
+  font-size: clamp(2.25rem, 3.65vw, 4.15rem);
+  line-height: 1.06;
+  text-wrap: balance;
+}
+.commercePublicRoot .shopEditorial h2 {
+  max-width: 14ch;
+  font-size: clamp(2.4rem, 3.9vw, 4.45rem);
+  line-height: 1.04;
+  text-wrap: balance;
+}
+.commercePublicRoot .shopNewsletter h2 {
+  font-size: clamp(2.15rem, 3.2vw, 3.65rem);
+  line-height: 1.08;
+  text-wrap: balance;
+}
+@media (max-width: 980px) {
+  .commercePublicRoot .shopHeroCopy h1,
+  .commercePublicRoot.shopTheme--hardware .shopHeroCopy h1,
+  .commercePublicRoot.shopTheme--pc .shopHeroCopy h1 {
+    font-size: clamp(2.6rem, 9vw, 4.4rem);
+  }
+}
+@media (max-width: 600px) {
+  .commercePublicRoot .shopHeroCopy h1,
+  .commercePublicRoot.shopTheme--hardware .shopHeroCopy h1,
+  .commercePublicRoot.shopTheme--pc .shopHeroCopy h1,
+  .commercePublicRoot[dir="rtl"] .shopHeroCopy h1 {
+    max-width: 14ch;
+    font-size: clamp(2.35rem, 11vw, 3.6rem);
   }
 }
 
