@@ -268,7 +268,11 @@ function defaultHighlights(template: PublicTemplateCatalogItem, locale: "ar" | "
   return [
     text.responsive,
     ...(template.features.includes("localized-content") ? [text.bilingual] : []),
-    template.features.includes("digital-menu") ? text.mobileMenu : text.contentDashboard,
+    template.features.includes("digital-menu")
+      ? text.mobileMenu
+      : template.features.includes("ecommerce")
+        ? text.commerceDashboard
+        : text.contentDashboard,
     template.supportsDarkMode ? text.darkMode : text.lightOnly,
   ];
 }
@@ -293,6 +297,10 @@ function periodLabel(
 }
 
 function previewHref(templateId: string, version: string, locale: "ar" | "en"): string {
+  if (templateId.startsWith("ecommerce:")) {
+    const rendererKey = templateId.slice("ecommerce:".length);
+    return `/commerce-template-preview/${encodeURIComponent(rendererKey)}?lang=${locale}`;
+  }
   const base = `/template-preview/${encodeURIComponent(templateId)}/${encodeURIComponent(version)}`;
   return locale === "ar" ? `${base}/ar` : `${base}/`;
 }
@@ -369,6 +377,21 @@ const arabicTemplateMetadata: Readonly<
     description: "قائمة طعام رقمية احترافية ثنائية اللغة للمطاعم والمقاهي.",
     category: "المطاعم والمقاهي",
   },
+  "ecommerce:fashion-store": {
+    displayName: "ميزون — متجر أزياء",
+    description: "متجر إلكتروني تحريري للموضة والجمال والمنتجات المختارة بعناية.",
+    category: "التجارة الإلكترونية",
+  },
+  "ecommerce:hardware-store": {
+    displayName: "فورج — متجر أدوات ومعدات",
+    description: "متجر تقني للأدوات والمعدات ومواد البناء وكتالوجات الحرفيين.",
+    category: "التجارة الإلكترونية",
+  },
+  "ecommerce:pc-hardware-store": {
+    displayName: "نيكسس — متجر مكونات كمبيوتر",
+    description: "متجر يركز على توافق مكونات الكمبيوتر والتجميعات والألعاب والترقيات.",
+    category: "التجارة الإلكترونية",
+  },
 };
 
 async function requirePlatformHost(): Promise<void> {
@@ -386,6 +409,7 @@ async function requirePlatformHost(): Promise<void> {
 
 const copy = {
   ar: {
+    commerceDashboard: "لوحة تحكم للمتجر والمنتجات والطلبات",
     headerNavigation: "التنقل الرئيسي",
     packages: "الباقات",
     howItWorks: "كيف نعمل",
@@ -429,6 +453,7 @@ const copy = {
     contactNavigation: "روابط التواصل",
   },
   en: {
+    commerceDashboard: "Store, product, and order dashboard",
     headerNavigation: "Primary navigation",
     packages: "Packages",
     howItWorks: "How it works",

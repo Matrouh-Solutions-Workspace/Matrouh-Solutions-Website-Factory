@@ -141,6 +141,7 @@ async function assignClaim(
           },
         },
         select: {
+          kind: true,
           clientId: true,
           client: { select: { id: true, contactEmail: true, archivedAt: true } },
         },
@@ -215,6 +216,27 @@ async function assignClaim(
           data: { clientId: client.id, revision: { increment: 1 } },
         });
         if (assigned.count !== 1) throw new Error("WEBSITE_ALREADY_CLAIMED");
+      }
+      if (website.kind === "ecommerce") {
+        const store = await transaction.ecommerceStore.findUnique({
+          where: { websiteId: claim.websiteId },
+          select: { ownerUserId: true },
+        });
+        if (!store) throw new Error("ECOMMERCE_STORE_NOT_FOUND");
+        if (store.ownerUserId && store.ownerUserId !== userId) {
+          throw new Error("ECOMMERCE_STORE_ALREADY_CLAIMED");
+        }
+        if (!store.ownerUserId) {
+          const assignedStore = await transaction.ecommerceStore.updateMany({
+            where: {
+              organizationId: claim.organizationId,
+              websiteId: claim.websiteId,
+              ownerUserId: null,
+            },
+            data: { ownerUserId: userId, revision: { increment: 1 } },
+          });
+          if (assignedStore.count !== 1) throw new Error("ECOMMERCE_STORE_ALREADY_CLAIMED");
+        }
       }
       await transaction.websiteClaim.update({
         where: { id: claim.claimId },

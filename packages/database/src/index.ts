@@ -13,7 +13,10 @@ export function databaseUrlFromEnv(environment: Record<string, string | undefine
   return connectionString;
 }
 export function createDatabaseClient(options: DatabaseOptions): PrismaClient {
-  const localPrismaDev = process.env.FACTORY_DATABASE_UNIQUE_PREPARED_STATEMENTS === "true";
+  const localPrismaDev =
+    process.env.FACTORY_DATABASE_UNIQUE_PREPARED_STATEMENTS === "true" ||
+    (process.env.NODE_ENV !== "production" &&
+      options.connectionString.startsWith("prisma+postgres://"));
   const adapterOptions = localPrismaDev
     ? { statementNameGenerator: uniqueStatementNameGenerator() }
     : {};
@@ -115,6 +118,8 @@ function isRecoverableTransactionError(error: unknown): boolean {
     message.includes("expired transaction") ||
     message.includes("Transaction API error") ||
     message.includes("Connection terminated unexpectedly") ||
-    message.includes("Server has closed the connection")
+    message.includes("Server has closed the connection") ||
+    message.includes("deadlock detected") ||
+    message.includes("40P01")
   );
 }

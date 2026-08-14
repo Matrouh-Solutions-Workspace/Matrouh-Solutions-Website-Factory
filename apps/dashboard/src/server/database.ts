@@ -23,6 +23,8 @@ export function isRecoverableDatabaseConnectionError(error: unknown): boolean {
     message.includes("Connection terminated unexpectedly") ||
     message.includes("bind message supplies") ||
     message.includes("prepared statement") ||
-    message.includes("Transaction not found")
+    message.includes("Transaction not found") ||
+    message.includes("getaddrinfo ENOENT") ||
+    message.includes("getaddrinfo EAI_AGAIN")
   );
 }

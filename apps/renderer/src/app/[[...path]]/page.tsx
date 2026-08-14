@@ -8,14 +8,31 @@ import { SiteNavigation } from "@/app/site-navigation";
 import { localeLinks, localizedPageRoute, textDirection } from "@/server/locale-navigation";
 import { rendererConfig } from "@/server/config";
 import { loadSite } from "@/server/site";
+import { loadEcommerceStorefront } from "@/server/ecommerce-store";
+import { EcommerceStorefront } from "@/app/ecommerce-storefront";
 
 interface PageProperties {
   readonly params: Promise<{ readonly path?: string[] }>;
+  readonly searchParams: Promise<{ readonly lang?: string }>;
 }
 
-export async function generateMetadata({ params }: PageProperties): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PageProperties): Promise<Metadata> {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-factory-site-host") ?? requestHeaders.get("host") ?? "";
+  const commerce = await loadEcommerceStorefront(host, (await searchParams).lang);
+  if (commerce) {
+    const { path = [] } = await params;
+    const product =
+      path[0] === "products" ? commerce.products.find((item) => item.slug === path[1]) : null;
+    return {
+      title: product ? `${product.name} · ${commerce.name}` : commerce.name,
+      description: product?.shortDescription || commerce.description,
+      robots: { index: true, follow: true },
+    };
+  }
   const site = await loadSite(host);
   if (!site) return { robots: { index: false, follow: false } };
   const { path = [] } = await params;
@@ -49,12 +66,14 @@ export async function generateMetadata({ params }: PageProperties): Promise<Meta
   }
 }
 
-export default async function SitePage({ params }: PageProperties) {
+export default async function SitePage({ params, searchParams }: PageProperties) {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-factory-site-host") ?? requestHeaders.get("host") ?? "";
+  const { path = [] } = await params;
+  const commerce = await loadEcommerceStorefront(host, (await searchParams).lang);
+  if (commerce) return <EcommerceStorefront path={path} store={commerce} />;
   const site = await loadSite(host);
   if (!site) notFound();
-  const { path = [] } = await params;
   let rendered;
   try {
     rendered = runtime(site).render(`/${path.join("/")}`);

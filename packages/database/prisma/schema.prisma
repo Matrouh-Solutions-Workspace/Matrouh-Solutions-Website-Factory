@@ -22,6 +22,78 @@ enum WebsiteStatus {
   archived
 }
 
+enum WebsiteKind {
+  standard
+  ecommerce
+}
+
+enum EcommerceTemplateStatus {
+  draft
+  ready
+  deprecated
+  retired
+}
+
+enum EcommerceStoreStatus {
+  draft
+  active
+  paused
+  archived
+}
+
+enum EcommerceProductStatus {
+  draft
+  published
+  hidden
+  out_of_stock
+  archived
+}
+
+enum EcommerceVisibility {
+  public
+  unlisted
+  private
+}
+
+enum EcommerceCustomerStatus {
+  active
+  blocked
+  archived
+}
+
+enum EcommerceCartStatus {
+  active
+  converted
+  abandoned
+  expired
+}
+
+enum EcommerceOrderStatus {
+  pending
+  confirmed
+  processing
+  shipped
+  delivered
+  cancelled
+  refunded
+}
+
+enum EcommercePaymentStatus {
+  pending
+  authorized
+  paid
+  failed
+  partially_refunded
+  refunded
+}
+
+enum EcommerceCouponType {
+  percentage
+  fixed
+  product
+  category
+}
+
 enum SubscriptionCadence {
   trial
   monthly
@@ -102,6 +174,7 @@ model Organization {
   subscriptions       WebsiteSubscription[]
   outboundMessages    OutboundMessage[]
   websiteClaims       WebsiteClaim[]
+  ecommerceStores     EcommerceStore[]
   passwordResets      PasswordReset[]
   roles               Role[]
   pluginInstallations PluginInstallation[]
@@ -125,6 +198,8 @@ model User {
   sessions        Session[]
   passwordResets  PasswordReset[]
   claimedWebsites WebsiteClaim[] @relation("ClaimedWebsiteOwner")
+  ownedEcommerceStores EcommerceStore[] @relation("EcommerceStoreOwner")
+  ecommerceInventoryAdjustments EcommerceInventoryAdjustment[] @relation("EcommerceInventoryActor")
 
   @@map("users")
 }
@@ -262,6 +337,7 @@ model Website {
   organizationId      String                 @map("organization_id") @db.Uuid
   clientId            String?                @map("client_id") @db.Uuid
   name                String                 @db.VarChar(200)
+  kind                WebsiteKind            @default(standard)
   status              WebsiteStatus          @default(draft)
   templateId          String                 @map("template_id") @db.VarChar(160)
   templateVersion     String                 @map("template_version") @db.VarChar(64)
@@ -290,6 +366,7 @@ model Website {
   outboundMessages    OutboundMessage[]
   claims              WebsiteClaim[]
   activePublication   Publication?           @relation("ActivePublication", fields: [organizationId, id, activePublicationId], references: [organizationId, websiteId, id])
+  ecommerceStore      EcommerceStore?
 
   @@unique([organizationId, id])
   @@unique([organizationId, id, activePublicationId])
@@ -842,6 +919,9 @@ model MediaAsset {
   variants            MediaVariant[]
   references          MediaReference[]
   faviconFor          Website[]        @relation("WebsiteFavicon")
+  ecommerceProductImages EcommerceProductImage[]
+  ecommerceVariantImages EcommerceProductVariant[] @relation("EcommerceVariantImage")
+  ecommerceStoreLogos EcommerceStore[] @relation("EcommerceStoreLogo")
 
   @@unique([organizationId, id])
   @@index([organizationId, status, createdAt])
@@ -1025,4 +1105,526 @@ model IdempotencyRecord {
 
   @@unique([organizationId, scope, keyHash])
   @@map("idempotency_records")
+}
+
+// E-commerce is a separate product domain. It reuses Website only for hosting,
+// domains, claims, media, and publication infrastructure.
+model EcommerceTemplate {
+  id              String                  @id @db.Uuid
+  slug            String                  @unique @db.VarChar(120)
+  name            String                  @db.VarChar(200)
+  description     String                  @db.Text
+  status          EcommerceTemplateStatus @default(draft)
+  previewImageUrl String?                 @map("preview_image_url") @db.Text
+  createdAt       DateTime                @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime                @updatedAt @map("updated_at") @db.Timestamptz
+  versions        EcommerceTemplateVersion[]
+
+  @@map("ecommerce_templates")
+}
+
+model EcommerceTemplateVersion {
+  id               String                  @id @db.Uuid
+  templateId       String                  @map("template_id") @db.Uuid
+  version          String                  @db.VarChar(64)
+  status           EcommerceTemplateStatus @default(draft)
+  rendererKey      String                  @map("renderer_key") @db.VarChar(160)
+  schemaVersion    Int                     @default(1) @map("schema_version")
+  capabilitiesJson Json                    @default("{}") @map("capabilities_json") @db.JsonB
+  presentationJson Json                    @default("{}") @map("presentation_json") @db.JsonB
+  createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz
+  publishedAt      DateTime?               @map("published_at") @db.Timestamptz
+  template         EcommerceTemplate       @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  stores           EcommerceStore[]
+
+  @@unique([templateId, version])
+  @@index([status, publishedAt])
+  @@map("ecommerce_template_versions")
+}
+
+model EcommerceStore {
+  id                       String               @id @db.Uuid
+  organizationId           String               @map("organization_id") @db.Uuid
+  websiteId                String               @unique @map("website_id") @db.Uuid
+  ownerUserId              String?              @map("owner_user_id") @db.Uuid
+  ecommerceTemplateVersionId String             @map("ecommerce_template_version_id") @db.Uuid
+  name                     String               @db.VarChar(200)
+  slug                     String               @db.VarChar(120)
+  status                   EcommerceStoreStatus @default(draft)
+  defaultLocale            String               @default("en") @map("default_locale") @db.VarChar(35)
+  currency                 String               @default("EGP") @db.VarChar(3)
+  timezone                 String               @default("Africa/Cairo") @db.VarChar(80)
+  logoAssetId              String?              @map("logo_asset_id") @db.Uuid
+  contactEmail             String?              @map("contact_email") @db.VarChar(320)
+  contactPhone             String?              @map("contact_phone") @db.VarChar(50)
+  addressJson              Json                 @default("{}") @map("address_json") @db.JsonB
+  brandingJson             Json                 @default("{}") @map("branding_json") @db.JsonB
+  settingsJson             Json                 @default("{}") @map("settings_json") @db.JsonB
+  revision                 BigInt               @default(1)
+  createdAt                DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                DateTime             @updatedAt @map("updated_at") @db.Timestamptz
+  archivedAt               DateTime?            @map("archived_at") @db.Timestamptz
+  organization             Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  website                  Website              @relation(fields: [organizationId, websiteId], references: [organizationId, id], onDelete: Restrict)
+  owner                    User?                @relation("EcommerceStoreOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  templateVersion          EcommerceTemplateVersion @relation(fields: [ecommerceTemplateVersionId], references: [id], onDelete: Restrict)
+  logoAsset                MediaAsset?          @relation("EcommerceStoreLogo", fields: [organizationId, logoAssetId], references: [organizationId, id], onDelete: Restrict)
+  locales                  EcommerceStoreLocale[]
+  categories               EcommerceCategory[]
+  products                 EcommerceProduct[]
+  customers                EcommerceCustomer[]
+  carts                    EcommerceCart[]
+  orders                   EcommerceOrder[]
+  coupons                  EcommerceCoupon[]
+  paymentMethods           EcommercePaymentMethod[]
+  shippingMethods          EcommerceShippingMethod[]
+  inventoryAdjustments     EcommerceInventoryAdjustment[]
+  analyticsEvents          EcommerceAnalyticsEvent[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, websiteId])
+  @@unique([organizationId, slug])
+  @@index([organizationId, ownerUserId, status])
+  @@map("ecommerce_stores")
+}
+
+model EcommerceStoreLocale {
+  organizationId String         @map("organization_id") @db.Uuid
+  storeId        String         @map("store_id") @db.Uuid
+  locale         String         @db.VarChar(35)
+  isDefault      Boolean        @default(false) @map("is_default")
+  storeName      String         @map("store_name") @db.VarChar(200)
+  description    String         @default("") @db.Text
+  footerText     String         @default("") @map("footer_text") @db.Text
+  store          EcommerceStore @relation(fields: [organizationId, storeId], references: [organizationId, id], onDelete: Restrict)
+
+  @@id([storeId, locale])
+  @@index([organizationId, storeId])
+  @@map("ecommerce_store_locales")
+}
+
+model EcommerceCategory {
+  id             String                    @id @db.Uuid
+  organizationId String                    @map("organization_id") @db.Uuid
+  storeId        String                    @map("store_id") @db.Uuid
+  parentId       String?                   @map("parent_id") @db.Uuid
+  slug           String                    @db.VarChar(160)
+  position       Int                       @default(0)
+  visible        Boolean                   @default(true)
+  createdAt      DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+  store          EcommerceStore            @relation(fields: [organizationId, storeId], references: [organizationId, id], onDelete: Restrict)
+  parent         EcommerceCategory?        @relation("EcommerceCategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children       EcommerceCategory[]       @relation("EcommerceCategoryTree")
+  translations   EcommerceCategoryTranslation[]
+  products       EcommerceProductCategory[]
+  couponScopes   EcommerceCouponCategory[]
+
+  @@unique([organizationId, id])
+  @@unique([storeId, slug])
+  @@index([organizationId, storeId, position])
+  @@map("ecommerce_categories")
+}
+
+model EcommerceCategoryTranslation {
+  categoryId String             @map("category_id") @db.Uuid
+  locale     String             @db.VarChar(35)
+  name       String             @db.VarChar(200)
+  description String            @default("") @db.Text
+  category   EcommerceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, locale])
+  @@map("ecommerce_category_translations")
+}
+
+model EcommerceProduct {
+  id               String                   @id @db.Uuid
+  organizationId   String                   @map("organization_id") @db.Uuid
+  storeId          String                   @map("store_id") @db.Uuid
+  slug             String                   @db.VarChar(180)
+  status           EcommerceProductStatus   @default(draft)
+  visibility       EcommerceVisibility      @default(public)
+  basePriceMinor   Int                      @map("base_price_minor")
+  salePriceMinor   Int?                     @map("sale_price_minor")
+  currency         String                   @db.VarChar(3)
+  sku              String?                  @db.VarChar(120)
+  trackInventory   Boolean                  @default(true) @map("track_inventory")
+  weightGrams      Int?                     @map("weight_grams")
+  dimensionsJson   Json                     @default("{}") @map("dimensions_json") @db.JsonB
+  attributesJson   Json                     @default("{}") @map("attributes_json") @db.JsonB
+  revision         BigInt                   @default(1)
+  createdAt        DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  archivedAt       DateTime?                @map("archived_at") @db.Timestamptz
+  store            EcommerceStore           @relation(fields: [organizationId, storeId], references: [organizationId, id], onDelete: Restrict)
+  translations     EcommerceProductTranslation[]
+  images           EcommerceProductImage[]
+  options          EcommerceProductOption[]
+  variants         EcommerceProductVariant[]
+  categories       EcommerceProductCategory[]
+  cartItems        EcommerceCartItem[]
+  orderItems       EcommerceOrderItem[]
+  couponScopes     EcommerceCouponProduct[]
+
+  @@unique([organizationId, id])
+  @@unique([storeId, slug])
+  @@index([organizationId, storeId, status, visibility])
+  @@index([storeId, sku])
+  @@map("ecommerce_products")
+}
+
+model EcommerceProductTranslation {
+  productId        String             @map("product_id") @db.Uuid
+  locale           String             @db.VarChar(35)
+  name             String             @db.VarChar(240)
+  shortDescription String             @default("") @map("short_description") @db.Text
+  description      String             @default("") @db.Text
+  seoTitle         String?            @map("seo_title") @db.VarChar(240)
+  seoDescription   String?            @map("seo_description") @db.Text
+  product          EcommerceProduct   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([productId, locale])
+  @@index([locale, name])
+  @@map("ecommerce_product_translations")
+}
+
+model EcommerceProductImage {
+  id             String           @id @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  productId      String           @map("product_id") @db.Uuid
+  mediaAssetId   String           @map("media_asset_id") @db.Uuid
+  altText        String           @default("") @map("alt_text") @db.VarChar(300)
+  position       Int              @default(0)
+  isPrimary      Boolean          @default(false) @map("is_primary")
+  product        EcommerceProduct @relation(fields: [organizationId, productId], references: [organizationId, id], onDelete: Cascade)
+  mediaAsset     MediaAsset       @relation(fields: [organizationId, mediaAssetId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([productId, mediaAssetId])
+  @@index([productId, position])
+  @@map("ecommerce_product_images")
+}
+
+model EcommerceProductOption {
+  id        String                       @id @db.Uuid
+  productId String                       @map("product_id") @db.Uuid
+  name      String                       @db.VarChar(120)
+  position  Int                          @default(0)
+  product   EcommerceProduct             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values    EcommerceProductOptionValue[]
+
+  @@unique([productId, name])
+  @@map("ecommerce_product_options")
+}
+
+model EcommerceProductOptionValue {
+  id       String                          @id @db.Uuid
+  optionId String                          @map("option_id") @db.Uuid
+  value    String                          @db.VarChar(160)
+  position Int                             @default(0)
+  option   EcommerceProductOption          @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  variants EcommerceVariantOptionValue[]
+
+  @@unique([optionId, value])
+  @@map("ecommerce_product_option_values")
+}
+
+model EcommerceProductVariant {
+  id                String                       @id @db.Uuid
+  organizationId    String                       @map("organization_id") @db.Uuid
+  productId         String                       @map("product_id") @db.Uuid
+  sku               String?                      @db.VarChar(120)
+  title             String                       @db.VarChar(240)
+  priceMinor        Int?                         @map("price_minor")
+  salePriceMinor    Int?                         @map("sale_price_minor")
+  stockQuantity     Int                          @default(0) @map("stock_quantity")
+  lowStockThreshold Int                          @default(5) @map("low_stock_threshold")
+  imageAssetId      String?                      @map("image_asset_id") @db.Uuid
+  active            Boolean                      @default(true)
+  position          Int                          @default(0)
+  product           EcommerceProduct             @relation(fields: [organizationId, productId], references: [organizationId, id], onDelete: Cascade)
+  imageAsset        MediaAsset?                  @relation("EcommerceVariantImage", fields: [organizationId, imageAssetId], references: [organizationId, id], onDelete: Restrict)
+  optionValues      EcommerceVariantOptionValue[]
+  cartItems         EcommerceCartItem[]
+  orderItems        EcommerceOrderItem[]
+  inventoryAdjustments EcommerceInventoryAdjustment[]
+
+  @@unique([organizationId, id])
+  @@unique([productId, sku])
+  @@index([productId, position])
+  @@map("ecommerce_product_variants")
+}
+
+model EcommerceVariantOptionValue {
+  variantId     String                        @map("variant_id") @db.Uuid
+  optionValueId String                        @map("option_value_id") @db.Uuid
+  variant       EcommerceProductVariant       @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  optionValue   EcommerceProductOptionValue   @relation(fields: [optionValueId], references: [id], onDelete: Restrict)
+
+  @@id([variantId, optionValueId])
+  @@map("ecommerce_variant_option_values")
+}
+
+model EcommerceProductCategory {
+  productId  String              @map("product_id") @db.Uuid
+  categoryId String              @map("category_id") @db.Uuid
+  product    EcommerceProduct    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   EcommerceCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@map("ecommerce_product_categories")
+}
+
+model EcommerceInventoryAdjustment {
+  id             String                    @id @db.Uuid
+  organizationId String                    @map("organization_id") @db.Uuid
+  storeId        String                    @map("store_id") @db.Uuid
+  variantId      String                    @map("variant_id") @db.Uuid
+  actorUserId    String?                   @map("actor_user_id") @db.Uuid
+  quantityDelta  Int                       @map("quantity_delta")
+  reason         String                    @db.VarChar(80)
+  referenceType  String?                   @map("reference_type") @db.VarChar(80)
+  referenceId    String?                   @map("reference_id") @db.VarChar(160)
+  createdAt      DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  store          EcommerceStore            @relation(fields: [organizationId, storeId], references: [organizationId, id], onDelete: Restrict)
+  variant        EcommerceProductVariant   @relation(fields: [organizationId, variantId], references: [organizationId, id], onDelete: Restrict)
+  actor          User?                     @relation("EcommerceInventoryActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, storeId, createdAt])
+  @@index([variantId, createdAt])
+  @@map("ecommerce_inventory_adjustments")
+}
+
+model EcommerceCustomer {
+  id             String                    @id @db.Uuid
+  organizationId String                    @map("organization_id") @db.Uuid
+  storeId        String                    @map("store_id") @db.Uuid
+  name           String                    @db.VarChar(200)
+  email          String?                   @db.VarChar(320)
+  phone          String?                   @db.VarChar(50)
+  status         EcommerceCustomerStatus   @default(active)
+  addressJson    Json                      @default("{}") @map("address_json") @db.JsonB
+  notes          String                    @default("") @db.Text
+  createdAt      DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+  store          EcommerceStore            @relation(fields: [organizationId, storeId], references: [organizationId, id], onDelete: Restrict)
+  carts          EcommerceCart[]
+  orders         EcommerceOrder[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId, storeId, email])
+  @@index([storeId, phone])
+  @@map("ecommerce_customers")
+}
+
+model EcommerceCart {
+  id             String                @id @db.Uuid
+  organizationId String                @map("organization_id") @db.Uuid
+  storeId        String                @map("store_id") @db.Uuid
+  customerId     String?               @map("customer_id") @db.Uuid
+  sessionKeyHash String                @map("session_key_hash") @db.VarChar(128)
+  status         EcommerceCartStatus   @default(active)
+  currency       String                @db.VarChar(3)
+  expiresAt      DateTime              @map("expires_at") @db.Timestamptz
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+  store          EcommerceStore        @relation(fields: [organizationId, storeId], references: [organizationId, id], onDelete: Restrict)
+  customer       EcommerceCustomer?    @relation(fields: [organizationId, customerId], references: [organizationId, id], onDelete: Restrict)
+  items          EcommerceCartItem[]
+
+  @@unique([storeId, sessionKeyHash])
+  @@index([organizationId, storeId, status, expiresAt])
+  @@map("ecommerce_carts")
+}
+
+model EcommerceCartItem {
+  id             String                    @id @db.Uuid
+  cartId         String                    @map("cart_id") @db.Uuid
+  productId      String                    @map("product_id") @db.Uuid
+  variantId      String                    @map("variant_id") @db.Uuid
+  quantity       Int
+  unitPriceMinor Int                       @map("unit_price_minor")
+  createdAt      DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+  cart           EcommerceCart             @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product        EcommerceProduct          @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variant        EcommerceProductVariant   @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@unique([cartId, variantId])
+  @@map("ecommerce_cart_items")
+}
+
+model EcommerceOrder {
+  id                String                    @id @db.Uuid
+  organizationId    String                    @map("organization_id") @db.Uuid
+  storeId           String                    @map("store_id") @db.Uuid
+  customerId        String?                   @map("customer_id") @db.Uuid
+  orderNumber       String                    @map("order_number") @db.VarChar(80)
+  status            EcommerceOrderStatus      @default(pending)
+  paymentStatus     EcommercePaymentStatus    @default(pending) @map("payment_status")
+  currency          String                    @db.VarChar(3)
+  subtotalMinor     Int                       @map("subtotal_minor")
+  discountMinor     Int                       @default(0) @map("discount_minor")
+  shippingMinor     Int                       @default(0) @map("shipping_minor")
+  taxMinor          Int                       @default(0) @map("tax_minor")
+  totalMinor        Int                       @map("total_minor")
+  customerSnapshot  Json                      @map("customer_snapshot") @db.JsonB
+  shippingAddress   Json                      @map("shipping_address") @db.JsonB
+  billingAddress    Json                      @map("billing_address") @db.JsonB
+  notes             String                    @default("") @db.Text
+  revision          BigInt                    @default(1)
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime                  @updatedAt @map("updated_at") @db.Timestamptz
+  store             EcommerceStore            @relation(fields: [organizationId, storeId], references: [organizationId, id], onDelete: Restrict)
+  customer          EcommerceCustomer?        @relation(fields: [organizationId, customerId], references: [organizationId, id], onDelete: Restrict)
+  items             EcommerceOrderItem[]
+  payments          EcommerceOrderPayment[]
+  couponRedemptions EcommerceCouponRedemption[]
+
+  @@unique([organizationId, id])
+  @@unique([storeId, orderNumber])
+  @@index([organizationId, storeId, status, createdAt])
+  @@index([storeId, paymentStatus, createdAt])
+  @@map("ecommerce_orders")
+}
+
+model EcommerceOrderItem {
+  id                String                    @id @db.Uuid
+  orderId           String                    @map("order_id") @db.Uuid
+  productId         String?                   @map("product_id") @db.Uuid
+  variantId         String?                   @map("variant_id") @db.Uuid
+  sku               String?                   @db.VarChar(120)
+  productName       String                    @map("product_name") @db.VarChar(240)
+  variantName       String?                   @map("variant_name") @db.VarChar(240)
+  quantity          Int
+  unitPriceMinor    Int                       @map("unit_price_minor")
+  discountMinor     Int                       @default(0) @map("discount_minor")
+  totalMinor        Int                       @map("total_minor")
+  product           EcommerceProduct?         @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variant           EcommerceProductVariant?  @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  order             EcommerceOrder            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("ecommerce_order_items")
+}
+
+model EcommercePaymentMethod {
+  id             String         @id @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  storeId        String         @map("store_id") @db.Uuid
+  key            String         @db.VarChar(80)
+  displayName    String         @map("display_name") @db.VarChar(160)
+  providerKey    String?        @map("provider_key") @db.VarChar(120)
+  enabled        Boolean        @default(false)
+  position       Int            @default(0)
+  configJson     Json           @default("{}") @map("config_json") @db.JsonB
+  store          EcommerceStore @relation(fields: [organizationId, storeId], references: [organizationId, id], onDelete: Restrict)
+  payments       EcommerceOrderPayment[]
+
+  @@unique([storeId, key])
+  @@index([organizationId, storeId, enabled])
+  @@map("ecommerce_payment_methods")
+}
+
+model EcommerceOrderPayment {
+  id                 String                   @id @db.Uuid
+  orderId            String                   @map("order_id") @db.Uuid
+  paymentMethodId    String                   @map("payment_method_id") @db.Uuid
+  providerReference  String?                  @map("provider_reference") @db.VarChar(240)
+  status             EcommercePaymentStatus   @default(pending)
+  amountMinor        Int                      @map("amount_minor")
+  providerResultJson Json                     @default("{}") @map("provider_result_json") @db.JsonB
+  createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  order              EcommerceOrder           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  paymentMethod      EcommercePaymentMethod   @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, status])
+  @@map("ecommerce_order_payments")
+}
+
+model EcommerceShippingMethod {
+  id             String         @id @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  storeId        String         @map("store_id") @db.Uuid
+  key            String         @db.VarChar(80)
+  displayName    String         @map("display_name") @db.VarChar(160)
+  enabled        Boolean        @default(false)
+  position       Int            @default(0)
+  priceMinor     Int            @default(0) @map("price_minor")
+  configJson     Json           @default("{}") @map("config_json") @db.JsonB
+  store          EcommerceStore @relation(fields: [organizationId, storeId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([storeId, key])
+  @@index([organizationId, storeId, enabled])
+  @@map("ecommerce_shipping_methods")
+}
+
+model EcommerceCoupon {
+  id                String                @id @db.Uuid
+  organizationId    String                @map("organization_id") @db.Uuid
+  storeId           String                @map("store_id") @db.Uuid
+  code              String                @db.VarChar(80)
+  type              EcommerceCouponType
+  value             Int
+  minimumOrderMinor Int?                  @map("minimum_order_minor")
+  usageLimit        Int?                  @map("usage_limit")
+  usedCount         Int                   @default(0) @map("used_count")
+  startsAt          DateTime?             @map("starts_at") @db.Timestamptz
+  expiresAt         DateTime?             @map("expires_at") @db.Timestamptz
+  enabled           Boolean               @default(true)
+  store             EcommerceStore        @relation(fields: [organizationId, storeId], references: [organizationId, id], onDelete: Restrict)
+  products          EcommerceCouponProduct[]
+  categories        EcommerceCouponCategory[]
+  redemptions       EcommerceCouponRedemption[]
+
+  @@unique([storeId, code])
+  @@index([organizationId, storeId, enabled])
+  @@map("ecommerce_coupons")
+}
+
+model EcommerceCouponProduct {
+  couponId  String             @map("coupon_id") @db.Uuid
+  productId String             @map("product_id") @db.Uuid
+  coupon    EcommerceCoupon    @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  product   EcommerceProduct   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([couponId, productId])
+  @@map("ecommerce_coupon_products")
+}
+
+model EcommerceCouponCategory {
+  couponId   String              @map("coupon_id") @db.Uuid
+  categoryId String              @map("category_id") @db.Uuid
+  coupon     EcommerceCoupon     @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  category   EcommerceCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([couponId, categoryId])
+  @@map("ecommerce_coupon_categories")
+}
+
+model EcommerceCouponRedemption {
+  id            String           @id @db.Uuid
+  couponId      String           @map("coupon_id") @db.Uuid
+  orderId       String           @map("order_id") @db.Uuid
+  discountMinor Int              @map("discount_minor")
+  redeemedAt    DateTime         @default(now()) @map("redeemed_at") @db.Timestamptz
+  coupon        EcommerceCoupon  @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  order         EcommerceOrder   @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([couponId, orderId])
+  @@map("ecommerce_coupon_redemptions")
+}
+
+model EcommerceAnalyticsEvent {
+  id             String         @id @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  storeId        String         @map("store_id") @db.Uuid
+  eventType      String         @map("event_type") @db.VarChar(120)
+  sessionHash    String?        @map("session_hash") @db.VarChar(128)
+  dataJson       Json           @default("{}") @map("data_json") @db.JsonB
+  occurredAt     DateTime       @default(now()) @map("occurred_at") @db.Timestamptz
+  store          EcommerceStore @relation(fields: [organizationId, storeId], references: [organizationId, id], onDelete: Restrict)
+
+  @@index([organizationId, storeId, eventType, occurredAt])
+  @@map("ecommerce_analytics_events")
 }

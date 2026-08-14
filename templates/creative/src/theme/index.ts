@@ -28,8 +28,8 @@ const defaults: ThemeTokens = {
   },
   typography: {
     fontFamilies: {
-      body: "Inter, ui-sans-serif, system-ui, Arial, sans-serif",
-      heading: "Georgia, 'Times New Roman', serif",
+      body: "Tajawal, ui-sans-serif, system-ui, Arial, sans-serif",
+      heading: "Cairo, Tajawal, ui-sans-serif, system-ui, Arial, sans-serif",
     },
     fontSizes: { body: "1rem", hero: "7.5rem" },
     fontWeights: { normal: 430, bold: 760 },

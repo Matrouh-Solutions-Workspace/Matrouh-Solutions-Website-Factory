@@ -44,6 +44,14 @@ export interface PublicTemplateCatalogItem {
   readonly highlightsAr: readonly string[];
 }
 
+interface PublicCommerceTemplateRow {
+  readonly slug: string;
+  readonly name: string;
+  readonly description: string;
+  readonly version: string;
+  readonly renderer_key: string;
+}
+
 export interface LoadedSite {
   readonly organizationId: string;
   readonly snapshot: PublicationSnapshot;
@@ -278,7 +286,7 @@ export const loadPublicTemplateCatalog = cache(
           AND entry.catalog_visible = true
         ORDER BY entry.catalog_featured DESC, entry.catalog_sort_order ASC, entry.display_name ASC
       `;
-      return Promise.all(
+      const websiteTemplates = await Promise.all(
         rows.map(async (row) => {
           const artifact = await loadCatalogedTemplateArtifact(templatesRoot(), row.artifact_uri, {
             templateId: row.template_id,
@@ -319,6 +327,8 @@ export const loadPublicTemplateCatalog = cache(
           };
         }),
       );
+      const commerceTemplates = await loadPublicCommerceTemplateCatalog();
+      return [...websiteTemplates, ...commerceTemplates];
     } catch (error) {
       if (rendererConfig.FACTORY_DEPLOYMENT_MODE !== "local") throw error;
       // Local previews should remain usable while a developer is rebuilding the catalog database.
@@ -385,7 +395,117 @@ const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
     supportsDarkMode: false,
     ...localCatalogPricing({ featured: true, badge: "New" }),
   },
+  commerceCatalogItem("fashion-store", "1.0.0"),
+  commerceCatalogItem("hardware-store", "1.0.0"),
+  commerceCatalogItem("pc-hardware-store", "1.0.0"),
 ];
+
+function commerceCatalogMetadataFor(rendererKey: string):
+  | {
+      readonly displayName: string;
+      readonly description: string;
+      readonly badge: string;
+      readonly badgeAr: string;
+    }
+  | undefined {
+  const metadata: Readonly<
+    Record<
+      string,
+      {
+        readonly displayName: string;
+        readonly description: string;
+        readonly badge: string;
+        readonly badgeAr: string;
+      }
+    >
+  > = {
+    "fashion-store": {
+      displayName: "Maison — Fashion Store",
+      description:
+        "An editorial, image-led storefront for fashion, lifestyle, beauty, and curated brands.",
+      badge: "E-shop",
+      badgeAr: "متجر إلكتروني",
+    },
+    "hardware-store": {
+      displayName: "Forge — Hardware Store",
+      description:
+        "A technical storefront for tools, hardware, building supplies, parts, and trade catalogs.",
+      badge: "E-shop",
+      badgeAr: "متجر إلكتروني",
+    },
+    "pc-hardware-store": {
+      displayName: "Nexus — PC Components Store",
+      description:
+        "A compatibility-first storefront for PC components, custom builds, gaming hardware, and upgrades.",
+      badge: "E-shop",
+      badgeAr: "متجر إلكتروني",
+    },
+  };
+  return metadata[rendererKey];
+}
+
+async function loadPublicCommerceTemplateCatalog(): Promise<readonly PublicTemplateCatalogItem[]> {
+  const rows = await database().$queryRaw<PublicCommerceTemplateRow[]>`
+    SELECT template.slug, template.name, template.description,
+           version.version, version.renderer_key
+    FROM ecommerce_templates AS template
+    JOIN LATERAL (
+      SELECT version, renderer_key
+      FROM ecommerce_template_versions
+      WHERE template_id = template.id
+        AND status = 'ready'
+        AND renderer_key IN ('fashion-store', 'hardware-store', 'pc-hardware-store')
+      ORDER BY string_to_array(version, '.')::int[] DESC
+      LIMIT 1
+    ) AS version ON TRUE
+    WHERE template.status = 'ready'
+    ORDER BY template.name ASC
+  `;
+  return rows.map((row) => commerceCatalogItem(row.renderer_key, row.version, row));
+}
+
+function commerceCatalogItem(
+  rendererKey: string,
+  version: string,
+  row?: Pick<PublicCommerceTemplateRow, "name" | "description">,
+): PublicTemplateCatalogItem {
+  const metadata = commerceCatalogMetadataFor(rendererKey);
+  const displayName = metadata?.displayName ?? row?.name ?? rendererKey;
+  const description = metadata?.description ?? row?.description ?? "E-commerce storefront";
+  return {
+    templateId: `ecommerce:${rendererKey}`,
+    displayName,
+    description,
+    category: "E-commerce",
+    categoryAr: "التجارة الإلكترونية",
+    version,
+    features: ["ecommerce", "product-catalog", "whatsapp-ordering"],
+    supportsDarkMode: true,
+    priceMinor: 40000,
+    currency: "EGP",
+    billingPeriod: "month",
+    featured: false,
+    badge: metadata?.badge ?? "E-shop",
+    badgeAr: metadata?.badgeAr ?? "متجر إلكتروني",
+    ctaLabel: null,
+    ctaLabelAr: null,
+    ctaHref: null,
+    salesDescription: description,
+    salesDescriptionAr: null,
+    highlights: [
+      "Store and product management dashboard",
+      "WhatsApp ordering flow",
+      "Arabic and English storefront",
+      "Responsive product catalog",
+    ],
+    highlightsAr: [
+      "لوحة تحكم للمتجر والمنتجات",
+      "طلبات مباشرة عبر واتساب",
+      "واجهة متجر بالعربية والإنجليزية",
+      "كتالوج منتجات متجاوب",
+    ],
+  };
+}
 
 function billingPeriod(value: string): PublicTemplateCatalogItem["billingPeriod"] {
   return value === "year" || value === "one-time" || value === "custom" ? value : "month";
