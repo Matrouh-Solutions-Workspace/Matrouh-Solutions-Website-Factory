@@ -5,6 +5,7 @@ import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
 import { instantiateTemplateRuntime } from "@factory/template-runtime";
 import { SiteNavigation } from "@/app/site-navigation";
+import { templateStyleVersion } from "@/app/template-style-version";
 import { localeLinks, localizedPageRoute, textDirection } from "@/server/locale-navigation";
 import { rendererConfig } from "@/server/config";
 import { loadSite } from "@/server/site";
@@ -99,7 +100,11 @@ export default async function SitePage({ params, searchParams }: PageProperties)
         site.snapshot.template.id,
         site.snapshot.template.version,
       )}
-      data-template-version={site.snapshot.template.version}
+      data-template-release-version={site.snapshot.template.version}
+      data-template-version={templateStyleVersion(
+        site.snapshot.template.id,
+        site.snapshot.template.version,
+      )}
       dir={textDirection(rendered.locale)}
       lang={rendered.locale}
       style={themeVariables(site.snapshot.theme)}

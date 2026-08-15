@@ -17,7 +17,7 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPrope
   const entry = catalog.find((item) => item.templateId === templateId);
   if (!entry) notFound();
   const template = artifact.definition;
-  const previewBase = `/dashboard/template-preview/${encodeURIComponent(templateId)}/${encodeURIComponent(version)}`;
+  const previewBase = `/template-preview/${encodeURIComponent(templateId)}/${encodeURIComponent(version)}`;
   return (
     <>
       <header>
@@ -30,7 +30,7 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPrope
           <a className="buttonLink secondaryButton" href="/templates">
             Back to catalog
           </a>
-          <a className="buttonLink" href={`${previewBase}/`} rel="noreferrer" target="_blank">
+          <a className="buttonLink" href={previewBase} rel="noreferrer" target="_blank">
             Open full preview
           </a>
         </div>
@@ -47,7 +47,7 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPrope
               const path = page.slug.defaultValue ?? (index === 0 ? "/" : slug(page.title));
               return (
                 <a
-                  href={`${previewBase}${path === "/" ? "/" : `/${path.replace(/^\/+/, "")}`}`}
+                  href={`${previewBase}${path === "/" ? "" : `/${path.replace(/^\/+/, "")}`}`}
                   key={page.id}
                   target="template-preview-frame"
                 >
@@ -61,7 +61,7 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPrope
         <div className="templatePreviewFrame">
           <iframe
             name="template-preview-frame"
-            src={`${previewBase}/`}
+            src={previewBase}
             title={`${template.manifest.displayName} preview`}
           />
         </div>
