@@ -2,7 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const dashboardHost = new URL(process.env.FACTORY_DASHBOARD_PUBLIC_URL ?? "http://localhost:3000")
   .hostname;
-const rendererBase = new URL(process.env.FACTORY_RENDERER_PUBLIC_URL ?? "http://localhost:3001");
+// The public renderer URL is for browser-facing links. Proxying server traffic through it
+// can send the preserved site host back through Cloudflare and create an origin loop.
+const rendererBase = new URL(
+  process.env.FACTORY_RENDERER_INTERNAL_URL ??
+    process.env.FACTORY_RENDERER_PUBLIC_URL ??
+    "http://localhost:3001",
+);
 
 /**
  * The dashboard remains its own Next application during development, but this gateway gives
@@ -18,7 +24,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       forwarded.set("x-factory-site-host", host);
       return NextResponse.next({ request: { headers: forwarded } });
     }
-    if (pathname === "/commerce-storefront.css") {
+    if (
+      pathname === "/commerce-storefront.css" ||
+      pathname === "/matrouh-logo.png" ||
+      pathname.startsWith("/commerce-heroes/")
+    ) {
       return rendererProxy(request, host);
     }
     if (
@@ -82,7 +92,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   ) {
     return rendererProxy(request, dashboardHost);
   }
-  if (pathname === "/commerce-storefront.css") {
+  if (
+    pathname === "/commerce-storefront.css" ||
+    pathname === "/matrouh-logo.png" ||
+    pathname.startsWith("/commerce-heroes/")
+  ) {
     return rendererProxy(request, dashboardHost);
   }
   if (pathname === "/templates") {

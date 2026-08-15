@@ -3,7 +3,10 @@ import { EcommerceStorefront } from "@/app/ecommerce-storefront";
 import type { EcommerceStorefrontData, StorefrontProduct } from "@/server/ecommerce-store";
 
 interface PreviewPageProperties {
-  readonly params: Promise<{ readonly rendererKey: string }>;
+  readonly params: Promise<{
+    readonly rendererKey: string;
+    readonly path?: readonly string[];
+  }>;
   readonly searchParams: Promise<{ readonly lang?: string }>;
 }
 
@@ -13,10 +16,16 @@ export default async function CommerceTemplatePreviewPage({
   params,
   searchParams,
 }: PreviewPageProperties) {
-  const { rendererKey } = await params;
+  const { rendererKey, path = [] } = await params;
   if (!supported.has(rendererKey)) notFound();
   const locale = (await searchParams).lang === "ar" ? "ar" : "en";
-  return <EcommerceStorefront path={[]} store={previewStore(rendererKey, locale)} />;
+  return (
+    <EcommerceStorefront
+      path={path}
+      previewBasePath={`/commerce-template-preview/${encodeURIComponent(rendererKey)}`}
+      store={previewStore(rendererKey, locale)}
+    />
+  );
 }
 
 function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStorefrontData {

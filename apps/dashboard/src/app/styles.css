@@ -1,4 +1,6 @@
 :root {
+  --font-cairo: "Cairo";
+  --font-tajawal: "Tajawal";
   color-scheme: light;
   --canvas: #f5f5f3;
   --surface: #ffffff;
@@ -4097,7 +4099,10 @@ input[type="file"] {
 }
 .templateLiveVisual {
   position: relative;
-  height: 220px;
+  /* Render the first desktop viewport at a true 25% scale. The catalog
+     includes templates with intentionally large editorial hero type, which
+     otherwise overwhelms the small card at the old 40% scale. */
+  height: 260px;
   overflow: hidden;
   border-bottom: 1px solid var(--line);
   background: #eef0ed;
@@ -4108,11 +4113,11 @@ input[type="file"] {
   top: 0;
   left: 0;
   display: block;
-  width: 250%;
-  height: 550px;
+  width: 400%;
+  height: 400%;
   border: 0;
   pointer-events: none;
-  transform: scale(0.4);
+  transform: scale(0.25);
   transform-origin: top left;
 }
 .templateVisualFallback {

@@ -26,9 +26,11 @@ type Theme = "light" | "dark";
 export function EcommerceStorefront({
   store,
   path,
+  previewBasePath,
 }: {
   readonly store: EcommerceStorefrontData;
   readonly path: readonly string[];
+  readonly previewBasePath?: string;
 }) {
   const kind = storefrontKind(store.template.rendererKey);
   const rtl = store.locale === "ar";
@@ -54,6 +56,13 @@ export function EcommerceStorefront({
   const catalogRef = useRef<HTMLElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const route = path[0] ?? "";
+  const previewPath = previewBasePath?.replace(/\/$/, "") ?? "";
+  const storefrontHref = (routePath = "", hash = "") => {
+    if (!previewPath) return `${routePath || "/"}${hash}`;
+    const normalizedRoute = routePath === "/" ? "" : routePath;
+    return `${previewPath}${normalizedRoute}?lang=${store.locale}${hash}`;
+  };
+  const languageHref = `${previewPath}${path.length ? `/${path.join("/")}` : ""}?lang=${rtl ? "en" : "ar"}`;
   const product =
     route === "products" ? store.products.find((item) => item.slug === path[1]) : undefined;
   const prices = store.products.map(productPrice);
@@ -345,9 +354,13 @@ export function EcommerceStorefront({
           >
             <Icon name="menu" />
           </button>
-          <a className="shopBrand" href="/" aria-label={`${store.name} · ${copy.home}`}>
+          <a
+            className="shopBrand"
+            href={storefrontHref()}
+            aria-label={`${store.name} · ${copy.home}`}
+          >
             <span className="shopBrandMark">
-              {kind === "fashion" ? "M" : kind === "pc" ? "NX" : "M+"}
+              <img alt="" src="/matrouh-logo.png" />
             </span>
             <span>
               <strong>{store.name}</strong>
@@ -377,7 +390,7 @@ export function EcommerceStorefront({
             ) : null}
           </form>
           <div className="shopHeaderActions">
-            <a className="shopTextControl" href={`?lang=${rtl ? "en" : "ar"}`}>
+            <a className="shopTextControl" href={languageHref}>
               <Icon name="globe" />
               <span>{rtl ? "EN" : "ع"}</span>
             </a>
@@ -389,7 +402,7 @@ export function EcommerceStorefront({
             >
               <Icon name={theme === "dark" ? "sun" : "moon"} />
             </button>
-            <a className="shopCartButton" href="/cart">
+            <a className="shopCartButton" href={storefrontHref("/cart")}>
               <Icon name="bag" />
               <span>{copy.cart}</span>
               <b>{cartCount}</b>
@@ -397,7 +410,7 @@ export function EcommerceStorefront({
           </div>
         </div>
         <nav aria-label={copy.navigation} className={menuOpen ? "shopNav isOpen" : "shopNav"}>
-          <a href="/" onClick={() => setMenuOpen(false)}>
+          <a href={storefrontHref()} onClick={() => setMenuOpen(false)}>
             {copy.newAndFeatured}
           </a>
           {store.categories.slice(0, 5).map((item) => (
@@ -448,11 +461,17 @@ export function EcommerceStorefront({
           <h1>{copy.orderReceived}</h1>
           <p>{copy.orderConfirmation}</p>
           <strong>{orderNumber}</strong>
-          <a className="shopPrimaryButton" href="/">
+          <a className="shopPrimaryButton" href={storefrontHref()}>
             {copy.continueShopping}
           </a>
         </main>
-        <StoreFooter copy={copy} kind={kind} store={store} />
+        <StoreFooter
+          copy={copy}
+          homeHref={storefrontHref()}
+          kind={kind}
+          productsHref={storefrontHref("", "#products")}
+          store={store}
+        />
       </div>
     );
   }
@@ -476,7 +495,7 @@ export function EcommerceStorefront({
                 <Icon name="bag" />
                 <h2>{copy.emptyCart}</h2>
                 <p>{copy.emptyCartHelp}</p>
-                <a className="shopPrimaryButton" href="/#products">
+                <a className="shopPrimaryButton" href={storefrontHref("", "#products")}>
                   {copy.continueShopping}
                 </a>
               </div>
@@ -588,7 +607,13 @@ export function EcommerceStorefront({
             </form>
           ) : null}
         </main>
-        <StoreFooter copy={copy} kind={kind} store={store} />
+        <StoreFooter
+          copy={copy}
+          homeHref={storefrontHref()}
+          kind={kind}
+          productsHref={storefrontHref("", "#products")}
+          store={store}
+        />
       </div>
     );
   }
@@ -615,7 +640,7 @@ export function EcommerceStorefront({
             />
           </div>
           <div className="commerceProductInfo">
-            <a className="shopBackLink" href="/#products">
+            <a className="shopBackLink" href={storefrontHref("", "#products")}>
               <Icon name="arrow" />
               {copy.backToProducts}
             </a>
@@ -668,7 +693,13 @@ export function EcommerceStorefront({
             </div>
           </div>
         </main>
-        <StoreFooter copy={copy} kind={kind} store={store} />
+        <StoreFooter
+          copy={copy}
+          homeHref={storefrontHref()}
+          kind={kind}
+          productsHref={storefrontHref("", "#products")}
+          store={store}
+        />
       </div>
     );
   }
@@ -777,6 +808,12 @@ export function EcommerceStorefront({
             </div>
           </div>
           <div className="shopHeroVisual" data-slide={heroSlide}>
+            <img
+              alt=""
+              aria-hidden="true"
+              className="shopHeroPhoto"
+              src={`/commerce-heroes/${kind === "pc" ? "pc-retail" : kind}.jpg`}
+            />
             <div className="shopHeroShape">
               <span>
                 {kind === "fashion"
@@ -797,6 +834,27 @@ export function EcommerceStorefront({
             <span className="shopHeroNumber">{slide.number}</span>
           </div>
         </section>
+
+        {kind === "pc" ? (
+          <nav aria-label={copy.shopByDepartment} className="shopPcQuickLinks">
+            {store.categories.slice(0, 4).map((item, index) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setCategory(item.id);
+                  catalogRef.current?.scrollIntoView({ behavior: "smooth" });
+                }}
+                type="button"
+              >
+                <span>
+                  <Icon name={categoryPcIcon(index)} />
+                </span>
+                <strong>{item.name}</strong>
+                <Icon name="arrow" />
+              </button>
+            ))}
+          </nav>
+        ) : null}
 
         <section aria-label={copy.storeBenefits} className="shopBenefitStrip" id="services">
           <Benefit icon="truck" title={copy.deliveryTitle} text={copy.deliveryText} />
@@ -903,6 +961,7 @@ export function EcommerceStorefront({
                 key={item.id}
                 kind={kind}
                 product={item}
+                productHref={storefrontHref(`/products/${item.slug}`)}
                 store={store}
               />
             ))}
@@ -1102,6 +1161,7 @@ export function EcommerceStorefront({
                       key={item.id}
                       kind={kind}
                       product={item}
+                      productHref={storefrontHref(`/products/${item.slug}`)}
                       store={store}
                     />
                   ))}
@@ -1162,7 +1222,13 @@ export function EcommerceStorefront({
           </form>
         </section>
       </main>
-      <StoreFooter copy={copy} kind={kind} store={store} />
+      <StoreFooter
+        copy={copy}
+        homeHref={storefrontHref()}
+        kind={kind}
+        productsHref={storefrontHref("", "#products")}
+        store={store}
+      />
       {filtersOpen ? (
         <button
           aria-label={copy.closeFilters}
@@ -1181,6 +1247,7 @@ function ProductCard({
   index,
   kind,
   product,
+  productHref,
   store,
 }: {
   readonly add: (product: StorefrontProduct) => void;
@@ -1188,6 +1255,7 @@ function ProductCard({
   readonly index: number;
   readonly kind: StorefrontKind;
   readonly product: StorefrontProduct;
+  readonly productHref: string;
   readonly store: EcommerceStorefrontData;
 }) {
   const stock = product.variants.reduce((sum, variant) => sum + variant.stockQuantity, 0);
@@ -1211,7 +1279,7 @@ function ProductCard({
         ];
   return (
     <article className="commerceProductCard">
-      <a href={`/products/${product.slug}`}>
+      <a href={productHref}>
         <ProductVisual index={index} kind={kind} product={product} store={store} />
         {badge ? <span className="shopProductBadge">{badge}</span> : null}
       </a>
@@ -1228,7 +1296,7 @@ function ProductCard({
             {stock > 0 ? copy.inStock : copy.outOfStock}
           </span>
         </div>
-        <a href={`/products/${product.slug}`}>
+        <a href={productHref}>
           <h3>{product.name}</h3>
           <p>{product.shortDescription}</p>
         </a>
@@ -1386,19 +1454,25 @@ function Benefit({
 
 function StoreFooter({
   copy,
+  homeHref,
   kind,
+  productsHref,
   store,
 }: {
   readonly copy: ReturnType<typeof commerceCopy>;
+  readonly homeHref: string;
   readonly kind: StorefrontKind;
+  readonly productsHref: string;
   readonly store: EcommerceStorefrontData;
 }) {
   const whatsappUrl = buildWhatsAppContactUrl(store.contactPhone);
   return (
     <footer className="commercePublicFooter">
       <div className="shopFooterLead">
-        <a className="shopBrand" href="/">
-          <span className="shopBrandMark">{kind === "fashion" ? "M" : "M+"}</span>
+        <a className="shopBrand" href={homeHref}>
+          <span className="shopBrandMark">
+            <img alt="" src="/matrouh-logo.png" />
+          </span>
           <span>
             <strong>{store.name}</strong>
             <small>{kind === "fashion" ? copy.fashionDescriptor : copy.hardwareDescriptor}</small>
@@ -1421,9 +1495,9 @@ function StoreFooter({
       </div>
       <div>
         <strong>{copy.shop}</strong>
-        <a href="#products">{copy.newAndFeatured}</a>
+        <a href={productsHref}>{copy.newAndFeatured}</a>
         {store.categories.slice(0, 4).map((item) => (
-          <a href={`/#products`} key={item.id}>
+          <a href={productsHref} key={item.id}>
             {item.name}
           </a>
         ))}

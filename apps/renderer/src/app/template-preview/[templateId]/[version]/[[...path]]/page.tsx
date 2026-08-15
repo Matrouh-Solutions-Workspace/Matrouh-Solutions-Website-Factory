@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
 import { SiteNavigation } from "@/app/site-navigation";
+import { templateStyleVersion } from "@/app/template-style-version";
 import { loadCatalogPreview } from "@/server/catalog-preview";
 import { localeLinks, localizedPageRoute, textDirection } from "@/server/locale-navigation";
 
@@ -53,7 +54,11 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
         preview.snapshot.template.id,
         preview.snapshot.template.version,
       )}
-      data-template-version={preview.snapshot.template.version}
+      data-template-release-version={preview.snapshot.template.version}
+      data-template-version={templateStyleVersion(
+        preview.snapshot.template.id,
+        preview.snapshot.template.version,
+      )}
       dir={textDirection(preview.rendered.locale)}
       lang={preview.rendered.locale}
       style={themeVariables(preview.snapshot.theme)}
