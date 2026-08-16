@@ -41,7 +41,7 @@ const websiteSchema = contentSchema<JsonValue>({
 export const template = defineTemplate({
   manifest: {
     id: ids.template("com.matrouh.creative"),
-    version: ids.version("1.0.0"),
+    version: ids.version("1.0.1"),
     displayName: "Studio Folio",
     author: "Matrouh Solutions",
     description:
