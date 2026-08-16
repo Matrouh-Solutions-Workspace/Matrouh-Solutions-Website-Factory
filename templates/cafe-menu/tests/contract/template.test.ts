@@ -35,9 +35,7 @@ describe("café and restaurant QR menu template contract", () => {
     expect(serialized).toContain("menu-breakfast-v3.webp");
     expect(serialized).toContain("menu-mains-v3.webp");
     expect(serialized).toContain("menu-drinks-v3.webp");
-    expect(template.manifest.previewImage).toBe(
-      "/templates/cafe-menu/cafe-menu-cover-v2.png",
-    );
+    expect(template.manifest.previewImage).toBe("/templates/cafe-menu/cafe-menu-cover-v2.png");
   });
 
   it("is locale-prefix aware and supports light and dark appearance", () => {

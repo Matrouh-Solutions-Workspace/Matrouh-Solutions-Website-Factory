@@ -42,7 +42,7 @@ describe("engineer template contract", () => {
   it("ships a photographic default hero while preserving media replacement", async () => {
     const source = await readFile(resolve(process.cwd(), "src/sections/index.tsx"), "utf8");
 
-    expect(source).toContain('/templates/engineer/engineer-hero.webp');
+    expect(source).toContain("/templates/engineer/engineer-hero.webp");
     expect(source).toContain('field(value, "heroMediaId")');
   });
 

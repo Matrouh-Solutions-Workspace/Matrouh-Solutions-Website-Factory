@@ -38,8 +38,7 @@ export const template = defineTemplate({
     version: ids.version("1.3.0"),
     displayName: "Cafe & Restaurant QR Menu",
     author: "Matrouh Solutions",
-    description:
-      "A bilingual QR menu for cafés, restaurants, bakeries, and casual food businesses",
+    description: "A bilingual QR menu for cafés, restaurants, bakeries, and casual food businesses",
     category: "food-and-hospitality",
     previewImage: "/templates/cafe-menu/cafe-menu-cover-v2.png",
     features: [

@@ -388,18 +388,11 @@ const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
   {
     templateId: "com.matrouh.cafe-menu",
     displayName: "Cafe & Restaurant QR Menu",
-    description:
-      "A bilingual, mobile-first café and restaurant menu with a printable QR workflow.",
+    description: "A bilingual, mobile-first café and restaurant menu with a printable QR workflow.",
     category: "Food & Hospitality",
     categoryAr: "المطاعم والمقاهي",
     version: "1.3.0",
-    features: [
-      "localized-content",
-      "menu-management",
-      "qr-code",
-      "printable-qr",
-      "dark-mode",
-    ],
+    features: ["localized-content", "menu-management", "qr-code", "printable-qr", "dark-mode"],
     supportsDarkMode: true,
     ...localCatalogDetails({ featured: true, badge: "New", badgeAr: "جديد" }),
   },

@@ -1,10 +1,5 @@
 import type { PageDefinition } from "@factory/template-sdk";
-import {
-  cafeMenuCatalogId,
-  cafeMenuHeroId,
-  cafeMenuHomePageId,
-  cafeMenuVisitId,
-} from "../ids";
+import { cafeMenuCatalogId, cafeMenuHeroId, cafeMenuHomePageId, cafeMenuVisitId } from "../ids";
 
 export const cafeMenuPages: readonly PageDefinition[] = [
   {

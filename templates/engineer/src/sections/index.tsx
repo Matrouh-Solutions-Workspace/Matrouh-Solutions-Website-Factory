@@ -165,11 +165,7 @@ export const engineerSections: readonly SectionDefinition[] = [
             </div>
           ) : (
             <div aria-hidden className="heroVisual">
-              <img
-                alt=""
-                fetchPriority="high"
-                src="/templates/engineer/engineer-hero.webp"
-              />
+              <img alt="" fetchPriority="high" src="/templates/engineer/engineer-hero.webp" />
               <span className="doctorPortraitMark">01</span>
               <small>{localeText(context.locale, "Engineering with intent", "هندسة هادفة")}</small>
             </div>

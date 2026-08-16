@@ -74,7 +74,8 @@ const english = {
   cardDescription: "Browse food, drinks, prices, and today’s availability on your phone.",
   print: "Print QR card",
   download: "Download PNG",
-  printHint: "For reliable scanning, print at A5 or larger and keep the white border around the code.",
+  printHint:
+    "For reliable scanning, print at A5 or larger and keep the white border around the code.",
   notReady: "QR code not ready yet",
   notReadyDescription: "The QR code appears here as soon as this menu has a live domain.",
   qrAlt: "QR code for",
@@ -83,7 +84,8 @@ const english = {
 const arabic: Record<keyof typeof english, string> = {
   eyebrow: "رمز QR للطاولات",
   title: "اطبع رمز القائمة",
-  description: "يفتح هذا الرمز القائمة المنشورة دائماً، لذلك يمكنك تحديث الأسعار والتوفر دون إعادة طباعته.",
+  description:
+    "يفتح هذا الرمز القائمة المنشورة دائماً، لذلك يمكنك تحديث الأسعار والتوفر دون إعادة طباعته.",
   publishFirst: "انشر القائمة واربط النطاق لإنشاء رمز QR الدائم.",
   cardEyebrow: "القائمة الرقمية",
   scan: "امسح الرمز لعرض قائمتنا",

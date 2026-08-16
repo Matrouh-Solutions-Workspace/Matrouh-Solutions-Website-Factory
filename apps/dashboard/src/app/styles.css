@@ -7885,7 +7885,7 @@ input[type="file"] {
   .appShell .editorStudioPage .websiteEditorHeader {
     grid-template-columns: 1fr auto;
   }
-.appShell .editorStudioPage .websiteEditorHeader .headerActions {
+  .appShell .editorStudioPage .websiteEditorHeader .headerActions {
     grid-column: 1 / -1;
     grid-row: 2;
     justify-content: flex-start;
@@ -8092,7 +8092,11 @@ input[type="file"] {
   overflow: hidden;
   border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
   background:
-    radial-gradient(circle at 0 0, color-mix(in srgb, var(--accent) 14%, transparent), transparent 24rem),
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--accent) 14%, transparent),
+      transparent 24rem
+    ),
     var(--panel);
 }
 .appShell .menuQrPanelCopy {

@@ -13,4 +13,3 @@ export async function createMenuQrDataUrl(publicUrl: string): Promise<string> {
     width: 720,
   });
 }
-

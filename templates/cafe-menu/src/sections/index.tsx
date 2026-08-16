@@ -206,7 +206,10 @@ export const cafeMenuSections: readonly SectionDefinition[] = [
             </div>
             <div className="cafeMenuHeroShade" />
             <div className="cafeMenuHeroTopline">
-              <span className="cafeMenuOpenStatus"><i aria-hidden />{text(content, "openStatus")}</span>
+              <span className="cafeMenuOpenStatus">
+                <i aria-hidden />
+                {text(content, "openStatus")}
+              </span>
               <span className="cafeMenuServiceNote">{text(content, "serviceNote")}</span>
             </div>
             <div className="cafeMenuHeroCopy">
@@ -218,7 +221,10 @@ export const cafeMenuSections: readonly SectionDefinition[] = [
                 <b aria-hidden>↘</b>
               </a>
             </div>
-            <div className="cafeMenuHeroIndex" aria-hidden><span>MENU</span><strong>01</strong></div>
+            <div className="cafeMenuHeroIndex" aria-hidden>
+              <span>MENU</span>
+              <strong>01</strong>
+            </div>
           </section>
         </>
       );
@@ -304,7 +310,9 @@ export const cafeMenuSections: readonly SectionDefinition[] = [
                             height={280}
                             loading="lazy"
                             src={defaultItemImages[categoryIndex % defaultItemImages.length]}
-                            style={{ objectPosition: defaultItemPosition(categoryIndex, itemIndex) }}
+                            style={{
+                              objectPosition: defaultItemPosition(categoryIndex, itemIndex),
+                            }}
                             width={280}
                           />
                         )}
@@ -407,7 +415,11 @@ export const cafeMenuSections: readonly SectionDefinition[] = [
               </a>
             </div>
             <p className="cafeMenuDietary">{text(content, "dietaryNote")}</p>
-            <div className="cafeMenuVisitStamp" aria-hidden>MR<br /><small>EST. 2026</small></div>
+            <div className="cafeMenuVisitStamp" aria-hidden>
+              MR
+              <br />
+              <small>EST. 2026</small>
+            </div>
           </div>
         </section>
       );

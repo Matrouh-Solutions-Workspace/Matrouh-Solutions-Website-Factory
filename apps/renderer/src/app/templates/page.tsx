@@ -319,9 +319,7 @@ function localizedTemplateMetadata(
     : (englishTemplateMetadata[templateId] ?? {});
 }
 
-const englishTemplateMetadata: Readonly<
-  Record<string, { readonly displayName: string }>
-> = {
+const englishTemplateMetadata: Readonly<Record<string, { readonly displayName: string }>> = {
   "com.matrouh.cafe-menu": { displayName: "Cafe & Restaurant QR Menu" },
   "com.matrouh.food-menu": { displayName: "Food Menu" },
   "ecommerce:fashion-store": { displayName: "Clothes Store" },

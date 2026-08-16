@@ -48,7 +48,8 @@ export const cafeMenuTheme: ThemeDefinition = {
   schema: contentSchema<ThemeTokens>({
     version: 1,
     schema: themeTokensZodSchema,
-    description: "Editorial café menu tokens with cream paper, forest green, and terracotta accents.",
+    description:
+      "Editorial café menu tokens with cream paper, forest green, and terracotta accents.",
   }),
   defaults,
   editor: { groups: ["colors", "layout", "typography"] },
