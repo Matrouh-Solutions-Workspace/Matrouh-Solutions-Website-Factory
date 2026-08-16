@@ -2879,6 +2879,153 @@ section.hero::before {
     height: 2rem;
   }
 }
+
+/* Forge Hardware uses the same immersive hero composition as Nexus PC while
+   retaining its own workshop palette, typography, imagery, and controls. */
+.shopTheme--hardware .shopHero {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  width: min(calc(100% - 3rem), 1500px);
+  min-height: clamp(560px, calc(100svh - 210px), 720px);
+  margin: 2rem auto 1rem;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 176, 0, 0.5);
+  border-radius: 24px;
+  background: #151a1d;
+  box-shadow:
+    0 32px 85px rgba(13, 17, 19, 0.3),
+    0 0 0 7px rgba(255, 176, 0, 0.06);
+}
+.shopTheme--hardware .shopHeroCopy {
+  position: relative;
+  z-index: 3;
+  width: min(53%, 720px);
+  min-height: inherit;
+  padding: clamp(3.5rem, 5vw, 6rem);
+  color: #fffaf0;
+  background: linear-gradient(
+    90deg,
+    #151a1d 0%,
+    rgba(21, 26, 29, 0.98) 62%,
+    rgba(21, 26, 29, 0.72) 82%,
+    transparent 100%
+  );
+}
+.shopTheme--hardware[dir="rtl"] .shopHeroCopy {
+  margin-inline: 0 auto;
+  background: linear-gradient(
+    270deg,
+    #151a1d 0%,
+    rgba(21, 26, 29, 0.98) 62%,
+    rgba(21, 26, 29, 0.72) 82%,
+    transparent 100%
+  );
+}
+.shopTheme--hardware .shopHeroCopy h1 {
+  max-width: 12ch;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+.shopTheme--hardware .shopHeroCopy > p:not(.shopEyebrow) {
+  max-width: 54ch;
+  color: #d4d0c8;
+}
+.shopTheme--hardware .shopHeroCopy .shopEyebrow {
+  color: #ffbf32;
+}
+.shopTheme--hardware .shopHeroCopy .shopSecondaryButton {
+  border-color: rgba(255, 250, 240, 0.42);
+  color: #fffaf0;
+  background: rgba(21, 26, 29, 0.58);
+  backdrop-filter: blur(12px);
+}
+.shopTheme--hardware .shopHeroCopy .shopHeroControls {
+  color: #fff4d6;
+}
+.shopTheme--hardware .shopHeroCopy .shopHeroControls button {
+  border-color: rgba(255, 176, 0, 0.48);
+  color: #fffaf0;
+  background: rgba(21, 26, 29, 0.74);
+}
+.shopTheme--hardware .shopHeroCopy .shopHeroControls span,
+.shopTheme--hardware .shopHeroCopy .shopHeroControls b {
+  color: inherit;
+}
+.shopTheme--hardware .shopHeroVisual {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  min-height: 0;
+  background: #151a1d;
+}
+.shopTheme--hardware .shopHeroPhoto {
+  object-position: center;
+}
+.shopTheme--hardware .shopHeroVisual::before {
+  z-index: 1;
+  background:
+    linear-gradient(0deg, rgba(10, 12, 13, 0.24), transparent 42%),
+    linear-gradient(90deg, rgba(21, 26, 29, 0.74), transparent 64%);
+}
+.shopTheme--hardware[dir="rtl"] .shopHeroVisual::before {
+  background:
+    linear-gradient(0deg, rgba(10, 12, 13, 0.24), transparent 42%),
+    linear-gradient(270deg, rgba(21, 26, 29, 0.74), transparent 64%);
+}
+.shopTheme--hardware[dir="rtl"] .shopHeroPhoto {
+  transform: scaleX(-1);
+}
+.shopTheme--hardware[dir="rtl"] .shopHeroVisual[data-slide="1"] .shopHeroPhoto {
+  transform: scaleX(-1) scale(1.035);
+}
+.shopTheme--hardware .shopHeroBadge,
+.shopTheme--hardware .shopHeroNumber {
+  display: none;
+}
+@media (max-width: 960px) {
+  .shopTheme--hardware .shopHero {
+    width: min(calc(100% - 2rem), 1500px);
+    min-height: 680px;
+    margin-top: 1rem;
+  }
+  .shopTheme--hardware .shopHeroCopy,
+  .shopTheme--hardware[dir="rtl"] .shopHeroCopy {
+    width: 100%;
+    min-height: 680px;
+    justify-content: flex-start;
+    padding: 3.25rem 2rem 15rem;
+    background: linear-gradient(
+      180deg,
+      #151a1d 0%,
+      rgba(21, 26, 29, 0.96) 44%,
+      rgba(21, 26, 29, 0.46) 70%,
+      rgba(21, 26, 29, 0.72) 100%
+    );
+  }
+  .shopTheme--hardware .shopHeroPhoto,
+  .shopTheme--hardware[dir="rtl"] .shopHeroPhoto {
+    object-position: 58% center;
+  }
+}
+@media (max-width: 560px) {
+  .shopTheme--hardware .shopHero {
+    min-height: 650px;
+    border-radius: 16px;
+  }
+  .shopTheme--hardware .shopHeroCopy,
+  .shopTheme--hardware[dir="rtl"] .shopHeroCopy {
+    min-height: 650px;
+    padding: 2.5rem 1.25rem 13rem;
+  }
+  .shopTheme--hardware .shopHeroActions {
+    align-items: stretch;
+  }
+  .shopTheme--hardware .shopHeroActions a {
+    justify-content: center;
+  }
+}
 .shopTheme--pc .shopCategoryCard,
 .shopTheme--pc .commerceProductCard {
   border-radius: 12px;

@@ -26,6 +26,23 @@ describe("template title scale", () => {
     expect(styles).toContain("line-height: 1.16");
   });
 
+  it("uses a compact Arabic title scale for the public template catalog", async () => {
+    const styles = await readFile(resolve(process.cwd(), "src/app/styles.css"), "utf8");
+
+    expect(styles).toContain('.templateGallery[dir="rtl"] .templateGalleryHero h1');
+    expect(styles).toContain("font-size: clamp(2.6rem, 5.2vw, 5.35rem)");
+  });
+
+  it("keeps the Arabic engineer hero title compact", async () => {
+    const styles = await readFile(resolve(process.cwd(), "src/app/styles.css"), "utf8");
+
+    expect(styles).toContain(
+      '.siteRoot[dir="rtl"][data-template-id="com.matrouh.engineer"] .heroCopy h1',
+    );
+    expect(styles).toContain("font-size: clamp(2.7rem, 5.2vw, 4.8rem)");
+    expect(styles).toContain("line-height: 1.05");
+  });
+
   it("uses the locally hosted Cairo and Tajawal families for Studio Folio Arabic titles", async () => {
     const styles = await readFile(resolve(process.cwd(), "src/app/styles.css"), "utf8");
 

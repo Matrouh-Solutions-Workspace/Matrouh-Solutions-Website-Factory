@@ -256,12 +256,13 @@
   }
 }
 
-/* Public catalog pricing experience */
+/* Public template catalog experience */
 .templateGallery {
   --gallery-accent-soft: #fff5bd;
   --gallery-accent-ink: #6f5600;
+  --gallery-gutter: clamp(1rem, 4vw, 4rem);
   --theme-typography-font-families-heading: var(--font-tajawal), Tajawal, Arial, sans-serif;
-  padding: 0 clamp(1rem, 4vw, 4rem) clamp(1rem, 4vw, 4rem);
+  padding: 0 var(--gallery-gutter) var(--gallery-gutter);
 }
 .templateGallery[data-theme="dark"] {
   --gallery-accent-soft: #332b0c;
@@ -270,12 +271,15 @@
 .templateGalleryHeader {
   position: sticky;
   top: 0;
-  z-index: 20;
-  width: min(1320px, 100%);
-  padding: 0.9rem 0;
+  z-index: 50;
+  width: calc(100% + var(--gallery-gutter) + var(--gallery-gutter));
+  min-height: 76px;
+  margin-inline: calc(var(--gallery-gutter) * -1);
+  padding: 0.9rem max(var(--gallery-gutter), calc((100vw - 1320px) / 2));
   border-bottom: 1px solid var(--gallery-line);
-  background: color-mix(in srgb, var(--gallery-canvas) 88%, transparent);
-  backdrop-filter: blur(18px);
+  background: var(--gallery-canvas);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--gallery-canvas) 82%, transparent);
+  isolation: isolate;
 }
 .templateGalleryHeaderNav {
   display: flex;
@@ -323,6 +327,11 @@
   font-weight: 900;
   letter-spacing: 0;
   line-height: 1.08;
+}
+.templateGallery[dir="rtl"] .templateGalleryHero h1 {
+  max-width: 15ch;
+  font-size: clamp(2.6rem, 5.2vw, 5.35rem);
+  line-height: 1.14;
 }
 .templateGalleryHeroCopy > span {
   max-width: 52rem;
@@ -534,23 +543,6 @@
   min-height: 0;
   margin: 0;
 }
-.templateGalleryPrice {
-  display: grid;
-  justify-items: end;
-  min-width: max-content;
-}
-.templateGallery[dir="rtl"] .templateGalleryPrice {
-  justify-items: start;
-}
-.templateGalleryPrice strong {
-  font-size: clamp(1.2rem, 1.8vw, 1.55rem);
-  letter-spacing: -0.05em;
-}
-.templateGalleryPrice span {
-  color: var(--gallery-muted);
-  font-size: 0.7rem;
-  font-weight: 750;
-}
 .templateGalleryDivider {
   height: 1px;
   background: var(--gallery-line);
@@ -715,6 +707,11 @@
   filter: none;
   transform: none;
 }
+@media (max-width: 1100px) {
+  .templateGalleryHeaderNav {
+    display: none;
+  }
+}
 @media (max-width: 900px) {
   .templateGalleryHero,
   .templateGalleryProcess {
@@ -723,9 +720,6 @@
   .templateGalleryHeroSummary {
     max-width: 420px;
   }
-  .templateGalleryHeaderNav {
-    display: none;
-  }
 }
 @media (max-width: 620px) {
   .templateGalleryGrid {
@@ -733,7 +727,8 @@
     padding-top: 1rem;
   }
   .templateGalleryHeader {
-    padding-inline: 0;
+    min-height: 68px;
+    padding-block: 0.65rem;
   }
   .templateGalleryHero {
     padding-top: 3.5rem;
@@ -746,10 +741,6 @@
   .templateGalleryPackageTitle,
   .templateGalleryCardActions {
     grid-template-columns: 1fr;
-  }
-  .templateGalleryPrice,
-  .templateGallery[dir="rtl"] .templateGalleryPrice {
-    justify-items: start;
   }
   .templateGalleryProcess li {
     grid-template-columns: 2rem minmax(0, 1fr);
@@ -1528,6 +1519,11 @@
   line-height: 0.92;
   text-wrap: balance;
 }
+.siteRoot[dir="rtl"][data-template-id="com.matrouh.engineer"] .heroCopy h1 {
+  max-width: 12ch;
+  font-size: clamp(2.7rem, 5.2vw, 4.8rem);
+  line-height: 1.05;
+}
 .siteRoot[data-template-id="com.matrouh.engineer"] .heroCopy .heroLead {
   max-width: 52ch;
   color: rgba(255, 255, 255, 0.7);
@@ -1562,12 +1558,27 @@
   text-align: start;
 }
 .siteRoot[data-template-id="com.matrouh.engineer"] .hero--engineer .heroVisual::before {
-  inset: 8%;
-  border-radius: 50%;
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 0 0 3rem rgba(255, 255, 255, 0.025),
-    0 0 0 6rem rgba(255, 255, 255, 0.018);
+  z-index: 1;
+  inset: 1rem;
+  border-radius: 0.15rem;
+  border-color: rgba(255, 255, 255, 0.38);
+  box-shadow: none;
+}
+.siteRoot[data-template-id="com.matrouh.engineer"] .hero--engineer .heroVisual::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 48%, rgba(5, 16, 27, 0.88) 100%);
+}
+.siteRoot[data-template-id="com.matrouh.engineer"] .hero--engineer .heroVisual > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  object-position: 50% 42%;
 }
 .siteRoot[data-template-id="com.matrouh.engineer"] .hero--engineer .heroVisual > strong {
   position: relative;
@@ -1580,6 +1591,9 @@
 .siteRoot[data-template-id="com.matrouh.engineer"] .hero--engineer .heroVisual > small {
   position: relative;
   z-index: 2;
+  align-self: end;
+  max-width: 18ch;
+  padding-inline-start: 0.15rem;
   color: rgba(255, 255, 255, 0.65);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   letter-spacing: 0.08em;

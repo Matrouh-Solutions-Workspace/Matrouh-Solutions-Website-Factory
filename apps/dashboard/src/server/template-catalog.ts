@@ -19,9 +19,6 @@ export interface TemplateCatalogItem {
   readonly lifecycleStatus: string;
   readonly catalog: {
     readonly visible: boolean;
-    readonly priceMinor: number;
-    readonly currency: string;
-    readonly billingPeriod: string;
     readonly featured: boolean;
     readonly sortOrder: number;
     readonly category: string;
@@ -72,9 +69,6 @@ export async function loadTemplateCatalog(): Promise<readonly TemplateCatalogIte
       lifecycleStatus: row.lifecycleStatus,
       catalog: {
         visible: row.catalogVisible ?? true,
-        priceMinor: row.catalogPriceMinor ?? 25000,
-        currency: row.catalogCurrency || "EGP",
-        billingPeriod: row.catalogBillingPeriod || "month",
         featured: row.catalogFeatured ?? false,
         sortOrder: row.catalogSortOrder ?? 0,
         category: row.catalogCategory || row.category,

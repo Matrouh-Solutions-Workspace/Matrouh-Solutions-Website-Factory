@@ -128,11 +128,12 @@ export default async function PreviewPage({ params, searchParams }: PreviewPrope
 
 function premiumTemplateId(templateId: string, version: string): string | undefined {
   const premiumVersions: Readonly<Record<string, string>> = {
-    "com.matrouh.engineer": "2.0.0",
-    "com.matrouh.doctor": "2.0.0",
-    "com.matrouh.clinic": "2.0.0",
+    "com.matrouh.engineer": "2.0.",
+    "com.matrouh.doctor": "2.0.",
+    "com.matrouh.clinic": "2.0.",
   };
-  return premiumVersions[templateId] === version ? templateId : undefined;
+  const premiumVersion = premiumVersions[templateId];
+  return premiumVersion && version.startsWith(premiumVersion) ? templateId : undefined;
 }
 
 function websiteSetting(snapshot: PublicationSnapshot, key: string): unknown {

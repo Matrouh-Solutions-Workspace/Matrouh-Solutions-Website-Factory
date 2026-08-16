@@ -364,8 +364,8 @@ const remainingArabicText: Readonly<Record<string, string>> = {
   "Color changes now appear in the main draft preview. Save the theme to keep them in this draft and refresh the complete website preview.":
     "تظهر تغييرات الألوان الآن في معاينة المسودة الرئيسية. احفظ المظهر للاحتفاظ بها في هذه المسودة وتحديث معاينة الموقع الكاملة.",
   "Template category": "تصنيف القالب",
-  "Manage package visibility, pricing, order, and sales content in one focused workspace.":
-    "أدر ظهور الباقات وأسعارها وترتيبها ومحتواها التسويقي من مساحة عمل واحدة.",
+  "Manage template visibility, order, and customer-facing content in one focused workspace.":
+    "أدر ظهور القوالب وترتيبها ومحتواها الموجّه للعملاء من مساحة عمل واحدة.",
   "Packages are shown in their current public sort order. Open one package to edit its public listing without loading every form at once.":
     "تظهر الباقات حسب ترتيبها الحالي في الكتالوج. افتح باقة واحدة لتعديل عرضها دون تحميل كل النماذج معًا.",
   "Preview and customize installed templates, or add a trusted template artifact.":
@@ -376,6 +376,7 @@ const remainingArabicText: Readonly<Record<string, string>> = {
   "Shown to customers": "ظاهرة للعملاء",
   "Template library": "مكتبة القوالب",
   "View public catalog": "عرض الكتالوج العام",
+  "Visibility &amp; listing": "الظهور والعرض",
   "No installed templates are available to list publicly.":
     "لا توجد قوالب مثبتة متاحة للعرض العام.",
   "https://wa.me/201284289997 or another HTTPS link":

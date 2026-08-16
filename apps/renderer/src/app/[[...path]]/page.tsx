@@ -167,11 +167,12 @@ export default async function SitePage({ params, searchParams }: PageProperties)
 
 function premiumTemplateId(templateId: string, version: string): string | undefined {
   const premiumVersions: Readonly<Record<string, string>> = {
-    "com.matrouh.engineer": "2.0.0",
-    "com.matrouh.doctor": "2.0.0",
-    "com.matrouh.clinic": "2.0.0",
+    "com.matrouh.engineer": "2.0.",
+    "com.matrouh.doctor": "2.0.",
+    "com.matrouh.clinic": "2.0.",
   };
-  return premiumVersions[templateId] === version ? templateId : undefined;
+  const premiumVersion = premiumVersions[templateId];
+  return premiumVersion && version.startsWith(premiumVersion) ? templateId : undefined;
 }
 
 function matrouhSolutionsUrl(locale: string): string {

@@ -37,6 +37,8 @@ import { DraftSetupSteps, draftSetupStep } from "@/app/draft-setup-steps";
 import { CoordinatePickerFields, StructuredListField } from "@/app/structured-list-field";
 import { ThemeLiveEditor } from "@/app/theme-live-editor";
 import { MediaPicker } from "@/app/media-picker";
+import { MenuQrCard } from "@/app/menu-qr-card";
+import { createMenuQrDataUrl } from "@/app/menu-qr";
 import { loadWebsiteEditor } from "@/server/editor";
 import { dashboardConfig } from "@/server/config";
 import { canRetryPublicationJob, isActivePublicationJob } from "@/server/publication-jobs";
@@ -57,6 +59,12 @@ export default async function WebsiteEditorPage({
   if (!editor) notFound();
   const setupStep = draftSetupStep(requestedSetupStep);
   const publishPending = isActivePublicationJob(editor.latestPublishJob?.status);
+  const qrMenu = editor.templateFeatures.includes("qr-code");
+  const qrPublicUrl =
+    qrMenu && editor.website.status === "published" && editor.website.hostname
+      ? websitePublicUrl(editor.website.hostname)
+      : null;
+  const qrDataUrl = qrPublicUrl ? await createMenuQrDataUrl(qrPublicUrl) : null;
   const availableLocales = editor.supportedLocales.filter(
     (locale) => !editor.website.locales.includes(locale),
   );
@@ -197,6 +205,15 @@ export default async function WebsiteEditorPage({
         </aside>
 
         <div className="editorStudioInspector">
+          {qrMenu ? (
+            <MenuQrCard
+              businessName={editor.website.name}
+              hidden={setupStep !== "review"}
+              locale={locale}
+              publicUrl={qrPublicUrl}
+              qrDataUrl={qrDataUrl}
+            />
+          ) : null}
           <form
             action={updateWebsiteIdentityAction}
             className="panel editForm"

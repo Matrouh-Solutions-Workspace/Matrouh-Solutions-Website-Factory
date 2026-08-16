@@ -19,6 +19,8 @@ import { DraftEditorForm } from "@/app/draft-editor-form";
 import { DocumentImportField } from "@/app/document-import-field";
 import { EditorPreviewPane, EditorSaveStatus } from "@/app/editor-studio";
 import { MediaPicker } from "@/app/media-picker";
+import { MenuQrCard } from "@/app/menu-qr-card";
+import { createMenuQrDataUrl } from "@/app/menu-qr";
 import { PendingSubmit } from "@/app/pending-submit";
 import { dashboardConfig } from "@/server/config";
 import { loadClientWebsiteEditor } from "@/server/editor";
@@ -34,6 +36,12 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
   const locale = uiLocale((await cookies()).get(UI_LOCALE_COOKIE)?.value);
   const copy = locale === "ar" ? arabic : english;
   const menuMode = editor.templateFeatures.includes("menu-management");
+  const qrMenu = editor.templateFeatures.includes("qr-code");
+  const qrPublicUrl =
+    qrMenu && editor.website.status === "published" && editor.website.hostname
+      ? publicWebsiteUrl(editor.website.hostname)
+      : null;
+  const qrDataUrl = qrPublicUrl ? await createMenuQrDataUrl(qrPublicUrl) : null;
   const availableLocales = editor.supportedLocales.filter(
     (supportedLocale) => !editor.website.locales.includes(supportedLocale),
   );
@@ -119,13 +127,19 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
                 {copy.languages}
               </a>
             ) : null}
+            {qrMenu ? (
+              <a href="#menu-qr">
+                <span>04</span>
+                {copy.qrCode}
+              </a>
+            ) : null}
             <a href="#client-content">
-              <span>{menuMode ? "04" : "03"}</span>
+              <span>{qrMenu ? "05" : menuMode ? "04" : "03"}</span>
               {menuMode ? copy.categoriesAndItems : copy.content}
             </a>
             {editor.navigation.length > 0 ? (
               <a href="#client-navigation">
-                <span>{menuMode ? "05" : "04"}</span>
+                <span>{qrMenu ? "06" : menuMode ? "05" : "04"}</span>
                 {copy.navigation}
               </a>
             ) : null}
@@ -137,6 +151,15 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
         </aside>
 
         <div className="editorStudioInspector">
+          {qrMenu ? (
+            <MenuQrCard
+              businessName={editor.website.name}
+              id="menu-qr"
+              locale={locale}
+              publicUrl={qrPublicUrl}
+              qrDataUrl={qrDataUrl}
+            />
+          ) : null}
           <DraftEditorForm
             action={updateWebsiteIdentityAction}
             className="panel editForm"
@@ -609,6 +632,7 @@ const english = {
   navigation: "Navigation",
   navigationLabels: "Navigation labels",
   navigationDescription: "Navigation labels are saved automatically for every website language.",
+  qrCode: "Menu QR code",
   menuCount: "{count} menus",
   navigationLabel: "Navigation label",
 } as const;
@@ -671,6 +695,7 @@ const arabic: Record<keyof typeof english, string> = {
   navigation: "التنقل",
   navigationLabels: "تسميات التنقل",
   navigationDescription: "تُحفظ تسميات التنقل تلقائيًا لكل لغة في الموقع.",
+  qrCode: "رمز QR للقائمة",
   menuCount: "{count} قوائم",
   navigationLabel: "تسمية التنقل",
 };

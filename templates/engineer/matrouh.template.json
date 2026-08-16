@@ -1,7 +1,7 @@
 {
   "manifestFormatVersion": 1,
   "templateId": "com.matrouh.engineer",
-  "templateVersion": "2.0.0",
+  "templateVersion": "2.0.1",
   "packageEntry": "./dist/index.js",
   "generatedManifest": "./generated/matrouh.template.manifest.json"
 }

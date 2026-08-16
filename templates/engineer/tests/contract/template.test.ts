@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { template } from "../../src";
 import { engineerHeroId } from "../../src/ids";
 
@@ -35,6 +37,13 @@ describe("engineer template contract", () => {
       control: "media",
       mediaKinds: ["image"],
     });
+  });
+
+  it("ships a photographic default hero while preserving media replacement", async () => {
+    const source = await readFile(resolve(process.cwd(), "src/sections/index.tsx"), "utf8");
+
+    expect(source).toContain('/templates/engineer/engineer-hero.webp');
+    expect(source).toContain('field(value, "heroMediaId")');
   });
 
   it("has a complete accessible page graph", () => {

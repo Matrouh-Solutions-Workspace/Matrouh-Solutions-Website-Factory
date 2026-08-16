@@ -47,6 +47,22 @@ describe("commerce storefront templates", () => {
     expect(styles).toMatch(/\.shopNav\.isOpen\s*\{\s*display:\s*grid;\s*\}/s);
   });
 
+  it("gives the hardware hero the PC hero's immersive responsive composition", async () => {
+    const styles = await readFile(resolve(process.cwd(), "public/commerce-storefront.css"), "utf8");
+
+    expect(styles).toMatch(
+      /\.shopTheme--hardware \.shopHero\s*\{[^}]*display:\s*block;[^}]*border-radius:\s*24px;/s,
+    );
+    expect(styles).toMatch(
+      /\.shopTheme--hardware \.shopHeroCopy\s*\{[^}]*position:\s*relative;[^}]*width:\s*min\(53%, 720px\);/s,
+    );
+    expect(styles).toMatch(
+      /\.shopTheme--hardware \.shopHeroVisual\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;/s,
+    );
+    expect(styles).toContain('.shopTheme--hardware[dir="rtl"] .shopHeroCopy');
+    expect(styles).toContain("@media (max-width: 560px)");
+  });
+
   it("uses one WhatsApp order flow without advertising an online gateway", async () => {
     const source = await readFile(
       resolve(process.cwd(), "src/app/ecommerce-storefront.tsx"),

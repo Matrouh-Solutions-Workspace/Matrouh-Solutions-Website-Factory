@@ -25,7 +25,7 @@ export function TemplateCatalogSettingsForm({
           <div className="templateCatalogSettingsHead">
             <div>
               <span className="templateCatalogSettingsEyebrow">Public listing controls</span>
-              <strong>Price &amp; visibility</strong>
+              <strong>Visibility &amp; listing</strong>
               <small>Changes appear on the public /templates page.</small>
             </div>
             <span className={settings.visible ? "status active" : "status failed"}>
@@ -37,30 +37,6 @@ export function TemplateCatalogSettingsForm({
           <label className="templateCatalogSwitch templateCatalogVisibilityControl">
             <input defaultChecked={settings.visible} name="visible" type="checkbox" value="yes" />
             <span>Show publicly</span>
-          </label>
-          <label>
-            Price
-            <input
-              defaultValue={(settings.priceMinor / 100).toFixed(2)}
-              min="0"
-              name="price"
-              required
-              step="0.01"
-              type="number"
-            />
-          </label>
-          <label>
-            Currency
-            <input defaultValue={settings.currency} maxLength={8} name="currency" required />
-          </label>
-          <label>
-            Billing period
-            <select defaultValue={settings.billingPeriod} name="billingPeriod">
-              <option value="month">Monthly</option>
-              <option value="year">Yearly</option>
-              <option value="one-time">One-time</option>
-              <option value="custom">Custom</option>
-            </select>
           </label>
           <label>
             Sort order

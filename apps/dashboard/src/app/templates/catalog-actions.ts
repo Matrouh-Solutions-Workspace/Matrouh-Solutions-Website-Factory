@@ -7,17 +7,12 @@ import { requireDashboardContext } from "@/server/auth";
 import { dashboardDatabase } from "@/server/database";
 import type { TemplateCatalogSettingsState } from "./catalog-action-state";
 
-const billingPeriods = new Set(["month", "year", "one-time", "custom"]);
-
 export async function updateTemplateCatalogSettingsAction(
   _previous: TemplateCatalogSettingsState,
   formData: FormData,
 ): Promise<TemplateCatalogSettingsState> {
   const context = await requireDashboardContext("template.import");
   const templateId = text(formData, "templateId", 160);
-  const currency = text(formData, "currency", 8).toUpperCase();
-  const billingPeriod = text(formData, "billingPeriod", 24);
-  const price = Number(text(formData, "price", 24));
   const sortOrder = Number.parseInt(text(formData, "sortOrder", 12), 10);
   const badge = optionalText(formData, "badge", 80);
   const badgeAr = optionalText(formData, "badgeAr", 80);
@@ -36,11 +31,6 @@ export async function updateTemplateCatalogSettingsAction(
     .filter(Boolean);
 
   if (!/^[a-z0-9][a-z0-9.-]{2,159}$/.test(templateId)) return failure("Invalid template ID.");
-  if (!/^[A-Z]{3,8}$/.test(currency)) return failure("Use a valid currency code such as EGP.");
-  if (!billingPeriods.has(billingPeriod)) return failure("Choose a supported billing period.");
-  if (!Number.isFinite(price) || price < 0 || price > 10_000_000) {
-    return failure("Price must be between 0 and 10,000,000.");
-  }
   if (!Number.isInteger(sortOrder) || sortOrder < -10_000 || sortOrder > 10_000) {
     return failure("Sort order must be between -10,000 and 10,000.");
   }
@@ -69,9 +59,6 @@ export async function updateTemplateCatalogSettingsAction(
           where: { templateId },
           data: {
             catalogVisible: formData.get("visible") === "yes",
-            catalogPriceMinor: Math.round(price * 100),
-            catalogCurrency: currency,
-            catalogBillingPeriod: billingPeriod,
             catalogFeatured: formData.get("featured") === "yes",
             catalogSortOrder: sortOrder,
             catalogBadge: badge || null,
@@ -99,9 +86,6 @@ export async function updateTemplateCatalogSettingsAction(
             metadataJson: {
               templateId,
               visible: formData.get("visible") === "yes",
-              priceMinor: Math.round(price * 100),
-              currency,
-              billingPeriod,
             },
             retentionClass: "operational",
           },

@@ -12,9 +12,9 @@ import {
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Website packages and prices | Matrouh Solutions",
+  title: "Website templates | Matrouh Solutions",
   description:
-    "Compare Matrouh Solutions website and digital-menu templates, pricing, features, and live previews.",
+    "Explore Matrouh Solutions website and digital-menu templates, features, and live previews.",
 };
 
 interface TemplatesGalleryProperties {
@@ -113,7 +113,7 @@ export default async function TemplatesGallery({ searchParams }: TemplatesGaller
           <p>{text.catalogEyebrow}</p>
           <h2>{text.catalogTitle}</h2>
         </div>
-        <span>{text.priceNote}</span>
+        <span>{text.catalogNote}</span>
       </section>
 
       <nav aria-label={text.categoryNavigation} className="templateGalleryCategoryFilter">
@@ -233,10 +233,6 @@ function TemplatePackageCard({
             <h2>{template.displayName}</h2>
             <p>{salesDescription}</p>
           </div>
-          <div className="templateGalleryPrice" aria-label={text.price}>
-            <strong>{formatPrice(template.priceMinor, template.currency, locale)}</strong>
-            <span>{periodLabel(template.billingPeriod, locale)}</span>
-          </div>
         </div>
         <div className="templateGalleryDivider" />
         <span className="templateGalleryIncludes">{text.packageIncludes}</span>
@@ -275,25 +271,6 @@ function defaultHighlights(template: PublicTemplateCatalogItem, locale: "ar" | "
         : text.contentDashboard,
     template.supportsDarkMode ? text.darkMode : text.lightOnly,
   ];
-}
-
-function formatPrice(priceMinor: number, currency: string, locale: "ar" | "en"): string {
-  try {
-    return new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-EG", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: priceMinor % 100 === 0 ? 0 : 2,
-    }).format(priceMinor / 100);
-  } catch {
-    return `${(priceMinor / 100).toLocaleString(locale === "ar" ? "ar-EG" : "en-EG")} ${currency}`;
-  }
-}
-
-function periodLabel(
-  period: PublicTemplateCatalogItem["billingPeriod"],
-  locale: "ar" | "en",
-): string {
-  return periodLabels[locale][period];
 }
 
 function previewHref(templateId: string, version: string, locale: "ar" | "en"): string {
@@ -337,14 +314,20 @@ function localizedTemplateMetadata(
   readonly description: string;
   readonly category: string;
 }> {
-  if (locale !== "ar") return {};
-  return arabicTemplateMetadata[templateId] ?? {};
+  return locale === "ar"
+    ? (arabicTemplateMetadata[templateId] ?? {})
+    : (englishTemplateMetadata[templateId] ?? {});
 }
 
-const periodLabels = {
-  ar: { month: "شهرياً", year: "سنوياً", "one-time": "دفعة واحدة", custom: "حسب الاتفاق" },
-  en: { month: "per month", year: "per year", "one-time": "one-time", custom: "custom" },
-} as const;
+const englishTemplateMetadata: Readonly<
+  Record<string, { readonly displayName: string }>
+> = {
+  "com.matrouh.cafe-menu": { displayName: "Cafe & Restaurant QR Menu" },
+  "com.matrouh.food-menu": { displayName: "Food Menu" },
+  "ecommerce:fashion-store": { displayName: "Clothes Store" },
+  "ecommerce:hardware-store": { displayName: "Hardware" },
+  "ecommerce:pc-hardware-store": { displayName: "PC Hardware" },
+};
 
 const arabicTemplateMetadata: Readonly<
   Record<
@@ -373,22 +356,27 @@ const arabicTemplateMetadata: Readonly<
     category: "أعمال إبداعية",
   },
   "com.matrouh.food-menu": {
-    displayName: "سافرون — قائمة مطعم ومقهى",
+    displayName: "قائمة طعام",
     description: "قائمة طعام رقمية احترافية ثنائية اللغة للمطاعم والمقاهي.",
     category: "المطاعم والمقاهي",
   },
+  "com.matrouh.cafe-menu": {
+    displayName: "قائمة مقهى ومطعم بالـ QR",
+    description: "قائمة ثنائية اللغة للمقاهي والمطاعم مع رمز QR جاهز للطباعة ووضعين فاتح وداكن.",
+    category: "المطاعم والمقاهي",
+  },
   "ecommerce:fashion-store": {
-    displayName: "ميزون — متجر أزياء",
+    displayName: "متجر ملابس",
     description: "متجر إلكتروني تحريري للموضة والجمال والمنتجات المختارة بعناية.",
     category: "التجارة الإلكترونية",
   },
   "ecommerce:hardware-store": {
-    displayName: "فورج — متجر أدوات ومعدات",
+    displayName: "أدوات ومعدات",
     description: "متجر تقني للأدوات والمعدات ومواد البناء وكتالوجات الحرفيين.",
     category: "التجارة الإلكترونية",
   },
   "ecommerce:pc-hardware-store": {
-    displayName: "نيكسس — متجر مكونات كمبيوتر",
+    displayName: "مكونات كمبيوتر",
     description: "متجر يركز على توافق مكونات الكمبيوتر والتجميعات والألعاب والترقيات.",
     category: "التجارة الإلكترونية",
   },
@@ -414,21 +402,20 @@ const copy = {
     packages: "الباقات",
     howItWorks: "كيف نعمل",
     eyebrow: "كتالوج Matrouh Solutions",
-    title: "اختر موقعك. اعرف السعر. وابدأ بثقة.",
+    title: "اختر موقعك. حدّد ما يناسبك. وابدأ بثقة.",
     description:
       "باقات مواقع وقوائم رقمية جاهزة للتخصيص، مع تصميم احترافي ولوحة تحكم وتجربة عربية وإنجليزية.",
     comparePackages: "قارن الباقات",
     catalogSummary: "ملخص الكتالوج",
     availablePackages: "باقات متاحة الآن",
-    catalogEyebrow: "الباقات والأسعار",
+    catalogEyebrow: "القوالب المتاحة",
     catalogTitle: "حل واضح لكل نوع من الأعمال.",
-    priceNote: "الأسعار المعروضة قابلة للتعديل حسب نطاق المشروع والخدمات الإضافية.",
-    catalogLabel: "كتالوج القوالب والأسعار",
+    catalogNote: "اختر قالباً مناسباً لنشاطك ثم شاهد المعاينة المباشرة.",
+    catalogLabel: "كتالوج القوالب",
     categoryNavigation: "تصفية القوالب حسب التصنيف",
     filterByCategory: "تصفح حسب التصنيف",
     allCategories: "كل التصنيفات",
     preview: "معاينة",
-    price: "السعر",
     features: "مزايا الباقة",
     packageIncludes: "تتضمن الباقة",
     bilingual: "العربية والإنجليزية",
@@ -444,7 +431,7 @@ const copy = {
     processEyebrow: "من الاختيار إلى الإطلاق",
     processTitle: "رحلة بسيطة، ونتيجة احترافية.",
     steps: [
-      { title: "اختر الباقة", description: "قارن التصميم والسعر والمزايا المناسبة لنشاطك." },
+      { title: "اختر القالب", description: "قارن التصميم والمزايا المناسبة لنشاطك." },
       { title: "نخصص المحتوى", description: "نضيف هويتك وصورك ومحتواك بالعربية والإنجليزية." },
       { title: "نراجع ونطلق", description: "راجع المعاينة ثم انشر موقعك على نطاقك." },
     ],
@@ -458,21 +445,20 @@ const copy = {
     packages: "Packages",
     howItWorks: "How it works",
     eyebrow: "Matrouh Solutions catalog",
-    title: "Choose your website. Know the price. Launch with confidence.",
+    title: "Choose your website. Find the right fit. Launch with confidence.",
     description:
       "Customizable website and digital-menu packages with professional design, an easy dashboard, and Arabic and English support.",
     comparePackages: "Compare packages",
     catalogSummary: "Catalog summary",
     availablePackages: "packages available now",
-    catalogEyebrow: "Packages and pricing",
+    catalogEyebrow: "Available templates",
     catalogTitle: "A clear solution for every kind of business.",
-    priceNote: "Displayed prices can change with project scope and optional services.",
-    catalogLabel: "Template packages and prices",
+    catalogNote: "Choose a template for your business, then explore its live preview.",
+    catalogLabel: "Template catalog",
     categoryNavigation: "Filter templates by category",
     filterByCategory: "Browse by category",
     allCategories: "All categories",
     preview: "preview",
-    price: "price",
     features: "Package features",
     packageIncludes: "Package includes",
     bilingual: "Arabic and English",
@@ -490,7 +476,7 @@ const copy = {
     steps: [
       {
         title: "Choose a package",
-        description: "Compare the design, price, and benefits that fit your business.",
+        description: "Compare the design and benefits that fit your business.",
       },
       {
         title: "We tailor the content",

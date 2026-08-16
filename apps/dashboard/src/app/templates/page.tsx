@@ -1,6 +1,6 @@
 import { Icon } from "@/app/icons";
 import { loadTemplateCatalog } from "@/server/template-catalog";
-import { catalogBillingLabel, formatCatalogPrice, templateListingId } from "./catalog-display";
+import { templateListingId } from "./catalog-display";
 import { TemplateCategoryForm } from "./template-category-form";
 import { TemplateImportForm } from "./template-import-form";
 
@@ -94,14 +94,12 @@ export default async function TemplatesPage() {
                   <div>
                     <span className="templateCardListingEyebrow">Public listing</span>
                     <strong>
-                      {template.catalog.visible
-                        ? formatCatalogPrice(template.catalog)
-                        : "Hidden from catalog"}
+                      {template.catalog.visible ? "Visible in catalog" : "Hidden from catalog"}
                     </strong>
                     <small>
                       {template.catalog.visible
-                        ? catalogBillingLabel(template.catalog.billingPeriod)
-                        : "Customers cannot see this package"}
+                        ? "Customers can discover this template"
+                        : "Customers cannot see this template"}
                     </small>
                   </div>
                   <a

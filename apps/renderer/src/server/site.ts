@@ -29,9 +29,6 @@ export interface PublicTemplateCatalogItem {
   readonly version: string;
   readonly features: readonly string[];
   readonly supportsDarkMode: boolean;
-  readonly priceMinor: number;
-  readonly currency: string;
-  readonly billingPeriod: "month" | "year" | "one-time" | "custom";
   readonly featured: boolean;
   readonly badge: string | null;
   readonly badgeAr: string | null;
@@ -248,9 +245,6 @@ export const loadPublicTemplateCatalog = cache(
           catalog_category_ar: string | null;
           template_version: string;
           artifact_uri: string;
-          catalog_price_minor: number;
-          catalog_currency: string;
-          catalog_billing_period: string;
           catalog_featured: boolean;
           catalog_badge: string | null;
           catalog_badge_ar: string | null;
@@ -265,7 +259,6 @@ export const loadPublicTemplateCatalog = cache(
       >`
         SELECT entry.template_id, entry.display_name, entry.description, entry.category,
                entry.catalog_category, entry.catalog_category_ar,
-               entry.catalog_price_minor, entry.catalog_currency, entry.catalog_billing_period,
                entry.catalog_featured, entry.catalog_badge, entry.catalog_badge_ar,
                entry.catalog_cta_label, entry.catalog_cta_label_ar,
                entry.catalog_cta_href, entry.catalog_sales_description,
@@ -311,9 +304,6 @@ export const loadPublicTemplateCatalog = cache(
               ...settingsRecord,
               colorMode: "dark",
             }).success,
-            priceMinor: row.catalog_price_minor,
-            currency: row.catalog_currency,
-            billingPeriod: billingPeriod(row.catalog_billing_period),
             featured: row.catalog_featured,
             badge: row.catalog_badge,
             badgeAr: row.catalog_badge_ar,
@@ -347,7 +337,7 @@ const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
     version: "2.0.0",
     features: ["localized-content"],
     supportsDarkMode: true,
-    ...localCatalogPricing(),
+    ...localCatalogDetails(),
   },
   {
     templateId: "com.matrouh.creative",
@@ -358,7 +348,7 @@ const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
     version: "1.0.0",
     features: ["localized-content"],
     supportsDarkMode: true,
-    ...localCatalogPricing(),
+    ...localCatalogDetails(),
   },
   {
     templateId: "com.matrouh.doctor",
@@ -370,7 +360,7 @@ const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
     version: "2.0.0",
     features: ["localized-content"],
     supportsDarkMode: true,
-    ...localCatalogPricing(),
+    ...localCatalogDetails(),
   },
   {
     templateId: "com.matrouh.engineer",
@@ -378,14 +368,14 @@ const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
     description: "A precise, project-focused portfolio for engineering and architecture practices.",
     category: "Portfolio",
     categoryAr: "ملفات الأعمال",
-    version: "2.0.0",
+    version: "2.0.1",
     features: ["localized-content"],
     supportsDarkMode: true,
-    ...localCatalogPricing(),
+    ...localCatalogDetails(),
   },
   {
     templateId: "com.matrouh.food-menu",
-    displayName: "Saffron — Food & Café Menu",
+    displayName: "Food Menu",
     description:
       "A mobile-first bilingual digital menu for restaurants, cafés, bakeries, and food businesses.",
     category: "Food & Hospitality",
@@ -393,7 +383,25 @@ const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
     version: "1.0.0",
     features: ["localized-content", "digital-menu", "mobile-first"],
     supportsDarkMode: false,
-    ...localCatalogPricing({ featured: true, badge: "New" }),
+    ...localCatalogDetails({ featured: true, badge: "New" }),
+  },
+  {
+    templateId: "com.matrouh.cafe-menu",
+    displayName: "Cafe & Restaurant QR Menu",
+    description:
+      "A bilingual, mobile-first café and restaurant menu with a printable QR workflow.",
+    category: "Food & Hospitality",
+    categoryAr: "المطاعم والمقاهي",
+    version: "1.3.0",
+    features: [
+      "localized-content",
+      "menu-management",
+      "qr-code",
+      "printable-qr",
+      "dark-mode",
+    ],
+    supportsDarkMode: true,
+    ...localCatalogDetails({ featured: true, badge: "New", badgeAr: "جديد" }),
   },
   commerceCatalogItem("fashion-store", "1.0.0"),
   commerceCatalogItem("hardware-store", "1.0.0"),
@@ -420,21 +428,21 @@ function commerceCatalogMetadataFor(rendererKey: string):
     >
   > = {
     "fashion-store": {
-      displayName: "Maison — Fashion Store",
+      displayName: "Clothes Store",
       description:
         "An editorial, image-led storefront for fashion, lifestyle, beauty, and curated brands.",
       badge: "E-shop",
       badgeAr: "متجر إلكتروني",
     },
     "hardware-store": {
-      displayName: "Forge — Hardware Store",
+      displayName: "Hardware",
       description:
         "A technical storefront for tools, hardware, building supplies, parts, and trade catalogs.",
       badge: "E-shop",
       badgeAr: "متجر إلكتروني",
     },
     "pc-hardware-store": {
-      displayName: "Nexus — PC Components Store",
+      displayName: "PC Hardware",
       description:
         "A compatibility-first storefront for PC components, custom builds, gaming hardware, and upgrades.",
       badge: "E-shop",
@@ -481,9 +489,6 @@ function commerceCatalogItem(
     version,
     features: ["ecommerce", "product-catalog", "whatsapp-ordering"],
     supportsDarkMode: true,
-    priceMinor: 40000,
-    currency: "EGP",
-    billingPeriod: "month",
     featured: false,
     badge: metadata?.badge ?? "E-shop",
     badgeAr: metadata?.badgeAr ?? "متجر إلكتروني",
@@ -507,21 +512,14 @@ function commerceCatalogItem(
   };
 }
 
-function billingPeriod(value: string): PublicTemplateCatalogItem["billingPeriod"] {
-  return value === "year" || value === "one-time" || value === "custom" ? value : "month";
-}
-
 function stringArray(value: unknown): readonly string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
     : [];
 }
 
-function localCatalogPricing(overrides: Partial<PublicTemplateCatalogItem> = {}) {
+function localCatalogDetails(overrides: Partial<PublicTemplateCatalogItem> = {}) {
   return {
-    priceMinor: 25000,
-    currency: "EGP",
-    billingPeriod: "month" as const,
     featured: false,
     badge: null,
     badgeAr: null,

@@ -1,6 +1,6 @@
 import { Icon } from "@/app/icons";
 import { loadTemplateCatalog } from "@/server/template-catalog";
-import { catalogBillingLabel, formatCatalogPrice, templateListingId } from "../catalog-display";
+import { templateListingId } from "../catalog-display";
 import { TemplateCatalogSettingsForm } from "../template-catalog-settings-form";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +27,7 @@ export default async function PublicTemplateListingPage({
           <p className="eyebrow">Public catalog</p>
           <h1>Listing controls</h1>
           <p className="sub">
-            Manage package visibility, pricing, order, and sales content in one focused workspace.
+            Manage template visibility, order, and customer-facing content in one focused workspace.
           </p>
         </div>
         <div className="headerActions templatePageActions">
@@ -113,10 +113,6 @@ export default async function PublicTemplateListingPage({
                     <span className={template.catalog.visible ? "status active" : "status failed"}>
                       {template.catalog.visible ? "Visible" : "Hidden"}
                     </span>
-                    <div>
-                      <strong>{formatCatalogPrice(template.catalog)}</strong>
-                      <small>{catalogBillingLabel(template.catalog.billingPeriod)}</small>
-                    </div>
                     <span className="templatePublicListingEditLabel">Edit listing</span>
                   </div>
                 </summary>
