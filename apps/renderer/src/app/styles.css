@@ -2733,6 +2733,28 @@
     font: 700 0.82rem/1 var(--theme-typography-font-families-body, Arial, sans-serif);
     list-style: none;
   }
+  /* Café 1.3.0 is already a released, immutable artifact. Its embedded mobile
+     rule hid the shared toggle, so fix navigation at the renderer layer without
+     changing the cataloged template hash or breaking existing websites. */
+  .siteRoot[data-template-artifact-id="com.matrouh.cafe-menu"] .siteHeader .siteNavigationToggle {
+    display: inline-flex !important;
+    width: 42px;
+    min-width: 42px;
+    padding-inline: 0;
+    border-radius: 10px;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.cafe-menu"]
+    .siteNavigationToggle
+    > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .siteRoot .siteNavigationToggle:focus-visible {
     outline: 3px solid color-mix(in srgb, var(--theme-colors-primary) 45%, transparent);
     outline-offset: 3px;

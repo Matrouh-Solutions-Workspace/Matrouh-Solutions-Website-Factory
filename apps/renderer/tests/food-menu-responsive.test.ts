@@ -23,4 +23,12 @@ describe("food menu responsive layout", () => {
     expect(styles).toContain("grid-template-columns: 6.75rem minmax(0, 1fr)");
     expect(styles).toContain("aspect-ratio: 4 / 3");
   });
+
+  it("restores the café hamburger outside the immutable template artifact", async () => {
+    const styles = await readFile(resolve(process.cwd(), "src/app/styles.css"), "utf8");
+
+    expect(styles).toMatch(
+      /data-template-artifact-id="com\.matrouh\.cafe-menu"[^}]*\.siteNavigationToggle\s*\{[^}]*display:\s*inline-flex !important;/s,
+    );
+  });
 });

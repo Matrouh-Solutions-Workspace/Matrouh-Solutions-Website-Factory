@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TemplateRenderContext } from "@factory/template-sdk";
 import { template } from "../../src";
-import { cafeMenuCatalogId, cafeMenuHeroId, cafeMenuVisitId } from "../../src/ids";
+import { cafeMenuCatalogId, cafeMenuVisitId } from "../../src/ids";
 
 describe("café and restaurant QR menu template contract", () => {
   it("validates settings, theme, and every section default", () => {
@@ -49,14 +49,6 @@ describe("café and restaurant QR menu template contract", () => {
     expect(template.manifest.features).toEqual(
       expect.arrayContaining(["localized-content", "qr-code", "printable-qr", "dark-mode"]),
     );
-  });
-
-  it("keeps the shared mobile hamburger navigation available", () => {
-    const hero = template.sections.find((section) => section.id === cafeMenuHeroId);
-    expect(hero).toBeDefined();
-    const rendered = hero?.render({ value: hero.defaults, context: context("ar") });
-
-    expect(JSON.stringify(rendered)).not.toContain(".siteNavigationToggle{display:none}");
   });
 
   it("uses the configured WhatsApp contact as the safe default ordering action", () => {

@@ -44,4 +44,17 @@ describe("dashboard shell direction and theme styles", () => {
       /@media \(min-width: 1101px\)[\s\S]*\.sidebarCollapseButton\s*\{[^}]*display:\s*flex;/,
     );
   });
+
+  it("adapts the QR workflow to the live-preview inspector width", async () => {
+    const styles = await dashboardStyles();
+
+    expect(styles).toContain("container-name: editor-inspector");
+    expect(styles).toContain("@container editor-inspector (max-width: 660px)");
+    expect(styles).toMatch(
+      /@container editor-inspector \(max-width: 660px\)[\s\S]*\.menuQrWorkspace\s*\{[^}]*grid-template-columns:\s*minmax\(155px, 0\.9fr\) minmax\(165px, 1fr\);/,
+    );
+    expect(styles).toMatch(
+      /@media print[\s\S]*\.menuQrPrintCard img\s*\{[^}]*width:\s*90mm !important;/,
+    );
+  });
 });

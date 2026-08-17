@@ -7534,6 +7534,8 @@ input[type="file"] {
   display: grid;
   min-width: 0;
   gap: 14px;
+  container-name: editor-inspector;
+  container-type: inline-size;
 }
 .appShell .editorStudioInspector > .panel,
 .appShell .editorStudioInspector > form.panel,
@@ -8335,6 +8337,109 @@ input[type="file"] {
     padding-inline: 0.75rem;
   }
 }
+/* The editor inspector is intentionally narrow beside the live preview. Keep
+   the QR workflow useful there without forcing the preview off-screen. */
+@container editor-inspector (max-width: 660px) {
+  .appShell .editorStudioInspector .menuQrPanel {
+    gap: 0.9rem;
+    padding: 1rem;
+    border-radius: 16px;
+  }
+  .appShell .editorStudioInspector .menuQrPanelHeader {
+    gap: 0.75rem;
+    padding-bottom: 0.85rem;
+  }
+  .appShell .editorStudioInspector .menuQrPanelCopy h2 {
+    margin-block: 0.2rem 0.35rem;
+    font-size: 1.3rem;
+  }
+  .appShell .editorStudioInspector .menuQrPanelCopy > p:last-child {
+    font-size: 0.75rem;
+    line-height: 1.55;
+  }
+  .appShell .editorStudioInspector .menuQrStatus {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.66rem;
+  }
+  .appShell .editorStudioInspector .menuQrWorkspace {
+    grid-template-columns: minmax(155px, 0.9fr) minmax(165px, 1fr);
+    gap: 0.75rem;
+  }
+  .appShell .editorStudioInspector .menuQrPreview {
+    gap: 0.65rem;
+    padding: 0.7rem;
+    border-radius: 14px;
+  }
+  .appShell .editorStudioInspector .menuQrPreviewHeader {
+    font-size: 0.66rem;
+  }
+  .appShell .editorStudioInspector .menuQrPreviewHeader span {
+    display: none;
+  }
+  .appShell .editorStudioInspector .menuQrPrintCard {
+    width: min(100%, 184px);
+    padding: 0.85rem;
+    border-radius: 9px;
+  }
+  .appShell .editorStudioInspector .menuQrPrintCard > span,
+  .appShell .editorStudioInspector .menuQrPrintCard small {
+    font-size: 0.52rem;
+  }
+  .appShell .editorStudioInspector .menuQrPrintCard > strong {
+    font-size: 0.82rem;
+  }
+  .appShell .editorStudioInspector .menuQrPrintCard img {
+    width: min(100%, 116px);
+    margin: 0.55rem 0;
+  }
+  .appShell .editorStudioInspector .menuQrPrintCard h3 {
+    font-size: 0.88rem;
+  }
+  .appShell .editorStudioInspector .menuQrPrintCard p {
+    margin-block: 0.35rem 0.5rem;
+    font-size: 0.62rem;
+  }
+  .appShell .editorStudioInspector .menuQrControls {
+    gap: 0.7rem;
+    justify-content: center;
+    padding: 0.75rem;
+    border-radius: 14px;
+  }
+  .appShell .editorStudioInspector .menuQrDestination {
+    padding: 0.7rem;
+    border-radius: 10px;
+  }
+  .appShell .editorStudioInspector .menuQrDestination strong {
+    font-size: 0.7rem;
+  }
+  .appShell .editorStudioInspector .menuQrActions button,
+  .appShell .editorStudioInspector .menuQrActions a {
+    min-height: 42px;
+    padding-inline: 0.7rem;
+    border-radius: 9px;
+    font-size: 0.72rem;
+  }
+  .appShell .editorStudioInspector .menuQrHelp {
+    padding: 0.7rem;
+    font-size: 0.66rem;
+    line-height: 1.55;
+  }
+}
+@container editor-inspector (max-width: 410px) {
+  .appShell .editorStudioInspector .menuQrPanelHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .appShell .editorStudioInspector .menuQrStatus {
+    align-self: flex-start;
+  }
+  .appShell .editorStudioInspector .menuQrWorkspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .appShell .editorStudioInspector .menuQrPrintCard {
+    width: min(100%, 220px);
+  }
+}
 @media print {
   body:has(.menuQrPrintCard) * {
     visibility: hidden !important;
@@ -8346,25 +8451,31 @@ input[type="file"] {
   body:has(.menuQrPrintCard) .menuQrPrintCard {
     position: fixed;
     inset: 0;
-    width: 148mm;
-    min-height: 200mm;
+    width: 148mm !important;
+    min-height: 200mm !important;
     margin: auto;
-    padding: 15mm;
+    padding: 15mm !important;
     border: 0;
     border-radius: 0;
     box-shadow: none;
   }
   body:has(.menuQrPrintCard) .menuQrPrintCard img {
-    width: 90mm;
-    margin: 8mm 0;
+    width: 90mm !important;
+    margin: 8mm 0 !important;
   }
   body:has(.menuQrPrintCard) .menuQrPrintCard > strong {
-    font-size: 18pt;
+    font-size: 18pt !important;
   }
   body:has(.menuQrPrintCard) .menuQrPrintCard h3 {
-    font-size: 22pt;
+    font-size: 22pt !important;
   }
   body:has(.menuQrPrintCard) .menuQrPrintCard p {
-    font-size: 11pt;
+    font-size: 11pt !important;
+  }
+  body:has(.menuQrPrintCard) .menuQrPrintCard > span {
+    font-size: 9pt !important;
+  }
+  body:has(.menuQrPrintCard) .menuQrPrintCard small {
+    font-size: 8pt !important;
   }
 }
