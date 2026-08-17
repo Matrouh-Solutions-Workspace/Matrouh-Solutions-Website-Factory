@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { MatrouhLanding } from "../../matrouh-solutions/landing";
+import { platformIcons } from "../../platform-icons";
 
 export const metadata: Metadata = {
   title: "Matrouh Solutions | Modern bilingual websites",
   description: "Fast, bilingual websites designed and built for businesses and professionals.",
+  icons: platformIcons,
   alternates: {
     canonical: "/en/matrouh-solutions",
     languages: { ar: "/matrouh-solutions", en: "/en/matrouh-solutions" },

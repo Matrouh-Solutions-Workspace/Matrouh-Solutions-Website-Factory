@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { GalleryAppearanceToggle } from "./gallery-controls";
 import { rendererConfig } from "@/server/config";
 import { loadPublicTemplateCatalog, type PublicTemplateCatalogItem } from "@/server/site";
+import { platformIcons } from "../platform-icons";
 import {
   MATROUH_EMAIL_URL,
   MATROUH_FACEBOOK_URL,
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
   title: "Website templates | Matrouh Solutions",
   description:
     "Explore Matrouh Solutions website and digital-menu templates, features, and live previews.",
+  icons: platformIcons,
 };
 
 interface TemplatesGalleryProperties {
