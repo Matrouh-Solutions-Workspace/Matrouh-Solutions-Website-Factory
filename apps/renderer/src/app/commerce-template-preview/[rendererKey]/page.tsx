@@ -32,19 +32,30 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
   const pc = rendererKey === "pc-hardware-store";
   const fashion = rendererKey === "fashion-store";
   const categoryNames = fashion
-    ? ["New edit", "Women", "Men", "Accessories", "Occasion", "Essentials"]
+    ? locale === "ar"
+      ? ["الجديد", "حريمي", "رجالي", "أطفال", "أحذية", "إكسسوارات"]
+      : ["New arrivals", "Women", "Men", "Kids", "Shoes", "Accessories"]
     : pc
       ? ["Graphics cards", "Processors", "Motherboards", "Memory", "Cooling", "Displays"]
       : ["Power tools", "Hand tools", "Cutting", "Fasteners", "Paint", "Storage"];
   const productNames = fashion
-    ? [
-        "Dune linen shirt",
-        "Coastal wrap dress",
-        "Knit polo",
-        "Woven market tote",
-        "Sea glass overshirt",
-        "Leather sandal",
-      ]
+    ? locale === "ar"
+      ? [
+          "تيشيرت قطن يومي",
+          "جينز بقصة مريحة",
+          "فستان مطبوع",
+          "قميص كاجوال",
+          "سنيكرز يومي",
+          "هودي أطفال",
+        ]
+      : [
+          "Everyday cotton tee",
+          "Relaxed fit jeans",
+          "Printed day dress",
+          "Casual overshirt",
+          "Everyday sneakers",
+          "Kids color hoodie",
+        ]
     : pc
       ? [
           "RTX 5070 graphics card",
@@ -67,7 +78,9 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
     slug: name.toLowerCase().replaceAll(" ", "-"),
     name,
     description: fashion
-      ? "A considered seasonal selection"
+      ? locale === "ar"
+        ? "اختيارات سهلة لمختلف الأيام والمقاسات"
+        : "Easy choices for different days, styles, and sizes"
       : pc
         ? "Build-ready components and upgrades"
         : "Professional workshop essentials",
@@ -78,19 +91,21 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
     slug: name.toLowerCase().replaceAll(" ", "-"),
     name,
     shortDescription: fashion
-      ? "Considered materials with an effortless modern shape."
+      ? locale === "ar"
+        ? "خامة مريحة وقصة سهلة للتنسيق بسعر واضح."
+        : "Comfortable fabric, an easy-to-style fit, and a clear price."
       : pc
         ? "Clear specifications and verified build compatibility."
         : "Reliable performance with practical technical specifications.",
     description: "Preview catalog product.",
-    priceMinor: (index + 2) * (pc ? 329900 : fashion ? 64900 : 119900),
-    salePriceMinor: index === 1 ? (index + 2) * (pc ? 289900 : fashion ? 54900 : 99900) : null,
+    priceMinor: (index + 2) * (pc ? 329900 : fashion ? 34900 : 119900),
+    salePriceMinor: index === 1 ? (index + 2) * (pc ? 289900 : fashion ? 29900 : 99900) : null,
     currency: "EGP",
     sku: `PREVIEW-${index + 1}`,
     attributes: fashion
       ? {
-          brand: "Nexus Studio",
-          material: "Premium fabric",
+          brand: locale === "ar" ? "ستايل يومي" : "Everyday Label",
+          material: locale === "ar" ? "خامة مريحة" : "Comfort fabric",
           badge: index === 0 ? "New" : undefined,
         }
       : pc
@@ -122,14 +137,24 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
     organizationId: "preview",
     storeId: `preview-${rendererKey}`,
     websiteId: `preview-${rendererKey}`,
-    name: fashion ? "Maison Preview" : pc ? "Nexus PC" : "Forge Supply",
+    name: fashion
+      ? locale === "ar"
+        ? "متجر ستايل يومي"
+        : "Everyday Style Store"
+      : pc
+        ? "Nexus PC"
+        : "Forge Supply",
     description: fashion
-      ? "Modern pieces for considered wardrobes."
+      ? locale === "ar"
+        ? "ملابس سهلة لكل يوم ولكل ستايل."
+        : "Easy clothes for every day and every style."
       : pc
         ? "PC components and custom-build expertise."
         : "Tools and hardware for serious work.",
     footerText: fashion
-      ? "Quiet style, lasting quality."
+      ? locale === "ar"
+        ? "اختيارات أكثر، مقاسات أوضح، وتسوق أسهل."
+        : "More choice, clearer sizing, easier shopping."
       : pc
         ? "Better parts. Balanced builds. Expert support."
         : "Reliable tools, genuine stock, practical support.",
@@ -145,7 +170,7 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
       tokens: pc
         ? { primary: "#07111f", accent: "#00a8e8", surface: "#0c1421", radius: "12px" }
         : fashion
-          ? { primary: "#171512", accent: "#a45f3f", surface: "#f8f6f1", radius: "18px" }
+          ? { primary: "#15263d", accent: "#ef684b", surface: "#fffaf5", radius: "16px" }
           : { primary: "#111619", accent: "#ffb000", surface: "#f4f5f6", radius: "8px" },
     },
     template: { slug: rendererKey, version: "1.0.0", rendererKey },

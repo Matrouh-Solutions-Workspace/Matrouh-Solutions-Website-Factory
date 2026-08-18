@@ -776,6 +776,13 @@ export function EcommerceStorefront({
             <p className="shopEyebrow">{slide.eyebrow}</p>
             <h1>{slide.title}</h1>
             <p>{slide.body}</p>
+            {kind === "fashion" ? (
+              <div aria-label={copy.storeStrengths} className="shopFashionHeroPills">
+                <span>{copy.everydayStyles}</span>
+                <span>{copy.moreSizes}</span>
+                <span>{copy.fairPrices}</span>
+              </div>
+            ) : null}
             <div className="shopHeroActions">
               <a className="shopPrimaryButton" href="#products">
                 {copy.shopNow}
@@ -812,7 +819,11 @@ export function EcommerceStorefront({
               alt=""
               aria-hidden="true"
               className="shopHeroPhoto"
-              src={`/commerce-heroes/${kind === "pc" ? "pc-retail" : kind}.jpg`}
+              src={
+                kind === "fashion"
+                  ? "/commerce-heroes/fashion-everyday-v2.jpg"
+                  : `/commerce-heroes/${kind === "pc" ? "pc-retail" : kind}.jpg`
+              }
             />
             <div className="shopHeroShape">
               <span>
@@ -834,6 +845,41 @@ export function EcommerceStorefront({
             <span className="shopHeroNumber">{slide.number}</span>
           </div>
         </section>
+
+        {kind === "fashion" ? (
+          <nav aria-label={copy.shopByStyle} className="shopFashionQuickLinks">
+            {store.categories.slice(0, 5).map((item, index) => {
+              const itemCount = store.products.filter((product) =>
+                product.categoryIds.includes(item.id),
+              ).length;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setCategory(item.id);
+                    catalogRef.current?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  type="button"
+                >
+                  <span className="shopFashionQuickIcon">
+                    <Icon name={categoryFashionIcon(index)} />
+                  </span>
+                  <span>
+                    <strong>{item.name}</strong>
+                    <small>
+                      {itemCount} {copy.itemsLabel}
+                    </small>
+                  </span>
+                  <Icon name="arrow" />
+                </button>
+              );
+            })}
+            <a href="#products">
+              <span>{copy.browseAll}</span>
+              <Icon name="arrow" />
+            </a>
+          </nav>
+        ) : null}
 
         {kind === "pc" ? (
           <nav aria-label={copy.shopByDepartment} className="shopPcQuickLinks">
@@ -1813,13 +1859,13 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     menu: "Open menu",
     home: "Home",
     cart: "Cart",
-    fashionDescriptor: "Modern essentials",
+    fashionDescriptor: "Clothes for every day",
     hardwareDescriptor: "Tools · Hardware · Trade",
-    announcementFashion: "Complimentary delivery on orders over EGP 2,500",
+    announcementFashion: "Free delivery over EGP 1,500 · Easy exchanges",
     announcementHardware: "Trade pricing and same-day pickup available",
     deliveryMessage: "Delivery across Egypt",
     search: "Search products",
-    searchFashion: "Search styles, collections, and products",
+    searchFashion: "Search clothes, sizes, categories, or products",
     searchHardware: "Search by tool, brand, model, or SKU",
     clearSearch: "Clear search",
     lightTheme: "Use light theme",
@@ -1867,14 +1913,20 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     easyReturns: "Easy returns",
     securePayment: "Secure payment",
     featuredPromotions: "Featured promotions",
-    fashionHeroEyebrow: "The new coastal edit · 2026",
-    fashionHeroTitle: "Quiet luxury, made to move.",
+    fashionHeroEyebrow: "New styles · Fair prices · Easy fits",
+    fashionHeroTitle: "Wear what feels like you.",
     fashionHeroBody:
-      "Natural textures, considered silhouettes, and effortless layers curated for warm days and long nights.",
-    fashionHeroEyebrow2: "The linen story",
-    fashionHeroTitle2: "Lightness in every layer.",
+      "A flexible shop for everyday basics, fresh trends, modest layers, workwear, kidswear, and everything in between.",
+    fashionHeroEyebrow2: "Fresh drops every week",
+    fashionHeroTitle2: "Outfits made for real life.",
     fashionHeroBody2:
-      "A refined capsule of breathable staples designed for the rhythm of the coast.",
+      "Easy-to-shop clothing, clear prices, useful size guidance, and looks your customers can make their own.",
+    storeStrengths: "Store strengths",
+    everydayStyles: "Everyday styles",
+    moreSizes: "More size options",
+    fairPrices: "Fair prices",
+    itemsLabel: "items",
+    browseAll: "Browse all clothes",
     hardwareHeroEyebrow: "Professional power · Built to last",
     hardwareHeroTitle: "The right tool changes the job.",
     hardwareHeroBody:
@@ -1883,12 +1935,12 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     hardwareHeroTitle2: "Build smarter. Finish stronger.",
     hardwareHeroBody2:
       "Reliable hardware and genuine accessories, selected for performance from first cut to final fix.",
-    shopNow: kind === "fashion" ? "Shop the collection" : "Shop all tools",
+    shopNow: kind === "fashion" ? "Shop new arrivals" : "Shop all tools",
     exploreCategories: "Explore categories",
     previousSlide: "Previous promotion",
     nextSlide: "Next promotion",
-    newSeason: "New season",
-    consideredDesign: "Considered design · Natural materials",
+    newSeason: "Fresh this week",
+    consideredDesign: "Easy fits · More sizes · Ready to wear",
     proGrade: "Pro grade",
     jobsiteReady: "Jobsite ready · Warranty backed",
     storeBenefits: "Store benefits",
@@ -1898,38 +1950,39 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     returnText: "Simple 30-day process",
     secureTitle: "Secure checkout",
     secureText: "Protected order details",
-    stylingTitle: "Personal styling",
-    stylingText: "Advice when you need it",
+    stylingTitle: "Size confidence",
+    stylingText: "Clear fit notes and helpful guidance",
     expertTitle: "Technical support",
     expertText: "Real experts, real answers",
-    shopBy: "Find your next favorite",
-    shopByStyle: "Shop by mood",
+    shopBy: "Start with what you need",
+    shopByStyle: "Shop every department",
     shopByDepartment: "Shop by department",
     categoryFashionText:
-      "Move from everyday foundations to elevated occasion pieces without losing your point of view.",
+      "Organize basics, casualwear, work looks, kidswear, shoes, accessories, and seasonal drops in one clear storefront.",
     categoryHardwareText:
       "Start with the job. Find the right category, compare key specs, and get back to building.",
     exploreNow: "Explore now",
-    editorialEyebrow: "The journal · Vol. 04",
-    editorialTitle: "A slower, better way to dress.",
+    editorialEyebrow: "Built for everyday retail",
+    editorialTitle: "One shop. Every kind of wardrobe.",
     editorialText:
-      "Discover versatile pieces that work harder in your wardrobe—chosen for feel, form, and longevity.",
+      "Promote new arrivals, affordable basics, trend-led pieces, modest fashion, uniforms, or family collections without changing the shopping experience.",
     hardwareEditorialEyebrow: "Workshop notes · No. 08",
     hardwareEditorialTitle: "Choose the system, not just the tool.",
     hardwareEditorialText:
       "Match batteries, accessories, and applications with clear compatibility cues and practical buying guidance.",
-    discoverTheEdit: kind === "fashion" ? "Read the story" : "Open the buying guide",
+    discoverTheEdit: kind === "fashion" ? "Explore all departments" : "Open the buying guide",
     curatedForYou: "Handpicked",
     trendingNow: "Trending now",
     weeklyDeals: "Workshop deals",
-    trendingText: "The pieces everyone is wearing, presented in an easy-to-browse edit.",
+    trendingText:
+      "Popular products, new drops, and strong-value picks customers can add in one tap.",
     dealsText: "Professional performance with better value—while current stock lasts.",
     previousProducts: "Previous products",
     nextProducts: "Next products",
-    catalog: "The complete collection",
-    allProducts: "Find exactly what you need",
+    catalog: "Everything in store",
+    allProducts: "Find the right style, size, and price",
     catalogFashionText:
-      "Filter by collection, maker, availability, and price. Your selections stay visible while you browse.",
+      "Search and filter by department, brand, availability, sale, and price while keeping every choice visible.",
     catalogHardwareText:
       "Search by model or SKU, narrow by department and brand, then compare essential specifications at a glance.",
     filters: "Filters",
@@ -1957,15 +2010,15 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     upTo: "Up to",
     new: "New",
     save: "Save product",
-    signatureCollection: "Signature collection",
+    signatureCollection: "Everyday collection",
     availableColors: "Available colors",
     quickAdd: "Quick add",
-    ourApproach: "Our approach",
+    ourApproach: "Made for more stores",
     builtForWork: "Built for real work",
-    storyTitle: "Less noise. Better pieces.",
+    storyTitle: "Simple shopping that helps clothes sell.",
     hardwareStoryTitle: "Confidence in every specification.",
     storyText:
-      "We curate useful, expressive design and make every step—from discovery to delivery—feel considered.",
+      "Clear categories, visible stock, size-friendly product pages, quick add, and WhatsApp ordering work for boutiques, basics stores, streetwear shops, and family retailers.",
     hardwareStoryText:
       "Clear product data, visible stock, and knowledgeable support help you buy once and build right.",
     dayReturns: "day easy returns",
@@ -1973,7 +2026,7 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     qualityChecked: "quality checked",
     genuineTools: "genuine products",
     stayInLoop: "Stay in the loop",
-    newsletterFashion: "New edits, considered stories, no clutter.",
+    newsletterFashion: "New arrivals, restocks, useful offers, and style inspiration.",
     newsletterHardware: "Project tips, restocks, and trade offers.",
     emailPlaceholder: "Your email address",
     subscribe: "Subscribe",
@@ -2057,13 +2110,13 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     menu: "فتح القائمة",
     home: "الرئيسية",
     cart: "السلة",
-    fashionDescriptor: "أساسيات عصرية",
+    fashionDescriptor: "ملابس لكل يوم",
     hardwareDescriptor: "أدوات · معدات · احتراف",
-    announcementFashion: "توصيل مجاني للطلبات فوق ٢٬٥٠٠ ج.م",
+    announcementFashion: "توصيل مجاني فوق ١٬٥٠٠ ج.م · استبدال سهل",
     announcementHardware: "أسعار للمحترفين واستلام في نفس اليوم",
     deliveryMessage: "توصيل إلى جميع أنحاء مصر",
     search: "البحث عن المنتجات",
-    searchFashion: "ابحث عن تصميم أو مجموعة أو منتج",
+    searchFashion: "ابحث عن ملابس أو مقاس أو قسم أو منتج",
     searchHardware: "ابحث بالأداة أو الماركة أو الموديل أو الكود",
     clearSearch: "مسح البحث",
     lightTheme: "استخدام المظهر الفاتح",
@@ -2110,24 +2163,32 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     easyReturns: "إرجاع سهل",
     securePayment: "دفع آمن",
     featuredPromotions: "العروض المميزة",
-    fashionHeroEyebrow: "تشكيلة الساحل الجديدة · ٢٠٢٦",
-    fashionHeroTitle: "أناقة هادئة تتحرك معك.",
-    fashionHeroBody: "خامات طبيعية وقصّات مدروسة وطبقات خفيفة مختارة لأيام دافئة وليالٍ طويلة.",
-    fashionHeroEyebrow2: "حكاية الكتان",
-    fashionHeroTitle2: "خفة في كل طبقة.",
-    fashionHeroBody2: "مجموعة راقية من القطع الأساسية القابلة للتنفس والمصممة لإيقاع الساحل.",
+    fashionHeroEyebrow: "ستايلات جديدة · أسعار مناسبة · مقاسات أسهل",
+    fashionHeroTitle: "البس ما يشبهك.",
+    fashionHeroBody:
+      "متجر مرن للأساسيات اليومية والترندات والملابس المحتشمة وملابس العمل والأطفال وكل ما بينها.",
+    fashionHeroEyebrow2: "جديد كل أسبوع",
+    fashionHeroTitle2: "ملابس مصممة للحياة اليومية.",
+    fashionHeroBody2:
+      "تسوق سهل وأسعار واضحة وإرشادات مفيدة للمقاسات وإطلالات يختارها كل عميل بطريقته.",
+    storeStrengths: "مميزات المتجر",
+    everydayStyles: "ستايلات يومية",
+    moreSizes: "مقاسات أكثر",
+    fairPrices: "أسعار مناسبة",
+    itemsLabel: "منتجات",
+    browseAll: "تصفح كل الملابس",
     hardwareHeroEyebrow: "قوة احترافية · صُنعت لتدوم",
     hardwareHeroTitle: "الأداة الصحيحة تغيّر المهمة.",
     hardwareHeroBody: "أدوات بمستوى الورش ومواصفات موثقة ودعم خبير للمحترفين وصنّاع المشاريع.",
     hardwareHeroEyebrow2: "جاهز للمشروع",
     hardwareHeroTitle2: "ابنِ بذكاء. أنهِ بقوة.",
     hardwareHeroBody2: "معدات موثوقة وملحقات أصلية مختارة للأداء من أول قطعية إلى آخر تثبيت.",
-    shopNow: kind === "fashion" ? "تسوق المجموعة" : "تسوق كل الأدوات",
+    shopNow: kind === "fashion" ? "تسوق الجديد" : "تسوق كل الأدوات",
     exploreCategories: "استكشف الأقسام",
     previousSlide: "العرض السابق",
     nextSlide: "العرض التالي",
-    newSeason: "موسم جديد",
-    consideredDesign: "تصميم مدروس · خامات طبيعية",
+    newSeason: "جديد هذا الأسبوع",
+    consideredDesign: "قصّات مريحة · مقاسات أكثر · جاهز للبس",
     proGrade: "فئة احترافية",
     jobsiteReady: "جاهز للموقع · بضمان",
     storeBenefits: "مزايا المتجر",
@@ -2137,36 +2198,37 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     returnText: "إجراءات بسيطة خلال ٣٠ يوماً",
     secureTitle: "دفع آمن",
     secureText: "بيانات طلب محمية",
-    stylingTitle: "تنسيق شخصي",
-    stylingText: "نصيحة عندما تحتاجها",
+    stylingTitle: "اختيار المقاس بثقة",
+    stylingText: "ملاحظات واضحة ومساعدة مفيدة",
     expertTitle: "دعم فني",
     expertText: "خبراء حقيقيون وإجابات واضحة",
-    shopBy: "اكتشف اختيارك القادم",
-    shopByStyle: "تسوق حسب أسلوبك",
+    shopBy: "ابدأ بما تحتاجه",
+    shopByStyle: "تسوق كل الأقسام",
     shopByDepartment: "تسوق حسب القسم",
     categoryFashionText:
-      "انتقل من الأساسيات اليومية إلى قطع المناسبات الراقية مع الحفاظ على أسلوبك.",
+      "نظّم الأساسيات والكاجوال وملابس العمل والأطفال والأحذية والإكسسوارات والمواسم في متجر واحد واضح.",
     categoryHardwareText: "ابدأ بالمهمة، اختر القسم، قارن المواصفات الأساسية، ثم عد إلى العمل.",
     exploreNow: "استكشف الآن",
-    editorialEyebrow: "المجلة · العدد ٠٤",
-    editorialTitle: "طريقة أهدأ وأفضل للملابس.",
-    editorialText: "اكتشف قطعاً مرنة تعمل أكثر في خزانتك—مختارة للملمس والشكل وطول العمر.",
+    editorialEyebrow: "مصمم لتجارة الملابس اليومية",
+    editorialTitle: "متجر واحد لكل أنواع الملابس.",
+    editorialText:
+      "اعرض الجديد والأساسيات الاقتصادية والترندات والملابس المحتشمة والزي الموحد ومجموعات العائلة بنفس تجربة التسوق السهلة.",
     hardwareEditorialEyebrow: "ملاحظات الورشة · ٠٨",
     hardwareEditorialTitle: "اختر المنظومة، وليس الأداة فقط.",
     hardwareEditorialText:
       "طابق البطاريات والملحقات والاستخدامات من خلال معلومات توافق واضحة وأدلة شراء عملية.",
-    discoverTheEdit: kind === "fashion" ? "اقرأ الحكاية" : "افتح دليل الشراء",
+    discoverTheEdit: kind === "fashion" ? "استكشف كل الأقسام" : "افتح دليل الشراء",
     curatedForYou: "مختار لك",
     trendingNow: "الأكثر رواجاً",
     weeklyDeals: "عروض الورشة",
-    trendingText: "القطع التي يختارها الجميع في مجموعة سهلة التصفح.",
+    trendingText: "منتجات رائجة وجديد المتجر واختيارات بقيمة قوية يمكن إضافتها بضغطة واحدة.",
     dealsText: "أداء احترافي بقيمة أفضل—حتى نفاد المخزون الحالي.",
     previousProducts: "المنتجات السابقة",
     nextProducts: "المنتجات التالية",
-    catalog: "المجموعة الكاملة",
-    allProducts: "اعثر على ما تحتاجه بالضبط",
+    catalog: "كل منتجات المتجر",
+    allProducts: "اعثر على الستايل والمقاس والسعر المناسب",
     catalogFashionText:
-      "صفِّ حسب المجموعة والماركة والتوفر والسعر، وتبقى اختياراتك ظاهرة أثناء التصفح.",
+      "ابحث وصفِّ حسب القسم والماركة والتوفر والخصم والسعر مع بقاء اختياراتك ظاهرة.",
     catalogHardwareText:
       "ابحث بالموديل أو الكود، وحدد القسم والماركة، ثم قارن المواصفات المهمة سريعاً.",
     filters: "الفلاتر",
@@ -2194,14 +2256,15 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     upTo: "حتى",
     new: "جديد",
     save: "حفظ المنتج",
-    signatureCollection: "المجموعة الأساسية",
+    signatureCollection: "مجموعة كل يوم",
     availableColors: "الألوان المتاحة",
     quickAdd: "إضافة سريعة",
-    ourApproach: "نهجنا",
+    ourApproach: "مناسب لمتاجر أكثر",
     builtForWork: "مصمم للعمل الحقيقي",
-    storyTitle: "ضوضاء أقل. قطع أفضل.",
+    storyTitle: "تسوق بسيط يساعد الملابس على البيع.",
     hardwareStoryTitle: "ثقة في كل مواصفة.",
-    storyText: "نختار تصميماً عملياً ومعبّراً ونجعل كل خطوة—من الاكتشاف إلى التوصيل—مدروسة.",
+    storyText:
+      "أقسام واضحة ومخزون ظاهر وصفحات مناسبة للمقاسات وإضافة سريعة وطلبات واتساب تناسب البوتيك والأساسيات والستريت وير ومتاجر العائلة.",
     hardwareStoryText:
       "بيانات واضحة ومخزون ظاهر ودعم خبير يساعدك على الشراء مرة والبناء بطريقة صحيحة.",
     dayReturns: "يوماً للإرجاع السهل",
@@ -2209,7 +2272,7 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     qualityChecked: "فحص جودة",
     genuineTools: "منتجات أصلية",
     stayInLoop: "ابقَ على اطلاع",
-    newsletterFashion: "مجموعات جديدة وحكايات مختارة بلا إزعاج.",
+    newsletterFashion: "جديد المتجر وتحديثات المخزون وعروض مفيدة وإلهام للإطلالات.",
     newsletterHardware: "نصائح للمشاريع وتحديثات المخزون وعروض المحترفين.",
     emailPlaceholder: "بريدك الإلكتروني",
     subscribe: "اشترك",

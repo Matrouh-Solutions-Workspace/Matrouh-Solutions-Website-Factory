@@ -2880,6 +2880,503 @@ section.hero::before {
   }
 }
 
+/* Fashion storefront V2 ---------------------------------------------------
+   A flexible, product-first system for everyday clothing, family retail,
+   streetwear, modest fashion, basics, and independent boutiques. */
+.shopTheme--fashion {
+  --shop-bg: #f7f4ef;
+  --shop-surface: #fffdf9;
+  --shop-surface-2: #e9eef2;
+  --shop-ink: #15263d;
+  --shop-muted: #657080;
+  --shop-border: rgba(21, 38, 61, 0.14);
+  --shop-accent: var(--commerce-accent, #ef684b);
+  --shop-brand: var(--commerce-primary, #15263d);
+  --shop-shadow: 0 20px 55px rgba(21, 38, 61, 0.12);
+  font-family: Inter, "Segoe UI", Tahoma, Arial, sans-serif;
+}
+.shopTheme--fashion[data-theme="dark"] {
+  --shop-bg: #101722;
+  --shop-surface: #172130;
+  --shop-surface-2: #1d2b3b;
+  --shop-ink: #f8f5ef;
+  --shop-muted: #b5c0cd;
+  --shop-border: rgba(248, 245, 239, 0.16);
+}
+.shopTheme--fashion :is(.shopBrand strong, h1, h2, h3) {
+  font-family: inherit;
+}
+.shopTheme--fashion .shopAnnouncement {
+  background: var(--shop-accent);
+  font-weight: 800;
+}
+.shopTheme--fashion .shopBrandMark {
+  border: 0;
+  border-radius: 0.9rem;
+  background: var(--shop-brand);
+  box-shadow: 0.22rem 0.22rem 0 color-mix(in srgb, var(--shop-accent) 70%, transparent);
+}
+.shopTheme--fashion .shopBrand strong {
+  font-weight: 850;
+  letter-spacing: -0.025em;
+}
+.shopTheme--fashion .shopBrand small {
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+.shopTheme--fashion .shopNav {
+  justify-content: flex-start;
+}
+.shopTheme--fashion .shopNav a::after {
+  height: 0.22rem;
+  border-radius: 999px;
+}
+.shopTheme--fashion .shopHero {
+  position: relative;
+  display: block;
+  min-height: clamp(620px, calc(100svh - 145px), 760px);
+  overflow: hidden;
+  background: #f5e9df;
+}
+.shopTheme--fashion .shopHeroVisual {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  background: #f5e9df;
+}
+.shopTheme--fashion .shopHeroVisual::before {
+  z-index: 1;
+  background: linear-gradient(
+    90deg,
+    rgba(248, 242, 234, 0.98) 0%,
+    rgba(248, 242, 234, 0.9) 31%,
+    rgba(248, 242, 234, 0.18) 57%,
+    transparent 72%
+  );
+}
+.shopTheme--fashion .shopHeroVisual::after,
+.shopTheme--fashion .shopHeroShape,
+.shopTheme--fashion .shopHeroNumber {
+  display: none;
+}
+.shopTheme--fashion .shopHeroPhoto {
+  object-position: center center;
+}
+.shopTheme--fashion .shopHeroVisual[data-slide="1"] .shopHeroPhoto {
+  transform: scale(1.025);
+}
+.shopTheme--fashion .shopHeroCopy {
+  position: relative;
+  z-index: 3;
+  width: min(52%, 760px);
+  min-height: clamp(620px, calc(100svh - 145px), 760px);
+  margin-right: auto;
+  padding: clamp(3.5rem, 6vw, 6.5rem) clamp(1.25rem, 5vw, 5.5rem);
+  color: #15263d;
+}
+.shopTheme--fashion .shopHeroCopy h1,
+.commercePublicRoot.shopTheme--fashion .shopHeroCopy h1,
+.commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy h1 {
+  max-width: 10ch;
+  margin-block: 0.65rem 1.2rem;
+  font-family: inherit;
+  font-size: clamp(3.5rem, 5.6vw, 6.7rem);
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+  text-wrap: balance;
+  color: #15263d;
+}
+.commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy {
+  align-items: flex-end;
+  text-align: right;
+}
+.commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy h1 {
+  max-width: 11ch;
+  font-size: clamp(3.15rem, 5vw, 5.7rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+}
+.shopTheme--fashion .shopHeroCopy > p:not(.shopEyebrow) {
+  max-width: 46ch;
+  color: #445064;
+  font-size: clamp(0.95rem, 1.15vw, 1.12rem);
+}
+.shopTheme--fashion .shopEyebrow {
+  color: #c64630;
+}
+.shopFashionHeroPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1.35rem;
+}
+.shopFashionHeroPills span {
+  padding: 0.48rem 0.72rem;
+  border: 1px solid rgba(21, 38, 61, 0.18);
+  border-radius: 999px;
+  color: #243750;
+  background: rgba(255, 255, 255, 0.68);
+  font-size: 0.68rem;
+  font-weight: 800;
+  backdrop-filter: blur(8px);
+}
+.shopTheme--fashion .shopPrimaryButton {
+  border-color: var(--shop-accent);
+  color: #fff;
+  background: var(--shop-accent);
+  box-shadow: 0.3rem 0.3rem 0 var(--shop-brand);
+}
+.shopTheme--fashion .shopSecondaryButton {
+  border-color: var(--shop-brand);
+  color: var(--shop-brand);
+  background: rgba(255, 255, 255, 0.58);
+}
+.shopTheme--fashion .shopHeroControls {
+  margin-top: 2rem;
+}
+.shopTheme--fashion .shopHeroControls button {
+  border-color: rgba(21, 38, 61, 0.2);
+  color: #15263d;
+  background: rgba(255, 255, 255, 0.7);
+}
+.shopTheme--fashion .shopHeroControls span {
+  color: #657080;
+}
+.shopTheme--fashion .shopHeroControls b {
+  color: #15263d;
+}
+.shopTheme--fashion .shopHeroBadge {
+  inset-inline: auto 3%;
+  right: 3%;
+  bottom: 4%;
+  border: 0;
+  border-radius: 0.9rem;
+  color: #fff;
+  background: rgba(21, 38, 61, 0.9);
+}
+.shopFashionQuickLinks {
+  position: relative;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(9rem, 0.8fr);
+  width: min(calc(100% - 2rem), 1536px);
+  margin: -1.4rem auto 0;
+  overflow: hidden;
+  border: 1px solid var(--shop-border);
+  border-radius: 1rem;
+  background: var(--shop-surface);
+  box-shadow: var(--shop-shadow);
+}
+.shopFashionQuickLinks :is(button, a) {
+  display: flex;
+  min-width: 0;
+  min-height: 5.5rem;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 0;
+  border-inline-end: 1px solid var(--shop-border);
+  color: var(--shop-ink);
+  background: transparent;
+  text-align: start;
+  cursor: pointer;
+  transition: background 180ms ease;
+}
+.shopFashionQuickLinks :is(button, a):hover {
+  background: color-mix(in srgb, var(--shop-accent) 9%, var(--shop-surface));
+}
+.shopFashionQuickLinks > :last-child {
+  justify-content: center;
+  border-inline-end: 0;
+  color: #fff;
+  background: var(--shop-brand);
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+.shopFashionQuickLinks button > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+.shopFashionQuickLinks strong {
+  overflow: hidden;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shopFashionQuickLinks small {
+  color: var(--shop-muted);
+  font-size: 0.62rem;
+}
+.shopFashionQuickLinks button > svg {
+  width: 0.95rem;
+  margin-inline-start: auto;
+}
+.shopFashionQuickIcon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.7rem;
+  color: var(--shop-brand);
+  background: color-mix(in srgb, var(--shop-accent) 18%, white);
+}
+.shopTheme--fashion .shopBenefitStrip {
+  width: min(calc(100% - 2rem), 1536px);
+  margin: 2.25rem auto 0;
+  overflow: hidden;
+  border: 1px solid var(--shop-border);
+  border-radius: 1rem;
+}
+.shopTheme--fashion .shopBenefitStrip article {
+  min-height: 76px;
+}
+.shopTheme--fashion :is(.shopSectionHeading h2, .shopEditorial h2, .shopStoryGrid h2) {
+  font-family: inherit;
+  font-weight: 880;
+  letter-spacing: -0.055em;
+}
+.shopTheme--fashion .shopCategoryGrid {
+  gap: 0.8rem;
+}
+.shopTheme--fashion .shopCategoryCard {
+  grid-template-columns: 5.25rem minmax(0, 1fr) auto;
+  min-height: 9.5rem;
+  border-radius: 1rem;
+}
+.shopTheme--fashion .shopCategoryArt {
+  background: #ffd9cc;
+}
+.shopTheme--fashion .shopCategoryCard[data-tone="1"] .shopCategoryArt {
+  background: #d9e8ff;
+}
+.shopTheme--fashion .shopCategoryCard[data-tone="2"] .shopCategoryArt {
+  background: #dcebcf;
+}
+.shopTheme--fashion .shopCategoryCard[data-tone="3"] .shopCategoryArt {
+  background: #ffe8a8;
+}
+.shopTheme--fashion .shopCategoryCard[data-tone="4"] .shopCategoryArt {
+  background: #eadcff;
+}
+.shopTheme--fashion .shopCategoryCard[data-tone="5"] .shopCategoryArt {
+  background: #cdebea;
+}
+.shopTheme--fashion .shopCategoryArt svg {
+  width: 2.75rem;
+  height: 2.75rem;
+  color: #23364e;
+  stroke-width: 1.5;
+}
+.shopTheme--fashion .shopCategoryCard strong,
+.shopTheme--fashion .shopProductCardBody h3 {
+  font-family: inherit;
+  font-weight: 820;
+}
+.shopTheme--fashion .shopEditorial {
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  min-height: 500px;
+  color: #fff;
+  background: var(--shop-brand);
+}
+.shopTheme--fashion .shopEditorialArt {
+  background:
+    linear-gradient(135deg, transparent 0 58%, rgba(255, 255, 255, 0.18) 58% 100%),
+    linear-gradient(145deg, #ef684b, #f0a443 52%, #78a9c7);
+}
+.shopTheme--fashion .shopEditorialArt::after {
+  inset: 16% 18%;
+  border: 0;
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px) 0 0 / 2.5rem 100%,
+    rgba(21, 38, 61, 0.2);
+  box-shadow: 1rem 1rem 0 rgba(21, 38, 61, 0.32);
+  transform: rotate(-3deg);
+}
+.shopTheme--fashion .shopEditorialArt span,
+.shopTheme--fashion .shopEditorial h2 {
+  font-family: inherit;
+  font-style: normal;
+  font-weight: 900;
+}
+.shopTheme--fashion .commerceProductCard {
+  border-radius: 1rem;
+}
+.shopTheme--fashion .commerceProductThumb {
+  background: linear-gradient(145deg, #ffd9cc, #f8b9a8);
+}
+.shopTheme--fashion .commerceProductThumb[data-tone="1"] {
+  background: linear-gradient(145deg, #d9e8ff, #a9c9ed);
+}
+.shopTheme--fashion .commerceProductThumb[data-tone="2"] {
+  background: linear-gradient(145deg, #dcebcf, #b7d59d);
+}
+.shopTheme--fashion .commerceProductThumb[data-tone="3"] {
+  background: linear-gradient(145deg, #ffe8a8, #f6cc68);
+}
+.shopTheme--fashion .commerceProductThumb[data-tone="4"] {
+  background: linear-gradient(145deg, #eadcff, #c9afe9);
+}
+.shopTheme--fashion .commerceProductThumb[data-tone="5"] {
+  background: linear-gradient(145deg, #cdebea, #9cd5d2);
+}
+.shopTheme--fashion .shopProductPlaceholder span {
+  font-family: inherit;
+  font-style: normal;
+  font-weight: 900;
+}
+.shopTheme--fashion .shopProductCardFoot > button {
+  color: #fff;
+  background: var(--shop-accent);
+}
+.shopTheme--fashion .shopProductBadge {
+  background: var(--shop-brand);
+}
+.shopTheme--fashion .shopMetric strong {
+  color: var(--shop-accent);
+  font-family: inherit;
+  font-weight: 900;
+}
+.shopTheme--fashion .shopNewsletter {
+  background: linear-gradient(110deg, var(--shop-brand), #254d6d);
+}
+.shopTheme--fashion .shopNewsletter h2 {
+  font-family: inherit;
+  font-weight: 850;
+}
+
+@media (max-width: 1180px) {
+  .shopFashionQuickLinks {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .shopFashionQuickLinks > :nth-child(3) {
+    border-inline-end: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .shopTheme--fashion .shopHero {
+    min-height: 670px;
+  }
+  .shopTheme--fashion .shopHeroVisual {
+    min-height: 100%;
+  }
+  .shopTheme--fashion .shopHeroPhoto {
+    object-position: 64% center;
+  }
+  .shopTheme--fashion .shopHeroVisual::before {
+    background: linear-gradient(
+      0deg,
+      rgba(17, 30, 48, 0.98) 0%,
+      rgba(17, 30, 48, 0.84) 38%,
+      rgba(17, 30, 48, 0.08) 75%
+    );
+  }
+  .shopTheme--fashion .shopHeroCopy {
+    position: absolute;
+    inset: auto 0 0;
+    width: 100%;
+    min-height: 0;
+    padding: 2rem 1.25rem 1.5rem;
+    color: #fff;
+  }
+  .shopTheme--fashion .shopHeroCopy h1,
+  .commercePublicRoot.shopTheme--fashion .shopHeroCopy h1,
+  .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy h1 {
+    max-width: 12ch;
+    color: #fff;
+    font-size: clamp(2.7rem, 13vw, 4.2rem);
+  }
+  .shopTheme--fashion .shopHeroCopy > p:not(.shopEyebrow) {
+    max-width: 36rem;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.88rem;
+  }
+  .shopTheme--fashion .shopEyebrow {
+    color: #ffad96;
+  }
+  .shopFashionHeroPills span {
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .shopTheme--fashion .shopSecondaryButton {
+    border-color: #fff;
+    color: #fff;
+    background: transparent;
+  }
+  .shopTheme--fashion .shopHeroControls {
+    margin-top: 1.35rem;
+  }
+  .shopTheme--fashion .shopHeroControls button {
+    border-color: rgba(255, 255, 255, 0.35);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .shopTheme--fashion .shopHeroControls span,
+  .shopTheme--fashion .shopHeroControls b {
+    color: #fff;
+  }
+  .shopTheme--fashion .shopHeroBadge {
+    display: none;
+  }
+  .shopFashionQuickLinks {
+    display: flex;
+    width: 100%;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+    border-width: 0 0 1px;
+    border-radius: 0;
+    box-shadow: none;
+    scroll-snap-type: inline mandatory;
+  }
+  .shopFashionQuickLinks :is(button, a) {
+    flex: 0 0 min(74vw, 15rem);
+    min-height: 4.5rem;
+    border: 1px solid var(--shop-border);
+    border-radius: 0.85rem;
+    scroll-snap-align: start;
+  }
+  .shopTheme--fashion .shopBenefitStrip {
+    width: 100%;
+    margin-top: 0;
+    border-width: 0 0 1px;
+    border-radius: 0;
+  }
+  .shopTheme--fashion .shopEditorial {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .shopTheme--fashion .shopEditorialArt {
+    min-height: 18rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .shopTheme--fashion .shopHero {
+    min-height: 640px;
+  }
+  .shopFashionHeroPills span:last-child {
+    display: none;
+  }
+  .shopTheme--fashion .shopHeroActions {
+    width: 100%;
+  }
+  .shopTheme--fashion .shopHeroActions a {
+    flex: 1;
+    min-width: 0;
+    padding-inline: 0.8rem;
+    font-size: 0.74rem;
+  }
+  .shopTheme--fashion .shopCategoryCard {
+    grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  }
+}
+
 /* Forge Hardware uses the same immersive hero composition as Nexus PC while
    retaining its own workshop palette, typography, imagery, and controls. */
 .shopTheme--hardware .shopHero {
