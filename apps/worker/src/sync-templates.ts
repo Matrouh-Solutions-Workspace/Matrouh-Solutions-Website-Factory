@@ -6,7 +6,11 @@ import type { JsonValue } from "@factory/template-sdk";
 import { discoverTemplates, loadTemplateArtifact } from "@factory/template-loader";
 import { validateTemplate } from "@factory/template-validator";
 import { workerConfig, workspaceRoot } from "./config";
-import { artifactIntegrityMatches, missingArtifactDisposition } from "./template-sync-policy";
+import {
+  artifactNeedsRefresh,
+  artifactRevisionCompatible,
+  missingArtifactDisposition,
+} from "./template-sync-policy";
 
 const database = createDatabaseClient({ connectionString: workerConfig.DATABASE_URL });
 const templatesRoot = resolve(workspaceRoot, workerConfig.FACTORY_TEMPLATE_DIRECTORY);
@@ -15,6 +19,7 @@ const requestedTemplateVersion = process.env.FACTORY_TEMPLATE_SYNC_VERSION?.trim
 let ready = 0;
 let quarantined = 0;
 let integrityFailed = 0;
+let refreshed = 0;
 let missingPruned = 0;
 let missingReferenced = 0;
 
@@ -86,7 +91,15 @@ try {
         },
       },
     });
-    if (existing && !artifactIntegrityMatches(existing.artifactHash, artifact.artifactHash)) {
+    const refreshArtifact = artifactNeedsRefresh(
+      existing?.artifactHash ?? null,
+      artifact.artifactHash,
+    );
+    const existingManifestHash = manifestHash(existing?.manifestJson);
+    const nextManifestHash = report.manifest?.manifestHash ?? null;
+    const incompatibleRefresh =
+      refreshArtifact && !artifactRevisionCompatible(existingManifestHash, nextManifestHash);
+    if (existing && refreshArtifact && (!report.valid || incompatibleRefresh)) {
       await database.templateVersionRecord.update({
         where: { id: existing.id },
         data: { lifecycleStatus: "quarantined", validationStatus: "integrity_failed" },
@@ -95,6 +108,7 @@ try {
       quarantined += 1;
       continue;
     }
+    if (existing && refreshArtifact) refreshed += 1;
     const catalog = await database.templateCatalogEntry.upsert({
       where: { templateId: candidate.discovery.templateId },
       update: {
@@ -124,6 +138,15 @@ try {
       },
       update: {
         artifactUri: relative(templatesRoot, candidate.root).replaceAll("\\", "/"),
+        artifactHash: artifact.artifactHash,
+        sdkVersion: template.compatibility.sdkVersion,
+        minimumFactoryVersion: template.compatibility.minimumFactoryVersion,
+        maximumFactoryVersion: template.compatibility.maximumFactoryVersion ?? null,
+        minimumRendererVersion: template.compatibility.minimumRendererVersion,
+        contentSchemaVersion: template.compatibility.contentSchemaVersion,
+        themeSchemaVersion: template.compatibility.themeSchemaVersion,
+        publicationSnapshotVersion: template.compatibility.publicationSnapshotVersion,
+        manifestJson: jsonInput(report.manifest ?? {}),
         validationReportJson: jsonInput(report),
         validationStatus: report.valid ? "valid" : "invalid",
         lifecycleStatus: lifecycle,
@@ -214,6 +237,7 @@ try {
       ready,
       quarantined,
       integrityFailed,
+      refreshed,
       missingPruned,
       missingReferenced,
       emptyCatalogsPruned: emptyCatalogs.length,
@@ -225,4 +249,10 @@ try {
 
 function jsonInput(value: unknown): Exclude<JsonValue, null> {
   return (value ?? {}) as Exclude<JsonValue, null>;
+}
+
+function manifestHash(value: unknown): string | null {
+  if (!value || typeof value !== "object" || !("manifestHash" in value)) return null;
+  const hash = value.manifestHash;
+  return typeof hash === "string" ? hash : null;
 }

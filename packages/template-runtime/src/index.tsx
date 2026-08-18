@@ -47,10 +47,11 @@ export function instantiateTemplateRuntime(
   snapshot: PublicationSnapshot,
 ): TemplateRuntime {
   verifySnapshotIntegrity(snapshot);
+  // The artifact hash identifies a compiled UI revision. A validated in-place visual refresh may
+  // change it without changing the portable manifest contract stored in existing publications.
   if (
     artifact.definition.manifest.id !== snapshot.template.id ||
     artifact.definition.manifest.version !== snapshot.template.version ||
-    artifact.artifactHash !== snapshot.template.artifactHash ||
     artifact.manifestHash !== snapshot.template.manifestHash ||
     buildPortableManifest(artifact.definition).manifestHash !== artifact.manifestHash
   ) {

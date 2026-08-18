@@ -4,9 +4,17 @@ export function missingArtifactDisposition(websiteReferences: number): MissingAr
   return websiteReferences > 0 ? "quarantine" : "delete";
 }
 
-export function artifactIntegrityMatches(
-  catalogHash: string | null,
-  discoveredHash: string,
+export function artifactNeedsRefresh(catalogHash: string | null, discoveredHash: string): boolean {
+  return catalogHash !== null && catalogHash !== discoveredHash;
+}
+
+export function artifactRevisionCompatible(
+  catalogManifestHash: string | null,
+  discoveredManifestHash: string | null,
 ): boolean {
-  return catalogHash === null || catalogHash === discoveredHash;
+  return (
+    catalogManifestHash !== null &&
+    discoveredManifestHash !== null &&
+    catalogManifestHash === discoveredManifestHash
+  );
 }

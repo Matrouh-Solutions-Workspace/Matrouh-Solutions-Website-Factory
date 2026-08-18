@@ -607,7 +607,7 @@ async function loadExactTemplate(snapshot: PublicationSnapshot): Promise<LoadedT
         LIMIT 1
       `;
       const version = versions[0];
-      if (!version || version.artifact_hash !== snapshot.template.artifactHash) {
+      if (!version) {
         throw new SiteLoadError("RENDERER_TEMPLATE_NOT_CATALOGED");
       }
       const loaded = await loadCatalogedTemplateArtifact(templatesRoot(), version.artifact_uri, {
@@ -615,7 +615,7 @@ async function loadExactTemplate(snapshot: PublicationSnapshot): Promise<LoadedT
         templateVersion: snapshot.template.version,
       });
       if (
-        loaded.artifactHash !== snapshot.template.artifactHash ||
+        loaded.artifactHash !== version.artifact_hash ||
         loaded.manifest.manifestHash !== snapshot.template.manifestHash
       ) {
         throw new SiteLoadError("RENDERER_TEMPLATE_INTEGRITY_MISMATCH");
