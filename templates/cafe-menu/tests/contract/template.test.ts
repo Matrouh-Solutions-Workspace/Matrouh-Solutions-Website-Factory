@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { TemplateRenderContext } from "@factory/template-sdk";
 import { template } from "../../src";
@@ -49,6 +51,16 @@ describe("café and restaurant QR menu template contract", () => {
     expect(template.manifest.features).toEqual(
       expect.arrayContaining(["localized-content", "qr-code", "printable-qr", "dark-mode"]),
     );
+  });
+
+  it("keeps the mobile header and category controls inside narrow viewports", async () => {
+    const styles = await readFile(resolve(process.cwd(), "src/sections/index.tsx"), "utf8");
+
+    expect(styles).toContain(".siteBrand{flex:1 1 auto;min-width:0");
+    expect(styles).toContain(".siteBrand strong{min-width:0;font-size:.82rem");
+    expect(styles).toContain("@media(max-width:30rem)");
+    expect(styles).toContain("grid-template-columns:repeat(2,minmax(0,1fr))");
+    expect(styles).toContain(".cafeMenuCategoryNav a:first-child{grid-column:1/-1}");
   });
 
   it("uses the configured WhatsApp contact as the safe default ordering action", () => {
