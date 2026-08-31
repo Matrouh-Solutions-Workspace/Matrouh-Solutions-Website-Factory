@@ -52,6 +52,7 @@ import {
   setWebsiteAvailability,
 } from "@/server/actions/publication-actions";
 import { createMediaFolder } from "@/server/actions/media-actions";
+import { updateWebsiteIdentity } from "@/server/actions/website-actions";
 
 const templatesRoot = resolve(workspaceRoot, dashboardConfig.FACTORY_TEMPLATE_DIRECTORY);
 
@@ -720,35 +721,7 @@ export async function updateWebsiteIdentityAction(formData: FormData): Promise<v
   const name = cleanText(formData.get("name"), 200);
   if (!websiteId || !name) return;
   const context = await requireWebsiteMutationContext(websiteId, "website.edit");
-  await withTenantTransaction(
-    dashboardDatabase(),
-    tenantActionContext(context, `website-identity:${websiteId}`),
-    async (transaction) => {
-      const result = await transaction.website.updateMany({
-        where: { id: websiteId, organizationId: context.organization.id, archivedAt: null },
-        data: {
-          name,
-          draftRevision: { increment: 1 },
-          revision: { increment: 1 },
-        },
-      });
-      if (result.count !== 1) return;
-      await transaction.auditEvent.create({
-        data: {
-          id: randomUUID(),
-          organizationId: context.organization.id,
-          actorType: "user",
-          actorId: context.actor.id,
-          action: "website.identity_updated",
-          resourceType: "website",
-          resourceId: websiteId,
-          correlationId: `website-identity:${websiteId}`,
-          metadataJson: jsonInput({ name }),
-          retentionClass: "standard",
-        },
-      });
-    },
-  );
+  await updateWebsiteIdentity(context, websiteId, name);
   revalidatePath("/websites");
   revalidatePath(`/websites/${websiteId}`);
 }
