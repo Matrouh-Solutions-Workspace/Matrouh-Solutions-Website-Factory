@@ -51,6 +51,7 @@ import {
   retryWebsitePublication,
   setWebsiteAvailability,
 } from "@/server/actions/publication-actions";
+import { createMediaFolder } from "@/server/actions/media-actions";
 
 const templatesRoot = resolve(workspaceRoot, dashboardConfig.FACTORY_TEMPLATE_DIRECTORY);
 
@@ -1942,39 +1943,7 @@ export async function createMediaFolderAction(formData: FormData): Promise<void>
   const name = cleanText(formData.get("name"), 160);
   if (!name) return;
   const context = await requireDashboardContext("media.create");
-  const folderId = randomUUID();
-  await withTenantTransaction(
-    dashboardDatabase(),
-    {
-      organizationId: context.organization.id,
-      actorId: context.actor.id,
-      correlationId: `create-media-folder:${folderId}`,
-    },
-    async (transaction) => {
-      await transaction.mediaFolder.create({
-        data: {
-          id: folderId,
-          organizationId: context.organization.id,
-          name,
-          orderKey: Date.now().toString(36).padStart(12, "0"),
-        },
-      });
-      await transaction.auditEvent.create({
-        data: {
-          id: randomUUID(),
-          organizationId: context.organization.id,
-          actorType: "user",
-          actorId: context.actor.id,
-          action: "media.folder_created",
-          resourceType: "media_folder",
-          resourceId: folderId,
-          correlationId: `create-media-folder:${folderId}`,
-          metadataJson: jsonInput({ name }),
-          retentionClass: "standard",
-        },
-      });
-    },
-  );
+  await createMediaFolder(context, name);
   revalidatePath("/media");
 }
 
