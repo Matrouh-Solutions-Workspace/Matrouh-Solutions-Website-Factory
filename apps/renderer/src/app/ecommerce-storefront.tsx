@@ -19,6 +19,7 @@ import {
 } from "./whatsapp-order";
 import { filterCatalog, type StorefrontSortKey } from "./storefront/catalog";
 import { addCartLine, isCartLine, updateCartQuantity, type CartLine } from "./storefront/cart";
+import { parseCheckoutResult, readCheckoutRequest } from "./storefront/checkout";
 
 type StorefrontKind = "fashion" | "hardware" | "pc";
 type SortKey = StorefrontSortKey;
@@ -183,19 +184,9 @@ export function EcommerceStorefront({
     }
     setCheckoutPending(true);
     void recordEvent("checkout_started");
-    const form = new FormData(event.currentTarget);
-    const customer = {
-      name: formText(form, "name"),
-      email: formText(form, "email"),
-      phone: formText(form, "phone"),
-    };
-    const address = {
-      line1: formText(form, "line1"),
-      city: formText(form, "city"),
-      notes: formText(form, "notes"),
-    };
-    const couponCode = formText(form, "couponCode");
-    const shippingMethodId = formText(form, "shippingMethodId");
+    const { customer, address, couponCode, shippingMethodId } = readCheckoutRequest(
+      new FormData(event.currentTarget),
+    );
     const shipping = store.shippingMethods.find((method) => method.id === shippingMethodId);
     if (!shipping) {
       whatsappWindow?.close();
@@ -222,31 +213,14 @@ export function EcommerceStorefront({
       setCheckoutError(copy.checkoutFailed);
       return;
     }
-    const result = (await response.json().catch(() => ({}))) as {
-      orderNumber?: string;
-      subtotalMinor?: number;
-      discountMinor?: number;
-      shippingMinor?: number;
-      totalMinor?: number;
-      error?: string;
-    };
-    if (
-      !response.ok ||
-      !result.orderNumber ||
-      !Number.isSafeInteger(result.subtotalMinor) ||
-      !Number.isSafeInteger(result.discountMinor) ||
-      !Number.isSafeInteger(result.shippingMinor) ||
-      !Number.isSafeInteger(result.totalMinor)
-    ) {
+    const result = parseCheckoutResult(await response.json().catch(() => null));
+    if (!response.ok || !result) {
       whatsappWindow?.close();
       setCheckoutPending(false);
       setCheckoutError(copy.checkoutFailed);
       return;
     }
-    const subtotalMinor = Number(result.subtotalMinor);
-    const discountMinor = Number(result.discountMinor);
-    const shippingMinor = Number(result.shippingMinor);
-    const totalMinor = Number(result.totalMinor);
+    const { subtotalMinor, discountMinor, shippingMinor, totalMinor } = result;
     const whatsappUrl = buildWhatsAppOrderUrl(store.contactPhone, {
       locale: store.locale,
       currency: store.currency,
@@ -1750,11 +1724,6 @@ function hardwareProductIcon(index: number): IconName {
 }
 function pcProductIcon(index: number): IconName {
   return ["gpu", "cpu", "memory", "monitor", "fan", "toolbox"][index % 6] as IconName;
-}
-
-function formText(form: FormData, name: string): string {
-  const value = form.get(name);
-  return typeof value === "string" ? value.trim() : "";
 }
 
 function productPrice(product: StorefrontProduct): number {
