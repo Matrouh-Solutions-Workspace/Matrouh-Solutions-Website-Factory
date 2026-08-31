@@ -22,6 +22,6 @@
     "@factory/template-sdk": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1"
+    "@types/node": "^26.4.0"
   }
 }
