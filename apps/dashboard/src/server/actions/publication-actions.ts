@@ -47,7 +47,11 @@ export async function requestWebsitePublication(
 export async function queueWebsitePublication(
   context: DashboardContext,
   websiteId: string,
-  options: { readonly correlationId: string; readonly requirePendingUpdate: boolean },
+  options: {
+    readonly correlationId: string;
+    readonly publicationCorrelationId?: string;
+    readonly requirePendingUpdate: boolean;
+  },
 ): Promise<"unchanged" | "pending" | "published" | "queued" | "missing"> {
   const client = dashboardDatabase();
   const result = await withTenantTransaction(
@@ -102,7 +106,11 @@ export async function queueWebsitePublication(
   if (result === "queued") {
     await requestPublication(
       new PrismaPublicationCommandRepository(client),
-      { organizationId: context.organization.id, actorId: context.actor.id, correlationId: options.correlationId },
+      {
+        organizationId: context.organization.id,
+        actorId: context.actor.id,
+        correlationId: options.publicationCorrelationId ?? options.correlationId,
+      },
       { websiteId },
     );
   }

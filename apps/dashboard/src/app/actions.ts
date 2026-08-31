@@ -7,7 +7,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   enforceRateLimit,
-  PrismaPublicationCommandRepository,
   withTenantTransaction,
   type DatabaseTransaction,
 } from "@factory/database";
@@ -34,7 +33,6 @@ import {
   loadTemplateArtifact,
 } from "@factory/template-loader";
 import { instantiateTemplateRuntime } from "@factory/template-runtime";
-import { requestPublication } from "@factory/publishing";
 import { dashboardArtifactStore as artifactStore } from "@/server/artifact-store";
 import { dashboardDatabase } from "@/server/overview";
 import { requireDashboardContext, requireWebsiteMutationContext } from "@/server/auth";
@@ -47,8 +45,8 @@ import { defaultSubscriptionExpiry } from "@/server/subscription-dates";
 import { isSupportedWebsiteLocale, websiteLanguageSelection } from "@/server/website-languages";
 import { dashboardMediaPath, mediaStorageKey } from "@/server/media-storage";
 import { supportedTemplateLocales } from "@/server/template-locales";
-import { canReuseActivePublication } from "@/server/publication-toggle";
 import {
+  queueWebsitePublication,
   requestWebsitePublication,
   retryWebsitePublication,
   setWebsiteAvailability,
@@ -675,63 +673,12 @@ export async function publishWebsiteAction(formData: FormData): Promise<void> {
 export async function toggleWebsitePublicationAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   if (!websiteId) return;
-  const client = dashboardDatabase();
   const context = await requireDashboardContext("website.publish");
-  const result = await withTenantTransaction(
-    client,
-    tenantActionContext(context, `toggle-publication:${websiteId}`),
-    async (transaction) => {
-      const website = await transaction.website.findUnique({
-        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
-        include: {
-          subscription: true,
-          activePublication: { select: { status: true, sourceDraftRevision: true } },
-        },
-      });
-      if (!website) return "missing" as const;
-      if (
-        website.subscription &&
-        (website.subscription.status !== "active" || website.subscription.expiresAt <= new Date())
-      ) {
-        throw new Error("SUBSCRIPTION_EXPIRED");
-      }
-      const activeJob = await transaction.job.findFirst({
-        where: {
-          organizationId: context.organization.id,
-          type: "publication.requested",
-          status: { in: ["queued", "running", "retryable"] },
-          payloadJson: { path: ["websiteId"], equals: websiteId },
-        },
-        select: { id: true },
-      });
-      if (activeJob) return "pending" as const;
-      if (
-        canReuseActivePublication({
-          activeStatus: website.activePublication?.status ?? null,
-          activeDraftRevision: website.activePublication?.sourceDraftRevision ?? null,
-          websiteDraftRevision: website.draftRevision,
-        })
-      ) {
-        await transaction.website.update({
-          where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
-          data: { status: "published", revision: { increment: 1 } },
-        });
-        return "published" as const;
-      }
-      return "queue" as const;
-    },
-  );
-  if (result === "queue") {
-    await requestPublication(
-      new PrismaPublicationCommandRepository(client),
-      {
-        organizationId: context.organization.id,
-        actorId: context.actor.id,
-        correlationId: `publish-update:${websiteId}`,
-      },
-      { websiteId },
-    );
-  }
+  await queueWebsitePublication(context, websiteId, {
+    correlationId: `toggle-publication:${websiteId}`,
+    publicationCorrelationId: `publish-update:${websiteId}`,
+    requirePendingUpdate: false,
+  });
   revalidateWebsiteEditor(websiteId);
 }
 
@@ -739,67 +686,11 @@ export async function toggleWebsitePublicationAction(formData: FormData): Promis
 export async function publishClientWebsiteUpdateAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   if (!websiteId) return;
-  const client = dashboardDatabase();
   const context = await requireWebsiteMutationContext(websiteId, "website.publish");
-  const result = await withTenantTransaction(
-    client,
-    tenantActionContext(context, `publish-client-update:${websiteId}`),
-    async (transaction) => {
-      const website = await transaction.website.findUnique({
-        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
-        include: {
-          subscription: true,
-          activePublication: { select: { status: true, sourceDraftRevision: true } },
-        },
-      });
-      const hasPendingUpdate =
-        website?.status === "published" &&
-        website.activePublication !== null &&
-        website.activePublication.sourceDraftRevision !== website.draftRevision;
-      if (!website || !hasPendingUpdate) return "unchanged" as const;
-      if (
-        website.subscription &&
-        (website.subscription.status !== "active" || website.subscription.expiresAt <= new Date())
-      ) {
-        throw new Error("SUBSCRIPTION_EXPIRED");
-      }
-      const activeJob = await transaction.job.findFirst({
-        where: {
-          organizationId: context.organization.id,
-          type: "publication.requested",
-          status: { in: ["queued", "running", "retryable"] },
-          payloadJson: { path: ["websiteId"], equals: websiteId },
-        },
-        select: { id: true },
-      });
-      if (activeJob) return "pending" as const;
-      if (
-        canReuseActivePublication({
-          activeStatus: website.activePublication?.status ?? null,
-          activeDraftRevision: website.activePublication?.sourceDraftRevision ?? null,
-          websiteDraftRevision: website.draftRevision,
-        })
-      ) {
-        await transaction.website.update({
-          where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
-          data: { status: "published", revision: { increment: 1 } },
-        });
-        return "published" as const;
-      }
-      return "queue" as const;
-    },
-  );
-  if (result === "queue") {
-    await requestPublication(
-      new PrismaPublicationCommandRepository(client),
-      {
-        organizationId: context.organization.id,
-        actorId: context.actor.id,
-        correlationId: `publish-client-update:${websiteId}`,
-      },
-      { websiteId },
-    );
-  }
+  await queueWebsitePublication(context, websiteId, {
+    correlationId: `publish-client-update:${websiteId}`,
+    requirePendingUpdate: true,
+  });
   revalidateWebsiteEditor(websiteId);
 }
 
