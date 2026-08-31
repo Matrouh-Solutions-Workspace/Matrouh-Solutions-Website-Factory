@@ -22,7 +22,7 @@
   "dependencies": {
     "@factory/publishing": "workspace:*",
     "@prisma/adapter-pg": "^7.9.1",
-    "@prisma/client": "^7.9.1",
+    "@prisma/client": "^7.10.0",
     "dotenv": "^17.2.1",
     "pg": "^8.16.3"
   },
