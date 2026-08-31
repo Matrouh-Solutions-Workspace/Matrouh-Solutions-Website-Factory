@@ -37,6 +37,7 @@ export function isCartLine(value: unknown): value is CartLine {
   return (
     typeof line.productId === "string" &&
     typeof line.variantId === "string" &&
+    typeof line.quantity === "number" &&
     Number.isInteger(line.quantity) &&
     line.quantity > 0
   );
