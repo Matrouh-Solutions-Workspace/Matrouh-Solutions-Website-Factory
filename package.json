@@ -11,6 +11,7 @@
     "dev": "turbo run dev",
     "typecheck": "pnpm db:generate && turbo run typecheck",
     "test": "turbo run test",
+    "test:coverage": "turbo run test -- --coverage",
     "lint": "pnpm db:generate && turbo run lint",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
@@ -25,6 +26,7 @@
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@types/node": "^24.1.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.32.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import-x": "^4.16.1",
