@@ -42,7 +42,7 @@ import { heartbeatProcessId, processIsRunning, startLocalWorker } from "@/server
 import { workerStatusFromHeartbeat } from "@/server/worker-status";
 import { renewalResumeStatus } from "@/server/subscriptions";
 import { defaultSubscriptionExpiry } from "@/server/subscription-dates";
-import { isSupportedWebsiteLocale, websiteLanguageSelection } from "@/server/website-languages";
+import { isSupportedWebsiteLocale } from "@/server/website-languages";
 import { dashboardMediaPath, mediaStorageKey } from "@/server/media-storage";
 import { supportedTemplateLocales } from "@/server/template-locales";
 import {
