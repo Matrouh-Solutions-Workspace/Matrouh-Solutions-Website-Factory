@@ -53,6 +53,7 @@ import {
 } from "@/server/actions/publication-actions";
 import { createMediaFolder, requestMediaDeletion } from "@/server/actions/media-actions";
 import { updateWebsiteIdentity } from "@/server/actions/website-actions";
+import { parseWebsiteCreationInput } from "@/server/actions/website-create";
 
 const templatesRoot = resolve(workspaceRoot, dashboardConfig.FACTORY_TEMPLATE_DIRECTORY);
 
@@ -110,21 +111,18 @@ interface WebsiteForPublish {
 }
 
 export async function createWebsiteAction(formData: FormData): Promise<void> {
-  const name = cleanText(formData.get("name"), 120);
-  const templateKey = cleanText(formData.get("template"), 260);
-  const hostnameInput = cleanText(formData.get("hostname"), 80);
-  const clientId = cleanText(formData.get("clientId"), 80) || null;
-  const cadenceInput = cleanText(formData.get("subscriptionCadence"), 20);
-  const cadence =
-    cadenceInput === "trial" || cadenceInput === "monthly" || cadenceInput === "yearly"
-      ? cadenceInput
-      : null;
-  const expiresOn = cleanText(formData.get("subscriptionExpiresAt"), 32);
-  const languages = websiteLanguageSelection(
-    cleanText(formData.get("languageMode"), 10),
-    cleanText(formData.get("defaultLanguage"), 10),
-  );
-  if (!name || !templateKey || !languages) return;
+  const input = parseWebsiteCreationInput(formData);
+  if (!input) return;
+  const {
+    name,
+    templateKey,
+    hostnameInput,
+    clientId,
+    cadenceInput,
+    cadence,
+    expiresOn,
+    languages,
+  } = input;
 
   const [templateId, templateVersion] = templateKey.split("@");
   if (!templateId || !templateVersion) return;
