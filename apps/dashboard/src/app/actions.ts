@@ -50,6 +50,8 @@ import { supportedTemplateLocales } from "@/server/template-locales";
 import { canReuseActivePublication } from "@/server/publication-toggle";
 import {
   requestWebsitePublication,
+  retryWebsitePublication,
+  setWebsiteAvailability,
 } from "@/server/actions/publication-actions";
 
 const templatesRoot = resolve(workspaceRoot, dashboardConfig.FACTORY_TEMPLATE_DIRECTORY);
@@ -804,68 +806,8 @@ export async function publishClientWebsiteUpdateAction(formData: FormData): Prom
 export async function retryPublicationJobAction(formData: FormData): Promise<void> {
   const jobId = cleanText(formData.get("jobId"), 80);
   if (!jobId) return;
-  const client = dashboardDatabase();
   const context = await requireDashboardContext("website.publish");
-  const result = await withTenantTransaction(
-    client,
-    tenantActionContext(context, `retry-publication:${jobId}`),
-    async (transaction) => {
-      const job = await transaction.job.findUnique({ where: { id: jobId } });
-      if (
-        !job ||
-        job.organizationId !== context.organization.id ||
-        job.type !== "publication.requested" ||
-        !["failed", "dead_letter"].includes(job.status)
-      ) {
-        return null;
-      }
-      const payload = job.payloadJson as Record<string, unknown>;
-      const websiteId = typeof payload.websiteId === "string" ? payload.websiteId : null;
-      if (!websiteId) return null;
-      const website = await transaction.website.findUnique({
-        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
-        select: { draftRevision: true },
-      });
-      if (!website) return null;
-      const requestedRevision =
-        typeof payload.requestedDraftRevision === "string" ? payload.requestedDraftRevision : null;
-      await transaction.job.update({
-        where: { id: job.id },
-        data: {
-          status: "queued",
-          payloadJson: jsonInput({
-            ...payload,
-            requestedDraftRevision: website.draftRevision.toString(),
-          }),
-          availableAt: new Date(),
-          completedAt: null,
-          lockedAt: null,
-          lockOwner: null,
-          lockExpiresAt: null,
-          maxAttempts: { increment: 5 },
-        },
-      });
-      await transaction.auditEvent.create({
-        data: {
-          id: randomUUID(),
-          organizationId: context.organization.id,
-          actorType: "user",
-          actorId: context.actor.id,
-          action: "publication.retry_requested",
-          resourceType: "job",
-          resourceId: job.id,
-          correlationId: `retry-publication:${job.id}`,
-          metadataJson: jsonInput({
-            websiteId,
-            previousRequestedDraftRevision: requestedRevision,
-            requestedDraftRevision: website.draftRevision.toString(),
-          }),
-          retentionClass: "standard",
-        },
-      });
-      return websiteId;
-    },
-  );
+  const result = await retryWebsitePublication(context, jobId);
   if (!result) return;
   revalidateWebsiteEditor(result);
 }
@@ -876,42 +818,7 @@ export async function setWebsiteAvailabilityAction(formData: FormData): Promise<
   if (!websiteId || !["unpublished", "disabled"].includes(requestedStatus)) return;
   const context = await requireDashboardContext("website.publish");
   const status = requestedStatus as "unpublished" | "disabled";
-  await withTenantTransaction(
-    dashboardDatabase(),
-    tenantActionContext(context, `website-availability:${websiteId}:${status}`),
-    async (transaction) => {
-      const result = await transaction.website.updateMany({
-        where: { id: websiteId, organizationId: context.organization.id, archivedAt: null },
-        data: { status, revision: { increment: 1 } },
-      });
-      if (result.count !== 1) return;
-      if (status === "disabled") {
-        // A deliberate staff disable after automatic expiry must survive a later renewal.
-        await transaction.websiteSubscription.updateMany({
-          where: {
-            organizationId: context.organization.id,
-            websiteId,
-            disabledReason: "subscription_expired",
-          },
-          data: { resumeStatus: "disabled" },
-        });
-      }
-      await transaction.auditEvent.create({
-        data: {
-          id: randomUUID(),
-          organizationId: context.organization.id,
-          actorType: "user",
-          actorId: context.actor.id,
-          action: `website.${status}`,
-          resourceType: "website",
-          resourceId: websiteId,
-          correlationId: `website-availability:${websiteId}:${status}`,
-          metadataJson: jsonInput({ status }),
-          retentionClass: "standard",
-        },
-      });
-    },
-  );
+  await setWebsiteAvailability(context, websiteId, status);
   revalidatePath("/websites");
   revalidatePath(`/websites/${websiteId}`);
 }
