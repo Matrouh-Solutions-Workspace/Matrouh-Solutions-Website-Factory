@@ -48,6 +48,9 @@ import { isSupportedWebsiteLocale, websiteLanguageSelection } from "@/server/web
 import { dashboardMediaPath, mediaStorageKey } from "@/server/media-storage";
 import { supportedTemplateLocales } from "@/server/template-locales";
 import { canReuseActivePublication } from "@/server/publication-toggle";
+import {
+  requestWebsitePublication,
+} from "@/server/actions/publication-actions";
 
 const templatesRoot = resolve(workspaceRoot, dashboardConfig.FACTORY_TEMPLATE_DIRECTORY);
 
@@ -661,34 +664,8 @@ export async function restartWorkerAction(): Promise<void> {
 export async function publishWebsiteAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   if (!websiteId) return;
-  const client = dashboardDatabase();
   const context = await requireDashboardContext("website.publish");
-  const subscriptionAllowed = await withTenantTransaction(
-    client,
-    tenantActionContext(context, `publish-subscription-check:${websiteId}`),
-    async (transaction) => {
-      const subscription = await transaction.websiteSubscription.findUnique({
-        where: {
-          organizationId_websiteId: { organizationId: context.organization.id, websiteId },
-        },
-        select: { status: true, expiresAt: true },
-      });
-      return (
-        !subscription || (subscription.status === "active" && subscription.expiresAt > new Date())
-      );
-    },
-  );
-  if (!subscriptionAllowed) throw new Error("SUBSCRIPTION_EXPIRED");
-  const data = await requestPublication(
-    new PrismaPublicationCommandRepository(client),
-    {
-      organizationId: context.organization.id,
-      actorId: context.actor.id,
-      correlationId: `publish-website:${websiteId}`,
-    },
-    { websiteId },
-  );
-  if (!data) return;
+  await requestWebsitePublication(context, websiteId, `publish-website:${websiteId}`);
 
   revalidatePath("/");
 }
