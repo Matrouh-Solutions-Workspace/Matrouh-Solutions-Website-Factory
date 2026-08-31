@@ -17,6 +17,7 @@ import { validateTemplate } from "@factory/template-validator";
 import { renderToStaticMarkup } from "react-dom/server";
 import { workerArtifactStore as artifactStore } from "./artifact-store";
 import { workerConfig, workspaceRoot } from "./config";
+import { logger } from "./logger";
 import { subscriptionExpiredMessage, subscriptionNotice } from "./subscription-lifecycle";
 
 const templatesRoot = resolve(workspaceRoot, workerConfig.FACTORY_TEMPLATE_DIRECTORY);
@@ -164,7 +165,7 @@ const abort = new AbortController();
 process.on("SIGINT", () => abort.abort());
 process.on("SIGTERM", () => abort.abort());
 
-console.log(JSON.stringify({ service: "worker", status: "ready", workerId, pid: process.pid }));
+logger.info({ status: "ready", workerId, pid: process.pid }, "Worker ready");
 
 let nextMaintenanceAt = Date.now();
 let nextHeartbeatAt = 0;
@@ -208,9 +209,7 @@ try {
       workerHealthy = true;
     } catch (error) {
       workerHealthy = false;
-      console.error(
-        JSON.stringify({ service: "worker", event: "loop.retrying", ...errorDetails(error) }),
-      );
+      logger.error({ event: "loop.retrying", ...errorDetails(error) }, "Worker loop retrying");
       await recordHeartbeat("error").catch(() => undefined);
       await sleep(2_000, abort.signal);
     }
@@ -256,14 +255,14 @@ async function deliverOutboundMessage(message: ClaimedOutboundMessage): Promise<
     } else if (workerConfig.FACTORY_DEPLOYMENT_MODE === "production") {
       throw new Error("MAIL_PROVIDER_NOT_CONFIGURED");
     } else {
-      console.log(
-        JSON.stringify({
-          service: "worker",
+      logger.info(
+        {
           event: "mail.local_delivery",
           messageId: message.id,
           recipient: message.recipient_email,
           subject: message.subject,
-        }),
+        },
+        "Delivered mail locally",
       );
     }
     await withTenantTransaction(
@@ -463,7 +462,7 @@ async function runJob(job: ClaimedJob, signal: AbortSignal): Promise<void> {
         },
       });
     });
-    console.log(JSON.stringify({ service: "worker", event: "job.succeeded", jobId: job.id }));
+    logger.info({ event: "job.succeeded", jobId: job.id }, "Job succeeded");
   } catch (error) {
     const permanent = error instanceof PermanentJobError;
     const retryable = !permanent && job.attemptCount < job.maxAttempts;
@@ -527,13 +526,9 @@ async function runJob(job: ClaimedJob, signal: AbortSignal): Promise<void> {
         }
       }
     });
-    console.error(
-      JSON.stringify({
-        service: "worker",
-        event: retryable ? "job.retryable" : "job.failed",
-        jobId: job.id,
-        ...failure,
-      }),
+    logger.error(
+      { event: retryable ? "job.retryable" : "job.failed", jobId: job.id, ...failure },
+      "Job failed",
     );
   }
 }
@@ -1057,9 +1052,8 @@ async function deliverOutboxEvent(event: ClaimedOutboxEvent): Promise<void> {
     ) {
       await invalidateWebsiteCache(event);
     }
-    console.log(
-      JSON.stringify({
-        service: "worker",
+    logger.info(
+      {
         event: "outbox.delivered",
         eventId: event.id,
         eventType: event.eventType,
@@ -1071,7 +1065,8 @@ async function deliverOutboxEvent(event: ClaimedOutboxEvent): Promise<void> {
         occurredAt: event.occurredAt.toISOString(),
         correlationId: event.correlationId,
         causationId: event.causationId,
-      }),
+      },
+      "Outbox event delivered",
     );
     await withTenantTransaction(database, eventTenantContext(event), (transaction) =>
       transaction.outboxEvent.update({
@@ -1093,15 +1088,15 @@ async function deliverOutboxEvent(event: ClaimedOutboxEvent): Promise<void> {
         },
       }),
     );
-    console.error(
-      JSON.stringify({
-        service: "worker",
+    logger.error(
+      {
         event: "outbox.failed",
         eventId: event.id,
         eventType: event.eventType,
         exhausted,
         ...failure,
-      }),
+      },
+      "Outbox event delivery failed",
     );
   }
 }
@@ -1199,18 +1194,14 @@ async function cleanupExpiredPreviews(): Promise<void> {
       );
       removed += 1;
     } catch (error) {
-      console.error(
-        JSON.stringify({
-          service: "worker",
-          event: "preview.cleanup_failed",
-          previewId: preview.id,
-          ...errorDetails(error),
-        }),
+      logger.error(
+        { event: "preview.cleanup_failed", previewId: preview.id, ...errorDetails(error) },
+        "Preview cleanup failed",
       );
     }
   }
   if (removed > 0) {
-    console.log(JSON.stringify({ service: "worker", event: "preview.cleaned", removed }));
+    logger.info({ event: "preview.cleaned", removed }, "Expired previews cleaned");
   }
 }
 
@@ -1256,16 +1247,16 @@ async function cleanupOperationalRecords(): Promise<void> {
   const removed =
     rateLimits.count + idempotency.count + sessions.count + audit.count + heartbeats.count;
   if (removed > 0) {
-    console.log(
-      JSON.stringify({
-        service: "worker",
+    logger.info(
+      {
         event: "retention.cleaned",
         rateLimits: rateLimits.count,
         idempotency: idempotency.count,
         sessions: sessions.count,
         audit: audit.count,
         heartbeats: heartbeats.count,
-      }),
+      },
+      "Operational records cleaned",
     );
   }
 }

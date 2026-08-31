@@ -100,9 +100,9 @@ docker compose up -d database
 pnpm db:deploy
 ```
 
-Use `pnpm test:coverage` to generate informational V8 coverage reports. CI runs format, lint,
-typecheck, tests, build, an informational dependency audit, and an informational coverage job on
-every pull request and push to `main`.
+Use `pnpm test:coverage` to generate V8 coverage reports and enforce the dashboard's minimum
+coverage baseline. CI runs format, lint, typecheck, tests, coverage, build, and a
+production-dependency audit on every pull request and push to `main`.
 
 ## Quality gate
 
