@@ -54,6 +54,11 @@ import {
 import { createMediaFolder, requestMediaDeletion } from "@/server/actions/media-actions";
 import { updateWebsiteIdentity } from "@/server/actions/website-actions";
 import { parseWebsiteCreationInput } from "@/server/actions/website-create";
+import {
+  hasExpectedSignature,
+  mediaType,
+  parseMediaUploadInput,
+} from "@/server/actions/media-upload";
 
 const templatesRoot = resolve(workspaceRoot, dashboardConfig.FACTORY_TEMPLATE_DIRECTORY);
 
@@ -1979,17 +1984,12 @@ function normalizeExtractedPdfText(value: string): string {
 }
 
 async function uploadMedia(formData: FormData): Promise<string | undefined> {
-  const upload = formData.get("file");
-  let folderId = cleanText(formData.get("folderId"), 80);
-  const websiteId = cleanText(formData.get("websiteId"), 80);
-  const purposeInput = cleanText(formData.get("purpose"), 24);
-  const purpose = purposeInput === "favicon" || purposeInput === "logo" ? purposeInput : null;
-  if (
-    !(upload instanceof File) ||
-    upload.size < 1 ||
-    upload.size > dashboardConfig.FACTORY_MAX_UPLOAD_BYTES
-  )
-    return;
+  const input = parseMediaUploadInput(formData, dashboardConfig.FACTORY_MAX_UPLOAD_BYTES);
+  if (!input) return;
+  const upload = input.upload;
+  let folderId = input.folderId;
+  const websiteId = input.websiteId;
+  const purpose = input.purpose;
   const context = websiteId
     ? await requireWebsiteMutationContext(websiteId, "media.create")
     : await requireDashboardContext("media.create");
@@ -3865,39 +3865,6 @@ function slugFromTitle(value: string): string {
 function normalizePageSlug(value: string): string {
   if (value === "/") return "/";
   return normalizeHostname(value.replace(/^\/+/, "")) || "/";
-}
-
-function mediaType(contentType: string): { kind: string; extension: string } | null {
-  return (
-    (
-      {
-        "image/jpeg": { kind: "image", extension: "jpg" },
-        "image/png": { kind: "image", extension: "png" },
-        "image/webp": { kind: "image", extension: "webp" },
-        "image/gif": { kind: "image", extension: "gif" },
-        "application/pdf": { kind: "document", extension: "pdf" },
-      } as Record<string, { kind: string; extension: string }>
-    )[contentType] ?? null
-  );
-}
-
-function hasExpectedSignature(bytes: Buffer, contentType: string): boolean {
-  const startsWith = (...signature: number[]) =>
-    signature.every((value, index) => bytes[index] === value);
-  if (contentType === "image/jpeg") return startsWith(0xff, 0xd8, 0xff);
-  if (contentType === "image/png")
-    return startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a);
-  if (contentType === "image/webp")
-    return (
-      bytes.subarray(0, 4).toString("ascii") === "RIFF" &&
-      bytes.subarray(8, 12).toString("ascii") === "WEBP"
-    );
-  if (contentType === "image/gif") {
-    const signature = bytes.subarray(0, 6).toString("ascii");
-    return signature === "GIF87a" || signature === "GIF89a";
-  }
-  if (contentType === "application/pdf") return bytes.subarray(0, 5).toString("ascii") === "%PDF-";
-  return false;
 }
 
 function mergeSectionContent(current: unknown, formData: FormData): unknown {
