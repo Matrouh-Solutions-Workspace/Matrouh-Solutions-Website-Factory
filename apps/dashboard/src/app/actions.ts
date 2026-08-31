@@ -51,7 +51,7 @@ import {
   retryWebsitePublication,
   setWebsiteAvailability,
 } from "@/server/actions/publication-actions";
-import { createMediaFolder } from "@/server/actions/media-actions";
+import { createMediaFolder, requestMediaDeletion } from "@/server/actions/media-actions";
 import { updateWebsiteIdentity } from "@/server/actions/website-actions";
 
 const templatesRoot = resolve(workspaceRoot, dashboardConfig.FACTORY_TEMPLATE_DIRECTORY);
@@ -2297,59 +2297,7 @@ export async function deleteMediaAction(formData: FormData): Promise<void> {
   const assetId = cleanText(formData.get("assetId"), 80);
   if (!assetId) return;
   const context = await requireDashboardContext("media.create");
-  await withTenantTransaction(
-    dashboardDatabase(),
-    {
-      organizationId: context.organization.id,
-      actorId: context.actor.id,
-      correlationId: `delete-media:${assetId}`,
-    },
-    async (transaction) => {
-      const asset = await transaction.mediaAsset.findFirst({
-        where: { id: assetId, organizationId: context.organization.id },
-        include: { _count: { select: { references: true } } },
-      });
-      if (!asset || asset.status === "deleted") return;
-      if (asset._count.references > 0) throw new Error("MEDIA_IN_USE");
-      await transaction.mediaAsset.update({
-        where: { id: asset.id },
-        data: {
-          status: "deleted",
-          metadataJson: jsonInput({ deletionRequestedAt: new Date().toISOString() }),
-          revision: { increment: 1 },
-        },
-      });
-      await transaction.job.create({
-        data: {
-          id: randomUUID(),
-          organizationId: context.organization.id,
-          type: "media.gc",
-          version: 1,
-          payloadJson: jsonInput({ assetId }),
-          status: "queued",
-          priority: -5,
-          maxAttempts: 8,
-          availableAt: new Date(Date.now() + 24 * 60 * 60 * 1_000),
-          deduplicationKey: `media.gc:${assetId}`,
-          correlationId: `delete-media:${assetId}`,
-        },
-      });
-      await transaction.auditEvent.create({
-        data: {
-          id: randomUUID(),
-          organizationId: context.organization.id,
-          actorType: "user",
-          actorId: context.actor.id,
-          action: "media.deletion_requested",
-          resourceType: "media_asset",
-          resourceId: asset.id,
-          correlationId: `delete-media:${assetId}`,
-          metadataJson: jsonInput({ storageKey: asset.storageKey, gracePeriodHours: 24 }),
-          retentionClass: "standard",
-        },
-      });
-    },
-  );
+  await requestMediaDeletion(context, assetId);
   revalidatePath("/media");
 }
 
