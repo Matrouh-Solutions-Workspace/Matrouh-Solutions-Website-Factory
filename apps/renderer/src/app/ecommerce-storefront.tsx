@@ -17,10 +17,11 @@ import {
   buildWhatsAppOrderUrl,
   normalizeWhatsAppNumber,
 } from "./whatsapp-order";
+import { filterCatalog, type StorefrontSortKey } from "./storefront/catalog";
 
 type CartLine = { variantId: string; productId: string; quantity: number };
 type StorefrontKind = "fashion" | "hardware" | "pc";
-type SortKey = "featured" | "newest" | "price-low" | "price-high" | "name";
+type SortKey = StorefrontSortKey;
 type Theme = "light" | "dark";
 
 export function EcommerceStorefront({
@@ -114,41 +115,9 @@ export function EcommerceStorefront({
   );
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const normalizedQuery = query.trim().toLocaleLowerCase(store.locale);
-  const visibleProducts = useMemo(() => {
-    const filtered = store.products.filter((item) => {
-      const searchable = [
-        item.name,
-        item.description,
-        item.shortDescription,
-        item.sku,
-        ...Object.values(item.attributes),
-      ]
-        .filter(
-          (value): value is string | number =>
-            typeof value === "string" || typeof value === "number",
-        )
-        .join(" ")
-        .toLocaleLowerCase(store.locale);
-      return (
-        (!category || item.categoryIds.includes(category)) &&
-        (!brand || attribute(item, "brand") === brand) &&
-        (!normalizedQuery || searchable.includes(normalizedQuery)) &&
-        productPrice(item) <= maxPrice &&
-        (!inStockOnly || item.variants.some((variant) => variant.stockQuantity > 0)) &&
-        (!saleOnly || item.salePriceMinor !== null)
-      );
-    });
-    return [...filtered].sort((left, right) => {
-      if (sort === "price-low") return productPrice(left) - productPrice(right);
-      if (sort === "price-high") return productPrice(right) - productPrice(left);
-      if (sort === "name") return left.name.localeCompare(right.name, store.locale);
-      if (sort === "newest") return store.products.indexOf(left) - store.products.indexOf(right);
-      return (
-        Number(attribute(right, "featured") === "true") -
-        Number(attribute(left, "featured") === "true")
-      );
-    });
-  }, [
+  const visibleProducts = useMemo(() => filterCatalog(store.products, {
+    locale: store.locale, category, brand, query: normalizedQuery, maxPrice, inStockOnly, saleOnly, sort,
+  }), [
     brand,
     category,
     inStockOnly,

@@ -29,7 +29,7 @@ describe("commerce storefront templates", () => {
 
     expect(source).toContain('role="search"');
     expect(source).toContain("activeFilters");
-    expect(source).toContain('sort === "price-low"');
+    expect(source).toContain("filterCatalog(");
     expect(source).toContain('dir={rtl ? "rtl" : "ltr"}');
     expect(source).toContain("data-theme={theme}");
     expect(source).toContain('aria-roledescription="carousel"');
