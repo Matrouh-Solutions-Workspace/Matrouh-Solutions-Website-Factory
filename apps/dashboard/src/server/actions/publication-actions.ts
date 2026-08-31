@@ -148,7 +148,7 @@ export async function retryWebsitePublication(
         where: { id: job.id },
         data: {
           status: "queued",
-          payloadJson: { ...payload, requestedDraftRevision: website.draftRevision.toString() } as JsonValue,
+          payloadJson: { ...payload, requestedDraftRevision: website.draftRevision.toString() } as Exclude<JsonValue, null>,
           availableAt: new Date(),
           completedAt: null,
           lockedAt: null,
@@ -171,7 +171,7 @@ export async function retryWebsitePublication(
             websiteId,
             previousRequestedDraftRevision: requestedRevision,
             requestedDraftRevision: website.draftRevision.toString(),
-          } as JsonValue,
+          } as Exclude<JsonValue, null>,
           retentionClass: "standard",
         },
       });
@@ -214,7 +214,7 @@ export async function setWebsiteAvailability(
           resourceType: "website",
           resourceId: websiteId,
           correlationId: `website-availability:${websiteId}:${status}`,
-          metadataJson: { status } as JsonValue,
+          metadataJson: { status } as Exclude<JsonValue, null>,
           retentionClass: "standard",
         },
       });

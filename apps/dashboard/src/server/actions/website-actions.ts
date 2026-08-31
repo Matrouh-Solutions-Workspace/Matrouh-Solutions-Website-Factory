@@ -32,7 +32,7 @@ export async function updateWebsiteIdentity(
           resourceType: "website",
           resourceId: websiteId,
           correlationId,
-          metadataJson: { name } as JsonValue,
+          metadataJson: { name } as Exclude<JsonValue, null>,
           retentionClass: "standard",
         },
       });
