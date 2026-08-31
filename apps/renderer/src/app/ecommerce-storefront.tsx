@@ -18,8 +18,8 @@ import {
   normalizeWhatsAppNumber,
 } from "./whatsapp-order";
 import { filterCatalog, type StorefrontSortKey } from "./storefront/catalog";
+import { addCartLine, isCartLine, updateCartQuantity, type CartLine } from "./storefront/cart";
 
-type CartLine = { variantId: string; productId: string; quantity: number };
 type StorefrontKind = "fashion" | "hardware" | "pc";
 type SortKey = StorefrontSortKey;
 type Theme = "light" | "dark";
@@ -80,7 +80,7 @@ export function EcommerceStorefront({
       if (Array.isArray(value)) {
         setCart(
           value
-            .filter(validCartLine)
+            .filter(isCartLine)
             .map((line) => ({ ...line, quantity: Math.min(line.quantity, 99) })),
         );
       }
@@ -144,25 +144,12 @@ export function EcommerceStorefront({
     if (!variant || variant.stockQuantity < 1) return;
     void recordEvent("add_to_cart", productItem.id);
     setCart((current) => {
-      const existing = current.find((item) => item.variantId === variant.id);
-      if (existing)
-        return current.map((item) =>
-          item.variantId === variant.id
-            ? { ...item, quantity: Math.min(item.quantity + 1, variant.stockQuantity) }
-            : item,
-        );
-      return [...current, { productId: productItem.id, variantId: variant.id, quantity: 1 }];
+      return addCartLine(current, productItem.id, variant.id, variant.stockQuantity);
     });
   }
 
   function updateQuantity(variantId: string, quantity: number) {
-    setCart((current) =>
-      quantity <= 0
-        ? current.filter((item) => item.variantId !== variantId)
-        : current.map((item) =>
-            item.variantId === variantId ? { ...item, quantity: Math.min(quantity, 99) } : item,
-          ),
-    );
+    setCart((current) => updateCartQuantity(current, variantId, quantity));
   }
 
   function resetFilters() {
@@ -1763,17 +1750,6 @@ function hardwareProductIcon(index: number): IconName {
 }
 function pcProductIcon(index: number): IconName {
   return ["gpu", "cpu", "memory", "monitor", "fan", "toolbox"][index % 6] as IconName;
-}
-
-function validCartLine(value: unknown): value is CartLine {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const line = value as Record<string, unknown>;
-  return (
-    typeof line.variantId === "string" &&
-    typeof line.productId === "string" &&
-    Number.isSafeInteger(line.quantity) &&
-    Number(line.quantity) > 0
-  );
 }
 
 function formText(form: FormData, name: string): string {
