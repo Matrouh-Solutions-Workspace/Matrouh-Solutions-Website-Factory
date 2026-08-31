@@ -15,6 +15,25 @@ Read [ARCHITECTURE.md](./ARCHITECTURE.md), the [engineering specifications](./do
 
 ## Development
 
+### One-command local stack
+
+For an isolated local stack with PostgreSQL, provider bridge, dashboard, renderer, worker, and
+Template Lab, run this from a fresh clone:
+
+```bash
+docker compose up --build
+```
+
+The initial `bootstrap` container applies migrations and seeds demo data before the applications
+start. Open the dashboard at `http://localhost:3000`, the public renderer at
+`http://localhost:3001`, and Template Lab at `http://localhost:3002`.
+
+This Compose setup is development-only and is not used by the production deployment workflow.
+Stop it with `docker compose down`; use `docker compose down --volumes` to also remove local
+database, media, and publication data.
+
+### Host-based development
+
 Copy the example environment and start PostgreSQL. On Windows PowerShell:
 
 ```powershell
@@ -63,6 +82,27 @@ OIDC with PKCE and short-lived, revocable opaque Factory sessions.
 `pnpm seed:demo` compiles immutable Doctor, Clinic, and Engineer publication artifacts. The renderer resolves the host to an artifact and loads its exact template through the generic Template SDK pipeline; application code does not import a concrete template.
 
 To stop the local database without deleting its data, run `docker compose stop database`. To start it again, run `docker compose start database`.
+
+## Testing
+
+Install dependencies from the committed pnpm lockfile, then run the test suite explicitly:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm test
+```
+
+Most tests are isolated unit tests. Start the local `database` Compose service before exercising
+persistence-backed flows or running migrations:
+
+```bash
+docker compose up -d database
+pnpm db:deploy
+```
+
+Use `pnpm test:coverage` to generate informational V8 coverage reports. CI runs format, lint,
+typecheck, tests, build, an informational dependency audit, and an informational coverage job on
+every pull request and push to `main`.
 
 ## Quality gate
 

@@ -10,6 +10,17 @@ Thanks for contributing to Matrouh Solutions Website Factory.
 
 ## Local setup
 
+To bring up the complete local stack without touching host services:
+
+```bash
+docker compose up --build
+```
+
+The Compose file is local-development tooling only; production uses the independent deployment
+workflow under `scripts/production/`.
+
+To run services directly on the host instead, use:
+
 ```bash
 pnpm install --frozen-lockfile
 cp .env.example .env.local

@@ -10,7 +10,7 @@
     "build": "pnpm db:generate && turbo run build --filter=@templates/* --concurrency=1 && turbo run build --concurrency=1",
     "dev": "turbo run dev",
     "typecheck": "pnpm db:generate && turbo run typecheck",
-    "test": "turbo run test",
+    "test": "pnpm db:generate && turbo run test",
     "test:coverage": "turbo run test -- --coverage",
     "lint": "pnpm db:generate && turbo run lint",
     "format:check": "prettier --check .",

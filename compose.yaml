@@ -1,0 +1,142 @@
+name: matrouh-solutions-website-factory
+
+x-factory-environment: &factory-environment
+  NODE_ENV: development
+  FACTORY_DEPLOYMENT_MODE: local
+  DATABASE_URL: postgresql://factory:factory@database:5432/factory
+  FACTORY_BASE_DOMAIN: localhost
+  FACTORY_DASHBOARD_PUBLIC_URL: http://localhost:3000
+  FACTORY_RENDERER_PUBLIC_URL: http://localhost:3001
+  FACTORY_RENDERER_INTERNAL_URL: http://renderer:3001
+  FACTORY_ARTIFACT_DRIVER: local
+  FACTORY_ARTIFACT_DIRECTORY: /workspace/artifacts
+  FACTORY_TEMPLATE_DIRECTORY: /workspace/templates
+  PREVIEW_SIGNING_SECRET: local-preview-signing-secret-at-least-32-characters
+  FACTORY_AUTH_MODE: demo
+  FACTORY_CACHE_INVALIDATION_URL: http://renderer:3001/api/internal/cache/invalidate
+  FACTORY_CACHE_INVALIDATION_SECRET: local-cache-invalidation-secret-at-least-32-characters
+  FACTORY_DOMAIN_CHALLENGE_SECRET: local-domain-challenge-secret-at-least-32-characters
+  FACTORY_DOMAIN_PROVIDER_URL: http://provider-bridge:3003
+  FACTORY_DOMAIN_PROVIDER_SECRET: local-domain-provider-secret-at-least-32-characters
+  FACTORY_MEDIA_PROVIDER_URL: http://provider-bridge:3003
+  FACTORY_MEDIA_PROVIDER_SECRET: local-media-provider-secret-at-least-32-characters
+  FACTORY_MEDIA_PUBLIC_BASE_URL: http://localhost:3003/factory-media
+  FACTORY_MAIL_PROVIDER_URL: http://provider-bridge:3003
+  FACTORY_MAIL_PROVIDER_SECRET: local-mail-provider-secret-at-least-32-characters
+  FACTORY_MAIL_FROM: support@matrouh.local
+  FACTORY_PROVIDER_MEDIA_DIRECTORY: /workspace/media
+  FACTORY_PROVIDER_BRIDGE_HOST: 0.0.0.0
+  FACTORY_PROVIDER_BRIDGE_PORT: 3003
+
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: factory
+      POSTGRES_USER: factory
+      POSTGRES_PASSWORD: factory
+    ports:
+      - "5432:5432"
+    volumes:
+      - factory-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U factory -d factory"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  bootstrap:
+    build:
+      context: .
+    environment: *factory-environment
+    command: sh -c "pnpm db:deploy && pnpm seed:demo"
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - factory-artifacts:/workspace/artifacts
+      - factory-media:/workspace/media
+    restart: "no"
+
+  provider-bridge:
+    build:
+      context: .
+    environment: *factory-environment
+    command: pnpm --filter @factory/provider-bridge dev
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    ports:
+      - "3003:3003"
+    volumes:
+      - factory-media:/workspace/media
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "fetch(''http://127.0.0.1:3003/health'').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  renderer:
+    build:
+      context: .
+    environment: *factory-environment
+    command: pnpm --filter @factory/renderer dev -- --hostname 0.0.0.0
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    ports:
+      - "3001:3001"
+    volumes:
+      - factory-artifacts:/workspace/artifacts
+
+  dashboard:
+    build:
+      context: .
+    environment: *factory-environment
+    command: pnpm --filter @factory/dashboard dev -- --hostname 0.0.0.0
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      renderer:
+        condition: service_started
+      provider-bridge:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - factory-artifacts:/workspace/artifacts
+
+  worker:
+    build:
+      context: .
+    environment: *factory-environment
+    command: pnpm --filter @factory/worker dev
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      provider-bridge:
+        condition: service_healthy
+      renderer:
+        condition: service_started
+    volumes:
+      - factory-artifacts:/workspace/artifacts
+
+  template-lab:
+    build:
+      context: .
+    environment: *factory-environment
+    command: pnpm --filter @factory/template-lab dev -- --hostname 0.0.0.0
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    ports:
+      - "3002:3002"
+
+volumes:
+  factory-artifacts:
+  factory-media:
+  factory-postgres:

@@ -1,0 +1,16 @@
+.git
+.github
+.next
+.turbo
+node_modules
+**/node_modules
+**/dist
+**/coverage
+.env
+.env.local
+artifacts
+artifacts-prisma-local
+media
+*.log
+*.pid
+

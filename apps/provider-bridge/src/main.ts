@@ -7,6 +7,7 @@ import { spawn } from "node:child_process";
 import { renderMail } from "./mail";
 
 const port = numberSetting("FACTORY_PROVIDER_BRIDGE_PORT", 3003);
+const host = process.env.FACTORY_PROVIDER_BRIDGE_HOST ?? "127.0.0.1";
 const root = resolve(
   process.env.FACTORY_PROVIDER_MEDIA_DIRECTORY ?? resolve(process.cwd(), "../../media"),
 );
@@ -33,7 +34,7 @@ const server = createServer((request, response) => {
   });
 });
 
-server.listen(port, "127.0.0.1", () => {
+server.listen(port, host, () => {
   console.log(JSON.stringify({ service: "provider-bridge", status: "ready", port }));
 });
 
