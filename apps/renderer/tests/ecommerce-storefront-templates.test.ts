@@ -8,9 +8,13 @@ describe("commerce storefront templates", () => {
       resolve(process.cwd(), "src/app/ecommerce-storefront.tsx"),
       "utf8",
     );
+    const presentation = await readFile(
+      resolve(process.cwd(), "src/app/storefront/presentation.ts"),
+      "utf8",
+    );
 
-    expect(source).toContain('key.includes("pc")');
-    expect(source).toContain('key.includes("hardware")');
+    expect(presentation).toContain('key.includes("pc")');
+    expect(presentation).toContain('key.includes("hardware")');
     expect(source).toContain("shopTheme--${kind}");
     expect(source).toContain("searchHardware");
     expect(source).toContain("searchFashion");

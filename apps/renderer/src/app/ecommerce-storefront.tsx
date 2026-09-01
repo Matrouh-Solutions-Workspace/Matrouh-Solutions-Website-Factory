@@ -1,15 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { formatMoney } from "@factory/ecommerce";
 import type { EcommerceStorefrontData, StorefrontProduct } from "../server/ecommerce-store";
 import {
@@ -20,8 +12,16 @@ import {
 import { filterCatalog, type StorefrontSortKey } from "./storefront/catalog";
 import { addCartLine, isCartLine, updateCartQuantity, type CartLine } from "./storefront/cart";
 import { parseCheckoutResult, readCheckoutRequest } from "./storefront/checkout";
+import {
+  attribute,
+  mediaUrl,
+  presentationTokens,
+  productPrice,
+  storefrontKind,
+  unitPrice,
+  type StorefrontKind,
+} from "./storefront/presentation";
 
-type StorefrontKind = "fashion" | "hardware" | "pc";
 type SortKey = StorefrontSortKey;
 type Theme = "light" | "dark";
 
@@ -116,19 +116,30 @@ export function EcommerceStorefront({
   );
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const normalizedQuery = query.trim().toLocaleLowerCase(store.locale);
-  const visibleProducts = useMemo(() => filterCatalog(store.products, {
-    locale: store.locale, category, brand, query: normalizedQuery, maxPrice, inStockOnly, saleOnly, sort,
-  }), [
-    brand,
-    category,
-    inStockOnly,
-    maxPrice,
-    normalizedQuery,
-    saleOnly,
-    sort,
-    store.locale,
-    store.products,
-  ]);
+  const visibleProducts = useMemo(
+    () =>
+      filterCatalog(store.products, {
+        locale: store.locale,
+        category,
+        brand,
+        query: normalizedQuery,
+        maxPrice,
+        inStockOnly,
+        saleOnly,
+        sort,
+      }),
+    [
+      brand,
+      category,
+      inStockOnly,
+      maxPrice,
+      normalizedQuery,
+      saleOnly,
+      sort,
+      store.locale,
+      store.products,
+    ],
+  );
   const activeFilters = [
     category ? store.categories.find((item) => item.id === category)?.name : null,
     brand || null,
@@ -1704,12 +1715,6 @@ function Icon({ name }: { readonly name: IconName }) {
   );
 }
 
-function storefrontKind(rendererKey: string): StorefrontKind {
-  const key = rendererKey.toLowerCase();
-  if (key.includes("pc") || key.includes("component")) return "pc";
-  return key.includes("hardware") ? "hardware" : "fashion";
-}
-
 function categoryFashionIcon(index: number): IconName {
   return ["hanger", "spark", "bag", "heart", "hanger", "spark"][index % 6] as IconName;
 }
@@ -1726,45 +1731,11 @@ function pcProductIcon(index: number): IconName {
   return ["gpu", "cpu", "memory", "monitor", "fan", "toolbox"][index % 6] as IconName;
 }
 
-function productPrice(product: StorefrontProduct): number {
-  return product.salePriceMinor ?? product.priceMinor;
-}
-function unitPrice(
-  product: StorefrontProduct,
-  variant: StorefrontProduct["variants"][number],
-): number {
-  return (
-    variant.salePriceMinor ?? variant.priceMinor ?? product.salePriceMinor ?? product.priceMinor
-  );
-}
-function attribute(product: StorefrontProduct, key: string): string {
-  const value = product.attributes[key];
-  return typeof value === "string" || typeof value === "number" || typeof value === "boolean"
-    ? String(value)
-    : "";
-}
 function humanize(value: string): string {
   return value
     .replace(/([A-Z])/g, " $1")
     .replace(/[-_]/g, " ")
     .replace(/^./, (letter) => letter.toUpperCase());
-}
-function mediaUrl(organizationId: string, storageKey: string): string {
-  const filename = storageKey.split("/").at(-1) ?? "";
-  return `/factory-media/${organizationId}/${encodeURIComponent(filename)}`;
-}
-
-function presentationTokens(value: Readonly<Record<string, unknown>>): CSSProperties {
-  const raw =
-    value.tokens && typeof value.tokens === "object" && !Array.isArray(value.tokens)
-      ? (value.tokens as Record<string, unknown>)
-      : {};
-  return {
-    "--commerce-primary": typeof raw.primary === "string" ? raw.primary : "#171512",
-    "--commerce-accent": typeof raw.accent === "string" ? raw.accent : "#a45f3f",
-    "--commerce-surface": typeof raw.surface === "string" ? raw.surface : "#f8f6f1",
-    "--commerce-radius": typeof raw.radius === "string" ? raw.radius : "18px",
-  } as CSSProperties;
 }
 
 function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
