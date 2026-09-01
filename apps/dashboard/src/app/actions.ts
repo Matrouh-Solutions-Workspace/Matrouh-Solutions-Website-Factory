@@ -54,6 +54,7 @@ import {
 import { createMediaFolder, requestMediaDeletion } from "@/server/actions/media-actions";
 import { updateWebsiteIdentity } from "@/server/actions/website-actions";
 import { parseWebsiteCreationInput } from "@/server/actions/website-create";
+import { persistWebsiteCreation } from "@/server/actions/website-create-persistence";
 import {
   hasExpectedSignature,
   mediaType,
@@ -194,207 +195,20 @@ export async function createWebsiteAction(formData: FormData): Promise<void> {
   if (hostnameExists) redirect(subdomainUnavailableUrl(hostname));
 
   try {
-    await withTenantTransaction(
-      client,
-      { organizationId: organization.id, actorId, correlationId: `create-website:${websiteId}` },
-      async (transaction) => {
-        if (clientId) {
-          const assignedClient = await transaction.client.findUnique({
-            where: { organizationId_id: { organizationId: organization.id, id: clientId } },
-            select: { id: true },
-          });
-          if (!assignedClient) throw new Error("CLIENT_NOT_FOUND");
-        }
-        await transaction.website.create({
-          data: {
-            id: websiteId,
-            organizationId: organization.id,
-            clientId,
-            name,
-            status: "draft",
-            templateId,
-            templateVersion,
-            defaultLocale: languages.defaultLocale,
-          },
-        });
-        if (cadence && expiresAt) {
-          await transaction.websiteSubscription.create({
-            data: {
-              id: randomUUID(),
-              organizationId: organization.id,
-              websiteId,
-              clientId,
-              cadence,
-              startsAt: new Date(),
-              expiresAt,
-            },
-          });
-        }
-        await transaction.websiteLocale.createMany({
-          data: languages.locales.map((locale) => ({
-            organizationId: organization.id,
-            websiteId,
-            locale,
-            isDefault: locale === languages.defaultLocale,
-            fallbackLocale: locale === languages.defaultLocale ? null : languages.defaultLocale,
-          })),
-        });
-        const settings = template.websiteSchema.parse({});
-        await transaction.websiteSettingsDraft.create({
-          data: {
-            id: randomUUID(),
-            organizationId: organization.id,
-            websiteId,
-            locale: null,
-            schemaVersion: template.websiteSchema.version,
-            contentJson: jsonInput(settings),
-            contentSizeBytes: Buffer.byteLength(JSON.stringify(settings)),
-          },
-        });
-        await transaction.themeDraft.create({
-          data: {
-            id: randomUUID(),
-            organizationId: organization.id,
-            websiteId,
-            locale: null,
-            themeDefinitionId: template.theme.id,
-            schemaVersion: template.theme.schemaVersion,
-            tokensJson: jsonInput(template.theme.defaults),
-            contentSizeBytes: Buffer.byteLength(JSON.stringify(template.theme.defaults)),
-          },
-        });
-        await transaction.domain.create({
-          data: {
-            id: randomUUID(),
-            organizationId: organization.id,
-            websiteId,
-            hostnameNormalized: hostname,
-            hostnameDisplay: hostname,
-            kind: "subdomain",
-            status: "active",
-          },
-        });
-
-        await transaction.auditEvent.create({
-          data: {
-            id: randomUUID(),
-            organizationId: organization.id,
-            actorType: "system",
-            actorId,
-            action: "website.created",
-            resourceType: "website",
-            resourceId: websiteId,
-            correlationId: `create-website:${websiteId}`,
-            metadataJson: jsonInput({
-              templateId,
-              templateVersion,
-              hostname,
-              locales: [...languages.locales],
-              defaultLocale: languages.defaultLocale,
-            }),
-            retentionClass: "standard",
-          },
-        });
-
-        const createdPages: {
-          id: string;
-          pageTypeId: string;
-          title: string;
-          locale: string;
-        }[] = [];
-        for (const locale of languages.locales) {
-          for (const [pageIndex, page] of template.pages.entries()) {
-            const pageId = randomUUID();
-            const localizedTitle = localizedTemplateTitle(page.title, locale);
-            createdPages.push({ id: pageId, pageTypeId: page.id, title: localizedTitle, locale });
-            await transaction.pageDraft.create({
-              data: {
-                id: pageId,
-                organizationId: organization.id,
-                websiteId,
-                pageTypeId: page.id,
-                locale,
-                title: localizedTitle,
-                slug: page.slug.defaultValue ?? slugFromTitle(page.title),
-                orderKey: String(pageIndex).padStart(4, "0"),
-              },
-            });
-            const sections = page.defaultSections.flatMap((sectionSpec, sectionIndex) => {
-              const definition = template.sections.find(
-                (item) => item.id === sectionSpec.sectionTypeId,
-              );
-              return definition
-                ? [
-                    {
-                      id: randomUUID(),
-                      organizationId: organization.id,
-                      websiteId,
-                      pageId,
-                      sectionTypeId: definition.id,
-                      schemaVersion: definition.schema.version,
-                      contentJson: jsonInput(
-                        localizeTemplateDefault(sectionSpec.content ?? definition.defaults, locale),
-                      ),
-                      orderKey: String(sectionIndex).padStart(4, "0"),
-                    },
-                  ]
-                : [];
-            });
-            if (sections.length > 0) {
-              await transaction.sectionDraft.createMany({ data: sections });
-            }
-          }
-        }
-
-        for (const definition of template.navigation) {
-          const navigationLocales =
-            definition.localization === "localized-tree" ? languages.locales : [null];
-          for (const navigationLocale of navigationLocales) {
-            const navigationId = randomUUID();
-            await transaction.navigationDraft.create({
-              data: {
-                id: navigationId,
-                organizationId: organization.id,
-                websiteId,
-                definitionId: definition.id,
-                locale: navigationLocale,
-                visibilitySchemaVersion: definition.visibilitySchema.version,
-              },
-            });
-            const pageLocale = navigationLocale ?? languages.defaultLocale;
-            const eligiblePages = createdPages.filter(
-              (page) =>
-                page.locale === pageLocale &&
-                (definition.allowedPageTypes === "all" ||
-                  definition.allowedPageTypes.includes(page.pageTypeId as never)),
-            );
-            if (eligiblePages.length === 0) continue;
-            await transaction.navigationNodeDraft.createMany({
-              data: eligiblePages.map((page, index) => ({
-                id: randomUUID(),
-                organizationId: organization.id,
-                websiteId,
-                navigationId,
-                parentNodeId: null,
-                nodeKind: "page",
-                pageId: page.id,
-                labelJson: jsonInput(
-                  Object.fromEntries(
-                    languages.locales.map((locale) => [
-                      locale,
-                      localizedTemplateTitle(page.title, locale),
-                    ]),
-                  ),
-                ),
-                targetJson: jsonInput({ pageId: page.id }),
-                visibilityJson: jsonInput(definition.visibilitySchema.parse({})),
-                orderKey: String(index).padStart(4, "0"),
-              })),
-            });
-          }
-        }
-      },
-    );
+    await persistWebsiteCreation(client, {
+      organizationId: organization.id,
+      actorId,
+      websiteId,
+      clientId,
+      name,
+      templateId,
+      templateVersion,
+      hostname,
+      cadence,
+      expiresAt,
+      languages,
+      template,
+    });
   } catch (error) {
     if (isHostnameConflict(error)) redirect(subdomainUnavailableUrl(hostname));
     throw error;
@@ -3855,11 +3669,6 @@ function normalizeHostname(value: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 50);
   return normalized || `site-${Date.now()}`;
-}
-
-function slugFromTitle(value: string): string {
-  const slug = normalizeHostname(value);
-  return slug === "home" ? "/" : slug;
 }
 
 function normalizePageSlug(value: string): string {
