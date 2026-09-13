@@ -10,6 +10,9 @@ describe("storefront checkout", () => {
       customer: { name: "Ahmed", email: "", phone: "" },
       shippingMethodId: "standard",
     });
+
+    form.set("notes", new Blob(["attachment"]));
+    expect(readCheckoutRequest(form).address.notes).toBe("");
   });
 
   it("accepts complete checkout results only", () => {
@@ -23,5 +26,25 @@ describe("storefront checkout", () => {
       }),
     ).toMatchObject({ orderNumber: "O-1" });
     expect(parseCheckoutResult({ orderNumber: "O-1", totalMinor: 3 })).toBeNull();
+    expect(parseCheckoutResult(null)).toBeNull();
+    expect(parseCheckoutResult("result")).toBeNull();
+    expect(
+      parseCheckoutResult({
+        orderNumber: "",
+        subtotalMinor: 1,
+        discountMinor: 0,
+        shippingMinor: 2,
+        totalMinor: 3,
+      }),
+    ).toBeNull();
+    expect(
+      parseCheckoutResult({
+        orderNumber: "O-2",
+        subtotalMinor: 1.5,
+        discountMinor: 0,
+        shippingMinor: 2,
+        totalMinor: 3,
+      }),
+    ).toBeNull();
   });
 });
