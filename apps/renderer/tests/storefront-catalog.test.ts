@@ -84,34 +84,30 @@ describe("filterCatalog", () => {
 
   it("supports every catalog filter", () => {
     expect(filterCatalog(products, { ...filters, category: "missing" })).toEqual([]);
-    expect(filterCatalog(products, { ...filters, brand: "Two" }).map((product) => product.id)).toEqual([
-      "b",
-    ]);
-    expect(filterCatalog(products, { ...filters, query: "beta" }).map((product) => product.id)).toEqual([
-      "b",
-    ]);
-    expect(filterCatalog(products, { ...filters, maxPrice: 90 }).map((product) => product.id)).toEqual([
-      "b",
-    ]);
+    expect(
+      filterCatalog(products, { ...filters, brand: "Two" }).map((product) => product.id),
+    ).toEqual(["b"]);
+    expect(
+      filterCatalog(products, { ...filters, query: "beta" }).map((product) => product.id),
+    ).toEqual(["b"]);
+    expect(
+      filterCatalog(products, { ...filters, maxPrice: 90 }).map((product) => product.id),
+    ).toEqual(["b"]);
   });
 
   it("supports every catalog ordering", () => {
-    expect(filterCatalog(products, { ...filters, sort: "featured" }).map((product) => product.id)).toEqual([
-      "a",
-      "b",
-    ]);
-    expect(filterCatalog(products, { ...filters, sort: "price-high" }).map((product) => product.id)).toEqual([
-      "a",
-      "b",
-    ]);
-    expect(filterCatalog(products, { ...filters, sort: "name" }).map((product) => product.id)).toEqual([
-      "a",
-      "b",
-    ]);
-    expect(filterCatalog(products, { ...filters, sort: "newest" }).map((product) => product.id)).toEqual([
-      "a",
-      "b",
-    ]);
+    expect(
+      filterCatalog(products, { ...filters, sort: "featured" }).map((product) => product.id),
+    ).toEqual(["a", "b"]);
+    expect(
+      filterCatalog(products, { ...filters, sort: "price-high" }).map((product) => product.id),
+    ).toEqual(["a", "b"]);
+    expect(
+      filterCatalog(products, { ...filters, sort: "name" }).map((product) => product.id),
+    ).toEqual(["a", "b"]);
+    expect(
+      filterCatalog(products, { ...filters, sort: "newest" }).map((product) => product.id),
+    ).toEqual(["a", "b"]);
   });
 
   it("resolves effective prices and safe attributes", () => {

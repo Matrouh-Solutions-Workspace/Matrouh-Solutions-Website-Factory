@@ -36,7 +36,10 @@ describe("storefront presentation helpers", () => {
     expect(unitPrice(product, { salePriceMinor: null, priceMinor: 60 } as never)).toBe(60);
     expect(unitPrice(product, { salePriceMinor: null, priceMinor: null } as never)).toBe(80);
     expect(
-      unitPrice({ ...product, salePriceMinor: null }, { salePriceMinor: null, priceMinor: null } as never),
+      unitPrice({ ...product, salePriceMinor: null }, {
+        salePriceMinor: null,
+        priceMinor: null,
+      } as never),
     ).toBe(100);
   });
 
