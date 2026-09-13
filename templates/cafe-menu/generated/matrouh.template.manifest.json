@@ -2,7 +2,7 @@
   "manifestFormatVersion": 1,
   "manifest": {
     "id": "com.matrouh.cafe-menu",
-    "version": "1.3.1",
+    "version": "1.3.0",
     "displayName": "Cafe & Restaurant QR Menu",
     "author": "Matrouh Solutions",
     "description": "A bilingual QR menu for cafés, restaurants, bakeries, and casual food businesses",
@@ -1065,5 +1065,5 @@
     }
   },
   "migrations": [],
-  "manifestHash": "19a856cc618c38ce94c2419e58722422"
+  "manifestHash": "f9f98cf959d6a903ad4b5e1fcaa70aed"
 }

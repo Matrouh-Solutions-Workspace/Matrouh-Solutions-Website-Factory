@@ -2,7 +2,7 @@
   "manifestFormatVersion": 1,
   "manifest": {
     "id": "com.matrouh.food-menu",
-    "version": "1.4.1",
+    "version": "1.4.0",
     "displayName": "Saffron — Food & Café Menu",
     "author": "Matrouh Solutions",
     "description": "A mobile-first bilingual digital menu for restaurants, cafés, bakeries, and food businesses",
@@ -1153,5 +1153,5 @@
     }
   },
   "migrations": [],
-  "manifestHash": "b4647ea77d88a9aafa0fc954fd606837"
+  "manifestHash": "4a8a3c4a691d314932618640fa40da5e"
 }

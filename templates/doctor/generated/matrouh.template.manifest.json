@@ -2,7 +2,7 @@
   "manifestFormatVersion": 1,
   "manifest": {
     "id": "com.matrouh.doctor",
-    "version": "2.2.0",
+    "version": "2.0.0",
     "displayName": "Doctor Practice",
     "author": "Matrouh Solutions",
     "description": "Physician-led practice with biography, credentials, patient journey, appointments, and live map",
@@ -1352,5 +1352,5 @@
     }
   },
   "migrations": [],
-  "manifestHash": "105ef43e8db468b268c7ffb47803eb65"
+  "manifestHash": "7ab1b8f6d567dae8decfecedb99328e3"
 }

@@ -99,7 +99,20 @@ try {
     const nextManifestHash = report.manifest?.manifestHash ?? null;
     const incompatibleRefresh =
       refreshArtifact && !artifactRevisionCompatible(existingManifestHash, nextManifestHash);
-    if (existing && refreshArtifact && (!report.valid || incompatibleRefresh)) {
+    const websiteReferences = existing
+      ? await database.website.count({
+          where: {
+            templateId: candidate.discovery.templateId,
+            templateVersion: candidate.discovery.templateVersion,
+          },
+        })
+      : 0;
+    if (
+      existing &&
+      websiteReferences > 0 &&
+      refreshArtifact &&
+      (!report.valid || incompatibleRefresh)
+    ) {
       await database.templateVersionRecord.update({
         where: { id: existing.id },
         data: { lifecycleStatus: "quarantined", validationStatus: "integrity_failed" },

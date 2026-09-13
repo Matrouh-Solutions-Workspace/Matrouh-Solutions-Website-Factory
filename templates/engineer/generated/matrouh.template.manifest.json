@@ -2,7 +2,7 @@
   "manifestFormatVersion": 1,
   "manifest": {
     "id": "com.matrouh.engineer",
-    "version": "2.0.2",
+    "version": "2.0.1",
     "displayName": "Engineer Portfolio",
     "author": "Matrouh Solutions",
     "description": "Project-led engineering studio with technical process, sectors, credentials, and measurable outcomes",
@@ -1425,5 +1425,5 @@
     }
   },
   "migrations": [],
-  "manifestHash": "a732fe4148e9a1fe0c36876524930aa3"
+  "manifestHash": "f45da34ed235022fa51b90ab016c4e94"
 }
