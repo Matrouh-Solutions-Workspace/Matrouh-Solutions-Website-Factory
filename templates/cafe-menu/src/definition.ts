@@ -45,7 +45,7 @@ const websiteSchema = contentSchema<JsonValue>({
 export const template = defineTemplate({
   manifest: {
     id: ids.template("com.matrouh.cafe-menu"),
-    version: ids.version("1.3.0"),
+    version: ids.version("1.3.1"),
     displayName: "Cafe & Restaurant QR Menu",
     author: "Matrouh Solutions",
     description: "A bilingual QR menu for cafés, restaurants, bakeries, and casual food businesses",

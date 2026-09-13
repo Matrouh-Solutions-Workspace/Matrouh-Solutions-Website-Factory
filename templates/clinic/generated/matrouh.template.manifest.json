@@ -2,7 +2,7 @@
   "manifestFormatVersion": 1,
   "manifest": {
     "id": "com.matrouh.clinic",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "displayName": "Multi-specialty Clinic",
     "author": "Matrouh Solutions",
     "description": "Connected multi-specialty clinic with care pathways, specialty discovery, booking, and live maps",
@@ -1249,5 +1249,5 @@
     }
   },
   "migrations": [],
-  "manifestHash": "8988908bbb11ffc599f0b5a857fc278e"
+  "manifestHash": "e50bded3434b1f9652e02fedba09e907"
 }

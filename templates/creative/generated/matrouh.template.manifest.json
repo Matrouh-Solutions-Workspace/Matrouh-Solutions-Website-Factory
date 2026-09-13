@@ -2,7 +2,7 @@
   "manifestFormatVersion": 1,
   "manifest": {
     "id": "com.matrouh.creative",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "displayName": "Studio Folio",
     "author": "Matrouh Solutions",
     "description": "Editorial portfolio for designers, creative directors, photographers, and independent studios",
@@ -1650,5 +1650,5 @@
     }
   },
   "migrations": [],
-  "manifestHash": "3b5920f3e59add43031178866f39c9a6"
+  "manifestHash": "d9ef28b2ddaeec04b40b44b8cabbe6b3"
 }

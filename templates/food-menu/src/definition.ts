@@ -43,7 +43,7 @@ const websiteSchema = contentSchema<JsonValue>({
 export const template = defineTemplate({
   manifest: {
     id: ids.template("com.matrouh.food-menu"),
-    version: ids.version("1.4.0"),
+    version: ids.version("1.4.1"),
     displayName: "Saffron — Food & Café Menu",
     author: "Matrouh Solutions",
     description:
