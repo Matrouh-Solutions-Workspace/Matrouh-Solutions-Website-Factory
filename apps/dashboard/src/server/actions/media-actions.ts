@@ -2,7 +2,6 @@
 
 import { randomUUID } from "node:crypto";
 import { withTenantTransaction } from "@factory/database";
-import type { JsonValue } from "@factory/template-sdk";
 import type { DashboardContext } from "../auth";
 import { dashboardDatabase } from "../database";
 
@@ -36,7 +35,7 @@ export async function createMediaFolder(context: DashboardContext, name: string)
           resourceType: "media_folder",
           resourceId: folderId,
           correlationId,
-          metadataJson: { name } as Exclude<JsonValue, null>,
+          metadataJson: { name },
           retentionClass: "standard",
         },
       });
@@ -63,10 +62,7 @@ export async function requestMediaDeletion(
         where: { id: asset.id },
         data: {
           status: "deleted",
-          metadataJson: { deletionRequestedAt: new Date().toISOString() } as Exclude<
-            JsonValue,
-            null
-          >,
+          metadataJson: { deletionRequestedAt: new Date().toISOString() },
           revision: { increment: 1 },
         },
       });
@@ -76,7 +72,7 @@ export async function requestMediaDeletion(
           organizationId: context.organization.id,
           type: "media.gc",
           version: 1,
-          payloadJson: { assetId } as Exclude<JsonValue, null>,
+          payloadJson: { assetId },
           status: "queued",
           priority: -5,
           maxAttempts: 8,
@@ -95,10 +91,7 @@ export async function requestMediaDeletion(
           resourceType: "media_asset",
           resourceId: asset.id,
           correlationId,
-          metadataJson: { storageKey: asset.storageKey, gracePeriodHours: 24 } as Exclude<
-            JsonValue,
-            null
-          >,
+          metadataJson: { storageKey: asset.storageKey, gracePeriodHours: 24 },
           retentionClass: "standard",
         },
       });

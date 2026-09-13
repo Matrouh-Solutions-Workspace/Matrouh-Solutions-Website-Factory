@@ -3,7 +3,6 @@
 import { randomUUID } from "node:crypto";
 import { PrismaPublicationCommandRepository, withTenantTransaction } from "@factory/database";
 import { requestPublication } from "@factory/publishing";
-import type { JsonValue } from "@factory/template-sdk";
 import type { DashboardContext } from "../auth";
 import { dashboardDatabase } from "../database";
 import { canReuseActivePublication } from "../publication-toggle";
@@ -150,7 +149,7 @@ export async function retryWebsitePublication(
           payloadJson: {
             ...payload,
             requestedDraftRevision: website.draftRevision.toString(),
-          } as Exclude<JsonValue, null>,
+          },
           availableAt: new Date(),
           completedAt: null,
           lockedAt: null,
@@ -173,7 +172,7 @@ export async function retryWebsitePublication(
             websiteId,
             previousRequestedDraftRevision: requestedRevision,
             requestedDraftRevision: website.draftRevision.toString(),
-          } as Exclude<JsonValue, null>,
+          },
           retentionClass: "standard",
         },
       });
@@ -216,7 +215,7 @@ export async function setWebsiteAvailability(
           resourceType: "website",
           resourceId: websiteId,
           correlationId: `website-availability:${websiteId}:${status}`,
-          metadataJson: { status } as Exclude<JsonValue, null>,
+          metadataJson: { status },
           retentionClass: "standard",
         },
       });

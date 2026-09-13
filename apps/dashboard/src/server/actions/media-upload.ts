@@ -10,18 +10,12 @@ export function parseMediaUploadInput(
   maxBytes: number,
 ): MediaUploadInput | null {
   const upload = formData.get("file");
-  const folderId =
-    typeof formData.get("folderId") === "string"
-      ? String(formData.get("folderId")).trim().slice(0, 80)
-      : "";
-  const websiteId =
-    typeof formData.get("websiteId") === "string"
-      ? String(formData.get("websiteId")).trim().slice(0, 80)
-      : "";
-  const purposeInput =
-    typeof formData.get("purpose") === "string"
-      ? String(formData.get("purpose")).trim().slice(0, 24)
-      : "";
+  const folderIdRaw = formData.get("folderId");
+  const folderId = typeof folderIdRaw === "string" ? folderIdRaw.trim().slice(0, 80) : "";
+  const websiteIdRaw = formData.get("websiteId");
+  const websiteId = typeof websiteIdRaw === "string" ? websiteIdRaw.trim().slice(0, 80) : "";
+  const purposeRaw = formData.get("purpose");
+  const purposeInput = typeof purposeRaw === "string" ? purposeRaw.trim().slice(0, 24) : "";
   const purpose = purposeInput === "favicon" || purposeInput === "logo" ? purposeInput : null;
   if (!(upload instanceof File) || upload.size < 1 || upload.size > maxBytes) return null;
   return { upload, folderId, websiteId, purpose };
