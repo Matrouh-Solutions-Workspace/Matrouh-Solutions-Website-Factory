@@ -98,12 +98,12 @@
 .hero {
   display: grid;
   max-width: 1240px;
-  min-height: 650px;
+  min-height: calc(100vh - 92px);
   grid-template-columns: minmax(0, 1.08fr) minmax(380px, 0.92fr);
   align-items: center;
   gap: clamp(48px, 8vw, 110px);
   margin: auto;
-  padding: 72px 32px 110px;
+  padding: 72px 32px 80px;
 }
 .heroCopy {
   position: relative;
@@ -124,12 +124,21 @@
   line-height: 1.02;
   letter-spacing: -0.065em;
 }
+[dir="rtl"] .hero h1 {
+  letter-spacing: 0;
+  line-height: 1.2;
+  word-spacing: 0.04em;
+}
 .lead {
   max-width: 650px;
   margin: 28px 0 0;
   color: var(--muted);
   font-size: clamp(1.05rem, 1.6vw, 1.32rem);
   line-height: 1.9;
+}
+[dir="rtl"] .lead {
+  letter-spacing: 0;
+  word-spacing: 0.03em;
 }
 .actions {
   display: flex;
@@ -161,10 +170,20 @@
   color: var(--ink);
   box-shadow: 0 14px 34px rgba(172, 138, 0, 0.2);
 }
+.primary:hover,
+.cta > a:hover {
+  box-shadow: 6px 6px 0 var(--ink) !important;
+  transform: translate(-2px, -2px) !important;
+}
 .secondary {
   border: 1px solid #d5d2c9;
   background: white;
   color: var(--ink);
+}
+.secondary:hover {
+  border-color: var(--ink);
+  box-shadow: 6px 6px 0 var(--ink) !important;
+  transform: translate(-2px, -2px) !important;
 }
 .heroVisual {
   position: relative;
@@ -215,6 +234,23 @@
   font-size: 0.65rem;
   font-weight: 900;
   letter-spacing: 0.2em;
+}
+.visualBrandRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.visualLogo {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 6px;
+  background: white;
+  object-fit: contain;
+  padding: 3px;
+}
+.scrollCue {
+  display: none;
 }
 .visualBody > strong {
   font-size: clamp(2rem, 3.4vw, 3.4rem);
@@ -540,9 +576,10 @@
     display: inline-flex;
   }
   .hero {
-    min-height: auto;
+    min-height: calc(100svh - 76px);
     grid-template-columns: 1fr;
     padding-top: 50px;
+    padding-bottom: 60px;
   }
   .hero h1 {
     font-size: clamp(2.55rem, 10.5vw, 4.35rem);
@@ -1179,14 +1216,7 @@
   transform: scaleX(1);
 }
 .scrollCue {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 34px;
-  color: var(--muted);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  display: none;
 }
 .scrollCue i {
   position: relative;

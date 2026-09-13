@@ -207,10 +207,6 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
                 {text.secondary}
               </a>
             </div>
-            <div className={styles.scrollCue}>
-              <i />
-              <span>{text.scroll}</span>
-            </div>
           </div>
           <div className={styles.heroVisualFrame} data-reveal="hero-visual">
             <div aria-hidden="true" className={styles.heroVisual}>
@@ -221,7 +217,14 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
                 <i />
               </div>
               <div className={styles.visualBody}>
-                <span>MATROUH / SOLUTIONS</span>
+                <div className={styles.visualBrandRow}>
+                  <img
+                    alt="Matrouh Solutions"
+                    className={styles.visualLogo}
+                    src="/matrouh-logo.png"
+                  />
+                  <span>MATROUH / SOLUTIONS</span>
+                </div>
                 <strong>
                   {locale === "en" ? (
                     <>
