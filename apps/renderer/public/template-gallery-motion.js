@@ -82,10 +82,17 @@
   };
 
   const scheduleInitialization = () => window.setTimeout(initializeGallery, 240);
+  const scheduleAfterHydration = () => {
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(scheduleInitialization, { timeout: 1200 });
+      return;
+    }
+    window.setTimeout(scheduleInitialization, 760);
+  };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", scheduleInitialization, { once: true });
+  if (document.readyState === "complete") {
+    scheduleAfterHydration();
   } else {
-    scheduleInitialization();
+    window.addEventListener("load", scheduleAfterHydration, { once: true });
   }
 })();

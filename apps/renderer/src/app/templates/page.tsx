@@ -61,6 +61,7 @@ export default async function TemplatesGallery({ searchParams }: TemplatesGaller
       dir={locale === "ar" ? "rtl" : "ltr"}
       lang={locale}
     >
+      <script defer src="/template-gallery-motion.js?v=2" />
       <header className="templateGalleryHeader">
         <a
           className="templateGalleryBrand"
