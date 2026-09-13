@@ -15,7 +15,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="und">
       <head>
-        <link href="/commerce-storefront.css" rel="stylesheet" />
+        <link href="/commerce-storefront.css?v=20260913-1" rel="stylesheet" />
       </head>
       <body>{children}</body>
     </html>

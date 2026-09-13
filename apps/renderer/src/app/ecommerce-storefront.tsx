@@ -733,27 +733,29 @@ export function EcommerceStorefront({
                 {copy.exploreCategories}
               </a>
             </div>
-            <div className="shopHeroControls">
-              <button
-                aria-label={copy.previousSlide}
-                onClick={() =>
-                  setHeroSlide((value) => (value + heroSlides.length - 1) % heroSlides.length)
-                }
-                type="button"
-              >
-                <Icon name="arrow" />
-              </button>
-              <span>
-                <b>{slide.number}</b> / 0{heroSlides.length}
-              </span>
-              <button
-                aria-label={copy.nextSlide}
-                onClick={() => setHeroSlide((value) => (value + 1) % heroSlides.length)}
-                type="button"
-              >
-                <Icon name="arrow" />
-              </button>
-            </div>
+            {kind !== "fashion" ? (
+              <div className="shopHeroControls">
+                <button
+                  aria-label={copy.previousSlide}
+                  onClick={() =>
+                    setHeroSlide((value) => (value + heroSlides.length - 1) % heroSlides.length)
+                  }
+                  type="button"
+                >
+                  <Icon name="arrow" />
+                </button>
+                <span>
+                  <b>{slide.number}</b> / 0{heroSlides.length}
+                </span>
+                <button
+                  aria-label={copy.nextSlide}
+                  onClick={() => setHeroSlide((value) => (value + 1) % heroSlides.length)}
+                  type="button"
+                >
+                  <Icon name="arrow" />
+                </button>
+              </div>
+            ) : null}
           </div>
           <div className="shopHeroVisual" data-slide={heroSlide}>
             <img

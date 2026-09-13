@@ -4925,3 +4925,95 @@
     font-size: clamp(1.7rem, 8.5vw, 2.4rem);
   }
 }
+
+/* Authoritative Arabic typography for rendered templates. These rules are
+   intentionally last and important because some versioned templates inject
+   their own styles from the rendered section tree after the app stylesheet. */
+.siteRoot[dir="rtl"],
+.siteRoot[dir="rtl"] :is(button, input, select, textarea) {
+  font-family: var(--font-tajawal), Tajawal, Tahoma, Arial, sans-serif !important;
+}
+.siteRoot[dir="rtl"] :is(h1, h2, h3, h4) {
+  font-family: var(--font-tajawal), Tajawal, Tahoma, Arial, sans-serif !important;
+  letter-spacing: 0 !important;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.siteRoot[dir="rtl"]
+  :is(
+    .heroCopy h1,
+    .medivraHeroCopy h1,
+    .portfolioHeroCopy h1,
+    .portfolioContact h1,
+    .portfolioSectionIntro h1,
+    .foodMenuHero h1,
+    .cafeMenuHero h1
+  ) {
+  max-width: 16ch !important;
+  font-size: clamp(2.55rem, 4.35vw, 4.65rem) !important;
+  font-weight: 800 !important;
+  line-height: 1.17 !important;
+  text-wrap: balance;
+}
+.siteRoot[dir="rtl"]
+  :is(
+    .sectionHeading h2,
+    .portfolioSectionIntro h2,
+    .portfolioApproachLead h2,
+    .portfolioQuote blockquote,
+    .foodMenuSectionIntro h2,
+    .foodMenuVisit h2,
+    .cafeMenuSectionIntro h2,
+    .cafeMenuVisit h2
+  ) {
+  max-width: 20ch !important;
+  font-size: clamp(2rem, 3.25vw, 3.45rem) !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  text-wrap: balance;
+}
+@media (max-width: 760px) {
+  .siteRoot[dir="rtl"]
+    :is(
+      .heroCopy h1,
+      .medivraHeroCopy h1,
+      .portfolioHeroCopy h1,
+      .portfolioContact h1,
+      .portfolioSectionIntro h1,
+      .foodMenuHero h1,
+      .cafeMenuHero h1
+    ) {
+    max-width: 18ch !important;
+    font-size: clamp(2.2rem, 9vw, 3.25rem) !important;
+  }
+  .siteRoot[dir="rtl"]
+    :is(
+      .sectionHeading h2,
+      .portfolioSectionIntro h2,
+      .portfolioApproachLead h2,
+      .portfolioQuote blockquote,
+      .foodMenuSectionIntro h2,
+      .foodMenuVisit h2,
+      .cafeMenuSectionIntro h2,
+      .cafeMenuVisit h2
+    ) {
+    max-width: 22ch !important;
+    font-size: clamp(1.8rem, 7.5vw, 2.7rem) !important;
+  }
+}
+
+/* Keep the opening composition connected to the navigation on desktop. The
+   shared hero layer centers every section vertically, which left a large,
+   empty band above the content in these three portfolio previews. This rule
+   stays last so older version-specific layers cannot restore that spacing. */
+@media (min-width: 761px) {
+  .siteRoot:is(
+      [data-template-artifact-id="com.matrouh.engineer"],
+      [data-template-artifact-id="com.matrouh.doctor"],
+      [data-template-artifact-id="com.matrouh.clinic"]
+    )
+    :is(.hero--engineer, .medivraHero, .hero--clinic) {
+    align-items: start !important;
+    padding-block-start: clamp(1rem, 2vw, 2rem) !important;
+  }
+}

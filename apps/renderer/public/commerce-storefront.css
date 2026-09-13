@@ -239,6 +239,16 @@
   color: var(--shop-ink);
   background: transparent;
 }
+.shopGlobalSearch input:focus,
+.shopGlobalSearch input:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+.shopGlobalSearch:focus-within {
+  border-color: color-mix(in srgb, var(--shop-accent) 72%, var(--shop-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--shop-accent) 14%, transparent);
+}
 .shopGlobalSearch input::placeholder {
   color: var(--shop-muted);
 }
@@ -2938,6 +2948,12 @@ section.hero::before {
   overflow: hidden;
   background: #f5e9df;
 }
+@media (min-width: 761px) {
+  .shopTheme--fashion .shopHeroPhoto {
+    object-fit: cover;
+    object-position: center 34%;
+  }
+}
 .shopTheme--fashion .shopHeroVisual {
   position: absolute;
   inset: 0;
@@ -4013,6 +4029,68 @@ p {
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* Final Arabic type scale. Keep this after every template-specific layer so
+   Arabic display copy never inherits oversized Latin typography or narrow
+   character measures. */
+.commercePublicRoot[lang="ar"],
+.commercePublicRoot[lang="ar"] :is(button, input, select, textarea) {
+  font-family: var(--font-tajawal), Tajawal, Tahoma, Arial, sans-serif;
+}
+.commercePublicRoot[lang="ar"]
+  :is(.shopHeroCopy h1, .commerceProductInfo h1, .commerceCartPage h1, .commerceOrderSuccess h1) {
+  max-width: 16ch;
+  font-family: var(--font-tajawal), Tajawal, Tahoma, Arial, sans-serif;
+  font-size: clamp(2.5rem, 3.5vw, 4.15rem) !important;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.16;
+  text-wrap: balance;
+}
+.commercePublicRoot[lang="ar"]
+  :is(.shopSectionHeading h2, .shopEditorial h2, .shopStoryGrid h2, .shopNewsletter h2) {
+  max-width: 18ch;
+  font-family: var(--font-tajawal), Tajawal, Tahoma, Arial, sans-serif;
+  font-size: clamp(2rem, 3vw, 3.45rem) !important;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+/* Fashion checkout is a desktop two-panel workspace with a stable summary,
+   then collapses before either column becomes cramped. */
+.shopTheme--fashion .commerceCartPage {
+  align-items: start;
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.72fr);
+  gap: clamp(2rem, 4vw, 4.5rem);
+}
+.shopTheme--fashion .commerceCartLines {
+  min-width: 0;
+  padding: clamp(1.25rem, 2.4vw, 2rem);
+  border: 1px solid var(--shop-border);
+  border-radius: var(--commerce-radius);
+  background: var(--shop-surface);
+}
+.shopTheme--fashion .commerceCheckoutForm {
+  position: sticky;
+  top: 10rem;
+}
+.shopTheme--fashion .commerceCartLine {
+  grid-template-columns: 112px minmax(0, 1fr) 84px minmax(100px, auto);
+}
+.shopTheme--fashion .commerceCartLine > b {
+  justify-self: end;
+  text-align: end;
+}
+@media (max-width: 1050px) {
+  .shopTheme--fashion .commerceCartPage {
+    grid-template-columns: 1fr;
+  }
+  .shopTheme--fashion .commerceCheckoutForm {
+    position: static;
+  }
+}
 .commercePublicRoot[dir="rtl"] :is(.shopSectionHeading h2, .shopEditorial h2, .shopStoryGrid h2) {
   font-size: clamp(2.25rem, 3.6vw, 4rem);
 }
@@ -4048,6 +4126,20 @@ p {
   .commercePublicRoot[dir="rtl"] .shopHeroCopy h1 {
     max-width: 14ch;
     font-size: clamp(2.35rem, 11vw, 3.6rem);
+  }
+}
+
+/* Keep the fashion campaign fully framed beneath the desktop header. This is
+   deliberately last because the theme bundle defines an older 620px minimum
+   farther above. */
+@media (min-width: 761px) {
+  .shopTheme--fashion .shopHero {
+    height: clamp(540px, calc(100svh - 163px), 760px);
+    min-height: clamp(540px, calc(100svh - 163px), 760px);
+  }
+  .shopTheme--fashion .shopHeroCopy {
+    min-height: 100% !important;
+    padding-block: clamp(2rem, 5vh, 4rem);
   }
 }
 
