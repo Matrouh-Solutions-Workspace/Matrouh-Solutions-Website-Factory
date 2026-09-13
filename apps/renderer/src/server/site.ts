@@ -213,6 +213,22 @@ export async function loadCatalogTemplateArtifact(
   templateId: string,
   templateVersion: string,
 ): Promise<LoadedTemplateArtifact | null> {
+  // In local development the database may not be seeded yet, so fall back to
+  // loading the artifact directly from the filesystem using the same folder
+  // convention the worker uses when syncing: the template folder name is the
+  // last segment of the reversed-domain templateId (e.g. "com.matrouh.clinic"
+  // → "clinic"). This mirrors the artifact_uri the worker would have stored.
+  if (rendererConfig.FACTORY_DEPLOYMENT_MODE === "local") {
+    try {
+      const folderName = templateId.split(".").at(-1) ?? templateId;
+      return await loadCatalogedTemplateArtifact(templatesRoot(), folderName, {
+        templateId,
+        templateVersion,
+      });
+    } catch {
+      // Fall through to the database path if the local artifact isn't available.
+    }
+  }
   const versions = await database().$queryRaw<{ artifact_uri: string; artifact_hash: string }[]>`
     SELECT artifact_uri, artifact_hash
     FROM template_versions
@@ -345,7 +361,7 @@ const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
     description: "An editorial portfolio for studios, independent creatives, and selected work.",
     category: "Portfolio",
     categoryAr: "ملفات الأعمال",
-    version: "1.0.0",
+    version: "1.0.1",
     features: ["localized-content"],
     supportsDarkMode: true,
     ...localCatalogDetails(),
@@ -380,7 +396,7 @@ const localTemplateCatalog: readonly PublicTemplateCatalogItem[] = [
       "A mobile-first bilingual digital menu for restaurants, cafés, bakeries, and food businesses.",
     category: "Food & Hospitality",
     categoryAr: "المطاعم والمقاهي",
-    version: "1.0.0",
+    version: "1.4.0",
     features: ["localized-content", "digital-menu", "mobile-first"],
     supportsDarkMode: false,
     ...localCatalogDetails({ featured: true, badge: "New" }),
