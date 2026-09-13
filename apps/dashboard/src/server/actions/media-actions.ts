@@ -61,20 +61,45 @@ export async function requestMediaDeletion(
       if (asset._count.references > 0) throw new Error("MEDIA_IN_USE");
       await transaction.mediaAsset.update({
         where: { id: asset.id },
-        data: { status: "deleted", metadataJson: { deletionRequestedAt: new Date().toISOString() } as Exclude<JsonValue, null>, revision: { increment: 1 } },
+        data: {
+          status: "deleted",
+          metadataJson: { deletionRequestedAt: new Date().toISOString() } as Exclude<
+            JsonValue,
+            null
+          >,
+          revision: { increment: 1 },
+        },
       });
       await transaction.job.create({
         data: {
-          id: randomUUID(), organizationId: context.organization.id, type: "media.gc", version: 1,
-          payloadJson: { assetId } as Exclude<JsonValue, null>, status: "queued", priority: -5, maxAttempts: 8,
-          availableAt: new Date(Date.now() + 24 * 60 * 60 * 1_000), deduplicationKey: `media.gc:${assetId}`, correlationId,
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          type: "media.gc",
+          version: 1,
+          payloadJson: { assetId } as Exclude<JsonValue, null>,
+          status: "queued",
+          priority: -5,
+          maxAttempts: 8,
+          availableAt: new Date(Date.now() + 24 * 60 * 60 * 1_000),
+          deduplicationKey: `media.gc:${assetId}`,
+          correlationId,
         },
       });
       await transaction.auditEvent.create({
         data: {
-          id: randomUUID(), organizationId: context.organization.id, actorType: "user", actorId: context.actor.id,
-          action: "media.deletion_requested", resourceType: "media_asset", resourceId: asset.id, correlationId,
-          metadataJson: { storageKey: asset.storageKey, gracePeriodHours: 24 } as Exclude<JsonValue, null>, retentionClass: "standard",
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          actorType: "user",
+          actorId: context.actor.id,
+          action: "media.deletion_requested",
+          resourceType: "media_asset",
+          resourceId: asset.id,
+          correlationId,
+          metadataJson: { storageKey: asset.storageKey, gracePeriodHours: 24 } as Exclude<
+            JsonValue,
+            null
+          >,
+          retentionClass: "standard",
         },
       });
     },

@@ -1,10 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import {
-  PrismaPublicationCommandRepository,
-  withTenantTransaction,
-} from "@factory/database";
+import { PrismaPublicationCommandRepository, withTenantTransaction } from "@factory/database";
 import { requestPublication } from "@factory/publishing";
 import type { JsonValue } from "@factory/template-sdk";
 import type { DashboardContext } from "../auth";
@@ -33,7 +30,9 @@ export async function requestWebsitePublication(
         where: { organizationId_websiteId: { organizationId: context.organization.id, websiteId } },
         select: { status: true, expiresAt: true },
       });
-      return !subscription || (subscription.status === "active" && subscription.expiresAt > new Date());
+      return (
+        !subscription || (subscription.status === "active" && subscription.expiresAt > new Date())
+      );
     },
   );
   if (!subscriptionAllowed) throw new Error("SUBSCRIPTION_EXPIRED");
@@ -148,7 +147,10 @@ export async function retryWebsitePublication(
         where: { id: job.id },
         data: {
           status: "queued",
-          payloadJson: { ...payload, requestedDraftRevision: website.draftRevision.toString() } as Exclude<JsonValue, null>,
+          payloadJson: {
+            ...payload,
+            requestedDraftRevision: website.draftRevision.toString(),
+          } as Exclude<JsonValue, null>,
           availableAt: new Date(),
           completedAt: null,
           lockedAt: null,

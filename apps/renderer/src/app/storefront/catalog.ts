@@ -35,7 +35,9 @@ export function filterCatalog(
       product.sku,
       ...Object.values(product.attributes),
     ]
-      .filter((value): value is string | number => typeof value === "string" || typeof value === "number")
+      .filter(
+        (value): value is string | number => typeof value === "string" || typeof value === "number",
+      )
       .join(" ")
       .toLocaleLowerCase(filters.locale);
     return (
@@ -52,6 +54,9 @@ export function filterCatalog(
     if (filters.sort === "price-high") return productPrice(right) - productPrice(left);
     if (filters.sort === "name") return left.name.localeCompare(right.name, filters.locale);
     if (filters.sort === "newest") return products.indexOf(left) - products.indexOf(right);
-    return Number(productAttribute(right, "featured") === "true") - Number(productAttribute(left, "featured") === "true");
+    return (
+      Number(productAttribute(right, "featured") === "true") -
+      Number(productAttribute(left, "featured") === "true")
+    );
   });
 }

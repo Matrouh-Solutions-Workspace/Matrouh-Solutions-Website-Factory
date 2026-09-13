@@ -13,7 +13,15 @@ describe("storefront checkout", () => {
   });
 
   it("accepts complete checkout results only", () => {
-    expect(parseCheckoutResult({ orderNumber: "O-1", subtotalMinor: 1, discountMinor: 0, shippingMinor: 2, totalMinor: 3 })).toMatchObject({ orderNumber: "O-1" });
+    expect(
+      parseCheckoutResult({
+        orderNumber: "O-1",
+        subtotalMinor: 1,
+        discountMinor: 0,
+        shippingMinor: 2,
+        totalMinor: 3,
+      }),
+    ).toMatchObject({ orderNumber: "O-1" });
     expect(parseCheckoutResult({ orderNumber: "O-1", totalMinor: 3 })).toBeNull();
   });
 });
