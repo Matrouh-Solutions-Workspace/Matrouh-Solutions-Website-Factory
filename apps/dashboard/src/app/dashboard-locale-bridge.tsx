@@ -716,7 +716,9 @@ export const dashboardArabicCopy: Readonly<Record<string, string>> = {
   ...supplementalArabicText,
   ...remainingArabicText,
   ...commerceArabicText,
+  "All pages": "كل الصفحات",
   "Arabic & English": "العربية والإنجليزية",
+  "Floating contact": "زر التواصل العائم",
   "Light & dark": "الوضع الفاتح والداكن",
   "Needs review": "يحتاج إلى مراجعة",
   "One fixed price": "سعر ثابت واحد",
@@ -725,6 +727,7 @@ export const dashboardArabicCopy: Readonly<Record<string, string>> = {
     "سجّل الأسعار غير الواضحة أو الصور المفقودة أو التصحيحات المتبقية.",
   "Reviewed and confirmed": "تمت المراجعة والتأكيد",
   "Sizes / variants": "الأحجام والخيارات",
+  "WhatsApp contact": "تواصل عبر واتساب",
   "Arabic, English &amp; light/dark controls are available inside the preview.":
     "تتوفر عناصر التحكم بالعربية والإنجليزية والوضع الفاتح والداكن داخل المعاينة.",
 };

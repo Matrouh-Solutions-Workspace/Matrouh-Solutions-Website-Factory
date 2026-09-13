@@ -1468,8 +1468,10 @@
   letter-spacing: -0.035em;
 }
 .siteRoot[data-template-id="com.matrouh.engineer"] .hero--engineer {
+  display: grid;
+  align-content: center;
   min-height: max(720px, calc(100svh - 84px));
-  padding-block: clamp(5rem, 10vw, 9rem);
+  padding-block: clamp(4rem, 8vw, 7rem);
   background: linear-gradient(
     105deg,
     color-mix(in srgb, var(--engineer-ink) 98%, black),
@@ -2959,8 +2961,10 @@
     [data-template-version="2.1.0"]
   )
   .medivraHero {
+  display: grid;
+  align-content: center;
   min-height: max(680px, calc(100svh - 92px));
-  padding-block: clamp(3.5rem, 6vw, 6rem);
+  padding-block: clamp(4rem, 6vw, 6rem);
 }
 .siteRoot[data-template-artifact-id="com.matrouh.doctor"]:is(
     [data-template-version^="1.7."],
@@ -3277,6 +3281,8 @@
 }
 .siteRoot[data-template-artifact-id="com.matrouh.doctor"][data-template-version="2.1.0"]
   .medivraHero {
+  display: grid;
+  align-content: center;
   background:
     radial-gradient(
       circle at 72% 42%,
@@ -3767,7 +3773,6 @@
 }
 .siteRoot[data-template-artifact-id="com.matrouh.creative"][data-template-version="1.0.0"]
   .portfolioHero {
-  align-items: stretch;
   background:
     linear-gradient(
       90deg,
@@ -3776,10 +3781,11 @@
       transparent 50.06%
     ),
     var(--theme-colors-background);
-  display: block;
+  display: grid;
+  align-content: center;
   min-height: calc(100svh - 86px);
   overflow: hidden;
-  padding-block: clamp(3.5rem, 7vw, 7rem) 2.2rem;
+  padding-block: clamp(4rem, 6vw, 6rem);
 }
 .siteRoot[data-template-artifact-id="com.matrouh.creative"][data-template-version="1.0.0"]
   .portfolioHero::before {
@@ -3800,7 +3806,7 @@
   grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.72fr);
   margin-inline: auto;
   max-width: 86rem;
-  min-height: min(680px, calc(100svh - 180px));
+  width: 100%;
 }
 .siteRoot[data-template-artifact-id="com.matrouh.creative"][data-template-version="1.0.0"]
   .portfolioHeroCopy {
@@ -4861,6 +4867,25 @@
 /* Clinic 2.0 final title scale. This must remain last so it is authoritative
    over the older clinic presentation and responsive layers above. */
 .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic {
+  display: grid;
+  align-content: center;
+  min-height: max(760px, calc(100svh - 84px));
+  padding-block: clamp(4rem, 6vw, 6rem);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .heroInner {
+  grid-template-columns: minmax(0, 1fr) minmax(400px, 0.9fr);
+  gap: clamp(3rem, 7vw, 7rem);
+}
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .heroCopy {
+  position: relative;
+  z-index: 2;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
   .hero--clinic
   .heroCopy
   h1 {
@@ -4869,6 +4894,13 @@
   line-height: 1.04;
   overflow-wrap: normal;
   text-wrap: balance;
+}
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .heroLead {
+  max-width: 44ch;
+  font-size: clamp(1rem, 1.35vw, 1.16rem);
+  line-height: 1.8;
 }
 .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
   .sectionHeading
@@ -4899,6 +4931,17 @@
 }
 @media (max-width: 760px) {
   .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .hero--clinic {
+    min-height: 0;
+    padding-block: 3.5rem;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .hero--clinic
+    .heroInner {
+    grid-template-columns: 1fr;
+    gap: 3.25rem;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
     .hero--clinic
     .heroCopy
     h1 {
@@ -4914,6 +4957,10 @@
 }
 @media (max-width: 420px) {
   .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .hero--clinic {
+    padding-block: 2.75rem;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
     .hero--clinic
     .heroCopy
     h1 {
@@ -4923,6 +4970,399 @@
     .sectionHeading
     h2 {
     font-size: clamp(1.7rem, 8.5vw, 2.4rem);
+  }
+}
+
+/* Clinic 2.0 fallback artwork. The published template stays immutable while
+   its generated hero graphic receives the same polished treatment as media. */
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .clinicVisual:not(:has(> img)) {
+  display: grid;
+  width: min(100%, 510px);
+  max-width: none;
+  aspect-ratio: 1.04;
+  place-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 2rem;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    radial-gradient(circle at 78% 18%, rgba(246, 194, 62, 0.76), transparent 18%),
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-colors-primary) 82%, #07394a), #006b70);
+  background-size:
+    44px 44px,
+    44px 44px,
+    auto,
+    auto;
+  box-shadow:
+    24px 24px 0 rgba(0, 122, 120, 0.18),
+    0 40px 90px rgba(0, 0, 0, 0.25);
+  isolation: isolate;
+}
+
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .clinicVisual:not(:has(> img))::before {
+  content: "CARE NETWORK  /  24 SPECIALTIES  /  3 LOCATIONS";
+  position: absolute;
+  z-index: 3;
+  inset: 1.35rem 1.5rem auto;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.74);
+  font:
+    700 0.64rem/1.4 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  letter-spacing: 0.13em;
+}
+
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .clinicVisual:not(:has(> img))::before {
+  content: "شبكة رعاية  /  24 تخصصاً  /  3 فروع";
+  font-family: var(--font-tajawal), Tajawal, Tahoma, Arial, sans-serif;
+  letter-spacing: 0;
+}
+
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .clinicVisual:not(:has(> img))::after {
+  content: "+";
+  position: absolute;
+  z-index: -1;
+  inset: auto -0.08em -0.2em auto;
+  color: rgba(255, 255, 255, 0.055);
+  font:
+    300 clamp(9rem, 15vw, 13rem)/1 Arial,
+    sans-serif;
+}
+
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .clinicVisual:not(:has(> img))
+  .orbit {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  width: min(72%, 350px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  transform: translate(-50%, -46%);
+}
+
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .clinicVisual:not(:has(> img))
+  .orbit--two {
+  width: min(45%, 220px);
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .clinicVisual:not(:has(> img))
+  > strong {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+  font: 820 clamp(5rem, 8vw, 7rem)/0.88
+    var(--theme-typography-font-families-heading, Arial, sans-serif);
+  letter-spacing: -0.06em;
+  text-shadow: 0 12px 38px rgba(1, 31, 43, 0.25);
+}
+
+.siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .clinicVisual:not(:has(> img))
+  > small {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 240px;
+  max-width: calc(100% - 3rem);
+  margin: 0.8rem auto 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .clinicVisual:not(:has(> img))
+  > small {
+  font-size: 0;
+}
+
+.siteRoot[dir="rtl"][data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+  .hero--clinic
+  .clinicVisual:not(:has(> img))
+  > small::after {
+  content: "تخصصاً ضمن شبكة رعاية واحدة";
+  font-size: 0.82rem;
+}
+
+@media (max-width: 760px) {
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"] {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .siteHeader {
+    width: 100%;
+    overflow: visible;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .siteBrand {
+    flex: 1 1 auto;
+    max-width: calc(100% - 7.5rem);
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .hero--clinic
+    .clinicVisual:not(:has(> img)) {
+    width: min(100% - 1rem, 500px);
+    max-width: none;
+    margin-inline: auto;
+    border-radius: 1.4rem;
+    box-shadow:
+      14px 16px 0 rgba(0, 122, 120, 0.18),
+      0 28px 65px rgba(0, 0, 0, 0.22);
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .hero--clinic
+    :is(.heroInner, .heroCopy) {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .hero--clinic
+    .heroCopy
+    :is(h1, .heroLead) {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .hero--clinic
+    .clinicVisual:not(:has(> img)) {
+    width: 100%;
+    min-height: 360px;
+    aspect-ratio: auto;
+  }
+  .siteRoot[data-template-artifact-id="com.matrouh.clinic"][data-template-version="2.0.0"]
+    .hero--clinic
+    .clinicVisual:not(:has(> img))::before {
+    inset: 1.1rem 1.1rem auto;
+    font-size: 0.56rem;
+  }
+}
+
+.clinicWhatsApp {
+  position: fixed;
+  z-index: 90;
+  right: clamp(1rem, 2vw, 2rem);
+  bottom: clamp(1rem, 2vw, 2rem);
+  display: grid;
+  justify-items: end;
+  gap: 0.75rem;
+  direction: ltr;
+  pointer-events: none;
+}
+
+.clinicWhatsAppCard {
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 1.2rem;
+  border: 1px solid color-mix(in srgb, #25d366 24%, var(--theme-colors-border));
+  border-radius: 1.35rem 1.35rem 0.35rem 1.35rem;
+  background: color-mix(in srgb, var(--theme-colors-surface) 96%, transparent);
+  color: var(--theme-colors-text);
+  box-shadow: 0 24px 70px rgba(4, 40, 35, 0.25);
+  opacity: 0;
+  transform: translateY(0.8rem) scale(0.96);
+  transform-origin: bottom right;
+  visibility: hidden;
+  backdrop-filter: blur(18px) saturate(140%);
+  transition:
+    opacity 220ms ease,
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 220ms;
+  pointer-events: auto;
+}
+
+.clinicWhatsApp[data-open="true"] .clinicWhatsAppCard {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  visibility: visible;
+}
+
+.clinicWhatsAppCardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--theme-colors-border);
+}
+
+.siteRoot[dir="rtl"] .clinicWhatsAppCard {
+  direction: rtl;
+}
+
+.clinicWhatsAppCardHead > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.clinicWhatsAppCardHead strong {
+  color: var(--theme-colors-heading);
+  font-size: 0.98rem;
+}
+
+.clinicWhatsAppCardHead small {
+  color: var(--theme-colors-muted);
+  font-size: 0.76rem;
+}
+
+.clinicWhatsAppPresence {
+  position: relative;
+  width: 2.65rem;
+  height: 2.65rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: color-mix(in srgb, #25d366 15%, var(--theme-colors-surface));
+}
+
+.clinicWhatsAppPresence::before,
+.clinicWhatsAppPresence::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+
+.clinicWhatsAppPresence::before {
+  inset: 0.72rem;
+  border: 2px solid #128c7e;
+}
+
+.clinicWhatsAppPresence::after {
+  top: 0;
+  right: 0.1rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 2px solid var(--theme-colors-surface);
+  background: #25d366;
+}
+
+.clinicWhatsAppCard > p {
+  margin: 1rem 0;
+  color: var(--theme-colors-heading);
+  font-size: 1.12rem;
+  font-weight: 760;
+}
+
+.clinicWhatsAppCard > a {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 3.25rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #1daf57;
+  border-radius: 0.9rem;
+  background: #25d366;
+  color: #062f1b;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: inset 0 -3px 0 rgba(4, 77, 39, 0.28);
+  transition:
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.clinicWhatsAppCard > a:hover,
+.clinicWhatsAppCard > a:focus-visible {
+  background: #36df76;
+  transform: translateY(-2px);
+}
+
+.clinicWhatsAppCard svg,
+.clinicWhatsAppToggle svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: currentColor;
+}
+
+.clinicWhatsAppToggle svg {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.clinicWhatsAppToggle {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 1px #128c7e,
+    0 14px 34px rgba(6, 95, 55, 0.35);
+  transition:
+    background 180ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms ease;
+  pointer-events: auto;
+}
+
+.clinicWhatsAppToggle:hover,
+.clinicWhatsAppToggle:focus-visible {
+  background: #20bd5a;
+  box-shadow:
+    0 0 0 4px rgba(37, 211, 102, 0.2),
+    0 16px 38px rgba(6, 95, 55, 0.4);
+  transform: translateY(-3px);
+}
+
+.clinicWhatsAppToggle:focus-visible {
+  outline: 3px solid color-mix(in srgb, #25d366 45%, white);
+  outline-offset: 4px;
+}
+
+.clinicWhatsAppToggle > span {
+  font:
+    400 2rem/1 Arial,
+    sans-serif;
+  transform: translateY(-0.08em);
+}
+
+@media (max-width: 600px) {
+  .clinicWhatsApp {
+    right: 1rem;
+    bottom: 1rem;
+  }
+  .clinicWhatsAppToggle {
+    width: 3.6rem;
+    height: 3.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clinicWhatsAppCard,
+  .clinicWhatsAppToggle,
+  .clinicWhatsAppCard > a {
+    transition-duration: 1ms;
   }
 }
 
@@ -5002,18 +5442,32 @@
   }
 }
 
-/* Keep the opening composition connected to the navigation on desktop. The
-   shared hero layer centers every section vertically, which left a large,
-   empty band above the content in these three portfolio previews. This rule
-   stays last so older version-specific layers cannot restore that spacing. */
-@media (min-width: 761px) {
-  .siteRoot:is(
-      [data-template-artifact-id="com.matrouh.engineer"],
-      [data-template-artifact-id="com.matrouh.doctor"],
-      [data-template-artifact-id="com.matrouh.clinic"]
-    )
-    :is(.hero--engineer, .medivraHero, .hero--clinic) {
-    align-items: start !important;
-    padding-block-start: clamp(1rem, 2vw, 2rem) !important;
+/* Hero sections use align-content: center so content sits in the vertical
+   middle of the full-height section on desktop. padding-block provides a
+   minimum buffer so content never crowds the edges on short viewports. */
+
+/* Scroll treatment belongs only to the Matrouh company landing page. */
+html:has([data-landing-page]) {
+  scroll-behavior: smooth;
+  scrollbar-color: #b39526 #f0eee6;
+  scrollbar-width: thin;
+}
+html:has([data-landing-page])::-webkit-scrollbar {
+  width: 10px;
+}
+html:has([data-landing-page])::-webkit-scrollbar-track {
+  background: #f0eee6;
+}
+html:has([data-landing-page])::-webkit-scrollbar-thumb {
+  background: #b39526;
+  border: 2px solid #f0eee6;
+  border-radius: 10px;
+}
+html:has([data-landing-page])::-webkit-scrollbar-thumb:hover {
+  background: #887017;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:has([data-landing-page]) {
+    scroll-behavior: auto;
   }
 }
