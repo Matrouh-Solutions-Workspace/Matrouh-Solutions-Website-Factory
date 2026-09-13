@@ -33,6 +33,64 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
+        "whatsappEnabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "whatsappPhone": {
+          "default": "+20 100 000 0000",
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 40
+        },
+        "whatsappGreeting": {
+          "default": "Welcome",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "whatsappGreetingAr": {
+          "default": "أهلاً بك",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "whatsappAvailability": {
+          "default": "Our team is ready to help",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "whatsappAvailabilityAr": {
+          "default": "فريقنا متاح لمساعدتك",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "whatsappPrompt": {
+          "default": "How can we help you?",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "whatsappPromptAr": {
+          "default": "كيف يمكننا مساعدتك؟",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "whatsappButtonLabel": {
+          "default": "Contact us on WhatsApp",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "whatsappButtonLabelAr": {
+          "default": "تواصل معنا على واتساب",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
         "phone": {
           "default": "+20 100 000 0000",
           "type": "string",
@@ -81,8 +139,69 @@
       },
       "additionalProperties": false
     },
-    "schemaHash": "fc731b6fa8de2942925ed08cb2648c47",
+    "schemaHash": "f786666b074b401b23eea25f8a74dca4",
     "fields": {
+      "/whatsappEnabled": {
+        "label": "Show WhatsApp contact",
+        "control": "boolean",
+        "group": "WhatsApp contact",
+        "order": 90
+      },
+      "/whatsappPhone": {
+        "label": "WhatsApp number",
+        "control": "text",
+        "group": "WhatsApp contact",
+        "order": 91,
+        "placeholder": "+20 100 000 0000"
+      },
+      "/whatsappGreeting": {
+        "label": "Greeting",
+        "control": "text",
+        "group": "WhatsApp contact",
+        "order": 92
+      },
+      "/whatsappGreetingAr": {
+        "label": "Arabic greeting",
+        "control": "text",
+        "group": "WhatsApp contact",
+        "order": 93
+      },
+      "/whatsappAvailability": {
+        "label": "Availability text",
+        "control": "text",
+        "group": "WhatsApp contact",
+        "order": 94
+      },
+      "/whatsappAvailabilityAr": {
+        "label": "Arabic availability text",
+        "control": "text",
+        "group": "WhatsApp contact",
+        "order": 95
+      },
+      "/whatsappPrompt": {
+        "label": "Contact prompt",
+        "control": "text",
+        "group": "WhatsApp contact",
+        "order": 96
+      },
+      "/whatsappPromptAr": {
+        "label": "Arabic contact prompt",
+        "control": "text",
+        "group": "WhatsApp contact",
+        "order": 97
+      },
+      "/whatsappButtonLabel": {
+        "label": "Button label",
+        "control": "text",
+        "group": "WhatsApp contact",
+        "order": 98
+      },
+      "/whatsappButtonLabelAr": {
+        "label": "Arabic button label",
+        "control": "text",
+        "group": "WhatsApp contact",
+        "order": 99
+      },
       "/phone": {
         "label": "Phone",
         "control": "text",
@@ -1233,5 +1352,5 @@
     }
   },
   "migrations": [],
-  "manifestHash": "0e8b492eb459901863f1e2eb49801cfb"
+  "manifestHash": "7ab1b8f6d567dae8decfecedb99328e3"
 }

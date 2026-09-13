@@ -2318,6 +2318,90 @@ export async function updateWebsiteSettingsDraftAction(formData: FormData): Prom
   revalidateWebsiteEditor(websiteId);
 }
 
+export async function updateWebsiteWhatsAppSettingsAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const draftId = cleanText(formData.get("draftId"), 80);
+  const expectedRevision = parseRevision(formData.get("expectedRevision"));
+  const websiteDraftRevision = parseRevision(formData.get("websiteDraftRevision"));
+  if (!websiteId || !draftId || !expectedRevision || !websiteDraftRevision) return;
+
+  const context = await requireDashboardContext("website.edit");
+  const prepared = await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `prepare-whatsapp-settings:${websiteId}`),
+    (transaction) =>
+      transaction.website.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        select: {
+          templateId: true,
+          templateVersion: true,
+          settingsDrafts: {
+            where: { id: draftId, revision: expectedRevision },
+            select: { contentJson: true },
+            take: 1,
+          },
+        },
+      }),
+  );
+  const current = prepared?.settingsDrafts[0]?.contentJson;
+  if (!prepared || !current || typeof current !== "object" || Array.isArray(current)) return;
+
+  const content = {
+    ...current,
+    whatsappEnabled: formData.get("whatsappEnabled") === "yes",
+    whatsappPhone: cleanText(formData.get("whatsappPhone"), 40),
+    whatsappGreeting: cleanText(formData.get("whatsappGreeting"), 80),
+    whatsappGreetingAr: cleanText(formData.get("whatsappGreetingAr"), 80),
+    whatsappAvailability: cleanText(formData.get("whatsappAvailability"), 140),
+    whatsappAvailabilityAr: cleanText(formData.get("whatsappAvailabilityAr"), 140),
+    whatsappPrompt: cleanText(formData.get("whatsappPrompt"), 140),
+    whatsappPromptAr: cleanText(formData.get("whatsappPromptAr"), 140),
+    whatsappButtonLabel: cleanText(formData.get("whatsappButtonLabel"), 80),
+    whatsappButtonLabelAr: cleanText(formData.get("whatsappButtonLabelAr"), 80),
+  };
+  const template = await loadExactWebsiteTemplate(prepared.templateId, prepared.templateVersion);
+  const validated = template?.websiteSchema.safeParse(content);
+  if (!validated?.success) throw new Error("WEBSITE_SETTINGS_INVALID");
+
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `update-whatsapp-settings:${draftId}`),
+    async (transaction) => {
+      const updated = await transaction.websiteSettingsDraft.updateMany({
+        where: {
+          id: draftId,
+          organizationId: context.organization.id,
+          websiteId,
+          revision: expectedRevision,
+        },
+        data: {
+          contentJson: jsonInput(validated.value),
+          contentSizeBytes: Buffer.byteLength(JSON.stringify(validated.value)),
+          revision: { increment: 1 },
+        },
+      });
+      if (updated.count !== 1) throw new Error("DRAFT_REVISION_CONFLICT");
+      await advanceWebsiteDraft(
+        transaction,
+        context.organization.id,
+        websiteId,
+        websiteDraftRevision,
+      );
+      await writeDraftAudit(
+        transaction,
+        context.organization.id,
+        context.actor.id,
+        "website.whatsapp_settings_updated",
+        "website_settings",
+        draftId,
+        websiteId,
+        { enabled: content.whatsappEnabled },
+      );
+    },
+  );
+  revalidateWebsiteEditor(websiteId);
+}
+
 export async function updateThemeDraftAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const themeId = cleanText(formData.get("themeId"), 80);

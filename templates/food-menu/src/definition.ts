@@ -1,4 +1,12 @@
-import { contentSchema, defineTemplate, ids, z, type JsonValue } from "@factory/template-sdk";
+import {
+  contentSchema,
+  defineTemplate,
+  ids,
+  whatsappContactFields,
+  whatsappContactSchemaShape,
+  z,
+  type JsonValue,
+} from "@factory/template-sdk";
 import { foodMenuNavigation } from "./navigation";
 import { foodMenuPages } from "./pages";
 import { foodMenuRoutes } from "./routes";
@@ -9,11 +17,13 @@ const websiteSchema = contentSchema<JsonValue>({
   version: 1,
   description: "Restaurant identity, language, currency, and menu display settings.",
   schema: z.strictObject({
+    ...whatsappContactSchemaShape,
     logoMediaId: z.string().uuid().nullable().default(null),
     colorMode: z.literal("light").default("light"),
     allowAppearanceToggle: z.literal(false).default(false),
   }),
   fields: {
+    ...whatsappContactFields,
     "/logoMediaId": { label: "Business logo", control: "media", order: 1, mediaKinds: ["image"] },
     "/colorMode": {
       label: "Appearance",

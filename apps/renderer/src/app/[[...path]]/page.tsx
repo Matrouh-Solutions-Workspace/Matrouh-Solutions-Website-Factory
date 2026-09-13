@@ -5,6 +5,8 @@ import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
 import { instantiateTemplateRuntime } from "@factory/template-runtime";
 import { SiteNavigation } from "@/app/site-navigation";
+import { WhatsAppContact } from "@/app/whatsapp-contact";
+import { whatsappContactSettings } from "@/app/whatsapp-contact-settings";
 import { templateStyleVersion } from "@/app/template-style-version";
 import { localeLinks, localizedPageRoute, textDirection } from "@/server/locale-navigation";
 import { rendererConfig } from "@/server/config";
@@ -91,6 +93,7 @@ export default async function SitePage({ params, searchParams }: PageProperties)
     typeof customLogo === "string"
       ? site.snapshot.media.find((item) => item.id === customLogo)?.url
       : undefined;
+  const whatsapp = whatsappContactSettings(site.snapshot, rendered.locale);
   return (
     <div
       className="siteRoot"
@@ -136,6 +139,7 @@ export default async function SitePage({ params, searchParams }: PageProperties)
         />
       </header>
       <main>{rendered.node}</main>
+      {whatsapp && <WhatsAppContact {...whatsapp} />}
       {structuredData.map((document, index) => (
         <script
           // JSON is serialized as text and angle brackets are escaped to prevent script termination.

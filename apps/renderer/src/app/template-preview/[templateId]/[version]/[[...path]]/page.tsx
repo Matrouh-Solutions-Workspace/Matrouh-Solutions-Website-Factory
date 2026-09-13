@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
 import { SiteNavigation } from "@/app/site-navigation";
+import { WhatsAppContact } from "@/app/whatsapp-contact";
+import { whatsappContactSettings } from "@/app/whatsapp-contact-settings";
 import { templateStyleVersion } from "@/app/template-style-version";
 import { loadCatalogPreview } from "@/server/catalog-preview";
 import { localeLinks, localizedPageRoute, textDirection } from "@/server/locale-navigation";
@@ -45,6 +47,7 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
       ? "dark"
       : "light";
   const text = previewText(preview.rendered.locale);
+  const whatsapp = whatsappContactSettings(preview.snapshot, preview.rendered.locale);
   return (
     <div
       className="siteRoot"
@@ -86,6 +89,7 @@ export default async function CatalogPreviewPage({ params }: CatalogPreviewPrope
         />
       </header>
       <main>{preview.rendered.node}</main>
+      {whatsapp && <WhatsAppContact {...whatsapp} />}
       <footer className="siteFooter">
         <div>
           <strong>{preview.snapshot.website.name}</strong>

@@ -19,15 +19,18 @@ describe("Matrouh public contact links", () => {
   });
 
   it("connects the shared destinations to the landing page and public catalog", async () => {
-    const [landing, catalog] = await Promise.all([
-      readFile(resolve(process.cwd(), "src/app/matrouh-solutions/landing.tsx"), "utf8"),
+    const [landing, catalog, contact] = await Promise.all([
+      readFile(resolve(process.cwd(), "src/app/matrouh-solutions/landing-footer.tsx"), "utf8"),
       readFile(resolve(process.cwd(), "src/app/templates/page.tsx"), "utf8"),
+      readFile(resolve(process.cwd(), "src/app/matrouh-solutions/contact-section.tsx"), "utf8"),
     ]);
 
     expect(landing).toContain("MATROUH_WHATSAPP_URL");
     expect(landing).toContain("MATROUH_FACEBOOK_URL");
     expect(landing).toContain("MATROUH_EMAIL_URL");
-    expect(landing).toContain('<strong dir="ltr">WhatsApp · {MATROUH_WHATSAPP_NUMBER}</strong>');
+    expect(contact).toContain("href={MATROUH_WHATSAPP_URL}");
+    expect(contact).toContain("href={MATROUH_FACEBOOK_URL}");
+    expect(contact).toContain("href={MATROUH_EMAIL_URL}");
     expect(landing).toContain('<strong dir="ltr">{MATROUH_WHATSAPP_NUMBER}</strong>');
     expect(landing).toContain('<strong dir="ltr">{MATROUH_EMAIL}</strong>');
     expect(catalog).toContain("MATROUH_WHATSAPP_URL");

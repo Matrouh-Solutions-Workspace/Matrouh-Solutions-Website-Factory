@@ -1,0 +1,273 @@
+.section {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  max-width: 1240px;
+  margin: 110px auto;
+  padding: 64px;
+  gap: 64px;
+  align-items: center;
+  border: 1px solid #dedbd1;
+  border-top: 4px solid var(--yellow);
+  background: #fffefa;
+  border-radius: 8px;
+  scroll-margin-top: 112px;
+}
+.intro {
+  min-width: 0;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 26px;
+  color: #7b650d;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+.eyebrow > span {
+  width: 6px;
+  height: 6px;
+  background: #bea12d;
+}
+.intro h2 {
+  margin: 0;
+  font-size: clamp(36px, 4.1vw, 57px);
+  letter-spacing: -1.6px;
+  line-height: 1.16;
+  font-weight: 800;
+}
+.intro h2 span {
+  color: #767568;
+}
+:global([dir="rtl"]) .intro h2 {
+  letter-spacing: -0.5px;
+  line-height: 1.35;
+}
+:global([dir="rtl"]) .eyebrow {
+  letter-spacing: 0;
+}
+.description {
+  max-width: 455px;
+  margin: 25px 0 0;
+  font-size: 17px;
+  color: #676c72;
+  line-height: 1.9;
+}
+.note {
+  margin-top: 34px;
+  padding-top: 22px;
+  border-top: 1px solid #e5e2d8;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #676c72;
+}
+.note > span {
+  font-size: 23px;
+  color: #a58a20;
+}
+.card {
+  background: var(--ink);
+  border-radius: 7px;
+  padding: 30px;
+  color: #fff;
+  min-width: 0;
+}
+.cardLabel {
+  margin: 0 0 22px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #c6c8ce;
+  font-weight: 700;
+}
+:global([dir="rtl"]) .cardLabel {
+  letter-spacing: 0;
+  font-size: 13px;
+}
+.card a {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.card a:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 5px;
+}
+.card .whatsapp {
+  background: #ffcc00;
+  border: 1px solid #ffcc00;
+  color: #111318;
+  padding: 22px 18px;
+  border-radius: 5px;
+}
+.card .whatsapp:hover {
+  background: #f5d145;
+}
+.icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+}
+.icon svg {
+  width: 26px;
+  height: 26px;
+}
+.channelText {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.channelText small {
+  color: #514619;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.channelText strong {
+  font-size: 23px;
+  line-height: 1.2;
+}
+.channelText > span {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.arrow {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+  font-size: 21px;
+}
+.otherChannels {
+  margin-top: 16px;
+}
+.otherChannels a {
+  padding: 20px 0;
+  border-bottom: 1px solid #363a42;
+}
+.otherChannels a:hover {
+  background: #ffffff08;
+}
+.otherChannels .icon {
+  border: 1px solid #464a53;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+}
+.otherChannels svg {
+  width: 19px;
+  height: 19px;
+}
+.otherChannels a > span:nth-child(2) {
+  display: grid;
+  gap: 5px;
+}
+.otherChannels strong {
+  font-size: 15px;
+}
+.otherChannels small {
+  font-size: 11px;
+  color: #b6bac4;
+  line-height: 1.5;
+}
+.otherChannels .arrow {
+  color: #b9bdc6;
+}
+.response {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 23px 0 0;
+  color: #b6bac4;
+  font-size: 11px;
+}
+.response svg {
+  width: 17px;
+  height: 17px;
+}
+@media (max-width: 1100px) {
+  .section {
+    margin-inline: 24px;
+    padding: 40px;
+    gap: 35px;
+  }
+  .card {
+    padding: 23px;
+  }
+}
+@media (max-width: 800px) {
+  .section {
+    grid-template-columns: 1fr;
+    max-width: 620px;
+    margin: 70px auto;
+    gap: 30px;
+    padding: 34px;
+  }
+  .intro h2 {
+    font-size: 43px;
+  }
+  .description {
+    font-size: 16px;
+  }
+  .note {
+    margin-top: 24px;
+  }
+}
+@media (max-width: 660px) {
+  .section {
+    margin-inline: 20px;
+    padding: 25px;
+  }
+}
+@media (max-width: 420px) {
+  .section {
+    margin-inline: 14px;
+    padding: 22px 16px;
+    gap: 28px;
+  }
+  .intro h2 {
+    font-size: 34px;
+    letter-spacing: -0.7px;
+  }
+  .eyebrow {
+    font-size: 10px;
+    margin-bottom: 19px;
+  }
+  .card {
+    padding: 20px 16px;
+  }
+  .card .whatsapp {
+    padding: 18px 12px;
+    gap: 10px;
+  }
+  .channelText strong {
+    font-size: 21px;
+  }
+  .channelText > span {
+    font-size: 12px;
+  }
+  .whatsapp .icon {
+    width: 29px;
+    flex-basis: 29px;
+  }
+  .description {
+    font-size: 15px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card a {
+    transition: none;
+  }
+}
+:global([dir="rtl"]) .arrow,
+:global([dir="rtl"]) .note > span {
+  display: inline-block;
+  transform: scaleX(-1);
+}

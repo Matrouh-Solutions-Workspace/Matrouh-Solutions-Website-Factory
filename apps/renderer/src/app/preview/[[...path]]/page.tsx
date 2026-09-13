@@ -4,6 +4,8 @@ import type { PublicationSnapshot } from "@factory/publication-contract";
 import type { ThemeTokens } from "@factory/template-sdk";
 import { instantiateTemplateRuntime } from "@factory/template-runtime";
 import { SiteNavigation } from "@/app/site-navigation";
+import { WhatsAppContact } from "@/app/whatsapp-contact";
+import { whatsappContactSettings } from "@/app/whatsapp-contact-settings";
 import { templateStyleVersion } from "@/app/template-style-version";
 import { localeLinks, localizedPageRoute, textDirection } from "@/server/locale-navigation";
 import { loadPreviewSite } from "@/server/site";
@@ -57,6 +59,7 @@ export default async function PreviewPage({ params, searchParams }: PreviewPrope
     typeof logoId === "string"
       ? site.snapshot.media.find((item) => item.id === logoId)?.url
       : undefined;
+  const whatsapp = whatsappContactSettings(site.snapshot, rendered.locale);
   return (
     <div
       className="siteRoot"
@@ -106,6 +109,7 @@ export default async function PreviewPage({ params, searchParams }: PreviewPrope
         />
       </header>
       <main>{rendered.node}</main>
+      {whatsapp && <WhatsAppContact {...whatsapp} />}
       <footer className="siteFooter">
         <div>
           <strong>{site.snapshot.website.name}</strong>

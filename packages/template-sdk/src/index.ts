@@ -156,6 +156,78 @@ export interface FieldMetadataMap {
   readonly [jsonPointer: string]: EditorMetadata;
 }
 
+export const whatsappContactSchemaShape = {
+  whatsappEnabled: z.boolean().default(true),
+  whatsappPhone: z.string().min(3).max(40).default("+20 100 000 0000"),
+  whatsappGreeting: z.string().min(1).max(80).default("Welcome"),
+  whatsappGreetingAr: z.string().min(1).max(80).default("أهلاً بك"),
+  whatsappAvailability: z.string().min(1).max(140).default("Our team is ready to help"),
+  whatsappAvailabilityAr: z.string().min(1).max(140).default("فريقنا متاح لمساعدتك"),
+  whatsappPrompt: z.string().min(1).max(140).default("How can we help you?"),
+  whatsappPromptAr: z.string().min(1).max(140).default("كيف يمكننا مساعدتك؟"),
+  whatsappButtonLabel: z.string().min(1).max(80).default("Contact us on WhatsApp"),
+  whatsappButtonLabelAr: z.string().min(1).max(80).default("تواصل معنا على واتساب"),
+} as const;
+
+export const whatsappContactFields: FieldMetadataMap = {
+  "/whatsappEnabled": {
+    label: "Show WhatsApp contact",
+    control: "boolean",
+    group: "WhatsApp contact",
+    order: 90,
+  },
+  "/whatsappPhone": {
+    label: "WhatsApp number",
+    control: "text",
+    group: "WhatsApp contact",
+    order: 91,
+    placeholder: "+20 100 000 0000",
+  },
+  "/whatsappGreeting": { label: "Greeting", control: "text", group: "WhatsApp contact", order: 92 },
+  "/whatsappGreetingAr": {
+    label: "Arabic greeting",
+    control: "text",
+    group: "WhatsApp contact",
+    order: 93,
+  },
+  "/whatsappAvailability": {
+    label: "Availability text",
+    control: "text",
+    group: "WhatsApp contact",
+    order: 94,
+  },
+  "/whatsappAvailabilityAr": {
+    label: "Arabic availability text",
+    control: "text",
+    group: "WhatsApp contact",
+    order: 95,
+  },
+  "/whatsappPrompt": {
+    label: "Contact prompt",
+    control: "text",
+    group: "WhatsApp contact",
+    order: 96,
+  },
+  "/whatsappPromptAr": {
+    label: "Arabic contact prompt",
+    control: "text",
+    group: "WhatsApp contact",
+    order: 97,
+  },
+  "/whatsappButtonLabel": {
+    label: "Button label",
+    control: "text",
+    group: "WhatsApp contact",
+    order: 98,
+  },
+  "/whatsappButtonLabelAr": {
+    label: "Arabic button label",
+    control: "text",
+    group: "WhatsApp contact",
+    order: 99,
+  },
+};
+
 export interface SchemaIssue {
   readonly code: string;
   readonly path: string;

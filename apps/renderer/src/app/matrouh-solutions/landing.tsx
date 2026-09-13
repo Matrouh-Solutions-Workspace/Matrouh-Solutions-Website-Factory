@@ -1,13 +1,10 @@
 import type { CSSProperties } from "react";
 import styles from "./landing.module.css";
 import { LandingMotion } from "./landing-motion";
-import {
-  MATROUH_EMAIL,
-  MATROUH_EMAIL_URL,
-  MATROUH_FACEBOOK_URL,
-  MATROUH_WHATSAPP_NUMBER,
-  MATROUH_WHATSAPP_URL,
-} from "../public-contact-links";
+import { LandingNavigation } from "./landing-navigation";
+import { LandingHero } from "./landing-hero";
+import { ContactSection } from "./contact-section";
+import { LandingFooter } from "./landing-footer";
 
 type Locale = "ar" | "en";
 
@@ -109,6 +106,39 @@ const copy = {
 
 export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
   const text = copy[locale];
+  const serviceDetails =
+    locale === "ar"
+      ? [
+          [
+            "هيكلة الصفحات ورحلة الزائر",
+            "واجهات متجاوبة للهاتف والكمبيوتر",
+            "ألوان وخطوط تعبّر عن علامتك",
+          ],
+          [
+            "تنقل ومحتوى بالعربية والإنجليزية",
+            "اتجاه صحيح وتجربة مناسبة لكل لغة",
+            "لوحة تحكم لتحديث محتواك بسهولة",
+          ],
+          ["ربط النطاق ونشر الموقع", "متابعة التشغيل والأداء", "صيانة وتحسينات مع نمو عملك"],
+        ]
+      : [
+          [
+            "Page structure and visitor journeys",
+            "Responsive desktop and mobile layouts",
+            "Colours and typography for your brand",
+          ],
+          [
+            "Arabic and English content and navigation",
+            "Natural layouts for each language",
+            "A dashboard for easy content updates",
+          ],
+          [
+            "Domain connection and website publishing",
+            "Operational and performance monitoring",
+            "Maintenance as your business grows",
+          ],
+        ];
+  const serviceIds = ["service-design", "service-bilingual", "service-launch"];
   const enterprise =
     locale === "ar"
       ? {
@@ -140,115 +170,10 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
   return (
     <div className={styles.page} data-landing-page dir={text.direction} lang={locale}>
       <LandingMotion />
-      <div aria-hidden="true" className={styles.ambientGrid} />
-      <header className={styles.header} data-landing-header>
-        <a
-          className={styles.brand}
-          href={locale === "ar" ? "/matrouh-solutions" : "/en/matrouh-solutions"}
-        >
-          <img alt="" src="/matrouh-logo.png" />
-          <span>
-            <strong>Matrouh</strong>
-            <small>Solutions</small>
-          </span>
-        </a>
-        <nav aria-label={locale === "ar" ? "التنقل الرئيسي" : "Main navigation"}>
-          <div className={styles.navLinks}>
-            {text.nav.map(([label, href], index) => (
-              <a data-nav-target={href?.slice(1)} href={href} key={href}>
-                <small>0{index + 1}</small>
-                <span>{label}</span>
-              </a>
-            ))}
-          </div>
-          <div className={styles.navActions}>
-            <a
-              className={styles.language}
-              href={text.languageHref}
-              hrefLang={locale === "ar" ? "en" : "ar"}
-            >
-              {text.language}
-            </a>
-            <a
-              aria-label={text.portal}
-              className={styles.portal}
-              href="/dashboard/login"
-              title={text.portal}
-            >
-              <span>{text.portal}</span>
-              <i aria-hidden="true">↗</i>
-            </a>
-          </div>
-        </nav>
-      </header>
+      <LandingNavigation locale={locale} />
 
-      <nav
-        aria-label={locale === "ar" ? "التنقل السريع" : "Quick navigation"}
-        className={styles.mobileNav}
-      >
-        {text.nav.map(([label, href], index) => (
-          <a data-nav-target={href?.slice(1)} href={href} key={href}>
-            <small>0{index + 1}</small>
-            <span>{label}</span>
-          </a>
-        ))}
-      </nav>
-
-      <main>
-        <section className={styles.hero} data-reveal="section">
-          <div className={styles.heroCopy} data-reveal>
-            <h1>{text.title}</h1>
-            <p className={styles.lead}>{text.lead}</p>
-            <div className={styles.actions}>
-              <a className={styles.primary} href="#contact">
-                {text.primary}
-              </a>
-              <a className={styles.secondary} href="#services">
-                {text.secondary}
-              </a>
-            </div>
-          </div>
-          <div className={styles.heroVisualFrame} data-reveal="hero-visual">
-            <div aria-hidden="true" className={styles.heroVisual}>
-              <div className={styles.visualBadge}>01 / DIGITAL</div>
-              <div className={styles.browserBar}>
-                <i />
-                <i />
-                <i />
-              </div>
-              <div className={styles.visualBody}>
-                <div className={styles.visualBrandRow}>
-                  <img
-                    alt="Matrouh Solutions"
-                    className={styles.visualLogo}
-                    src="/matrouh-logo.png"
-                  />
-                  <span>MATROUH / SOLUTIONS</span>
-                </div>
-                <strong>
-                  {locale === "en" ? (
-                    <>
-                      Clarity in design.
-                      <br />
-                      Strength in delivery.
-                    </>
-                  ) : (
-                    <>
-                      وضوح في التصميم.
-                      <br />
-                      قوة في التنفيذ.
-                    </>
-                  )}
-                </strong>
-                <div>
-                  <i />
-                  <i />
-                  <i />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+      <main id="landing-content" tabIndex={-1}>
+        <LandingHero locale={locale} />
 
         <section
           aria-label={locale === "ar" ? "مميزات" : "Highlights"}
@@ -268,7 +193,12 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           ))}
         </section>
 
-        <section className={styles.section} data-reveal="section" data-section="01" id="services">
+        <section
+          className={`${styles.section} ${styles.enhancedServices}`}
+          data-reveal="section"
+          data-section="01"
+          id="services"
+        >
           <div className={styles.sectionHead} data-reveal="heading">
             <div>
               <p className={styles.eyebrow}>{text.servicesEyebrow}</p>
@@ -281,18 +211,39 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
               <article
                 data-reveal="card"
                 key={title}
+                id={serviceIds[index]}
                 className="transition duration-200 ease-in-out"
                 style={{ "--item-index": index, transition: "0.2s" } as CSSProperties}
               >
                 <div className={styles.serviceCardTop}>
                   <span>0{index + 1}</span>
-                  <i aria-hidden="true">↗</i>
+                  <i aria-hidden="true">{locale === "ar" ? "↖" : "↗"}</i>
                 </div>
                 <small className={styles.serviceMeta}>{enterprise.serviceMeta[index]}</small>
                 <h3>{title}</h3>
                 <p>{body}</p>
+                <ul className={styles.serviceDetails}>
+                  {serviceDetails[index]?.map((detail) => (
+                    <li key={detail}>{detail}</li>
+                  ))}
+                </ul>
+                <a className={styles.serviceLink} href="#contact">
+                  {locale === "ar" ? "ناقش احتياجات مشروعك" : "Discuss your project"}
+                  <span aria-hidden="true">{locale === "ar" ? "↖" : "↗"}</span>
+                </a>
               </article>
             ))}
+          </div>
+          <div className={styles.servicesEnd}>
+            <p>
+              {locale === "ar"
+                ? "ابدأ بقالب يناسب نشاطك، أو تحدث معنا عن تجربة مصممة لعملك."
+                : "Start with a template for your industry, or talk to us about an experience designed for your business."}
+            </p>
+            <a href={`/templates?locale=${locale}`}>
+              {locale === "ar" ? "استكشف القوالب" : "Explore templates"}
+              <span aria-hidden="true">{locale === "ar" ? "↖" : "↗"}</span>
+            </a>
           </div>
         </section>
 
@@ -332,105 +283,10 @@ export function MatrouhLanding({ locale }: { readonly locale: Locale }) {
           </div>
         </section>
 
-        <section className={styles.cta} data-reveal="scale" id="contact">
-          <div aria-hidden="true" className={styles.ctaMark}>
-            M
-          </div>
-          <div className={styles.ctaContent}>
-            <p className={styles.eyebrow}>{text.ctaEyebrow}</p>
-            <h2>{text.ctaTitle}</h2>
-            <p>{text.ctaBody}</p>
-          </div>
-          <div className={styles.ctaContactCard}>
-            <span className={styles.ctaStatus}>
-              <i aria-hidden="true" />
-              {enterprise.contactLabel}
-            </span>
-            <a href={MATROUH_WHATSAPP_URL} rel="noreferrer" target="_blank">
-              <span>
-                <small>{enterprise.contactActionLabel}</small>
-                <strong dir="ltr">WhatsApp · {MATROUH_WHATSAPP_NUMBER}</strong>
-              </span>
-              <i aria-hidden="true">↗</i>
-            </a>
-            <div className={styles.ctaContactChannels}>
-              <a href={MATROUH_FACEBOOK_URL} rel="noreferrer" target="_blank">
-                <span>Facebook</span>
-                <i aria-hidden="true">↗</i>
-              </a>
-              <a href={MATROUH_EMAIL_URL}>
-                <span>{locale === "ar" ? "البريد الإلكتروني" : "Email"}</span>
-                <i aria-hidden="true">↗</i>
-              </a>
-            </div>
-            <small>{text.ctaNote}</small>
-          </div>
-        </section>
+        <ContactSection locale={locale} />
       </main>
 
-      <footer className={styles.footer}>
-        <div className={styles.footerInner} data-reveal="scale">
-          <div className={styles.footerTop}>
-            <div className={styles.footerIdentity}>
-              <a
-                className={styles.brand}
-                href={locale === "ar" ? "/matrouh-solutions" : "/en/matrouh-solutions"}
-              >
-                <img alt="" src="/matrouh-logo.png" />
-                <span>
-                  <strong>Matrouh</strong>
-                  <small>Solutions</small>
-                </span>
-              </a>
-              <p>{text.footer}</p>
-            </div>
-            <div className={styles.footerContact}>
-              <span>{locale === "ar" ? "لديك مشروع في ذهنك؟" : "Have a project in mind?"}</span>
-              <div className={styles.footerContactChannels}>
-                <a href={MATROUH_WHATSAPP_URL} rel="noreferrer" target="_blank">
-                  <span>
-                    <small>WhatsApp</small>
-                    <strong dir="ltr">{MATROUH_WHATSAPP_NUMBER}</strong>
-                  </span>
-                  <i aria-hidden="true">↗</i>
-                </a>
-                <a href={MATROUH_FACEBOOK_URL} rel="noreferrer" target="_blank">
-                  <span>
-                    <small>Facebook</small>
-                    <strong>
-                      {locale === "ar" ? "صفحة مطروح سوليوشنز" : "Matrouh Solutions page"}
-                    </strong>
-                  </span>
-                  <i aria-hidden="true">↗</i>
-                </a>
-                <a href={MATROUH_EMAIL_URL}>
-                  <span>
-                    <small>{locale === "ar" ? "البريد الإلكتروني" : "Email"}</small>
-                    <strong dir="ltr">{MATROUH_EMAIL}</strong>
-                  </span>
-                  <i aria-hidden="true">↗</i>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div className={styles.footerBottom}>
-            <span>© Matrouh Solutions</span>
-            <nav aria-label={locale === "ar" ? "روابط التذييل" : "Footer navigation"}>
-              {text.nav.map(([label, href]) => (
-                <a href={href} key={href}>
-                  {label}
-                </a>
-              ))}
-              <a href={text.languageHref} hrefLang={locale === "ar" ? "en" : "ar"}>
-                {text.language}
-              </a>
-              <a href={MATROUH_FACEBOOK_URL} rel="noreferrer" target="_blank">
-                Facebook
-              </a>
-            </nav>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter locale={locale} />
     </div>
   );
 }

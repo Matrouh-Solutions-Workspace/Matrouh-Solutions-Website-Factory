@@ -24,6 +24,7 @@ import {
   updateWebsiteLogoAction,
   updateWebsiteDefaultLocaleAction,
   updateWebsiteSettingsDraftAction,
+  updateWebsiteWhatsAppSettingsAction,
   upgradeWebsiteTemplateAction,
 } from "@/app/actions";
 import { ConfirmSubmit } from "@/app/confirm-submit";
@@ -517,6 +518,147 @@ export default async function WebsiteEditorPage({
                 </div>
               </form>
             )}
+            {editor.settings && (
+              <form action={updateWebsiteWhatsAppSettingsAction} className="panel editForm">
+                <div className="panelHead">
+                  <div>
+                    <p className="eyebrow">Floating contact</p>
+                    <h2>WhatsApp contact</h2>
+                  </div>
+                  <span>All pages</span>
+                </div>
+                <input name="websiteId" type="hidden" value={editor.website.id} />
+                <input name="draftId" type="hidden" value={editor.settings.id} />
+                <input name="expectedRevision" type="hidden" value={editor.settings.revision} />
+                <input
+                  name="websiteDraftRevision"
+                  type="hidden"
+                  value={editor.website.draftRevision}
+                />
+                <label className="checkLabel">
+                  <input
+                    defaultChecked={settingsBoolean(
+                      editor.settings.content,
+                      "whatsappEnabled",
+                      true,
+                    )}
+                    name="whatsappEnabled"
+                    type="checkbox"
+                    value="yes"
+                  />
+                  Show the WhatsApp contact button
+                </label>
+                <label>
+                  WhatsApp number
+                  <input
+                    defaultValue={
+                      settingsValue(editor.settings.content, "whatsappPhone") ??
+                      settingsValue(editor.settings.content, "centralPhone") ??
+                      settingsValue(editor.settings.content, "phone") ??
+                      "+20 100 000 0000"
+                    }
+                    dir="ltr"
+                    name="whatsappPhone"
+                    placeholder="+20 100 000 0000"
+                    required
+                    type="tel"
+                  />
+                </label>
+                <div className="formGrid">
+                  <label>
+                    Greeting
+                    <input
+                      defaultValue={
+                        settingsValue(editor.settings.content, "whatsappGreeting") ?? "Welcome"
+                      }
+                      name="whatsappGreeting"
+                      required
+                    />
+                  </label>
+                  <label dir="rtl">
+                    الترحيب بالعربية
+                    <input
+                      defaultValue={
+                        settingsValue(editor.settings.content, "whatsappGreetingAr") ?? "أهلاً بك"
+                      }
+                      name="whatsappGreetingAr"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Availability text
+                    <input
+                      defaultValue={
+                        settingsValue(editor.settings.content, "whatsappAvailability") ??
+                        "Our team is ready to help"
+                      }
+                      name="whatsappAvailability"
+                      required
+                    />
+                  </label>
+                  <label dir="rtl">
+                    نص التوفر بالعربية
+                    <input
+                      defaultValue={
+                        settingsValue(editor.settings.content, "whatsappAvailabilityAr") ??
+                        "فريقنا متاح لمساعدتك"
+                      }
+                      name="whatsappAvailabilityAr"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Contact prompt
+                    <input
+                      defaultValue={
+                        settingsValue(editor.settings.content, "whatsappPrompt") ??
+                        "How can we help you?"
+                      }
+                      name="whatsappPrompt"
+                      required
+                    />
+                  </label>
+                  <label dir="rtl">
+                    سؤال التواصل بالعربية
+                    <input
+                      defaultValue={
+                        settingsValue(editor.settings.content, "whatsappPromptAr") ??
+                        "كيف يمكننا مساعدتك؟"
+                      }
+                      name="whatsappPromptAr"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Button label
+                    <input
+                      defaultValue={
+                        settingsValue(editor.settings.content, "whatsappButtonLabel") ??
+                        "Contact us on WhatsApp"
+                      }
+                      name="whatsappButtonLabel"
+                      required
+                    />
+                  </label>
+                  <label dir="rtl">
+                    نص الزر بالعربية
+                    <input
+                      defaultValue={
+                        settingsValue(editor.settings.content, "whatsappButtonLabelAr") ??
+                        "تواصل معنا على واتساب"
+                      }
+                      name="whatsappButtonLabelAr"
+                      required
+                    />
+                  </label>
+                </div>
+                <div className="formFooter">
+                  <PendingSubmit pendingLabel="Saving WhatsApp contact...">
+                    Save WhatsApp contact
+                  </PendingSubmit>
+                </div>
+              </form>
+            )}
             {editor.theme && (
               <ThemeLiveEditor
                 action={updateThemeDraftAction}
@@ -960,6 +1102,18 @@ function settingsValue(content: string | undefined, key: string): string | undef
     return typeof selected === "string" ? selected : undefined;
   } catch {
     return undefined;
+  }
+}
+
+function settingsBoolean(content: string | undefined, key: string, fallback: boolean): boolean {
+  if (!content) return fallback;
+  try {
+    const value = JSON.parse(content) as unknown;
+    if (!value || typeof value !== "object" || Array.isArray(value)) return fallback;
+    const selected = (value as Record<string, unknown>)[key];
+    return typeof selected === "boolean" ? selected : fallback;
+  } catch {
+    return fallback;
   }
 }
 

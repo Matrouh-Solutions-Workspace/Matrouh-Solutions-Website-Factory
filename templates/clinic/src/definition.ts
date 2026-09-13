@@ -1,4 +1,12 @@
-import { contentSchema, defineTemplate, ids, z, type JsonValue } from "@factory/template-sdk";
+import {
+  contentSchema,
+  defineTemplate,
+  ids,
+  whatsappContactFields,
+  whatsappContactSchemaShape,
+  z,
+  type JsonValue,
+} from "@factory/template-sdk";
 import { sharedButton, sharedInfoCard } from "@templates/shared";
 import { clinicNavigation } from "./navigation";
 import { clinicPages } from "./pages";
@@ -10,6 +18,7 @@ const websiteSchema = contentSchema<JsonValue>({
   version: 1,
   description: "Public clinic contact settings.",
   schema: z.strictObject({
+    ...whatsappContactSchemaShape,
     centralPhone: z.string().min(3).max(40).default("+20 100 000 0000"),
     centralEmail: z.string().email().max(320).default("clinic@example.com"),
     bookingPath: z
@@ -21,6 +30,7 @@ const websiteSchema = contentSchema<JsonValue>({
     logoMediaId: z.string().uuid().nullable().default(null),
   }),
   fields: {
+    ...whatsappContactFields,
     "/centralPhone": { label: "Central phone", control: "text", order: 1 },
     "/centralEmail": { label: "Central email", control: "text", order: 2, sensitive: true },
     "/bookingPath": { label: "Booking path", control: "url", order: 3 },
