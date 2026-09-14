@@ -11,7 +11,7 @@ SET status = 'succeeded',
     locked_at = NULL,
     lock_owner = NULL,
     lock_expires_at = NULL
-WHERE job.job_type = 'domain.verify'
+WHERE job.type = 'domain.verify'
   AND job.status IN ('queued', 'running', 'retryable')
   AND EXISTS (
     SELECT 1

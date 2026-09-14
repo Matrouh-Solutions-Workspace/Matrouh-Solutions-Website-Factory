@@ -23,6 +23,9 @@ run_as_factory() {
 
 run_as_factory '/usr/bin/corepack pnpm install --frozen-lockfile'
 run_as_factory '/usr/bin/corepack pnpm db:generate'
+# A failed first attempt can leave Prisma's migration ledger marked as failed. The
+# migration is idempotent; clear that failed marker before retrying a deployment.
+run_as_factory 'DATABASE_URL="$FACTORY_MIGRATOR_DATABASE_URL" /usr/bin/corepack pnpm --filter @factory/database exec prisma migrate resolve --rolled-back 0029_custom_domains_without_txt_verification || true'
 run_as_factory 'DATABASE_URL="$FACTORY_MIGRATOR_DATABASE_URL" /usr/bin/corepack pnpm db:deploy'
 
 runuser -u postgres -- psql -d factory -v ON_ERROR_STOP=1 <<'SQL'
