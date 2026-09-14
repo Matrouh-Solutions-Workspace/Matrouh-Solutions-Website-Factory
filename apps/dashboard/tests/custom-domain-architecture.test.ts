@@ -25,7 +25,7 @@ describe("website-scoped custom domains", () => {
     expect(source).toMatch(/const customDomains = clientScoped\s*\? \[\]/);
   });
 
-  it("provides the guided DNS, verification, live test, and subdomain workflow", async () => {
+  it("provides a root-domain DNS, live test, and grouped subdomain workflow", async () => {
     const [page, setup, actions] = await Promise.all([
       readFile(resolve(process.cwd(), "src/app/websites/[id]/page.tsx"), "utf8"),
       readFile(resolve(process.cwd(), "src/app/custom-domain-setup.tsx"), "utf8"),
@@ -33,9 +33,17 @@ describe("website-scoped custom domains", () => {
     ]);
     expect(setup).toContain("Add these DNS records");
     expect(setup).toContain("Customize subdomains");
-    expect(page).toContain("Verify DNS and activate");
+    expect(setup).toContain("No TXT record or separate ownership check is required.");
+    expect(page).toContain("customDomainGroups");
     expect(page).toContain("Test live route");
     expect(actions).toContain("testCustomDomainAction");
+    const configureAction = actions.slice(
+      actions.indexOf("export async function configureWebsiteCustomDomainAction"),
+      actions.indexOf("export async function releaseWebsiteCustomDomainAction"),
+    );
+    expect(configureAction).toContain('status: "active"');
+    expect(configureAction).not.toContain("domainVerificationAttempt.create");
+    expect(configureAction).not.toContain('type: "domain.verify"');
   });
 
   it("refreshes automatically while domain verification is running", async () => {

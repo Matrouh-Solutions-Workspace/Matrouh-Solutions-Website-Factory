@@ -78,23 +78,21 @@ export function CustomDomainSetup({
                 <strong>{ar ? "أضف سجلات DNS" : "Add these DNS records"}</strong>
                 <p>
                   {ar
-                    ? "أضف السجلين عند شركة الدومين. اترك Proxy مفعّلًا إذا كنت تستخدم Cloudflare."
-                    : "Add both records at your DNS provider. Keep Proxy enabled when using Cloudflare."}
+                    ? "أضف السجلين عند مزود DNS. لا نطلب سجل TXT أو تحقق ملكية منفصل."
+                    : "Add both records at your DNS provider. No TXT record or separate ownership check is required."}
                 </p>
               </div>
             </div>
             <DnsRecord type="A" name="@" value={ingressIpv4} />
             <DnsRecord type="CNAME" name="www" value={normalizedDomain} />
             <small>
-              {ar
-                ? "بعد الحفظ سنعرض لك سجل TXT لإثبات ملكية الدومين."
-                : "After saving, the TXT ownership record and verification button will appear below."}
+              {ar ? "يمكنك الاختبار فور انتشار DNS." : "You can test as soon as DNS propagates."}
             </small>
           </div>
         ) : null}
 
-        <PendingSubmit pendingLabel={ar ? "جارٍ إنشاء التحقق…" : "Creating verification…"}>
-          {ar ? "حفظ الدومين وإنشاء التحقق" : "Save domain and create verification"}
+        <PendingSubmit pendingLabel={ar ? "جارٍ ربط الدومين…" : "Connecting domain…"}>
+          {ar ? "حفظ وربط الدومين" : "Save and connect domain"}
         </PendingSubmit>
       </form>
     </div>
@@ -129,8 +127,8 @@ export function CustomSubdomainSetup({
           <strong>{ar ? "خصص النطاقات الفرعية" : "Customize subdomains"}</strong>
           <p>
             {ar
-              ? "أضف نطاقات محددة أو فعّل كل النطاقات الفرعية بعد نجاح ربط الدومين."
-              : "Add selected labels or enable every subdomain after the root domain is active."}
+              ? "أضف عناوين فرعية للدومين نفسه أو فعّلها كلها. لن تُعامل كدومينات منفصلة."
+              : "Add routes under the same domain or enable all subdomains. They are not treated as separate domains."}
           </p>
         </div>
       </div>

@@ -1,61 +1,50 @@
-CUSTOM DOMAIN ARCHITECTURE AND GUIDED UX VERIFICATION
+CUSTOM DOMAIN ROOT ROUTING AND CLOUDFLARE LOOP REPAIR
 
 Changed branch/fields:
 - Branch: main
-- Domain.rootHostname, Domain.routingMode, Domain.isPrimary
-- FactoryConfig.FACTORY_INGRESS_IPV4
-- Website editor custom-domain wizard, DNS instructions, TXT verification, live-route test, automatic status refresh, and post-verification subdomain customization
-- Custom-domain mutations require the platform administrator role (`owner` or `admin`); the production bootstrap account `matrouhsolutions@gmail.com` has the `owner` platform role.
+- Domain.rootHostname is the website-scoped configuration boundary.
+- Apex, www, selected labels, and wildcard routes are grouped under one root-domain UI.
+- Website-scoped custom-domain routes activate on an administrator save without TXT records or domain.verify jobs.
+- Migration 0029 activates custom routes left pending by the removed TXT workflow.
+- Caddy HTTP ingress serves requests already marked HTTPS by Cloudflare instead of redirecting them back to the same HTTPS URL.
+
+Hashes:
+- Original custom-domain setup SHA256: 30e0a26440e1934223aeb438a9d9b239b048f3ab356c8e130c0b44f4f4b411b3
+- MODIFIED_FILE SHA256: 19e6226e8d8ef10b02f800a26363fb22c1dfb327693c4d89cce5e40bc714d3f2
 
 Artifacts:
-- MODIFIED_FILE: verification/custom-domain-architecture/MODIFIED_FILE.tsx
-- DIFF_FILE: verification/custom-domain-architecture/DIFF_FILE.patch
-- VERIFICATION: verification/custom-domain-architecture/VERIFICATION.txt
-- ROLLBACK: verification/custom-domain-architecture/ROLLBACK.sh
+- MODIFIED_FILE: D:/Dev env/Matrouh Solutions/Portfolio Factory/verification/custom-domain-architecture/MODIFIED_FILE.tsx
+- DIFF_FILE: D:/Dev env/Matrouh Solutions/Portfolio Factory/verification/custom-domain-architecture/DIFF_FILE.patch
+- VERIFICATION.txt: D:/Dev env/Matrouh Solutions/Portfolio Factory/verification/custom-domain-architecture/VERIFICATION.txt
+- ROLLBACK.sh: D:/Dev env/Matrouh Solutions/Portfolio Factory/verification/custom-domain-architecture/ROLLBACK.sh
 
 BASELINE
-Command: pnpm --filter @factory/domains test
-Input: repository at HEAD 2eb5d2b before the custom-domain change
-Literal result: No test files found, exiting with code 0
-Exit status: 0
+Command: curl.exe -sS -I -L --max-redirs 8 https://emadramsis.com/
+Input: production emadramsis.com through Cloudflare before the Caddy repair
+Literal output/result: HTTP/1.1 301 Moved Permanently with Location: https://emadramsis.com/ repeated; curl: (47) Maximum (8) redirects followed
+Exit status: 47
 
 MODIFIED
+Command: pnpm check
+Input: modified root-domain grouping, no-TXT activation, migration, and ingress configuration
+Literal output/result: lint Tasks: 76 successful, 76 total; typecheck Tasks: 75 successful, 75 total; dashboard Test Files 27 passed (27), Tests 78 passed (78); renderer Test Files 18 passed (18), Tests 50 passed (50); build Tasks: 57 successful, 57 total
+Exit status: 0
+
+MODIFIED TARGET TEST
 Command: pnpm --filter @factory/dashboard test -- custom-domain-architecture.test.ts
-Input: guided custom-domain UX and architecture tests
-Literal result: Test Files 1 passed (1); Tests 5 passed (5)
-Exit status: 0
-
-MODIFIED LINT
-Command: pnpm --filter @factory/dashboard lint
-Input: modified dashboard source
-Literal result: eslint src
-Exit status: 0
-
-MODIFIED TYPECHECK
-Command: pnpm --filter @factory/dashboard typecheck
-Input: modified dashboard and rebuilt @factory/config types
-Literal result: tsc --noEmit
-Exit status: 0
-
-MODIFIED BUILD
-Command: pnpm --filter @factory/dashboard build
-Input: complete modified dashboard
-Literal result: Compiled successfully; Finished TypeScript; Generating static pages (8/8); route /websites/[id] generated as dynamic
+Input: modified website-scoped custom-domain workflow
+Literal output/result: Test Files 1 passed (1); Tests 5 passed (5)
 Exit status: 0
 
 DATABASE SCHEMA
 Command: pnpm db:validate
-Input: modified Prisma schema
-Literal result: The schema at prisma\schema.prisma is valid
+Input: Prisma schema plus migration 0029_custom_domains_without_txt_verification
+Literal output/result: Prisma schema loaded from prisma/schema.prisma; command completed successfully
 Exit status: 0
-Command: pnpm db:deploy
-Input: local DATABASE_URL localhost:51214
-Literal result: Schema engine error (local PostgreSQL service was not running)
-Exit status: 1
 
 ROLLBACK
-Command: git apply --check custom-domain.patch; git apply custom-domain.patch; git apply -R custom-domain.patch
-Input: detached worktree at HEAD 2eb5d2b
-Literal result: APPLY_CHECK_EXIT=0; APPLY_EXIT=0; MODIFIED_PAGE_HASH=cdde5817fddfca1a0aa9050e0e07ea33ecb90999; ROLLBACK_EXIT=0; RESTORED_PAGE_HASH=756147fb60280905a8dd5d2c58ff6b4928238e1c; ORIGINAL_PAGE_HASH=756147fb60280905a8dd5d2c58ff6b4928238e1c
+Command: "C:/Program Files/Git/bin/bash.exe" "D:/Dev env/Matrouh Solutions/Portfolio Factory/verification/custom-domain-architecture/ROLLBACK.sh" "D:/Dev env/Matrouh Solutions/Portfolio Factory/.tmp-rollback-custom-domain"
+Input: detached worktree at a205296 after DIFF_FILE.patch was applied
+Literal output/result: ROLLBACK_OK: root-domain grouping, no-TXT activation, and ingress redirect handling restored to the pre-change behavior.; APPLY_CHECK_EXIT=0; APPLY_EXIT=0; ROLLBACK_EXIT=0; RESTORED_DIFF_EXIT=0
 Exit status: 0
-Restored behavior/status: the pre-feature website editor and exact-only domain behavior were restored in the rollback worktree; the main workspace and MODIFIED_FILE remain changed.
+Restored behavior/status: the detached test copy returned exactly to a205296 with no diff; the main workspace and MODIFIED_FILE remain changed.

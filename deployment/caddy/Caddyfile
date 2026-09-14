@@ -9,7 +9,16 @@
 }
 
 (http_redirect) {
-	redir https://{host}{uri} permanent
+	# Cloudflare Flexible reaches the origin over HTTP while the visitor is already on
+	# HTTPS. Serving that request avoids an HTTPS-to-HTTPS redirect loop. Direct HTTP
+	# visitors still receive the canonical redirect below.
+	@cloudflare_https header X-Forwarded-Proto https
+	handle @cloudflare_https {
+		reverse_proxy 127.0.0.1:3000
+	}
+	handle {
+		redir https://{host}{uri} permanent
+	}
 }
 
 http:// {

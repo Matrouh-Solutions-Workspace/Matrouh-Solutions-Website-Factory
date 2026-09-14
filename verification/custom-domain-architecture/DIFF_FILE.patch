@@ -1,82 +1,88 @@
-diff --git a/.env.example b/.env.example
-index c3f1bff..7034eb3 100644
---- a/.env.example
-+++ b/.env.example
-@@ -4,6 +4,8 @@ FACTORY_DEPLOYMENT_MODE="local"
- # login mapped to the read-only factory_renderer role.
- DATABASE_RENDERER_URL=""
- FACTORY_BASE_DOMAIN="localhost"
-+# Public origin IPv4 shown in the custom-domain DNS setup wizard.
-+FACTORY_INGRESS_IPV4=""
- FACTORY_DASHBOARD_PUBLIC_URL="http://localhost:3000"
- FACTORY_RENDERER_PUBLIC_URL="http://localhost:3001"
- # Internal renderer URL used by the dashboard gateway. Keep this private in production.
 diff --git a/apps/dashboard/src/app/actions.ts b/apps/dashboard/src/app/actions.ts
-index 120ea5a..ec6056a 100644
+index ec6056a..c85d486 100644
 --- a/apps/dashboard/src/app/actions.ts
 +++ b/apps/dashboard/src/app/actions.ts
-@@ -12,6 +12,7 @@ import {
- } from "@factory/database";
- import { localizeTemplateDefault, localizedTemplateTitle } from "@factory/content";
- import {
-+  customDomainRoutes,
-   domainChallengeHash,
-   domainOwnershipChallenge,
-   normalizeHostname as normalizeDomainHostname,
-@@ -35,7 +36,11 @@ import {
- import { instantiateTemplateRuntime } from "@factory/template-runtime";
- import { dashboardArtifactStore as artifactStore } from "@/server/artifact-store";
- import { dashboardDatabase } from "@/server/overview";
--import { requireDashboardContext, requireWebsiteMutationContext } from "@/server/auth";
-+import {
-+  requireDashboardContext,
-+  requireDomainAdministratorContext,
-+  requireWebsiteMutationContext,
-+} from "@/server/auth";
- import { hostedHostname, isHostnameConflict, localHostname } from "@/server/local-hostnames";
- import { dashboardConfig, workspaceRoot } from "@/server/config";
- import { heartbeatProcessId, processIsRunning, startLocalWorker } from "@/server/worker-control";
-@@ -1437,6 +1442,7 @@ export async function createDomainAction(formData: FormData): Promise<void> {
-     return;
-   }
-   const isLocal = hostname === "localhost" || hostname.endsWith(".localhost");
-+  if (!isLocal) return;
-   const context = await requireDashboardContext("domain.create");
-   const domainId = randomUUID();
-   const verificationAttemptId = isLocal ? null : randomUUID();
-@@ -1468,6 +1474,7 @@ export async function createDomainAction(formData: FormData): Promise<void> {
-           websiteId,
-           hostnameNormalized: hostname,
-           hostnameDisplay: hostname,
-+          rootHostname: hostname.endsWith(".localhost") ? "localhost" : hostname,
-           kind: isLocal ? "subdomain" : "custom",
-           status: isLocal ? "active" : "verifying",
-         },
-@@ -1519,17 +1526,146 @@ export async function createDomainAction(formData: FormData): Promise<void> {
-   revalidatePath("/websites");
+@@ -1585,15 +1585,27 @@ export async function configureWebsiteCustomDomainAction(formData: FormData): Pr
+           select: { websiteId: true, kind: true },
+         });
+         if (existingRoute) {
+-          if (existingRoute.websiteId === websiteId && existingRoute.kind === "custom") continue;
++          if (existingRoute.websiteId === websiteId && existingRoute.kind === "custom") {
++            await transaction.domain.updateMany({
++              where: {
++                organizationId: context.organization.id,
++                websiteId,
++                hostnameNormalized: route.hostname,
++                kind: "custom",
++                releasedAt: null,
++              },
++              data: {
++                status: "active",
++                routingMode: route.routingMode,
++                isPrimary: route.isPrimary,
++                revision: { increment: 1 },
++              },
++            });
++            continue;
++          }
+           throw new Error("CUSTOM_DOMAIN_ROUTE_CONFLICT");
+         }
+         const domainId = randomUUID();
+-        const attemptId = randomUUID();
+-        const challenge = domainOwnershipChallenge(
+-          attemptId,
+-          dashboardConfig.FACTORY_DOMAIN_CHALLENGE_SECRET ?? dashboardConfig.PREVIEW_SIGNING_SECRET,
+-        );
+         await transaction.domain.create({
+           data: {
+             id: domainId,
+@@ -1605,31 +1617,9 @@ export async function configureWebsiteCustomDomainAction(formData: FormData): Pr
+             routingMode: route.routingMode,
+             isPrimary: route.isPrimary,
+             kind: "custom",
+-            status: "verifying",
+-          },
+-        });
+-        await transaction.domainVerificationAttempt.create({
+-          data: {
+-            id: attemptId,
+-            organizationId: context.organization.id,
+-            domainId,
+-            challengeKind: "dns_txt",
+-            challengeValueHash: domainChallengeHash(challenge),
+-            status: "pending",
+-          },
+-        });
+-        await transaction.job.create({
+-          data: {
+-            id: randomUUID(),
+-            organizationId: context.organization.id,
+-            type: "domain.verify",
+-            version: 1,
+-            payloadJson: jsonInput({ domainId }),
+-            status: "queued",
+-            priority: 5,
+-            maxAttempts: 40,
+-            deduplicationKey: `domain.verify:${domainId}`,
+-            correlationId: `verify-domain:${domainId}`,
++            // Creating the DNS route is an explicit administrator action. DNS ownership
++            // challenges are intentionally not required for website-scoped custom domains.
++            status: "active",
+           },
+         });
+       }
+@@ -1655,6 +1645,62 @@ export async function configureWebsiteCustomDomainAction(formData: FormData): Pr
+   revalidatePath(`/websites/${websiteId}`);
  }
-
-+export async function configureWebsiteCustomDomainAction(formData: FormData): Promise<void> {
+ 
++export async function releaseWebsiteCustomDomainAction(formData: FormData): Promise<void> {
 +  const websiteId = cleanText(formData.get("websiteId"), 80);
-+  const rootHostname = cleanText(formData.get("rootHostname"), 253);
-+  if (!websiteId || !rootHostname) return;
++  const requestedRoot = cleanText(formData.get("rootHostname"), 253);
++  if (!websiteId || !requestedRoot) return;
 +  const context = await requireDomainAdministratorContext();
-+  const subdomainModeValue = cleanText(formData.get("subdomainMode"), 20);
-+  const subdomainMode = ["none", "selected", "wildcard"].includes(subdomainModeValue)
-+    ? (subdomainModeValue as "none" | "selected" | "wildcard")
-+    : "none";
-+  let routes: ReturnType<typeof customDomainRoutes>;
++  let rootHostname: string;
 +  try {
-+    routes = customDomainRoutes({
-+      rootHostname,
-+      includeApex: formData.get("includeApex") === "on",
-+      includeWww: formData.get("includeWww") === "on",
-+      subdomainMode,
-+      selectedSubdomains: cleanText(formData.get("selectedSubdomains"), 500)
-+        .split(",")
-+        .map((item) => item.trim())
-+        .filter(Boolean),
-+    });
++    rootHostname = normalizeDomainHostname(requestedRoot);
 +  } catch {
 +    return;
 +  }
@@ -85,97 +91,37 @@ index 120ea5a..ec6056a 100644
 +    {
 +      organizationId: context.organization.id,
 +      actorId: context.actor.id,
-+      correlationId: `configure-custom-domain:${websiteId}`,
++      correlationId: `release-custom-domain:${websiteId}:${rootHostname}`,
 +    },
 +    async (transaction) => {
-+      const website = await transaction.website.findFirst({
-+        where: { id: websiteId, organizationId: context.organization.id, archivedAt: null },
-+        select: { id: true },
++      const routes = await transaction.domain.findMany({
++        where: {
++          organizationId: context.organization.id,
++          websiteId,
++          rootHostname,
++          kind: "custom",
++          releasedAt: null,
++        },
++        select: { id: true, hostnameNormalized: true },
 +      });
-+      if (!website) return;
-+      if (routes.some((route) => route.isPrimary)) {
-+        await transaction.domain.updateMany({
-+          where: {
-+            organizationId: context.organization.id,
-+            websiteId,
-+            kind: "custom",
-+            releasedAt: null,
-+            isPrimary: true,
-+          },
-+          data: { isPrimary: false, revision: { increment: 1 } },
-+        });
-+      }
-+      for (const route of routes) {
-+        const existingRoute = await transaction.domain.findFirst({
-+          where: {
-+            organizationId: context.organization.id,
-+            hostnameNormalized: route.hostname,
-+            releasedAt: null,
-+          },
-+          select: { websiteId: true, kind: true },
-+        });
-+        if (existingRoute) {
-+          if (existingRoute.websiteId === websiteId && existingRoute.kind === "custom") continue;
-+          throw new Error("CUSTOM_DOMAIN_ROUTE_CONFLICT");
-+        }
-+        const domainId = randomUUID();
-+        const attemptId = randomUUID();
-+        const challenge = domainOwnershipChallenge(
-+          attemptId,
-+          dashboardConfig.FACTORY_DOMAIN_CHALLENGE_SECRET ?? dashboardConfig.PREVIEW_SIGNING_SECRET,
-+        );
-+        await transaction.domain.create({
-+          data: {
-+            id: domainId,
-+            organizationId: context.organization.id,
-+            websiteId,
-+            hostnameNormalized: route.hostname,
-+            hostnameDisplay: route.hostname,
-+            rootHostname: route.rootHostname,
-+            routingMode: route.routingMode,
-+            isPrimary: route.isPrimary,
-+            kind: "custom",
-+            status: "verifying",
-+          },
-+        });
-+        await transaction.domainVerificationAttempt.create({
-+          data: {
-+            id: attemptId,
-+            organizationId: context.organization.id,
-+            domainId,
-+            challengeKind: "dns_txt",
-+            challengeValueHash: domainChallengeHash(challenge),
-+            status: "pending",
-+          },
-+        });
-+        await transaction.job.create({
-+          data: {
-+            id: randomUUID(),
-+            organizationId: context.organization.id,
-+            type: "domain.verify",
-+            version: 1,
-+            payloadJson: jsonInput({ domainId }),
-+            status: "queued",
-+            priority: 5,
-+            maxAttempts: 40,
-+            deduplicationKey: `domain.verify:${domainId}`,
-+            correlationId: `verify-domain:${domainId}`,
-+          },
-+        });
-+      }
++      if (routes.length === 0) return;
++      await transaction.domain.updateMany({
++        where: { id: { in: routes.map((route) => route.id) } },
++        data: { status: "disconnected", releasedAt: new Date(), revision: { increment: 1 } },
++      });
 +      await transaction.auditEvent.create({
 +        data: {
 +          id: randomUUID(),
 +          organizationId: context.organization.id,
 +          actorType: "user",
 +          actorId: context.actor.id,
-+          action: "website.custom_domains_configured",
++          action: "website.custom_domain_released",
 +          resourceType: "website",
 +          resourceId: websiteId,
-+          correlationId: `configure-custom-domain:${websiteId}`,
++          correlationId: `release-custom-domain:${websiteId}:${rootHostname}`,
 +          metadataJson: jsonInput({
-+            rootHostname: routes[0]!.rootHostname,
-+            routes: routes.map((route) => route.hostname),
++            rootHostname,
++            routes: routes.map((route) => route.hostnameNormalized),
 +          }),
 +          retentionClass: "standard",
 +        },
@@ -188,1585 +134,355 @@ index 120ea5a..ec6056a 100644
  export async function verifyDomainAction(formData: FormData): Promise<void> {
    const domainId = cleanText(formData.get("domainId"), 80);
    if (!domainId) return;
--  const context = await requireDashboardContext("domain.create");
-+  const context = await requireDomainAdministratorContext();
-   await enforceRateLimit(
-     dashboardDatabase(),
-     `domain-verify:${context.organization.id}:${domainId}`,
-     6,
-     60,
-   );
--  await withTenantTransaction(
-+  const websiteId = await withTenantTransaction(
-     dashboardDatabase(),
-     {
-       organizationId: context.organization.id,
-@@ -1544,9 +1680,9 @@ export async function verifyDomainAction(formData: FormData): Promise<void> {
-           kind: "custom",
-           releasedAt: null,
-         },
--        select: { id: true },
-+        select: { id: true, websiteId: true },
-       });
--      if (!domain) return;
-+      if (!domain) return null;
-       await transaction.domain.update({
-         where: { id: domainId },
-         data: { status: "verifying", revision: { increment: 1 } },
-@@ -1587,15 +1723,68 @@ export async function verifyDomainAction(formData: FormData): Promise<void> {
-           },
-         });
-       }
-+      return domain.websiteId;
-     },
-   );
--  revalidatePath("/domains");
-+  if (websiteId) revalidatePath(`/websites/${websiteId}`);
-+}
-+
-+export async function testCustomDomainAction(formData: FormData): Promise<void> {
-+  const domainId = cleanText(formData.get("domainId"), 80);
-+  if (!domainId) return;
-+  const context = await requireDomainAdministratorContext();
-+  const domain = await withTenantTransaction(
-+    dashboardDatabase(),
-+    {
-+      organizationId: context.organization.id,
-+      actorId: context.actor.id,
-+      correlationId: `test-custom-domain:${domainId}`,
-+    },
-+    (transaction) =>
-+      transaction.domain.findFirst({
-+        where: {
-+          id: domainId,
-+          organizationId: context.organization.id,
-+          kind: "custom",
-+          status: "active",
-+          releasedAt: null,
-+        },
-+        select: {
-+          hostnameNormalized: true,
-+          rootHostname: true,
-+          routingMode: true,
-+          websiteId: true,
-+          website: { select: { status: true } },
-+        },
-+      }),
-+  );
-+  if (!domain?.websiteId || domain.website?.status !== "published") {
-+    redirect("/websites?domainTest=unavailable");
-+  }
-+  const hostname =
-+    domain.routingMode === "wildcard"
-+      ? `factory-route-check.${domain.rootHostname}`
-+      : domain.hostnameNormalized;
-+  let result = "failed";
-+  try {
-+    const response = await fetch(`https://${hostname}/`, {
-+      method: "HEAD",
-+      redirect: "manual",
-+      cache: "no-store",
-+      signal: AbortSignal.timeout(10_000),
-+      headers: { "user-agent": "Matrouh-Solutions-domain-check/1.0" },
-+    });
-+    if (response.status >= 200 && response.status < 400) result = "ok";
-+  } catch {
-+    result = "failed";
-+  }
-+  redirect(`/websites/${domain.websiteId}?setupStep=review&domainTest=${result}#custom-domains`);
- }
-
- export async function rotateDomainChallengeAction(formData: FormData): Promise<void> {
-   const domainId = cleanText(formData.get("domainId"), 80);
-   if (!domainId) return;
--  const context = await requireDashboardContext("domain.create");
-+  const context = await requireDomainAdministratorContext();
-   const attemptId = randomUUID();
-   const challenge = domainOwnershipChallenge(
-     attemptId,
-@@ -1668,7 +1857,7 @@ export async function rotateDomainChallengeAction(formData: FormData): Promise<v
- export async function releaseDomainAction(formData: FormData): Promise<void> {
-   const domainId = cleanText(formData.get("domainId"), 80);
-   if (!domainId) return;
--  const context = await requireDashboardContext("domain.create");
-+  const context = await requireDomainAdministratorContext();
-   await withTenantTransaction(
-     dashboardDatabase(),
-     {
-@@ -1845,7 +2034,9 @@ async function uploadMedia(formData: FormData): Promise<string | undefined> {
-       async (transaction) => {
-         const website = await transaction.website.findFirst({
-           where: { id: websiteId, organizationId: context.organization.id, archivedAt: null },
--          include: { domains: { orderBy: { createdAt: "asc" }, take: 1 } },
-+          include: {
-+            domains: { where: { kind: "subdomain" }, orderBy: { createdAt: "asc" }, take: 1 },
-+          },
-         });
-         if (!website) throw new Error("WEBSITE_NOT_FOUND");
-         const folderName = website.domains[0]?.hostnameNormalized ?? website.name;
-diff --git a/apps/dashboard/src/app/api/internal/domains/authorize/route.ts b/apps/dashboard/src/app/api/internal/domains/authorize/route.ts
-new file mode 100644
-index 0000000..49895c7
---- /dev/null
-+++ b/apps/dashboard/src/app/api/internal/domains/authorize/route.ts
-@@ -0,0 +1,14 @@
-+import { NextResponse, type NextRequest } from "next/server";
-+import { dashboardDatabase } from "@/server/database";
-+
-+export const dynamic = "force-dynamic";
-+
-+/** Caddy on-demand TLS gate: certificates are issued only for active website routes. */
-+export async function GET(request: NextRequest) {
-+  const hostname = request.nextUrl.searchParams.get("domain")?.trim().toLowerCase();
-+  if (!hostname || hostname.length > 253) return new NextResponse(null, { status: 400 });
-+  const rows = await dashboardDatabase().$queryRaw<Array<{ allowed: boolean }>>`
-+    SELECT authorize_public_hostname(${hostname}) AS allowed
-+  `;
-+  return new NextResponse(null, { status: rows[0]?.allowed ? 200 : 404 });
-+}
 diff --git a/apps/dashboard/src/app/custom-domain-setup.tsx b/apps/dashboard/src/app/custom-domain-setup.tsx
-new file mode 100644
-index 0000000..45887af
---- /dev/null
+index 45887af..e3a8e91 100644
+--- a/apps/dashboard/src/app/custom-domain-setup.tsx
 +++ b/apps/dashboard/src/app/custom-domain-setup.tsx
-@@ -0,0 +1,190 @@
-+"use client";
-+
-+import { useEffect, useMemo, useState, useTransition } from "react";
-+import { useRouter } from "next/navigation";
-+import { configureWebsiteCustomDomainAction } from "@/app/actions";
-+import { PendingSubmit } from "@/app/pending-submit";
-+
-+type Locale = "ar" | "en";
-+
-+export function CustomDomainStatusRefresh({ active }: { active: boolean }) {
-+  const router = useRouter();
-+  const [refreshing, startRefresh] = useTransition();
-+  useEffect(() => {
-+    if (!active || refreshing) return;
-+    const timeout = window.setTimeout(() => startRefresh(() => router.refresh()), 2_000);
-+    return () => window.clearTimeout(timeout);
-+  }, [active, refreshing, router]);
-+  return null;
-+}
-+
-+export function CustomDomainSetup({
-+  websiteId,
-+  locale,
-+  ingressIpv4,
-+}: {
-+  websiteId: string;
-+  locale: Locale;
-+  ingressIpv4: string;
-+}) {
-+  const [domain, setDomain] = useState("");
-+  const normalizedDomain = useMemo(
-+    () =>
-+      domain
-+        .trim()
-+        .toLowerCase()
-+        .replace(/^https?:\/\//, "")
-+        .replace(/\/.*$/, ""),
-+    [domain],
-+  );
-+  const ar = locale === "ar";
-+
-+  return (
-+    <div className="customDomainWizard" dir={ar ? "rtl" : "ltr"}>
-+      <div className="domainWizardStep">
-+        <span className="domainStepNumber">1</span>
-+        <div>
-+          <strong>{ar ? "اكتب الدومين" : "Enter the domain"}</strong>
-+          <p>
-+            {ar
-+              ? "اكتب الدومين الرئيسي بدون https أو www."
-+              : "Enter the root domain without https or www."}
-+          </p>
-+        </div>
-+      </div>
-+
-+      <form action={configureWebsiteCustomDomainAction} className="customDomainConnectForm">
-+        <input name="websiteId" type="hidden" value={websiteId} />
-+        <input name="includeApex" type="hidden" value="on" />
-+        <input name="includeWww" type="hidden" value="on" />
-+        <input name="subdomainMode" type="hidden" value="none" />
-+        <label>
-+          {ar ? "الدومين الرئيسي" : "Root domain"}
-+          <input
-+            name="rootHostname"
-+            placeholder="emadramsis.com"
-+            required
-+            maxLength={253}
-+            value={domain}
-+            onChange={(event) => setDomain(event.target.value)}
-+          />
-+        </label>
-+
-+        {normalizedDomain ? (
-+          <div className="domainDnsPreview">
-+            <div className="domainWizardStep compact">
-+              <span className="domainStepNumber">2</span>
-+              <div>
-+                <strong>{ar ? "أضف سجلات DNS" : "Add these DNS records"}</strong>
-+                <p>
-+                  {ar
-+                    ? "أضف السجلين عند شركة الدومين. اترك Proxy مفعّلًا إذا كنت تستخدم Cloudflare."
-+                    : "Add both records at your DNS provider. Keep Proxy enabled when using Cloudflare."}
-+                </p>
-+              </div>
-+            </div>
-+            <DnsRecord type="A" name="@" value={ingressIpv4} />
-+            <DnsRecord type="CNAME" name="www" value={normalizedDomain} />
-+            <small>
-+              {ar
-+                ? "بعد الحفظ سنعرض لك سجل TXT لإثبات ملكية الدومين."
-+                : "After saving, the TXT ownership record and verification button will appear below."}
-+            </small>
-+          </div>
-+        ) : null}
-+
-+        <PendingSubmit pendingLabel={ar ? "جارٍ إنشاء التحقق…" : "Creating verification…"}>
-+          {ar ? "حفظ الدومين وإنشاء التحقق" : "Save domain and create verification"}
-+        </PendingSubmit>
-+      </form>
-+    </div>
-+  );
-+}
-+
-+export function CustomSubdomainSetup({
-+  websiteId,
-+  locale,
-+  roots,
-+  ingressIpv4,
-+}: {
-+  websiteId: string;
-+  locale: Locale;
-+  roots: string[];
-+  ingressIpv4: string;
-+}) {
-+  const [mode, setMode] = useState<"selected" | "wildcard">("selected");
-+  const ar = locale === "ar";
-+  if (roots.length === 0) return null;
-+
-+  return (
-+    <form
-+      action={configureWebsiteCustomDomainAction}
-+      className="customSubdomainForm"
-+      dir={ar ? "rtl" : "ltr"}
-+    >
-+      <input name="websiteId" type="hidden" value={websiteId} />
-+      <div className="domainWizardStep">
-+        <span className="domainStepNumber">4</span>
-+        <div>
-+          <strong>{ar ? "خصص النطاقات الفرعية" : "Customize subdomains"}</strong>
-+          <p>
-+            {ar
-+              ? "أضف نطاقات محددة أو فعّل كل النطاقات الفرعية بعد نجاح ربط الدومين."
-+              : "Add selected labels or enable every subdomain after the root domain is active."}
-+          </p>
-+        </div>
-+      </div>
-+      <label>
-+        {ar ? "الدومين" : "Domain"}
-+        <select name="rootHostname">
-+          {roots.map((root) => (
-+            <option key={root} value={root}>
-+              {root}
-+            </option>
-+          ))}
-+        </select>
-+      </label>
-+      <label>
-+        {ar ? "النطاقات الفرعية" : "Subdomains"}
-+        <select
-+          name="subdomainMode"
-+          value={mode}
-+          onChange={(event) => setMode(event.target.value as "selected" | "wildcard")}
-+        >
-+          <option value="selected">{ar ? "نطاقات محددة" : "Selected only"}</option>
-+          <option value="wildcard">{ar ? "كل النطاقات الفرعية" : "All subdomains"}</option>
-+        </select>
-+      </label>
-+      {mode === "selected" ? (
-+        <label>
-+          {ar ? "الأسماء" : "Labels"}
-+          <input name="selectedSubdomains" placeholder="booking, portal" required maxLength={500} />
-+          <span className="fieldHint">
-+            {ar ? "افصل بين الأسماء بفاصلة." : "Separate labels with commas."}
-+          </span>
-+        </label>
-+      ) : null}
-+      {mode === "wildcard" ? (
-+        <div className="domainDnsPreview">
-+          <DnsRecord type="A" name="*" value={ingressIpv4} />
-+          <small>
-+            {ar ? "أضف هذا السجل أولًا ثم اضغط إضافة." : "Add this record first, then submit."}
-+          </small>
-+        </div>
-+      ) : null}
-+      <PendingSubmit pendingLabel={ar ? "جارٍ الإضافة…" : "Adding…"}>
-+        {ar ? "إضافة النطاقات الفرعية" : "Add subdomains"}
-+      </PendingSubmit>
-+    </form>
-+  );
-+}
-+
-+function DnsRecord({ type, name, value }: { type: string; name: string; value: string }) {
-+  return (
-+    <div className="dnsRecordRow">
-+      <code>{type}</code>
-+      <code>{name}</code>
-+      <code>{value}</code>
-+    </div>
-+  );
-+}
-diff --git a/apps/dashboard/src/app/dashboard-locale-bridge.tsx b/apps/dashboard/src/app/dashboard-locale-bridge.tsx
-index e839ada..43a4aa8 100644
---- a/apps/dashboard/src/app/dashboard-locale-bridge.tsx
-+++ b/apps/dashboard/src/app/dashboard-locale-bridge.tsx
-@@ -88,6 +88,19 @@ const arabicText: Readonly<Record<string, string>> = {
-   unpublished: "غير منشور",
-   "Account client": "عميل الحساب",
-   "Add hosting domain": "إضافة نطاق استضافة",
-+  "Add local development route": "إضافة مسار تطوير محلي",
-+  "All subdomains": "كل النطاقات الفرعية",
-+  "Comma-separated; used only with Selected only.":
-+    "افصل بينها بفواصل؛ تُستخدم فقط مع خيار نطاقات محددة.",
-+  "Connect custom domain": "ربط نطاق مخصص",
-+  "Custom domains": "النطاقات المخصصة",
-+  "Manage system base domains and generated website hostnames.":
-+    "إدارة نطاقات النظام الأساسية وعناوين المواقع التي ينشئها النظام.",
-+  None: "بدون",
-+  "Selected only": "نطاقات محددة فقط",
-+  "Website delivery": "توصيل الموقع",
-+  "booking, portal": "booking, portal",
-+  "emadramsis.com": "emadramsis.com",
-   "Apply filters": "تطبيق عوامل التصفية",
-   "Client accounts": "حسابات العملاء",
-   "Client dashboard": "لوحة العميل",
-diff --git a/apps/dashboard/src/app/domains/page.tsx b/apps/dashboard/src/app/domains/page.tsx
-index cdd5963..c5ca1c4 100644
---- a/apps/dashboard/src/app/domains/page.tsx
-+++ b/apps/dashboard/src/app/domains/page.tsx
-@@ -24,10 +24,10 @@ export default async function DomainsPage() {
-         <div>
-           <p className="eyebrow">Delivery</p>
-           <h1>Domains</h1>
--          <p className="sub">Route each hostname to exactly one published website.</p>
-+          <p className="sub">Manage system base domains and generated website hostnames.</p>
-         </div>
-         <a className="buttonLink" href="#connect-domain">
--          Connect domain
-+          Add local route
-         </a>
-       </header>
-       <section className="stats compactStats">
-@@ -185,7 +185,7 @@ export default async function DomainsPage() {
-           <div className="panelHead">
-             <div>
-               <p className="eyebrow">New mapping</p>
--              <h2>Connect domain</h2>
-+              <h2>Add local development route</h2>
+@@ -78,23 +78,21 @@ export function CustomDomainSetup({
+                 <strong>{ar ? "أضف سجلات DNS" : "Add these DNS records"}</strong>
+                 <p>
+                   {ar
+-                    ? "أضف السجلين عند شركة الدومين. اترك Proxy مفعّلًا إذا كنت تستخدم Cloudflare."
+-                    : "Add both records at your DNS provider. Keep Proxy enabled when using Cloudflare."}
++                    ? "أضف السجلين عند مزود DNS. لا نطلب سجل TXT أو تحقق ملكية منفصل."
++                    : "Add both records at your DNS provider. No TXT record or separate ownership check is required."}
+                 </p>
+               </div>
              </div>
+             <DnsRecord type="A" name="@" value={ingressIpv4} />
+             <DnsRecord type="CNAME" name="www" value={normalizedDomain} />
+             <small>
+-              {ar
+-                ? "بعد الحفظ سنعرض لك سجل TXT لإثبات ملكية الدومين."
+-                : "After saving, the TXT ownership record and verification button will appear below."}
++              {ar ? "يمكنك الاختبار فور انتشار DNS." : "You can test as soon as DNS propagates."}
+             </small>
            </div>
-           <label>
-@@ -201,13 +201,18 @@ export default async function DomainsPage() {
-           <label>
-             Hostname
-             <span className="fieldHint">
--              Enter a short name for .localhost, or a complete custom hostname.
-+              Enter a short name for .localhost. Custom domains are managed inside each website.
-             </span>
--            <input name="hostname" placeholder="my-clinic" required maxLength={253} />
-+            <input
-+              name="hostname"
-+              placeholder="my-clinic"
-+              required
-+              maxLength={80}
-+              pattern="[A-Za-z0-9-]+"
-+            />
-           </label>
-           <p className="formNotice">
--            Local hostnames activate immediately. Custom domains receive a DNS ownership challenge
--            and activate only after verification and certificate provisioning.
-+            Local hostnames activate immediately and remain separate from customer custom domains.
+         ) : null}
+ 
+-        <PendingSubmit pendingLabel={ar ? "جارٍ إنشاء التحقق…" : "Creating verification…"}>
+-          {ar ? "حفظ الدومين وإنشاء التحقق" : "Save domain and create verification"}
++        <PendingSubmit pendingLabel={ar ? "جارٍ ربط الدومين…" : "Connecting domain…"}>
++          {ar ? "حفظ وربط الدومين" : "Save and connect domain"}
+         </PendingSubmit>
+       </form>
+     </div>
+@@ -129,8 +127,8 @@ export function CustomSubdomainSetup({
+           <strong>{ar ? "خصص النطاقات الفرعية" : "Customize subdomains"}</strong>
+           <p>
+             {ar
+-              ? "أضف نطاقات محددة أو فعّل كل النطاقات الفرعية بعد نجاح ربط الدومين."
+-              : "Add selected labels or enable every subdomain after the root domain is active."}
++              ? "أضف عناوين فرعية للدومين نفسه أو فعّلها كلها. لن تُعامل كدومينات منفصلة."
++              : "Add routes under the same domain or enable all subdomains. They are not treated as separate domains."}
            </p>
-           <PendingSubmit pendingLabel="Connecting…">Connect domain</PendingSubmit>
-         </form>
-diff --git a/apps/dashboard/src/app/ecommerce/actions.ts b/apps/dashboard/src/app/ecommerce/actions.ts
-index 89fd8bd..c8e2008 100644
---- a/apps/dashboard/src/app/ecommerce/actions.ts
-+++ b/apps/dashboard/src/app/ecommerce/actions.ts
-@@ -80,6 +80,7 @@ export async function createEcommerceStoreAction(formData: FormData): Promise<vo
-                 id: randomUUID(),
-                 hostnameNormalized: hostname,
-                 hostnameDisplay: hostname,
-+                rootHostname: hostname,
-                 kind: hostname.endsWith(".localhost") ? "subdomain" : "custom",
-                 status: "active",
-               },
-diff --git a/apps/dashboard/src/app/styles.css b/apps/dashboard/src/app/styles.css
-index e97ad86..5906309 100644
---- a/apps/dashboard/src/app/styles.css
-+++ b/apps/dashboard/src/app/styles.css
-@@ -3873,6 +3873,87 @@ input[type="file"] {
-   color: var(--ink);
-   font-size: 10px;
- }
-+.customDomainPanel {
-+  gap: 18px;
-+}
-+.customDomainWizard,
-+.customSubdomainForm {
-+  display: grid;
-+  gap: 16px;
-+  padding: 18px;
-+  border: 1px solid var(--line);
-+  border-inline-start: 4px solid var(--primary);
-+  background: var(--surface-soft);
-+}
-+.customDomainConnectForm,
-+.customSubdomainForm {
-+  align-items: end;
-+}
-+.customDomainConnectForm {
-+  display: grid;
-+  grid-template-columns: minmax(240px, 1fr) auto;
-+  gap: 14px;
-+}
-+.customDomainConnectForm .domainDnsPreview {
-+  grid-column: 1 / -1;
-+}
-+.domainWizardStep {
-+  display: flex;
-+  align-items: flex-start;
-+  gap: 12px;
-+}
-+.domainWizardStep.compact {
-+  margin-bottom: 6px;
-+}
-+.domainWizardStep p {
-+  margin: 4px 0 0;
-+  color: var(--muted);
-+}
-+.domainStepNumber {
-+  display: grid;
-+  flex: 0 0 32px;
-+  width: 32px;
-+  height: 32px;
-+  place-items: center;
-+  border: 1px solid var(--ink);
-+  background: var(--primary);
-+  color: #111;
-+  font-weight: 800;
-+}
-+.domainDnsPreview {
-+  display: grid;
-+  gap: 8px;
-+  padding: 14px;
-+  border: 1px dashed var(--line-strong);
-+  background: var(--surface);
-+}
-+.dnsRecordRow {
-+  display: grid;
-+  grid-template-columns: 70px minmax(90px, 0.5fr) minmax(180px, 1.5fr);
-+  gap: 8px;
-+  align-items: center;
-+}
-+.dnsRecordRow code {
-+  min-height: 34px;
-+  padding: 8px 10px;
-+  border: 1px solid var(--line);
-+  background: var(--surface-soft);
-+  overflow-wrap: anywhere;
-+}
-+.customSubdomainForm {
-+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
-+}
-+.customSubdomainForm .domainWizardStep,
-+.customSubdomainForm .domainDnsPreview {
-+  grid-column: 1 / -1;
-+}
-+@media (max-width: 800px) {
-+  .customDomainConnectForm,
-+  .customSubdomainForm,
-+  .dnsRecordRow {
-+    grid-template-columns: 1fr;
-+  }
-+}
- .domainLink:hover {
-   color: var(--primary-dark);
- }
+         </div>
+       </div>
 diff --git a/apps/dashboard/src/app/websites/[id]/page.tsx b/apps/dashboard/src/app/websites/[id]/page.tsx
-index 756147f..cdde581 100644
+index cdde581..2ffdf4d 100644
 --- a/apps/dashboard/src/app/websites/[id]/page.tsx
 +++ b/apps/dashboard/src/app/websites/[id]/page.tsx
-@@ -1,4 +1,5 @@
+@@ -1,5 +1,4 @@
  import { notFound } from "next/navigation";
-+import { domainChallengeHash, domainOwnershipChallenge } from "@factory/domains";
+-import { domainChallengeHash, domainOwnershipChallenge } from "@factory/domains";
  import {
    addSectionDraftAction,
    addWebsiteLocaleAction,
-@@ -10,8 +11,12 @@ import {
+@@ -11,12 +10,10 @@ import {
    moveSectionDraftAction,
    previewWebsiteAction,
    retryPublicationJobAction,
-+  releaseDomainAction,
-+  rotateDomainChallengeAction,
+-  releaseDomainAction,
+-  rotateDomainChallengeAction,
++  releaseWebsiteCustomDomainAction,
    setWebsiteAvailabilityAction,
-+  testCustomDomainAction,
+   testCustomDomainAction,
    toggleWebsitePublicationAction,
-+  verifyDomainAction,
+-  verifyDomainAction,
    uploadMediaAction,
    rollbackPublicationAction,
    updatePageDraftAction,
-@@ -28,6 +33,11 @@ import {
-   upgradeWebsiteTemplateAction,
- } from "@/app/actions";
- import { ConfirmSubmit } from "@/app/confirm-submit";
-+import {
-+  CustomDomainSetup,
-+  CustomDomainStatusRefresh,
-+  CustomSubdomainSetup,
-+} from "@/app/custom-domain-setup";
- import { DraftEditorForm } from "@/app/draft-editor-form";
- import { EditorPreviewPane, EditorSaveStatus } from "@/app/editor-studio";
- import { DocumentImportField } from "@/app/document-import-field";
-@@ -52,10 +62,10 @@ export default async function WebsiteEditorPage({
-   searchParams,
- }: {
-   params: Promise<{ id: string }>;
--  searchParams: Promise<{ claimLink?: string; setupStep?: string }>;
-+  searchParams: Promise<{ claimLink?: string; setupStep?: string; domainTest?: string }>;
- }) {
-   const { id } = await params;
--  const { claimLink, setupStep: requestedSetupStep } = await searchParams;
-+  const { claimLink, setupStep: requestedSetupStep, domainTest } = await searchParams;
-   const [editor, locale] = await Promise.all([loadWebsiteEditor(id), dashboardLocale()]);
-   if (!editor) notFound();
-   const setupStep = draftSetupStep(requestedSetupStep);
-@@ -69,6 +79,60 @@ export default async function WebsiteEditorPage({
-   const availableLocales = editor.supportedLocales.filter(
-     (locale) => !editor.website.locales.includes(locale),
-   );
-+  const activeCustomDomainRoots = [
-+    ...new Set(
-+      editor.customDomains
-+        .filter((domain) => domain.status === "active")
-+        .map((domain) => domain.rootHostname),
-+    ),
-+  ];
-+  const ingressIpv4 = dashboardConfig.FACTORY_INGRESS_IPV4 ?? "135.125.202.142";
-+  const domainUi =
-+    locale === "ar"
-+      ? {
-+          eyebrow: "توصيل الموقع",
-+          title: "الدومينات المخصصة",
-+          privacy: "هذه الإعدادات خاصة بهذا الموقع ولا تظهر لحساب العميل.",
-+          routes: "مسارات",
-+          live: "الدومين يعمل ويعرض هذا الموقع بنجاح.",
-+          liveFailed: "تم التحقق من DNS، لكن مسار HTTPS لم يستجب بنجاح حتى الآن.",
-+          allSubdomains: "كل النطاقات الفرعية",
-+          primary: "رئيسي",
-+          exact: "عنوان محدد",
-+          verifyTitle: "3. تحقق من الملكية",
-+          verifyHelp: "أضف سجل TXT، وانتظر انتشار DNS، ثم اضغط تحقق.",
-+          verify: "تحقق من DNS وفعّل",
-+          checking: "جارٍ التحقق…",
-+          rotate: "غيّر TXT",
-+          rotating: "جارٍ التغيير…",
-+          open: "افتح الموقع",
-+          test: "اختبر الموقع",
-+          testing: "جارٍ الاختبار…",
-+          disconnect: "فصل",
-+          disconnecting: "جارٍ الفصل…",
-+        }
-+      : {
-+          eyebrow: "Website delivery",
-+          title: "Custom domains",
-+          privacy: "Private to this website. Client accounts cannot view or change these settings.",
-+          routes: "routes",
-+          live: "Domain is live and serving this website.",
-+          liveFailed: "DNS is verified, but the live HTTPS route did not respond successfully yet.",
-+          allSubdomains: "All subdomains",
-+          primary: "Primary",
-+          exact: "Exact hostname",
-+          verifyTitle: "3. Verify ownership",
-+          verifyHelp: "Add this DNS TXT record, wait for DNS propagation, then verify.",
-+          verify: "Verify DNS and activate",
-+          checking: "Checking…",
-+          rotate: "Rotate TXT",
-+          rotating: "Rotating…",
-+          open: "Open live route",
-+          test: "Test live route",
-+          testing: "Testing…",
-+          disconnect: "Disconnect",
-+          disconnecting: "Disconnecting…",
-+        };
-
-   return (
-     <div
-@@ -76,6 +140,11 @@ export default async function WebsiteEditorPage({
-       data-editor-step={setupStep}
-     >
-       <PublicationStatusRefresh active={publishPending && setupStep === "review"} />
-+      <CustomDomainStatusRefresh
-+        active={editor.customDomains.some((domain) =>
-+          ["verifying", "verified", "connecting"].includes(domain.status),
-+        )}
-+      />
-       <header className="websiteEditorHeader">
-         <div>
-           <p className="eyebrow">Draft editor</p>
-@@ -1039,6 +1108,119 @@ export default async function WebsiteEditorPage({
-             </div>
-           </section>
-
-+          <section
-+            className="panel followPanel customDomainPanel"
-+            hidden={setupStep !== "review"}
-+            id="custom-domains"
-+          >
-+            <div className="panelHead">
-+              <div>
-+                <p className="eyebrow">{domainUi.eyebrow}</p>
-+                <h2>{domainUi.title}</h2>
-+                <p>{domainUi.privacy}</p>
-+              </div>
-+              <span>
-+                {editor.customDomains.length} {domainUi.routes}
-+              </span>
-+            </div>
-+            {domainTest === "ok" ? (
-+              <div className="flashMessage success">{domainUi.live}</div>
-+            ) : null}
-+            {domainTest === "failed" ? (
-+              <div className="flashMessage error">{domainUi.liveFailed}</div>
-+            ) : null}
-+            <CustomDomainSetup
-+              websiteId={editor.website.id}
-+              locale={locale}
-+              ingressIpv4={ingressIpv4}
-+            />
-+            {editor.customDomains.map((domain) => (
-+              <article className="dataRow domainRow" key={domain.id}>
-+                <div>
-+                  <strong>{domain.hostname}</strong>
-+                  <p>
-+                    {domain.routingMode === "wildcard"
-+                      ? domainUi.allSubdomains
-+                      : domain.isPrimary
-+                        ? domainUi.primary
-+                        : domainUi.exact}
-+                  </p>
-+                  {domain.status !== "active" && domain.verificationAttempt ? (
-+                    <div className="domainChallenge">
-+                      <strong>{domainUi.verifyTitle}</strong>
-+                      <span>{domainUi.verifyHelp}</span>
-+                      <div className="dnsRecordRow">
-+                        <code>TXT</code>
-+                        <code>_factory-verification.{domain.rootHostname}</code>
-+                        <code>{customDomainChallenge(domain)}</code>
-+                      </div>
-+                      {domain.verificationAttempt.failureCode ? (
-+                        <small>{domain.verificationAttempt.failureCode}</small>
-+                      ) : null}
-+                    </div>
-+                  ) : null}
-+                </div>
-+                <span
-+                  className={`jobStatus ${domain.status === "active" ? "succeeded" : "queued"}`}
-+                >
-+                  {domain.status}
-+                </span>
-+                <div className="rowActions">
-+                  {domain.status !== "active" ? (
-+                    <>
-+                      <form action={verifyDomainAction}>
-+                        <input name="domainId" type="hidden" value={domain.id} />
-+                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.checking}>
-+                          {domainUi.verify}
-+                        </PendingSubmit>
-+                      </form>
-+                      <form action={rotateDomainChallengeAction}>
-+                        <input name="domainId" type="hidden" value={domain.id} />
-+                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.rotating}>
-+                          {domainUi.rotate}
-+                        </PendingSubmit>
-+                      </form>
-+                    </>
-+                  ) : null}
-+                  {domain.status === "active" ? (
-+                    <>
-+                      <a
-+                        className="inlineButton"
-+                        href={`https://${domain.routingMode === "wildcard" ? `factory-route-check.${domain.rootHostname}` : domain.hostname}`}
-+                        target="_blank"
-+                        rel="noreferrer"
-+                      >
-+                        {domainUi.open}
-+                      </a>
-+                      <form action={testCustomDomainAction}>
-+                        <input name="domainId" type="hidden" value={domain.id} />
-+                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.testing}>
-+                          {domainUi.test}
-+                        </PendingSubmit>
-+                      </form>
-+                    </>
-+                  ) : null}
-+                  <form action={releaseDomainAction}>
-+                    <input name="domainId" type="hidden" value={domain.id} />
-+                    <ConfirmSubmit
-+                      className="inlineButton dangerButton"
-+                      confirmation={`${domainUi.disconnect} ${domain.hostname}?`}
-+                      pendingLabel={domainUi.disconnecting}
-+                    >
-+                      {domainUi.disconnect}
-+                    </ConfirmSubmit>
-+                  </form>
-+                </div>
-+              </article>
-+            ))}
-+            <CustomSubdomainSetup
-+              websiteId={editor.website.id}
-+              locale={locale}
-+              roots={activeCustomDomainRoots}
-+              ingressIpv4={ingressIpv4}
-+            />
-+          </section>
-+
-           <section className="panel followPanel" hidden={setupStep !== "review"}>
-             <div className="panelHead">
-               <div>
-@@ -1093,6 +1275,20 @@ export default async function WebsiteEditorPage({
+@@ -86,6 +83,12 @@ export default async function WebsiteEditorPage({
+         .map((domain) => domain.rootHostname),
+     ),
+   ];
++  const customDomainGroups = [
++    ...new Set(editor.customDomains.map((domain) => domain.rootHostname)),
++  ].map((rootHostname) => ({
++    rootHostname,
++    routes: editor.customDomains.filter((domain) => domain.rootHostname === rootHostname),
++  }));
+   const ingressIpv4 = dashboardConfig.FACTORY_INGRESS_IPV4 ?? "135.125.202.142";
+   const domainUi =
+     locale === "ar"
+@@ -99,12 +102,6 @@ export default async function WebsiteEditorPage({
+           allSubdomains: "كل النطاقات الفرعية",
+           primary: "رئيسي",
+           exact: "عنوان محدد",
+-          verifyTitle: "3. تحقق من الملكية",
+-          verifyHelp: "أضف سجل TXT، وانتظر انتشار DNS، ثم اضغط تحقق.",
+-          verify: "تحقق من DNS وفعّل",
+-          checking: "جارٍ التحقق…",
+-          rotate: "غيّر TXT",
+-          rotating: "جارٍ التغيير…",
+           open: "افتح الموقع",
+           test: "اختبر الموقع",
+           testing: "جارٍ الاختبار…",
+@@ -121,12 +118,6 @@ export default async function WebsiteEditorPage({
+           allSubdomains: "All subdomains",
+           primary: "Primary",
+           exact: "Exact hostname",
+-          verifyTitle: "3. Verify ownership",
+-          verifyHelp: "Add this DNS TXT record, wait for DNS propagation, then verify.",
+-          verify: "Verify DNS and activate",
+-          checking: "Checking…",
+-          rotate: "Rotate TXT",
+-          rotating: "Rotating…",
+           open: "Open live route",
+           test: "Test live route",
+           testing: "Testing…",
+@@ -1134,85 +1125,64 @@ export default async function WebsiteEditorPage({
+               locale={locale}
+               ingressIpv4={ingressIpv4}
+             />
+-            {editor.customDomains.map((domain) => (
+-              <article className="dataRow domainRow" key={domain.id}>
+-                <div>
+-                  <strong>{domain.hostname}</strong>
+-                  <p>
+-                    {domain.routingMode === "wildcard"
+-                      ? domainUi.allSubdomains
+-                      : domain.isPrimary
+-                        ? domainUi.primary
+-                        : domainUi.exact}
+-                  </p>
+-                  {domain.status !== "active" && domain.verificationAttempt ? (
+-                    <div className="domainChallenge">
+-                      <strong>{domainUi.verifyTitle}</strong>
+-                      <span>{domainUi.verifyHelp}</span>
+-                      <div className="dnsRecordRow">
+-                        <code>TXT</code>
+-                        <code>_factory-verification.{domain.rootHostname}</code>
+-                        <code>{customDomainChallenge(domain)}</code>
+-                      </div>
+-                      {domain.verificationAttempt.failureCode ? (
+-                        <small>{domain.verificationAttempt.failureCode}</small>
+-                      ) : null}
++            {customDomainGroups.map((group) => {
++              const primaryRoute =
++                group.routes.find((route) => route.isPrimary) ?? group.routes[0]!;
++              const allActive = group.routes.every((route) => route.status === "active");
++              return (
++                <article className="dataRow domainRow" key={group.rootHostname}>
++                  <div>
++                    <strong>{group.rootHostname}</strong>
++                    <p>{domainUi.primary}</p>
++                    <div className="domainRouteList">
++                      {group.routes.map((route) => (
++                        <span className="jobStatus succeeded" key={route.id}>
++                          {route.routingMode === "wildcard"
++                            ? domainUi.allSubdomains
++                            : route.hostname === group.rootHostname
++                              ? "@"
++                              : route.hostname.slice(0, -(group.rootHostname.length + 1))}
++                        </span>
++                      ))}
+                     </div>
+-                  ) : null}
+-                </div>
+-                <span
+-                  className={`jobStatus ${domain.status === "active" ? "succeeded" : "queued"}`}
+-                >
+-                  {domain.status}
+-                </span>
+-                <div className="rowActions">
+-                  {domain.status !== "active" ? (
+-                    <>
+-                      <form action={verifyDomainAction}>
+-                        <input name="domainId" type="hidden" value={domain.id} />
+-                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.checking}>
+-                          {domainUi.verify}
+-                        </PendingSubmit>
+-                      </form>
+-                      <form action={rotateDomainChallengeAction}>
+-                        <input name="domainId" type="hidden" value={domain.id} />
+-                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.rotating}>
+-                          {domainUi.rotate}
+-                        </PendingSubmit>
+-                      </form>
+-                    </>
+-                  ) : null}
+-                  {domain.status === "active" ? (
+-                    <>
+-                      <a
+-                        className="inlineButton"
+-                        href={`https://${domain.routingMode === "wildcard" ? `factory-route-check.${domain.rootHostname}` : domain.hostname}`}
+-                        target="_blank"
+-                        rel="noreferrer"
++                  </div>
++                  <span className={`jobStatus ${allActive ? "succeeded" : "queued"}`}>
++                    {allActive ? "active" : "connecting"}
++                  </span>
++                  <div className="rowActions">
++                    {allActive ? (
++                      <>
++                        <a
++                          className="inlineButton"
++                          href={`https://${primaryRoute.hostname}`}
++                          target="_blank"
++                          rel="noreferrer"
++                        >
++                          {domainUi.open}
++                        </a>
++                        <form action={testCustomDomainAction}>
++                          <input name="domainId" type="hidden" value={primaryRoute.id} />
++                          <PendingSubmit className="inlineButton" pendingLabel={domainUi.testing}>
++                            {domainUi.test}
++                          </PendingSubmit>
++                        </form>
++                      </>
++                    ) : null}
++                    <form action={releaseWebsiteCustomDomainAction}>
++                      <input name="websiteId" type="hidden" value={editor.website.id} />
++                      <input name="rootHostname" type="hidden" value={group.rootHostname} />
++                      <ConfirmSubmit
++                        className="inlineButton dangerButton"
++                        confirmation={`${domainUi.disconnect} ${group.rootHostname}?`}
++                        pendingLabel={domainUi.disconnecting}
+                       >
+-                        {domainUi.open}
+-                      </a>
+-                      <form action={testCustomDomainAction}>
+-                        <input name="domainId" type="hidden" value={domain.id} />
+-                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.testing}>
+-                          {domainUi.test}
+-                        </PendingSubmit>
+-                      </form>
+-                    </>
+-                  ) : null}
+-                  <form action={releaseDomainAction}>
+-                    <input name="domainId" type="hidden" value={domain.id} />
+-                    <ConfirmSubmit
+-                      className="inlineButton dangerButton"
+-                      confirmation={`${domainUi.disconnect} ${domain.hostname}?`}
+-                      pendingLabel={domainUi.disconnecting}
+-                    >
+-                      {domainUi.disconnect}
+-                    </ConfirmSubmit>
+-                  </form>
+-                </div>
+-              </article>
+-            ))}
++                        {domainUi.disconnect}
++                      </ConfirmSubmit>
++                    </form>
++                  </div>
++                </article>
++              );
++            })}
+             <CustomSubdomainSetup
+               websiteId={editor.website.id}
+               locale={locale}
+@@ -1275,20 +1245,6 @@ export default async function WebsiteEditorPage({
    );
  }
-
-+function customDomainChallenge(domain: {
-+  id: string;
-+  verificationAttempt: { id: string; challengeValueHash: string } | null;
-+}): string {
-+  const attempt = domain.verificationAttempt;
-+  if (!attempt) return "Challenge unavailable";
-+  const secret =
-+    dashboardConfig.FACTORY_DOMAIN_CHALLENGE_SECRET ?? dashboardConfig.PREVIEW_SIGNING_SECRET;
-+  const current = domainOwnershipChallenge(attempt.id, secret);
-+  return domainChallengeHash(current) === attempt.challengeValueHash
-+    ? current
-+    : domainOwnershipChallenge(domain.id, secret);
-+}
-+
+ 
+-function customDomainChallenge(domain: {
+-  id: string;
+-  verificationAttempt: { id: string; challengeValueHash: string } | null;
+-}): string {
+-  const attempt = domain.verificationAttempt;
+-  if (!attempt) return "Challenge unavailable";
+-  const secret =
+-    dashboardConfig.FACTORY_DOMAIN_CHALLENGE_SECRET ?? dashboardConfig.PREVIEW_SIGNING_SECRET;
+-  const current = domainOwnershipChallenge(attempt.id, secret);
+-  return domainChallengeHash(current) === attempt.challengeValueHash
+-    ? current
+-    : domainOwnershipChallenge(domain.id, secret);
+-}
+-
  function settingsValue(content: string | undefined, key: string): string | undefined {
    if (!content) return undefined;
    try {
-diff --git a/apps/dashboard/src/middleware.ts b/apps/dashboard/src/middleware.ts
-index b558727..293af5b 100644
---- a/apps/dashboard/src/middleware.ts
-+++ b/apps/dashboard/src/middleware.ts
-@@ -18,6 +18,9 @@ const rendererBase = new URL(
- export async function middleware(request: NextRequest): Promise<NextResponse> {
-   const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
-   const { pathname, search } = request.nextUrl;
-+  // Caddy calls this over loopback with its own Host header while authorizing
-+  // on-demand TLS. It must reach the control app rather than a customer site.
-+  if (pathname === "/api/internal/domains/authorize") return NextResponse.next();
-   if (host && host !== dashboardHost) {
-     if (pathname.startsWith("/api/storefront/")) {
-       const forwarded = new Headers(request.headers);
-diff --git a/apps/dashboard/src/server/actions/website-create-persistence.ts b/apps/dashboard/src/server/actions/website-create-persistence.ts
-index 8f906da..8a98ca5 100644
---- a/apps/dashboard/src/server/actions/website-create-persistence.ts
-+++ b/apps/dashboard/src/server/actions/website-create-persistence.ts
-@@ -125,6 +125,7 @@ export async function persistWebsiteCreation(
-           websiteId,
-           hostnameNormalized: hostname,
-           hostnameDisplay: hostname,
-+          rootHostname: hostname,
-           kind: "subdomain",
-           status: "active",
-         },
-diff --git a/apps/dashboard/src/server/auth.ts b/apps/dashboard/src/server/auth.ts
-index 60ae3b6..97f0fda 100644
---- a/apps/dashboard/src/server/auth.ts
-+++ b/apps/dashboard/src/server/auth.ts
-@@ -125,6 +125,16 @@ export async function requireClientAccountContext(): Promise<DashboardContext> {
-   return context;
- }
-
-+/** Custom-domain management is reserved for control-panel administrators, never clients. */
-+export async function requireDomainAdministratorContext(): Promise<DashboardContext> {
-+  const context = await requireDashboardContext();
-+  const administrator = context.roleKeys.some((role) => role === "owner" || role === "admin");
-+  if (!administrator) {
-+    throw new DashboardAuthorizationError("website.domain.manage");
-+  }
-+  return context;
-+}
-+
- /** Allows a client to change only a website that is assigned to their email address. */
- export async function requireWebsiteMutationContext(
-   websiteId: string,
-diff --git a/apps/dashboard/src/server/control-data.ts b/apps/dashboard/src/server/control-data.ts
-index 6e9ece5..e857663 100644
---- a/apps/dashboard/src/server/control-data.ts
-+++ b/apps/dashboard/src/server/control-data.ts
-@@ -24,6 +24,7 @@ export async function loadClients(query = "") {
-                       some: {
-                         domains: {
-                           some: {
-+                            kind: "subdomain",
-                             hostnameNormalized: { contains: query, mode: "insensitive" as const },
-                           },
-                         },
-@@ -59,6 +60,7 @@ export async function loadBillingWorkspace(query = "") {
-                   {
-                     domains: {
-                       some: {
-+                        kind: "subdomain",
-                         hostnameNormalized: { contains: query, mode: "insensitive" as const },
-                       },
-                     },
-@@ -72,7 +74,7 @@ export async function loadBillingWorkspace(query = "") {
-           client: { select: { id: true, name: true } },
-           subscription: true,
-           domains: {
--            where: { releasedAt: null },
-+            where: { releasedAt: null, kind: "subdomain" },
-             orderBy: { createdAt: "asc" },
-             take: 1,
-             select: { hostnameNormalized: true },
-@@ -144,7 +146,7 @@ export async function loadClientAccount() {
-             include: {
-               subscription: true,
-               domains: {
--                where: { releasedAt: null },
-+                where: { releasedAt: null, kind: "subdomain" },
-                 orderBy: { createdAt: "asc" },
-                 take: 1,
-                 select: { hostnameNormalized: true, status: true },
-@@ -170,7 +172,7 @@ export async function loadDomainsWorkspace() {
-         select: { id: true, name: true },
-       });
-       const domains = await transaction.domain.findMany({
--        where: { organizationId: context.organization.id, releasedAt: null },
-+        where: { organizationId: context.organization.id, releasedAt: null, kind: "subdomain" },
-         orderBy: [{ status: "asc" }, { hostnameNormalized: "asc" }],
-         include: {
-           website: { select: { name: true } },
-@@ -209,7 +211,7 @@ export async function loadHostingDomainChoices() {
-         orderBy: [{ isDefault: "desc" }, { hostnameNormalized: "asc" }],
-       });
-       const mappings = await transaction.domain.findMany({
--        where: { organizationId: context.organization.id, releasedAt: null },
-+        where: { organizationId: context.organization.id, releasedAt: null, kind: "subdomain" },
-         select: { hostnameNormalized: true },
-       });
-       return domains.map((domain) => ({
-diff --git a/apps/dashboard/src/server/editor.ts b/apps/dashboard/src/server/editor.ts
-index 8e686ab..9fb81b6 100644
---- a/apps/dashboard/src/server/editor.ts
-+++ b/apps/dashboard/src/server/editor.ts
-@@ -30,6 +30,19 @@ export interface WebsiteEditor {
-     whiteLabelEnabled: boolean;
-   };
-   mediaAssets: { id: string; name: string; url: string }[];
-+  customDomains: {
-+    id: string;
-+    hostname: string;
-+    rootHostname: string;
-+    routingMode: "exact" | "wildcard";
-+    isPrimary: boolean;
-+    status: string;
-+    verificationAttempt: {
-+      id: string;
-+      challengeValueHash: string;
-+      failureCode: string | null;
-+    } | null;
-+  }[];
-   settings: { id: string; content: string; revision: string } | null;
-   theme: { id: string; tokens: string; revision: string } | null;
-   navigation: {
-@@ -159,8 +172,19 @@ async function loadWebsiteEditorForContext(
-         orderBy: { createdAt: "asc" },
-         take: 1,
-       });
-+      const customDomains = clientScoped
-+        ? []
-+        : await transaction.domain.findMany({
-+            where: { organizationId: organization.id, websiteId, kind: "custom", releasedAt: null },
-+            orderBy: [
-+              { rootHostname: "asc" },
-+              { isPrimary: "desc" },
-+              { hostnameNormalized: "asc" },
-+            ],
-+            include: { verificationAttempts: { orderBy: { createdAt: "desc" }, take: 1 } },
-+          });
-       const mediaDomain = await transaction.domain.findFirst({
--        where: { organizationId: organization.id, websiteId },
-+        where: { organizationId: organization.id, websiteId, kind: "subdomain" },
-         orderBy: { createdAt: "asc" },
-         select: { hostnameNormalized: true },
-       });
-@@ -237,6 +261,7 @@ async function loadWebsiteEditorForContext(
-         })),
-         publications,
-         domains,
-+        customDomains,
-         locales,
-         settingsDrafts,
-         themeDrafts,
-@@ -302,6 +327,21 @@ async function loadWebsiteEditorForContext(
-       name: asset.originalFilename,
-       url: dashboardMediaPath(asset.id),
-     })),
-+    customDomains: editorData.customDomains.map((domain) => ({
-+      id: domain.id,
-+      hostname: domain.hostnameDisplay,
-+      rootHostname: domain.rootHostname,
-+      routingMode: domain.routingMode,
-+      isPrimary: domain.isPrimary,
-+      status: domain.status,
-+      verificationAttempt: domain.verificationAttempts[0]
-+        ? {
-+            id: domain.verificationAttempts[0].id,
-+            challengeValueHash: domain.verificationAttempts[0].challengeValueHash,
-+            failureCode: domain.verificationAttempts[0].failureCode,
-+          }
-+        : null,
-+    })),
-     latestPublishJob: editorData.latestPublishJob,
-     settings: editorData.settingsDrafts[0]
-       ? {
-diff --git a/apps/dashboard/src/server/overview.ts b/apps/dashboard/src/server/overview.ts
-index af96306..e2ecbd7 100644
---- a/apps/dashboard/src/server/overview.ts
-+++ b/apps/dashboard/src/server/overview.ts
-@@ -105,7 +105,7 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
-           where: { archivedAt: null },
-           orderBy: { updatedAt: "desc" },
-           include: {
--            domains: { orderBy: { hostnameNormalized: "asc" } },
-+            domains: { where: { kind: "subdomain" }, orderBy: { hostnameNormalized: "asc" } },
-             activePublication: { select: { sourceDraftRevision: true } },
-             _count: { select: { pages: true } },
-           },
 diff --git a/apps/dashboard/tests/custom-domain-architecture.test.ts b/apps/dashboard/tests/custom-domain-architecture.test.ts
-new file mode 100644
-index 0000000..f890dac
---- /dev/null
+index f890dac..ad17a16 100644
+--- a/apps/dashboard/tests/custom-domain-architecture.test.ts
 +++ b/apps/dashboard/tests/custom-domain-architecture.test.ts
-@@ -0,0 +1,46 @@
-+import { readFile } from "node:fs/promises";
-+import { resolve } from "node:path";
-+import { describe, expect, it } from "vitest";
-+
-+describe("website-scoped custom domains", () => {
-+  it("keeps custom routes out of the global domain workspace", async () => {
-+    const source = await readFile(resolve(process.cwd(), "src/server/control-data.ts"), "utf8");
-+    expect(source).toContain('releasedAt: null, kind: "subdomain"');
-+  });
-+
-+  it("uses the platform administrator authorization boundary for mutations", async () => {
-+    const [auth, actions] = await Promise.all([
-+      readFile(resolve(process.cwd(), "src/server/auth.ts"), "utf8"),
-+      readFile(resolve(process.cwd(), "src/app/actions.ts"), "utf8"),
-+    ]);
-+    expect(auth).toContain("requireDomainAdministratorContext");
-+    expect(auth).toContain('role === "owner" || role === "admin"');
-+    expect(actions).toMatch(
-+      /configureWebsiteCustomDomainAction[\s\S]*requireDomainAdministratorContext\(\)/,
+@@ -25,7 +25,7 @@ describe("website-scoped custom domains", () => {
+     expect(source).toMatch(/const customDomains = clientScoped\s*\? \[\]/);
+   });
+ 
+-  it("provides the guided DNS, verification, live test, and subdomain workflow", async () => {
++  it("provides a root-domain DNS, live test, and grouped subdomain workflow", async () => {
+     const [page, setup, actions] = await Promise.all([
+       readFile(resolve(process.cwd(), "src/app/websites/[id]/page.tsx"), "utf8"),
+       readFile(resolve(process.cwd(), "src/app/custom-domain-setup.tsx"), "utf8"),
+@@ -33,9 +33,17 @@ describe("website-scoped custom domains", () => {
+     ]);
+     expect(setup).toContain("Add these DNS records");
+     expect(setup).toContain("Customize subdomains");
+-    expect(page).toContain("Verify DNS and activate");
++    expect(setup).toContain("No TXT record or separate ownership check is required.");
++    expect(page).toContain("customDomainGroups");
+     expect(page).toContain("Test live route");
+     expect(actions).toContain("testCustomDomainAction");
++    const configureAction = actions.slice(
++      actions.indexOf("export async function configureWebsiteCustomDomainAction"),
++      actions.indexOf("export async function releaseWebsiteCustomDomainAction"),
 +    );
-+  });
-+
-+  it("does not load custom-domain settings into the client editor", async () => {
-+    const source = await readFile(resolve(process.cwd(), "src/server/editor.ts"), "utf8");
-+    expect(source).toMatch(/const customDomains = clientScoped\s*\? \[\]/);
-+  });
-+
-+  it("provides the guided DNS, verification, live test, and subdomain workflow", async () => {
-+    const [page, setup, actions] = await Promise.all([
-+      readFile(resolve(process.cwd(), "src/app/websites/[id]/page.tsx"), "utf8"),
-+      readFile(resolve(process.cwd(), "src/app/custom-domain-setup.tsx"), "utf8"),
-+      readFile(resolve(process.cwd(), "src/app/actions.ts"), "utf8"),
-+    ]);
-+    expect(setup).toContain("Add these DNS records");
-+    expect(setup).toContain("Customize subdomains");
-+    expect(page).toContain("Verify DNS and activate");
-+    expect(page).toContain("Test live route");
-+    expect(actions).toContain("testCustomDomainAction");
-+  });
-+
-+  it("refreshes automatically while domain verification is running", async () => {
-+    const setup = await readFile(resolve(process.cwd(), "src/app/custom-domain-setup.tsx"), "utf8");
-+    expect(setup).toContain("CustomDomainStatusRefresh");
-+    expect(setup).toContain("router.refresh()");
-+  });
-+});
-diff --git a/apps/provider-bridge/src/main.ts b/apps/provider-bridge/src/main.ts
-index 174c453..f70e8bf 100644
---- a/apps/provider-bridge/src/main.ts
-+++ b/apps/provider-bridge/src/main.ts
-@@ -265,7 +265,10 @@ function assertProviderSigned(request: IncomingMessage, body: Buffer, secret: st
- function connectDomain(input: DomainConnectRequest): DomainConnectResult {
-   if (
-     !validDomainId(input.domainId) ||
--    !validHostname(input.hostname) ||
-+    !(input.routingMode === "wildcard"
-+      ? input.hostname === `*.${input.rootHostname}` && validHostname(input.rootHostname)
-+      : validHostname(input.hostname)) ||
-+    !validHostname(input.rootHostname) ||
-     input.idempotencyKey !== input.domainId
-   ) {
-     throw new HttpError(400, "DOMAIN_REQUEST_INVALID");
-@@ -276,7 +279,10 @@ function connectDomain(input: DomainConnectRequest): DomainConnectResult {
- function validateDomainDisconnect(input: DomainDisconnectRequest): void {
-   if (
-     !validDomainId(input.domainId) ||
--    !validHostname(input.hostname) ||
-+    !(input.routingMode === "wildcard"
-+      ? input.hostname === `*.${input.rootHostname}` && validHostname(input.rootHostname)
-+      : validHostname(input.hostname)) ||
-+    !validHostname(input.rootHostname) ||
-     input.idempotencyKey !== `release:${input.domainId}`
-   ) {
-     throw new HttpError(400, "DOMAIN_REQUEST_INVALID");
-@@ -422,12 +428,16 @@ interface MailRequest {
- interface DomainConnectRequest {
-   readonly domainId: string;
-   readonly hostname: string;
-+  readonly rootHostname: string;
-+  readonly routingMode: "exact" | "wildcard";
-   readonly idempotencyKey: string;
- }
-
- interface DomainDisconnectRequest {
-   readonly domainId: string;
-   readonly hostname: string;
-+  readonly rootHostname: string;
-+  readonly routingMode: "exact" | "wildcard";
-   readonly idempotencyKey: string;
-   readonly bindings: readonly {
-     readonly providerKey: string;
-diff --git a/apps/renderer/src/server/site.ts b/apps/renderer/src/server/site.ts
-index de67edb..ed3b2d9 100644
---- a/apps/renderer/src/server/site.ts
-+++ b/apps/renderer/src/server/site.ts
-@@ -64,6 +64,8 @@ export interface LoadedSite {
-
- interface ActiveSiteRow {
-   hostname_normalized: string;
-+  root_hostname: string;
-+  routing_mode: "exact" | "wildcard";
-   organization_id: string;
-   website_id: string;
-   publication_id: string;
-@@ -140,12 +142,15 @@ export const loadSite = cache(async (hostname: string): Promise<LoadedSite | nul
-   if (existing && existing.expiresAt > Date.now()) return existing.value;
-
-   const rows = await database().$queryRaw<ActiveSiteRow[]>`
--    SELECT hostname_normalized, organization_id, website_id, publication_id,
-+    SELECT hostname_normalized, root_hostname, routing_mode, organization_id, website_id, publication_id,
-            template_id, template_version, template_artifact_hash,
-            snapshot_schema_version, storage_uri, content_hash, byte_size, mapping_version,
-            favicon_storage_key, white_label_enabled, subscription_expires_at
-     FROM renderer_active_sites
--    WHERE hostname_normalized = ${normalized}
-+    WHERE (routing_mode = 'exact' AND hostname_normalized = ${normalized})
-+       OR (routing_mode = 'wildcard' AND ${normalized} <> root_hostname
-+           AND ${normalized} LIKE ('%.' || root_hostname))
-+    ORDER BY CASE WHEN routing_mode = 'exact' THEN 0 ELSE 1 END
-     LIMIT 1
-   `;
-   const row = rows[0];
-diff --git a/apps/worker/src/main.ts b/apps/worker/src/main.ts
-index a331a08..53b1cf2 100644
---- a/apps/worker/src/main.ts
-+++ b/apps/worker/src/main.ts
-@@ -574,7 +574,7 @@ async function processDomainVerificationJob(job: ClaimedJob): Promise<void> {
-
-   let verified = false;
-   try {
--    const records = await resolveTxt(`_factory-verification.${domain.hostnameNormalized}`);
-+    const records = await resolveTxt(`_factory-verification.${domain.rootHostname}`);
-     verified = records.some((segments) => segments.join("").trim() === challenge);
-   } catch {
-     verified = false;
-@@ -600,7 +600,12 @@ async function processDomainVerificationJob(job: ClaimedJob): Promise<void> {
-     });
++    expect(configureAction).toContain('status: "active"');
++    expect(configureAction).not.toContain("domainVerificationAttempt.create");
++    expect(configureAction).not.toContain('type: "domain.verify"');
    });
-
--  const provider = await connectDomainProvider(domain.id, domain.hostnameNormalized);
-+  const provider = await connectDomainProvider(
-+    domain.id,
-+    domain.hostnameNormalized,
-+    domain.rootHostname,
-+    domain.routingMode,
-+  );
-   if (!provider) return;
-   await withTenantTransaction(database, tenantContext(job), async (transaction) => {
-     await transaction.certificateBinding.upsert({
-@@ -673,7 +678,13 @@ async function processDomainDisconnectJob(job: ClaimedJob): Promise<void> {
-     }),
-   );
-   if (!domain) throw new PermanentJobError("Domain was not found", "DOMAIN_NOT_FOUND");
--  await disconnectDomainProvider(domain.id, domain.hostnameNormalized, domain.certificateBindings);
-+  await disconnectDomainProvider(
-+    domain.id,
-+    domain.hostnameNormalized,
-+    domain.rootHostname,
-+    domain.routingMode,
-+    domain.certificateBindings,
-+  );
-   await withTenantTransaction(database, tenantContext(job), async (transaction) => {
-     await transaction.certificateBinding.updateMany({
-       where: { organizationId: job.organizationId, domainId },
-@@ -951,6 +962,8 @@ function domainIdFromPayload(value: unknown): string | null {
- async function connectDomainProvider(
-   domainId: string,
-   hostname: string,
-+  rootHostname: string,
-+  routingMode: "exact" | "wildcard",
- ): Promise<{ providerKey: string; bindingId: string; status: string } | null> {
-   const endpoint = workerConfig.FACTORY_DOMAIN_PROVIDER_URL;
-   const secret = workerConfig.FACTORY_DOMAIN_PROVIDER_SECRET;
-@@ -960,7 +973,13 @@ async function connectDomainProvider(
-     }
-     return null;
-   }
--  const body = JSON.stringify({ domainId, hostname, idempotencyKey: domainId });
-+  const body = JSON.stringify({
-+    domainId,
-+    hostname,
-+    rootHostname,
-+    routingMode,
-+    idempotencyKey: domainId,
-+  });
-   const timestamp = String(Date.now());
-   const signature = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
-   const response = await fetch(endpoint, {
-@@ -995,6 +1014,8 @@ async function connectDomainProvider(
- async function disconnectDomainProvider(
-   domainId: string,
-   hostname: string,
-+  rootHostname: string,
-+  routingMode: "exact" | "wildcard",
-   bindings: readonly { providerKey: string; providerBindingId: string }[],
- ): Promise<void> {
-   const endpoint = workerConfig.FACTORY_DOMAIN_PROVIDER_URL;
-@@ -1008,6 +1029,8 @@ async function disconnectDomainProvider(
-   const body = JSON.stringify({
-     domainId,
-     hostname,
-+    rootHostname,
-+    routingMode,
-     bindings,
-     idempotencyKey: `release:${domainId}`,
-   });
-diff --git a/apps/worker/src/seed-demo.ts b/apps/worker/src/seed-demo.ts
-index 0c777b6..ab95c05 100644
---- a/apps/worker/src/seed-demo.ts
-+++ b/apps/worker/src/seed-demo.ts
-@@ -686,6 +686,7 @@ try {
-               organizationId,
-               websiteId,
-               hostnameDisplay: hostname,
-+              rootHostname: hostname,
-               kind: "subdomain",
-               status: "active",
-               releasedAt: null,
-@@ -699,6 +700,7 @@ try {
-               websiteId,
-               hostnameNormalized: hostname,
-               hostnameDisplay: hostname,
-+              rootHostname: hostname,
-               kind: "subdomain",
-               status: "active",
-             },
-@@ -776,6 +778,7 @@ try {
-           websiteId: commerceWebsiteId,
-           hostnameNormalized: "shop.localhost",
-           hostnameDisplay: "shop.localhost",
-+          rootHostname: "shop.localhost",
-           status: "active",
-           releasedAt: null,
-         },
-@@ -785,6 +788,7 @@ try {
-           websiteId: commerceWebsiteId,
-           hostnameNormalized: "shop.localhost",
-           hostnameDisplay: "shop.localhost",
-+          rootHostname: "shop.localhost",
-           kind: "subdomain",
-           status: "active",
-         },
-@@ -1263,6 +1267,7 @@ try {
-           websiteId: hardwareWebsiteId,
-           hostnameNormalized: "tools.localhost",
-           hostnameDisplay: "tools.localhost",
-+          rootHostname: "tools.localhost",
-           status: "active",
-           releasedAt: null,
-         },
-@@ -1272,6 +1277,7 @@ try {
-           websiteId: hardwareWebsiteId,
-           hostnameNormalized: "tools.localhost",
-           hostnameDisplay: "tools.localhost",
-+          rootHostname: "tools.localhost",
-           kind: "subdomain",
-           status: "active",
-         },
+ 
+   it("refreshes automatically while domain verification is running", async () => {
 diff --git a/deployment/caddy/Caddyfile b/deployment/caddy/Caddyfile
-new file mode 100644
-index 0000000..7f6aee7
---- /dev/null
+index 79587f0..d0f7d91 100644
+--- a/deployment/caddy/Caddyfile
 +++ b/deployment/caddy/Caddyfile
-@@ -0,0 +1,14 @@
-+{
-+	on_demand_tls {
-+		ask http://127.0.0.1:3000/api/internal/domains/authorize
+@@ -9,7 +9,16 @@
+ }
+ 
+ (http_redirect) {
+-	redir https://{host}{uri} permanent
++	# Cloudflare Flexible reaches the origin over HTTP while the visitor is already on
++	# HTTPS. Serving that request avoids an HTTPS-to-HTTPS redirect loop. Direct HTTP
++	# visitors still receive the canonical redirect below.
++	@cloudflare_https header X-Forwarded-Proto https
++	handle @cloudflare_https {
++		reverse_proxy 127.0.0.1:3000
 +	}
-+}
-+
-+# Customer domains terminate here. The ask endpoint prevents arbitrary hosts
-+# from consuming certificates and keeps routing bound to active website records.
-+https:// {
-+	tls {
-+		on_demand
++	handle {
++		redir https://{host}{uri} permanent
 +	}
-+	reverse_proxy 127.0.0.1:3000
-+}
-diff --git a/docs/CUSTOM_DOMAINS.md b/docs/CUSTOM_DOMAINS.md
+ }
+ 
+ http:// {
+diff --git a/packages/database/prisma/migrations/0029_custom_domains_without_txt_verification/migration.sql b/packages/database/prisma/migrations/0029_custom_domains_without_txt_verification/migration.sql
 new file mode 100644
-index 0000000..f7334c3
+index 0000000..fe19327
 --- /dev/null
-+++ b/docs/CUSTOM_DOMAINS.md
-@@ -0,0 +1,43 @@
-+# Website custom domains
++++ b/packages/database/prisma/migrations/0029_custom_domains_without_txt_verification/migration.sql
+@@ -0,0 +1,22 @@
++-- Website-scoped custom domains are configured explicitly by a platform administrator.
++-- DNS ownership TXT challenges are no longer part of this workflow. Activate any routes
++-- left waiting by the former verifier and close only their obsolete verification jobs.
++UPDATE domains
++SET status = 'active', revision = revision + 1, updated_at = CURRENT_TIMESTAMP
++WHERE kind = 'custom' AND released_at IS NULL AND status IN ('pending', 'verifying', 'verified', 'connecting');
 +
-+Custom domains are website-scoped routes. They are deliberately separate from `HostingDomain`,
-+which is the system-wide pool used when the factory assigns a subdomain during website creation.
-+
-+## Owner workflow
-+
-+The website editor provides a four-step flow: enter the root domain, copy the displayed DNS
-+records, add the generated TXT challenge and verify it, then configure selected or wildcard
-+subdomains. Active exact routes can be opened and tested from the same screen. The screen refreshes
-+while verification jobs run, so activation does not require a manual browser refresh.
-+
-+Set `FACTORY_INGRESS_IPV4` to the public origin address that the wizard should show in A records.
-+
-+## Ownership and isolation
-+
-+- Only the control-panel platform administrator roles (`owner` or `admin`) can list or mutate
-+  custom-domain routes.
-+- Client-account editor loads omit custom domains completely.
-+- The global Domains screen lists only system-generated routes and hosting base domains.
-+- A database trigger rejects exact/wildcard overlaps that would route one hostname to different
-+  websites, including across tenant RLS boundaries.
-+- Exact routes take precedence over a wildcard belonging to the same website.
-+
-+## Route modes
-+
-+A website can connect an apex domain, `www`, selected first-level labels, or `*.example.com`.
-+Wildcard routes match subdomains only; the apex must be selected separately. Each route must pass
-+the DNS TXT challenge at `_factory-verification.<root-domain>` before it becomes active.
-+
-+## DNS examples
-+
-+For `emadramsis.com`, point the apex `A`/`AAAA` record to the platform ingress. Point `www` to the
-+apex with `CNAME`. When **All subdomains** is enabled, also add `CNAME * emadramsis.com` (or a
-+wildcard `A` record to the ingress). The ownership TXT values shown in the website editor may
-+coexist at the same TXT name.
-+
-+## TLS and ingress
-+
-+`deployment/caddy/Caddyfile` enables on-demand TLS. Caddy asks
-+`/api/internal/domains/authorize?domain=<hostname>` before issuing a certificate. The endpoint
-+approves only an active route attached to a published website, so arbitrary hostnames cannot
-+consume certificates. Install this Caddyfile at the ingress and reload Caddy after deployment.
-diff --git a/packages/config/src/index.ts b/packages/config/src/index.ts
-index 1cccc30..1837454 100644
---- a/packages/config/src/index.ts
-+++ b/packages/config/src/index.ts
-@@ -13,6 +13,10 @@ const environmentSchema = z
-     DATABASE_URL: z.url(),
-     DATABASE_RENDERER_URL: optionalUrl,
-     FACTORY_BASE_DOMAIN: z.string().trim().min(1).default("localhost"),
-+    FACTORY_INGRESS_IPV4: z.preprocess(
-+      (value) => (value === "" ? undefined : value),
-+      z.ipv4().optional(),
-+    ),
-     FACTORY_DASHBOARD_PUBLIC_URL: z.url().default("http://localhost:3000"),
-     FACTORY_RENDERER_PUBLIC_URL: z.url().default("http://localhost:3001"),
-     FACTORY_ARTIFACT_DRIVER: z.enum(["local", "s3"]).default("local"),
-diff --git a/packages/database/prisma/migrations/0028_website_custom_domain_routing/migration.sql b/packages/database/prisma/migrations/0028_website_custom_domain_routing/migration.sql
-new file mode 100644
-index 0000000..36d2fd5
---- /dev/null
-+++ b/packages/database/prisma/migrations/0028_website_custom_domain_routing/migration.sql
-@@ -0,0 +1,123 @@
-+CREATE TYPE "DomainRoutingMode" AS ENUM ('exact', 'wildcard');
-+
-+ALTER TABLE "domains"
-+  ADD COLUMN "root_hostname" varchar(253),
-+  ADD COLUMN "routing_mode" "DomainRoutingMode" NOT NULL DEFAULT 'exact',
-+  ADD COLUMN "is_primary" boolean NOT NULL DEFAULT false;
-+
-+UPDATE "domains"
-+SET "root_hostname" = CASE
-+  WHEN "hostname_normalized" LIKE '%.localhost' THEN 'localhost'
-+  ELSE regexp_replace("hostname_normalized", '^www\.', '')
-+END;
-+
-+ALTER TABLE "domains" ALTER COLUMN "root_hostname" SET NOT NULL;
-+CREATE INDEX "domains_root_hostname_idx" ON "domains" ("root_hostname");
-+CREATE UNIQUE INDEX "domains_one_primary_per_website_idx"
-+  ON "domains" ("organization_id", "website_id")
-+  WHERE "is_primary" = true AND "released_at" IS NULL;
-+
-+-- Prevent an exact hostname and a wildcard owned by different websites from
-+-- creating ambiguous routing, including across tenant RLS boundaries.
-+CREATE OR REPLACE FUNCTION enforce_domain_route_isolation()
-+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
-+BEGIN
-+  PERFORM pg_advisory_xact_lock(hashtext(NEW.root_hostname));
-+  IF NEW.released_at IS NULL AND EXISTS (
-+    SELECT 1 FROM domains existing
-+    WHERE existing.released_at IS NULL AND existing.id <> NEW.id
-+      AND existing.website_id <> NEW.website_id
-+      AND (
-+        existing.hostname_normalized = NEW.hostname_normalized
-+        OR (existing.routing_mode = 'wildcard' AND NEW.routing_mode = 'exact'
-+            AND NEW.hostname_normalized <> existing.root_hostname
-+            AND NEW.hostname_normalized LIKE ('%.' || existing.root_hostname))
-+        OR (NEW.routing_mode = 'wildcard' AND existing.routing_mode = 'exact'
-+            AND existing.hostname_normalized <> NEW.root_hostname
-+            AND existing.hostname_normalized LIKE ('%.' || NEW.root_hostname))
-+      )
-+  ) THEN
-+    RAISE EXCEPTION 'DOMAIN_ROUTE_CONFLICT' USING ERRCODE = 'unique_violation';
-+  END IF;
-+  RETURN NEW;
-+END;
-+$$;
-+
-+CREATE TRIGGER domains_route_isolation
-+BEFORE INSERT OR UPDATE OF hostname_normalized, root_hostname, routing_mode, website_id, released_at
-+ON domains FOR EACH ROW EXECUTE FUNCTION enforce_domain_route_isolation();
-+
-+DROP VIEW "renderer_active_sites";
-+CREATE VIEW "renderer_active_sites" WITH (security_barrier = true) AS
-+SELECT
-+  d.hostname_normalized,
-+  d.root_hostname,
-+  d.routing_mode,
-+  d.is_primary,
-+  d.organization_id,
-+  d.website_id,
-+  w.active_publication_id AS publication_id,
-+  p.template_id,
-+  p.template_version,
-+  p.template_artifact_hash,
-+  p.snapshot_schema_version,
-+  pa.storage_uri,
-+  pa.content_hash,
-+  pa.byte_size,
-+  w.revision AS mapping_version,
-+  favicon.storage_key AS favicon_storage_key,
-+  w.white_label_enabled,
-+  subscription.expires_at AS subscription_expires_at
-+FROM domains d
-+JOIN websites w ON w.organization_id = d.organization_id AND w.id = d.website_id
-+JOIN publications p ON p.organization_id = w.organization_id AND p.website_id = w.id AND p.id = w.active_publication_id
-+JOIN publication_artifacts pa ON pa.organization_id = p.organization_id AND pa.publication_id = p.id AND pa.artifact_kind = 'snapshot'
-+LEFT JOIN media_assets favicon ON favicon.organization_id = w.organization_id AND favicon.id = w.favicon_asset_id AND favicon.status = 'ready'
-+LEFT JOIN website_subscriptions subscription ON subscription.organization_id = w.organization_id AND subscription.website_id = w.id
-+WHERE d.status = 'active' AND d.released_at IS NULL AND p.status = 'ready' AND w.active_publication_id IS NOT NULL
-+  AND w.status = 'published'
-+  AND (subscription.id IS NULL OR (subscription.status = 'active' AND subscription.expires_at > CURRENT_TIMESTAMP));
-+
-+REVOKE ALL ON "renderer_active_sites" FROM PUBLIC;
-+GRANT SELECT ON "renderer_active_sites" TO factory_renderer;
-+
-+CREATE OR REPLACE FUNCTION resolve_active_ecommerce_store(p_hostname text)
-+RETURNS TABLE (organization_id uuid, store_id uuid, website_id uuid, currency varchar)
-+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
-+  SELECT store.organization_id, store.id, store.website_id, store.currency
-+  FROM domains domain_row
-+  JOIN websites website ON website.organization_id = domain_row.organization_id AND website.id = domain_row.website_id
-+  JOIN ecommerce_stores store ON store.organization_id = website.organization_id AND store.website_id = website.id
-+  LEFT JOIN website_subscriptions subscription ON subscription.organization_id = website.organization_id AND subscription.website_id = website.id
-+  WHERE (
-+      (domain_row.routing_mode = 'exact' AND domain_row.hostname_normalized = lower(split_part(p_hostname, ':', 1)))
-+      OR (domain_row.routing_mode = 'wildcard'
-+          AND lower(split_part(p_hostname, ':', 1)) <> domain_row.root_hostname
-+          AND lower(split_part(p_hostname, ':', 1)) LIKE ('%.' || domain_row.root_hostname))
-+    )
-+    AND domain_row.status = 'active' AND domain_row.released_at IS NULL
-+    AND website.kind = 'ecommerce' AND website.status = 'published' AND website.archived_at IS NULL
-+    AND store.status = 'active' AND store.archived_at IS NULL
-+    AND (subscription.id IS NULL OR (subscription.status = 'active' AND subscription.expires_at > CURRENT_TIMESTAMP))
-+  ORDER BY CASE WHEN domain_row.routing_mode = 'exact' THEN 0 ELSE 1 END
-+  LIMIT 1;
-+$$;
-+
-+CREATE OR REPLACE FUNCTION authorize_public_hostname(p_hostname text)
-+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
-+  SELECT EXISTS (
-+    SELECT 1 FROM domains d
-+    JOIN websites w ON w.organization_id = d.organization_id AND w.id = d.website_id
-+    WHERE d.status = 'active' AND d.released_at IS NULL
-+      AND w.status = 'published' AND w.archived_at IS NULL
-+      AND (
-+        (d.routing_mode = 'exact' AND d.hostname_normalized = lower(split_part(p_hostname, ':', 1)))
-+        OR (d.routing_mode = 'wildcard'
-+            AND lower(split_part(p_hostname, ':', 1)) <> d.root_hostname
-+            AND lower(split_part(p_hostname, ':', 1)) LIKE ('%.' || d.root_hostname))
-+      )
++UPDATE jobs AS job
++SET status = 'succeeded',
++    completed_at = COALESCE(completed_at, CURRENT_TIMESTAMP),
++    locked_at = NULL,
++    lock_owner = NULL,
++    lock_expires_at = NULL
++WHERE job.job_type = 'domain.verify'
++  AND job.status IN ('queued', 'running', 'retryable')
++  AND EXISTS (
++    SELECT 1
++    FROM domains AS domain_row
++    WHERE domain_row.id::text = job.payload_json ->> 'domainId'
++      AND domain_row.kind = 'custom'
++      AND domain_row.released_at IS NULL
 +  );
-+$$;
-+
-+REVOKE ALL ON FUNCTION authorize_public_hostname(text) FROM PUBLIC;
-+GRANT EXECUTE ON FUNCTION authorize_public_hostname(text) TO factory_app;
-diff --git a/packages/database/prisma/schema.prisma b/packages/database/prisma/schema.prisma
-index d3232e8..1afc9f0 100644
---- a/packages/database/prisma/schema.prisma
-+++ b/packages/database/prisma/schema.prisma
-@@ -131,6 +131,11 @@ enum DomainStatus {
-   disconnected
- }
-
-+enum DomainRoutingMode {
-+  exact
-+  wildcard
-+}
-+
- enum MediaStatus {
-   pending_upload
-   quarantined
-@@ -834,6 +839,9 @@ model Domain {
-   websiteId            String                      @map("website_id") @db.Uuid
-   hostnameNormalized   String                      @map("hostname_normalized") @db.VarChar(253)
-   hostnameDisplay      String                      @map("hostname_display") @db.VarChar(253)
-+  rootHostname         String                      @map("root_hostname") @db.VarChar(253)
-+  routingMode          DomainRoutingMode           @default(exact) @map("routing_mode")
-+  isPrimary            Boolean                     @default(false) @map("is_primary")
-   kind                 String                      @db.VarChar(24)
-   status               DomainStatus                @default(pending)
-   revision             BigInt                      @default(1)
-diff --git a/packages/domains/src/custom-domains.test.ts b/packages/domains/src/custom-domains.test.ts
-new file mode 100644
-index 0000000..aaeddb9
---- /dev/null
-+++ b/packages/domains/src/custom-domains.test.ts
-@@ -0,0 +1,46 @@
-+import { describe, expect, it } from "vitest";
-+import { customDomainRouteMatches, customDomainRoutes } from "./index";
-+
-+describe("customDomainRoutes", () => {
-+  it("creates apex, www, and selected website routes", () => {
-+    expect(
-+      customDomainRoutes({
-+        rootHostname: "EmadRamsis.com",
-+        subdomainMode: "selected",
-+        selectedSubdomains: ["booking", "www"],
-+      }),
-+    ).toEqual([
-+      {
-+        hostname: "emadramsis.com",
-+        rootHostname: "emadramsis.com",
-+        routingMode: "exact",
-+        isPrimary: true,
-+      },
-+      {
-+        hostname: "www.emadramsis.com",
-+        rootHostname: "emadramsis.com",
-+        routingMode: "exact",
-+        isPrimary: false,
-+      },
-+      {
-+        hostname: "booking.emadramsis.com",
-+        rootHostname: "emadramsis.com",
-+        routingMode: "exact",
-+        isPrimary: false,
-+      },
-+    ]);
-+  });
-+
-+  it("supports all subdomains without matching the apex", () => {
-+    const wildcard = customDomainRoutes({
-+      rootHostname: "emadramsis.com",
-+      includeApex: false,
-+      includeWww: false,
-+      subdomainMode: "wildcard",
-+    })[0]!;
-+    expect(wildcard.hostname).toBe("*.emadramsis.com");
-+    expect(customDomainRouteMatches("portal.emadramsis.com", wildcard)).toBe(true);
-+    expect(customDomainRouteMatches("emadramsis.com", wildcard)).toBe(false);
-+    expect(customDomainRouteMatches("evil-example.com", wildcard)).toBe(false);
-+  });
-+});
-diff --git a/packages/domains/src/index.ts b/packages/domains/src/index.ts
-index 0ed7e60..83a5e91 100644
---- a/packages/domains/src/index.ts
-+++ b/packages/domains/src/index.ts
-@@ -33,6 +33,60 @@ export interface CertificateProvider {
-   connect(hostname: string): Promise<{ bindingId: string; status: string }>;
- }
-
-+export type CustomDomainSubdomainMode = "none" | "selected" | "wildcard";
-+export type DomainRoutingMode = "exact" | "wildcard";
-+
-+export interface CustomDomainRoute {
-+  hostname: string;
-+  rootHostname: string;
-+  routingMode: DomainRoutingMode;
-+  isPrimary: boolean;
-+}
-+
-+/** Expands one website-scoped custom-domain configuration into routable hostnames. */
-+export function customDomainRoutes(input: {
-+  rootHostname: string;
-+  includeApex?: boolean;
-+  includeWww?: boolean;
-+  subdomainMode?: CustomDomainSubdomainMode;
-+  selectedSubdomains?: readonly string[];
-+}): CustomDomainRoute[] {
-+  const rootHostname = normalizeHostname(input.rootHostname);
-+  if (rootHostname === "localhost" || rootHostname.endsWith(".localhost")) {
-+    throw new Error("CUSTOM_DOMAIN_PUBLIC_HOST_REQUIRED");
-+  }
-+  const routes = new Map<string, CustomDomainRoute>();
-+  const add = (hostname: string, routingMode: DomainRoutingMode, isPrimary = false) =>
-+    routes.set(hostname, { hostname, rootHostname, routingMode, isPrimary });
-+  if (input.includeApex !== false) add(rootHostname, "exact", true);
-+  if (input.includeWww !== false) add(`www.${rootHostname}`, "exact", input.includeApex === false);
-+  const mode = input.subdomainMode ?? "none";
-+  if (mode === "wildcard") add(`*.${rootHostname}`, "wildcard");
-+  if (mode === "selected") {
-+    for (const rawLabel of input.selectedSubdomains ?? []) {
-+      const label = rawLabel.trim().toLowerCase();
-+      if (!label || label === "www" || !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)) {
-+        if (label && label !== "www") throw new Error("CUSTOM_DOMAIN_INVALID_SUBDOMAIN");
-+        continue;
-+      }
-+      add(`${label}.${rootHostname}`, "exact");
-+    }
-+  }
-+  if (routes.size === 0) throw new Error("CUSTOM_DOMAIN_ROUTE_REQUIRED");
-+  return [...routes.values()];
-+}
-+
-+/** Exact routes win; wildcard routes match subdomains but never the apex. */
-+export function customDomainRouteMatches(
-+  requestedHostname: string,
-+  route: Pick<CustomDomainRoute, "hostname" | "rootHostname" | "routingMode">,
-+): boolean {
-+  const requested = normalizeHostname(requestedHostname);
-+  return route.routingMode === "exact"
-+    ? requested === route.hostname
-+    : requested !== route.rootHostname && requested.endsWith(`.${route.rootHostname}`);
-+}
-+
- export function domainOwnershipChallenge(domainId: string, secret: string): string {
-   if (!/^[0-9a-f-]{36}$/i.test(domainId) || Buffer.byteLength(secret, "utf8") < 32) {
-     throw new Error("DOMAIN_CHALLENGE_INPUT_INVALID");

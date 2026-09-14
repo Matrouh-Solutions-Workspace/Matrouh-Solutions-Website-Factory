@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { domainChallengeHash, domainOwnershipChallenge } from "@factory/domains";
 import {
   addSectionDraftAction,
   addWebsiteLocaleAction,
@@ -11,12 +10,10 @@ import {
   moveSectionDraftAction,
   previewWebsiteAction,
   retryPublicationJobAction,
-  releaseDomainAction,
-  rotateDomainChallengeAction,
+  releaseWebsiteCustomDomainAction,
   setWebsiteAvailabilityAction,
   testCustomDomainAction,
   toggleWebsitePublicationAction,
-  verifyDomainAction,
   uploadMediaAction,
   rollbackPublicationAction,
   updatePageDraftAction,
@@ -86,6 +83,12 @@ export default async function WebsiteEditorPage({
         .map((domain) => domain.rootHostname),
     ),
   ];
+  const customDomainGroups = [
+    ...new Set(editor.customDomains.map((domain) => domain.rootHostname)),
+  ].map((rootHostname) => ({
+    rootHostname,
+    routes: editor.customDomains.filter((domain) => domain.rootHostname === rootHostname),
+  }));
   const ingressIpv4 = dashboardConfig.FACTORY_INGRESS_IPV4 ?? "135.125.202.142";
   const domainUi =
     locale === "ar"
@@ -99,12 +102,6 @@ export default async function WebsiteEditorPage({
           allSubdomains: "كل النطاقات الفرعية",
           primary: "رئيسي",
           exact: "عنوان محدد",
-          verifyTitle: "3. تحقق من الملكية",
-          verifyHelp: "أضف سجل TXT، وانتظر انتشار DNS، ثم اضغط تحقق.",
-          verify: "تحقق من DNS وفعّل",
-          checking: "جارٍ التحقق…",
-          rotate: "غيّر TXT",
-          rotating: "جارٍ التغيير…",
           open: "افتح الموقع",
           test: "اختبر الموقع",
           testing: "جارٍ الاختبار…",
@@ -121,12 +118,6 @@ export default async function WebsiteEditorPage({
           allSubdomains: "All subdomains",
           primary: "Primary",
           exact: "Exact hostname",
-          verifyTitle: "3. Verify ownership",
-          verifyHelp: "Add this DNS TXT record, wait for DNS propagation, then verify.",
-          verify: "Verify DNS and activate",
-          checking: "Checking…",
-          rotate: "Rotate TXT",
-          rotating: "Rotating…",
           open: "Open live route",
           test: "Test live route",
           testing: "Testing…",
@@ -1134,85 +1125,64 @@ export default async function WebsiteEditorPage({
               locale={locale}
               ingressIpv4={ingressIpv4}
             />
-            {editor.customDomains.map((domain) => (
-              <article className="dataRow domainRow" key={domain.id}>
-                <div>
-                  <strong>{domain.hostname}</strong>
-                  <p>
-                    {domain.routingMode === "wildcard"
-                      ? domainUi.allSubdomains
-                      : domain.isPrimary
-                        ? domainUi.primary
-                        : domainUi.exact}
-                  </p>
-                  {domain.status !== "active" && domain.verificationAttempt ? (
-                    <div className="domainChallenge">
-                      <strong>{domainUi.verifyTitle}</strong>
-                      <span>{domainUi.verifyHelp}</span>
-                      <div className="dnsRecordRow">
-                        <code>TXT</code>
-                        <code>_factory-verification.{domain.rootHostname}</code>
-                        <code>{customDomainChallenge(domain)}</code>
-                      </div>
-                      {domain.verificationAttempt.failureCode ? (
-                        <small>{domain.verificationAttempt.failureCode}</small>
-                      ) : null}
+            {customDomainGroups.map((group) => {
+              const primaryRoute =
+                group.routes.find((route) => route.isPrimary) ?? group.routes[0]!;
+              const allActive = group.routes.every((route) => route.status === "active");
+              return (
+                <article className="dataRow domainRow" key={group.rootHostname}>
+                  <div>
+                    <strong>{group.rootHostname}</strong>
+                    <p>{domainUi.primary}</p>
+                    <div className="domainRouteList">
+                      {group.routes.map((route) => (
+                        <span className="jobStatus succeeded" key={route.id}>
+                          {route.routingMode === "wildcard"
+                            ? domainUi.allSubdomains
+                            : route.hostname === group.rootHostname
+                              ? "@"
+                              : route.hostname.slice(0, -(group.rootHostname.length + 1))}
+                        </span>
+                      ))}
                     </div>
-                  ) : null}
-                </div>
-                <span
-                  className={`jobStatus ${domain.status === "active" ? "succeeded" : "queued"}`}
-                >
-                  {domain.status}
-                </span>
-                <div className="rowActions">
-                  {domain.status !== "active" ? (
-                    <>
-                      <form action={verifyDomainAction}>
-                        <input name="domainId" type="hidden" value={domain.id} />
-                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.checking}>
-                          {domainUi.verify}
-                        </PendingSubmit>
-                      </form>
-                      <form action={rotateDomainChallengeAction}>
-                        <input name="domainId" type="hidden" value={domain.id} />
-                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.rotating}>
-                          {domainUi.rotate}
-                        </PendingSubmit>
-                      </form>
-                    </>
-                  ) : null}
-                  {domain.status === "active" ? (
-                    <>
-                      <a
-                        className="inlineButton"
-                        href={`https://${domain.routingMode === "wildcard" ? `factory-route-check.${domain.rootHostname}` : domain.hostname}`}
-                        target="_blank"
-                        rel="noreferrer"
+                  </div>
+                  <span className={`jobStatus ${allActive ? "succeeded" : "queued"}`}>
+                    {allActive ? "active" : "connecting"}
+                  </span>
+                  <div className="rowActions">
+                    {allActive ? (
+                      <>
+                        <a
+                          className="inlineButton"
+                          href={`https://${primaryRoute.hostname}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {domainUi.open}
+                        </a>
+                        <form action={testCustomDomainAction}>
+                          <input name="domainId" type="hidden" value={primaryRoute.id} />
+                          <PendingSubmit className="inlineButton" pendingLabel={domainUi.testing}>
+                            {domainUi.test}
+                          </PendingSubmit>
+                        </form>
+                      </>
+                    ) : null}
+                    <form action={releaseWebsiteCustomDomainAction}>
+                      <input name="websiteId" type="hidden" value={editor.website.id} />
+                      <input name="rootHostname" type="hidden" value={group.rootHostname} />
+                      <ConfirmSubmit
+                        className="inlineButton dangerButton"
+                        confirmation={`${domainUi.disconnect} ${group.rootHostname}?`}
+                        pendingLabel={domainUi.disconnecting}
                       >
-                        {domainUi.open}
-                      </a>
-                      <form action={testCustomDomainAction}>
-                        <input name="domainId" type="hidden" value={domain.id} />
-                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.testing}>
-                          {domainUi.test}
-                        </PendingSubmit>
-                      </form>
-                    </>
-                  ) : null}
-                  <form action={releaseDomainAction}>
-                    <input name="domainId" type="hidden" value={domain.id} />
-                    <ConfirmSubmit
-                      className="inlineButton dangerButton"
-                      confirmation={`${domainUi.disconnect} ${domain.hostname}?`}
-                      pendingLabel={domainUi.disconnecting}
-                    >
-                      {domainUi.disconnect}
-                    </ConfirmSubmit>
-                  </form>
-                </div>
-              </article>
-            ))}
+                        {domainUi.disconnect}
+                      </ConfirmSubmit>
+                    </form>
+                  </div>
+                </article>
+              );
+            })}
             <CustomSubdomainSetup
               websiteId={editor.website.id}
               locale={locale}
@@ -1273,20 +1243,6 @@ export default async function WebsiteEditorPage({
       </div>
     </div>
   );
-}
-
-function customDomainChallenge(domain: {
-  id: string;
-  verificationAttempt: { id: string; challengeValueHash: string } | null;
-}): string {
-  const attempt = domain.verificationAttempt;
-  if (!attempt) return "Challenge unavailable";
-  const secret =
-    dashboardConfig.FACTORY_DOMAIN_CHALLENGE_SECRET ?? dashboardConfig.PREVIEW_SIGNING_SECRET;
-  const current = domainOwnershipChallenge(attempt.id, secret);
-  return domainChallengeHash(current) === attempt.challengeValueHash
-    ? current
-    : domainOwnershipChallenge(domain.id, secret);
 }
 
 function settingsValue(content: string | undefined, key: string): string | undefined {

@@ -1585,15 +1585,27 @@ export async function configureWebsiteCustomDomainAction(formData: FormData): Pr
           select: { websiteId: true, kind: true },
         });
         if (existingRoute) {
-          if (existingRoute.websiteId === websiteId && existingRoute.kind === "custom") continue;
+          if (existingRoute.websiteId === websiteId && existingRoute.kind === "custom") {
+            await transaction.domain.updateMany({
+              where: {
+                organizationId: context.organization.id,
+                websiteId,
+                hostnameNormalized: route.hostname,
+                kind: "custom",
+                releasedAt: null,
+              },
+              data: {
+                status: "active",
+                routingMode: route.routingMode,
+                isPrimary: route.isPrimary,
+                revision: { increment: 1 },
+              },
+            });
+            continue;
+          }
           throw new Error("CUSTOM_DOMAIN_ROUTE_CONFLICT");
         }
         const domainId = randomUUID();
-        const attemptId = randomUUID();
-        const challenge = domainOwnershipChallenge(
-          attemptId,
-          dashboardConfig.FACTORY_DOMAIN_CHALLENGE_SECRET ?? dashboardConfig.PREVIEW_SIGNING_SECRET,
-        );
         await transaction.domain.create({
           data: {
             id: domainId,
@@ -1605,31 +1617,9 @@ export async function configureWebsiteCustomDomainAction(formData: FormData): Pr
             routingMode: route.routingMode,
             isPrimary: route.isPrimary,
             kind: "custom",
-            status: "verifying",
-          },
-        });
-        await transaction.domainVerificationAttempt.create({
-          data: {
-            id: attemptId,
-            organizationId: context.organization.id,
-            domainId,
-            challengeKind: "dns_txt",
-            challengeValueHash: domainChallengeHash(challenge),
-            status: "pending",
-          },
-        });
-        await transaction.job.create({
-          data: {
-            id: randomUUID(),
-            organizationId: context.organization.id,
-            type: "domain.verify",
-            version: 1,
-            payloadJson: jsonInput({ domainId }),
-            status: "queued",
-            priority: 5,
-            maxAttempts: 40,
-            deduplicationKey: `domain.verify:${domainId}`,
-            correlationId: `verify-domain:${domainId}`,
+            // Creating the DNS route is an explicit administrator action. DNS ownership
+            // challenges are intentionally not required for website-scoped custom domains.
+            status: "active",
           },
         });
       }
@@ -1646,6 +1636,62 @@ export async function configureWebsiteCustomDomainAction(formData: FormData): Pr
           metadataJson: jsonInput({
             rootHostname: routes[0]!.rootHostname,
             routes: routes.map((route) => route.hostname),
+          }),
+          retentionClass: "standard",
+        },
+      });
+    },
+  );
+  revalidatePath(`/websites/${websiteId}`);
+}
+
+export async function releaseWebsiteCustomDomainAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const requestedRoot = cleanText(formData.get("rootHostname"), 253);
+  if (!websiteId || !requestedRoot) return;
+  const context = await requireDomainAdministratorContext();
+  let rootHostname: string;
+  try {
+    rootHostname = normalizeDomainHostname(requestedRoot);
+  } catch {
+    return;
+  }
+  await withTenantTransaction(
+    dashboardDatabase(),
+    {
+      organizationId: context.organization.id,
+      actorId: context.actor.id,
+      correlationId: `release-custom-domain:${websiteId}:${rootHostname}`,
+    },
+    async (transaction) => {
+      const routes = await transaction.domain.findMany({
+        where: {
+          organizationId: context.organization.id,
+          websiteId,
+          rootHostname,
+          kind: "custom",
+          releasedAt: null,
+        },
+        select: { id: true, hostnameNormalized: true },
+      });
+      if (routes.length === 0) return;
+      await transaction.domain.updateMany({
+        where: { id: { in: routes.map((route) => route.id) } },
+        data: { status: "disconnected", releasedAt: new Date(), revision: { increment: 1 } },
+      });
+      await transaction.auditEvent.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          actorType: "user",
+          actorId: context.actor.id,
+          action: "website.custom_domain_released",
+          resourceType: "website",
+          resourceId: websiteId,
+          correlationId: `release-custom-domain:${websiteId}:${rootHostname}`,
+          metadataJson: jsonInput({
+            rootHostname,
+            routes: routes.map((route) => route.hostnameNormalized),
           }),
           retentionClass: "standard",
         },
