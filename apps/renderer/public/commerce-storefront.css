@@ -2990,6 +2990,10 @@ section.hero::before {
   padding: clamp(3.5rem, 6vw, 6.5rem) clamp(1.25rem, 5vw, 5.5rem);
   color: #15263d;
 }
+.shopTheme--fashion .shopHeroActions {
+  position: relative;
+  z-index: 5;
+}
 .shopTheme--fashion .shopHeroCopy h1,
 .commercePublicRoot.shopTheme--fashion .shopHeroCopy h1,
 .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy h1 {
@@ -3006,12 +3010,19 @@ section.hero::before {
 .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy {
   align-items: flex-end;
   text-align: right;
+  padding-inline-start: clamp(3.5rem, 8vw, 8rem);
+  padding-inline-end: clamp(1.25rem, 3vw, 3rem);
 }
 .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy h1 {
-  max-width: 11ch;
+  max-width: 14ch;
+  width: 100%;
   font-size: clamp(3.15rem, 5vw, 5.7rem);
   line-height: 1.04;
   letter-spacing: -0.035em;
+}
+.commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy > p:not(.shopEyebrow) {
+  width: 100%;
+  line-height: 1.8;
 }
 .shopTheme--fashion .shopHeroCopy > p:not(.shopEyebrow) {
   max-width: 46ch;
@@ -3077,7 +3088,7 @@ section.hero::before {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(9rem, 0.8fr);
   width: min(calc(100% - 2rem), 1536px);
-  margin: -1.4rem auto 0;
+  margin: 1.25rem auto 0;
   overflow: hidden;
   border: 1px solid var(--shop-border);
   border-radius: 1rem;
@@ -3298,6 +3309,9 @@ section.hero::before {
     min-height: 0;
     padding: 2rem 1.25rem 1.5rem;
     color: #fff;
+  }
+  .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy {
+    padding-inline: 1.25rem;
   }
   .shopTheme--fashion .shopHeroCopy h1,
   .commercePublicRoot.shopTheme--fashion .shopHeroCopy h1,
@@ -4064,6 +4078,10 @@ p {
   align-items: start;
   grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.72fr);
   gap: clamp(2rem, 4vw, 4.5rem);
+}
+.shopTheme--fashion .commerceCartPage--empty {
+  grid-template-columns: minmax(0, 960px);
+  justify-content: center;
 }
 .shopTheme--fashion .commerceCartLines {
   min-width: 0;

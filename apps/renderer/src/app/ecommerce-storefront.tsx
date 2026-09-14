@@ -427,7 +427,7 @@ export function EcommerceStorefront({
         style={presentationTokens(store.presentation)}
       >
         {header}
-        <main className="commerceCartPage">
+        <main className={`commerceCartPage${lines.length === 0 ? " commerceCartPage--empty" : ""}`}>
           <section className="commerceCartLines">
             <p className="shopEyebrow">{copy.secureCheckout}</p>
             <h1>{copy.yourCart}</h1>
