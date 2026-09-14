@@ -12,6 +12,7 @@ const ignoredLiteralText = new Set([
   "generated/matrouh.template.manifest.json",
   "matrouh.template.json",
   "PDF",
+  "TXT",
   // Brand names are intentionally invariant across dashboard locales.
   "Matrouh",
   "Matrouh Solutions",
