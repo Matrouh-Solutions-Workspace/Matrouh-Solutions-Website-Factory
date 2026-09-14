@@ -1,11 +1,54 @@
 {
+	email matrouhsolutions@gmail.com
+	servers {
+		protocols h1 h2
+	}
 	on_demand_tls {
 		ask http://127.0.0.1:3000/api/internal/domains/authorize
 	}
 }
 
-# Customer domains terminate here. The ask endpoint prevents arbitrary hosts
-# from consuming certificates and keeps routing bound to active website records.
+(http_redirect) {
+	redir https://{host}{uri} permanent
+}
+
+http:// {
+	import http_redirect
+}
+
+mportfolio.ink, www.mportfolio.ink {
+	tls /etc/caddy/certs/mportfolio-origin.crt /etc/caddy/certs/mportfolio-origin.key
+	@renderer_gateway header X-Factory-Site-Host *
+	handle @renderer_gateway {
+		reverse_proxy 127.0.0.1:3001
+	}
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}
+
+auth.mportfolio.ink {
+	tls /etc/caddy/certs/mportfolio-origin.crt /etc/caddy/certs/mportfolio-origin.key
+	reverse_proxy 127.0.0.1:8080
+}
+
+media.mportfolio.ink {
+	tls /etc/caddy/certs/mportfolio-origin.crt /etc/caddy/certs/mportfolio-origin.key
+	reverse_proxy 127.0.0.1:3003
+}
+
+renderer.mportfolio.ink {
+	tls /etc/caddy/certs/mportfolio-origin.crt /etc/caddy/certs/mportfolio-origin.key
+	reverse_proxy 127.0.0.1:3001
+}
+
+*.mportfolio.ink {
+	tls /etc/caddy/certs/mportfolio-origin.crt /etc/caddy/certs/mportfolio-origin.key
+	reverse_proxy 127.0.0.1:3000
+}
+
+# Customer domains terminate here. Caddy asks the dashboard before issuing a
+# certificate, and the dashboard approves only an active route on a published site.
 https:// {
 	tls {
 		on_demand

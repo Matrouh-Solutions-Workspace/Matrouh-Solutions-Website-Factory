@@ -38,6 +38,13 @@ SQL
 run_as_factory '/usr/bin/corepack pnpm build'
 run_as_factory '/usr/bin/corepack pnpm templates:sync'
 
+caddy_source="$release/deployment/caddy/Caddyfile"
+if [ -f "$caddy_source" ]; then
+  caddy validate --config "$caddy_source" --adapter caddyfile
+  install -o root -g root -m 0644 "$caddy_source" /etc/caddy/Caddyfile
+  systemctl reload caddy
+fi
+
 keycloak_theme_source="$release/deployment/keycloak/themes/matrouh"
 keycloak_theme_target="/opt/keycloak/themes/matrouh"
 
