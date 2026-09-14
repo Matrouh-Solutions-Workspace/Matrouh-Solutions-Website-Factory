@@ -574,7 +574,7 @@ async function processDomainVerificationJob(job: ClaimedJob): Promise<void> {
 
   let verified = false;
   try {
-    const records = await resolveTxt(`_factory-verification.${domain.hostnameNormalized}`);
+    const records = await resolveTxt(`_factory-verification.${domain.rootHostname}`);
     verified = records.some((segments) => segments.join("").trim() === challenge);
   } catch {
     verified = false;
@@ -600,7 +600,12 @@ async function processDomainVerificationJob(job: ClaimedJob): Promise<void> {
     });
   });
 
-  const provider = await connectDomainProvider(domain.id, domain.hostnameNormalized);
+  const provider = await connectDomainProvider(
+    domain.id,
+    domain.hostnameNormalized,
+    domain.rootHostname,
+    domain.routingMode,
+  );
   if (!provider) return;
   await withTenantTransaction(database, tenantContext(job), async (transaction) => {
     await transaction.certificateBinding.upsert({
@@ -673,7 +678,13 @@ async function processDomainDisconnectJob(job: ClaimedJob): Promise<void> {
     }),
   );
   if (!domain) throw new PermanentJobError("Domain was not found", "DOMAIN_NOT_FOUND");
-  await disconnectDomainProvider(domain.id, domain.hostnameNormalized, domain.certificateBindings);
+  await disconnectDomainProvider(
+    domain.id,
+    domain.hostnameNormalized,
+    domain.rootHostname,
+    domain.routingMode,
+    domain.certificateBindings,
+  );
   await withTenantTransaction(database, tenantContext(job), async (transaction) => {
     await transaction.certificateBinding.updateMany({
       where: { organizationId: job.organizationId, domainId },
@@ -951,6 +962,8 @@ function domainIdFromPayload(value: unknown): string | null {
 async function connectDomainProvider(
   domainId: string,
   hostname: string,
+  rootHostname: string,
+  routingMode: "exact" | "wildcard",
 ): Promise<{ providerKey: string; bindingId: string; status: string } | null> {
   const endpoint = workerConfig.FACTORY_DOMAIN_PROVIDER_URL;
   const secret = workerConfig.FACTORY_DOMAIN_PROVIDER_SECRET;
@@ -960,7 +973,13 @@ async function connectDomainProvider(
     }
     return null;
   }
-  const body = JSON.stringify({ domainId, hostname, idempotencyKey: domainId });
+  const body = JSON.stringify({
+    domainId,
+    hostname,
+    rootHostname,
+    routingMode,
+    idempotencyKey: domainId,
+  });
   const timestamp = String(Date.now());
   const signature = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
   const response = await fetch(endpoint, {
@@ -995,6 +1014,8 @@ async function connectDomainProvider(
 async function disconnectDomainProvider(
   domainId: string,
   hostname: string,
+  rootHostname: string,
+  routingMode: "exact" | "wildcard",
   bindings: readonly { providerKey: string; providerBindingId: string }[],
 ): Promise<void> {
   const endpoint = workerConfig.FACTORY_DOMAIN_PROVIDER_URL;
@@ -1008,6 +1029,8 @@ async function disconnectDomainProvider(
   const body = JSON.stringify({
     domainId,
     hostname,
+    rootHostname,
+    routingMode,
     bindings,
     idempotencyKey: `release:${domainId}`,
   });

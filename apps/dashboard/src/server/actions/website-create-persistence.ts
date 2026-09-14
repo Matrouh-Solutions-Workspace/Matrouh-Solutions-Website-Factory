@@ -125,6 +125,7 @@ export async function persistWebsiteCreation(
           websiteId,
           hostnameNormalized: hostname,
           hostnameDisplay: hostname,
+          rootHostname: hostname,
           kind: "subdomain",
           status: "active",
         },

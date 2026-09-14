@@ -33,6 +33,60 @@ export interface CertificateProvider {
   connect(hostname: string): Promise<{ bindingId: string; status: string }>;
 }
 
+export type CustomDomainSubdomainMode = "none" | "selected" | "wildcard";
+export type DomainRoutingMode = "exact" | "wildcard";
+
+export interface CustomDomainRoute {
+  hostname: string;
+  rootHostname: string;
+  routingMode: DomainRoutingMode;
+  isPrimary: boolean;
+}
+
+/** Expands one website-scoped custom-domain configuration into routable hostnames. */
+export function customDomainRoutes(input: {
+  rootHostname: string;
+  includeApex?: boolean;
+  includeWww?: boolean;
+  subdomainMode?: CustomDomainSubdomainMode;
+  selectedSubdomains?: readonly string[];
+}): CustomDomainRoute[] {
+  const rootHostname = normalizeHostname(input.rootHostname);
+  if (rootHostname === "localhost" || rootHostname.endsWith(".localhost")) {
+    throw new Error("CUSTOM_DOMAIN_PUBLIC_HOST_REQUIRED");
+  }
+  const routes = new Map<string, CustomDomainRoute>();
+  const add = (hostname: string, routingMode: DomainRoutingMode, isPrimary = false) =>
+    routes.set(hostname, { hostname, rootHostname, routingMode, isPrimary });
+  if (input.includeApex !== false) add(rootHostname, "exact", true);
+  if (input.includeWww !== false) add(`www.${rootHostname}`, "exact", input.includeApex === false);
+  const mode = input.subdomainMode ?? "none";
+  if (mode === "wildcard") add(`*.${rootHostname}`, "wildcard");
+  if (mode === "selected") {
+    for (const rawLabel of input.selectedSubdomains ?? []) {
+      const label = rawLabel.trim().toLowerCase();
+      if (!label || label === "www" || !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)) {
+        if (label && label !== "www") throw new Error("CUSTOM_DOMAIN_INVALID_SUBDOMAIN");
+        continue;
+      }
+      add(`${label}.${rootHostname}`, "exact");
+    }
+  }
+  if (routes.size === 0) throw new Error("CUSTOM_DOMAIN_ROUTE_REQUIRED");
+  return [...routes.values()];
+}
+
+/** Exact routes win; wildcard routes match subdomains but never the apex. */
+export function customDomainRouteMatches(
+  requestedHostname: string,
+  route: Pick<CustomDomainRoute, "hostname" | "rootHostname" | "routingMode">,
+): boolean {
+  const requested = normalizeHostname(requestedHostname);
+  return route.routingMode === "exact"
+    ? requested === route.hostname
+    : requested !== route.rootHostname && requested.endsWith(`.${route.rootHostname}`);
+}
+
 export function domainOwnershipChallenge(domainId: string, secret: string): string {
   if (!/^[0-9a-f-]{36}$/i.test(domainId) || Buffer.byteLength(secret, "utf8") < 32) {
     throw new Error("DOMAIN_CHALLENGE_INPUT_INVALID");

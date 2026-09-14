@@ -24,6 +24,7 @@ export async function loadClients(query = "") {
                       some: {
                         domains: {
                           some: {
+                            kind: "subdomain",
                             hostnameNormalized: { contains: query, mode: "insensitive" as const },
                           },
                         },
@@ -59,6 +60,7 @@ export async function loadBillingWorkspace(query = "") {
                   {
                     domains: {
                       some: {
+                        kind: "subdomain",
                         hostnameNormalized: { contains: query, mode: "insensitive" as const },
                       },
                     },
@@ -72,7 +74,7 @@ export async function loadBillingWorkspace(query = "") {
           client: { select: { id: true, name: true } },
           subscription: true,
           domains: {
-            where: { releasedAt: null },
+            where: { releasedAt: null, kind: "subdomain" },
             orderBy: { createdAt: "asc" },
             take: 1,
             select: { hostnameNormalized: true },
@@ -144,7 +146,7 @@ export async function loadClientAccount() {
             include: {
               subscription: true,
               domains: {
-                where: { releasedAt: null },
+                where: { releasedAt: null, kind: "subdomain" },
                 orderBy: { createdAt: "asc" },
                 take: 1,
                 select: { hostnameNormalized: true, status: true },
@@ -170,7 +172,7 @@ export async function loadDomainsWorkspace() {
         select: { id: true, name: true },
       });
       const domains = await transaction.domain.findMany({
-        where: { organizationId: context.organization.id, releasedAt: null },
+        where: { organizationId: context.organization.id, releasedAt: null, kind: "subdomain" },
         orderBy: [{ status: "asc" }, { hostnameNormalized: "asc" }],
         include: {
           website: { select: { name: true } },
@@ -209,7 +211,7 @@ export async function loadHostingDomainChoices() {
         orderBy: [{ isDefault: "desc" }, { hostnameNormalized: "asc" }],
       });
       const mappings = await transaction.domain.findMany({
-        where: { organizationId: context.organization.id, releasedAt: null },
+        where: { organizationId: context.organization.id, releasedAt: null, kind: "subdomain" },
         select: { hostnameNormalized: true },
       });
       return domains.map((domain) => ({

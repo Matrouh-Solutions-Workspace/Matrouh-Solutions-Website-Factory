@@ -1,0 +1,61 @@
+CUSTOM DOMAIN ARCHITECTURE AND GUIDED UX VERIFICATION
+
+Changed branch/fields:
+- Branch: main
+- Domain.rootHostname, Domain.routingMode, Domain.isPrimary
+- FactoryConfig.FACTORY_INGRESS_IPV4
+- Website editor custom-domain wizard, DNS instructions, TXT verification, live-route test, automatic status refresh, and post-verification subdomain customization
+- Custom-domain mutations require the platform administrator role (`owner` or `admin`); the production bootstrap account `matrouhsolutions@gmail.com` has the `owner` platform role.
+
+Artifacts:
+- MODIFIED_FILE: verification/custom-domain-architecture/MODIFIED_FILE.tsx
+- DIFF_FILE: verification/custom-domain-architecture/DIFF_FILE.patch
+- VERIFICATION: verification/custom-domain-architecture/VERIFICATION.txt
+- ROLLBACK: verification/custom-domain-architecture/ROLLBACK.sh
+
+BASELINE
+Command: pnpm --filter @factory/domains test
+Input: repository at HEAD 2eb5d2b before the custom-domain change
+Literal result: No test files found, exiting with code 0
+Exit status: 0
+
+MODIFIED
+Command: pnpm --filter @factory/dashboard test -- custom-domain-architecture.test.ts
+Input: guided custom-domain UX and architecture tests
+Literal result: Test Files 1 passed (1); Tests 5 passed (5)
+Exit status: 0
+
+MODIFIED LINT
+Command: pnpm --filter @factory/dashboard lint
+Input: modified dashboard source
+Literal result: eslint src
+Exit status: 0
+
+MODIFIED TYPECHECK
+Command: pnpm --filter @factory/dashboard typecheck
+Input: modified dashboard and rebuilt @factory/config types
+Literal result: tsc --noEmit
+Exit status: 0
+
+MODIFIED BUILD
+Command: pnpm --filter @factory/dashboard build
+Input: complete modified dashboard
+Literal result: Compiled successfully; Finished TypeScript; Generating static pages (8/8); route /websites/[id] generated as dynamic
+Exit status: 0
+
+DATABASE SCHEMA
+Command: pnpm db:validate
+Input: modified Prisma schema
+Literal result: The schema at prisma\schema.prisma is valid
+Exit status: 0
+Command: pnpm db:deploy
+Input: local DATABASE_URL localhost:51214
+Literal result: Schema engine error (local PostgreSQL service was not running)
+Exit status: 1
+
+ROLLBACK
+Command: git apply --check custom-domain.patch; git apply custom-domain.patch; git apply -R custom-domain.patch
+Input: detached worktree at HEAD 2eb5d2b
+Literal result: APPLY_CHECK_EXIT=0; APPLY_EXIT=0; MODIFIED_PAGE_HASH=cdde5817fddfca1a0aa9050e0e07ea33ecb90999; ROLLBACK_EXIT=0; RESTORED_PAGE_HASH=756147fb60280905a8dd5d2c58ff6b4928238e1c; ORIGINAL_PAGE_HASH=756147fb60280905a8dd5d2c58ff6b4928238e1c
+Exit status: 0
+Restored behavior/status: the pre-feature website editor and exact-only domain behavior were restored in the rollback worktree; the main workspace and MODIFIED_FILE remain changed.

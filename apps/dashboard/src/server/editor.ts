@@ -30,6 +30,19 @@ export interface WebsiteEditor {
     whiteLabelEnabled: boolean;
   };
   mediaAssets: { id: string; name: string; url: string }[];
+  customDomains: {
+    id: string;
+    hostname: string;
+    rootHostname: string;
+    routingMode: "exact" | "wildcard";
+    isPrimary: boolean;
+    status: string;
+    verificationAttempt: {
+      id: string;
+      challengeValueHash: string;
+      failureCode: string | null;
+    } | null;
+  }[];
   settings: { id: string; content: string; revision: string } | null;
   theme: { id: string; tokens: string; revision: string } | null;
   navigation: {
@@ -159,8 +172,19 @@ async function loadWebsiteEditorForContext(
         orderBy: { createdAt: "asc" },
         take: 1,
       });
+      const customDomains = clientScoped
+        ? []
+        : await transaction.domain.findMany({
+            where: { organizationId: organization.id, websiteId, kind: "custom", releasedAt: null },
+            orderBy: [
+              { rootHostname: "asc" },
+              { isPrimary: "desc" },
+              { hostnameNormalized: "asc" },
+            ],
+            include: { verificationAttempts: { orderBy: { createdAt: "desc" }, take: 1 } },
+          });
       const mediaDomain = await transaction.domain.findFirst({
-        where: { organizationId: organization.id, websiteId },
+        where: { organizationId: organization.id, websiteId, kind: "subdomain" },
         orderBy: { createdAt: "asc" },
         select: { hostnameNormalized: true },
       });
@@ -237,6 +261,7 @@ async function loadWebsiteEditorForContext(
         })),
         publications,
         domains,
+        customDomains,
         locales,
         settingsDrafts,
         themeDrafts,
@@ -301,6 +326,21 @@ async function loadWebsiteEditorForContext(
       id: asset.id,
       name: asset.originalFilename,
       url: dashboardMediaPath(asset.id),
+    })),
+    customDomains: editorData.customDomains.map((domain) => ({
+      id: domain.id,
+      hostname: domain.hostnameDisplay,
+      rootHostname: domain.rootHostname,
+      routingMode: domain.routingMode,
+      isPrimary: domain.isPrimary,
+      status: domain.status,
+      verificationAttempt: domain.verificationAttempts[0]
+        ? {
+            id: domain.verificationAttempts[0].id,
+            challengeValueHash: domain.verificationAttempts[0].challengeValueHash,
+            failureCode: domain.verificationAttempts[0].failureCode,
+          }
+        : null,
     })),
     latestPublishJob: editorData.latestPublishJob,
     settings: editorData.settingsDrafts[0]

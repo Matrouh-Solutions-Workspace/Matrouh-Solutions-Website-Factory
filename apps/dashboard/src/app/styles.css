@@ -3873,6 +3873,87 @@ input[type="file"] {
   color: var(--ink);
   font-size: 10px;
 }
+.customDomainPanel {
+  gap: 18px;
+}
+.customDomainWizard,
+.customSubdomainForm {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--primary);
+  background: var(--surface-soft);
+}
+.customDomainConnectForm,
+.customSubdomainForm {
+  align-items: end;
+}
+.customDomainConnectForm {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  gap: 14px;
+}
+.customDomainConnectForm .domainDnsPreview {
+  grid-column: 1 / -1;
+}
+.domainWizardStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.domainWizardStep.compact {
+  margin-bottom: 6px;
+}
+.domainWizardStep p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+.domainStepNumber {
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--ink);
+  background: var(--primary);
+  color: #111;
+  font-weight: 800;
+}
+.domainDnsPreview {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px dashed var(--line-strong);
+  background: var(--surface);
+}
+.dnsRecordRow {
+  display: grid;
+  grid-template-columns: 70px minmax(90px, 0.5fr) minmax(180px, 1.5fr);
+  gap: 8px;
+  align-items: center;
+}
+.dnsRecordRow code {
+  min-height: 34px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  overflow-wrap: anywhere;
+}
+.customSubdomainForm {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+}
+.customSubdomainForm .domainWizardStep,
+.customSubdomainForm .domainDnsPreview {
+  grid-column: 1 / -1;
+}
+@media (max-width: 800px) {
+  .customDomainConnectForm,
+  .customSubdomainForm,
+  .dnsRecordRow {
+    grid-template-columns: 1fr;
+  }
+}
 .domainLink:hover {
   color: var(--primary-dark);
 }

@@ -64,6 +64,8 @@ export interface LoadedSite {
 
 interface ActiveSiteRow {
   hostname_normalized: string;
+  root_hostname: string;
+  routing_mode: "exact" | "wildcard";
   organization_id: string;
   website_id: string;
   publication_id: string;
@@ -140,12 +142,15 @@ export const loadSite = cache(async (hostname: string): Promise<LoadedSite | nul
   if (existing && existing.expiresAt > Date.now()) return existing.value;
 
   const rows = await database().$queryRaw<ActiveSiteRow[]>`
-    SELECT hostname_normalized, organization_id, website_id, publication_id,
+    SELECT hostname_normalized, root_hostname, routing_mode, organization_id, website_id, publication_id,
            template_id, template_version, template_artifact_hash,
            snapshot_schema_version, storage_uri, content_hash, byte_size, mapping_version,
            favicon_storage_key, white_label_enabled, subscription_expires_at
     FROM renderer_active_sites
-    WHERE hostname_normalized = ${normalized}
+    WHERE (routing_mode = 'exact' AND hostname_normalized = ${normalized})
+       OR (routing_mode = 'wildcard' AND ${normalized} <> root_hostname
+           AND ${normalized} LIKE ('%.' || root_hostname))
+    ORDER BY CASE WHEN routing_mode = 'exact' THEN 0 ELSE 1 END
     LIMIT 1
   `;
   const row = rows[0];

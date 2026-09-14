@@ -80,6 +80,7 @@ export async function createEcommerceStoreAction(formData: FormData): Promise<vo
                 id: randomUUID(),
                 hostnameNormalized: hostname,
                 hostnameDisplay: hostname,
+                rootHostname: hostname,
                 kind: hostname.endsWith(".localhost") ? "subdomain" : "custom",
                 status: "active",
               },

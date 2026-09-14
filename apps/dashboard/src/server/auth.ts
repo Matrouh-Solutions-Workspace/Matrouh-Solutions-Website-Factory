@@ -125,6 +125,16 @@ export async function requireClientAccountContext(): Promise<DashboardContext> {
   return context;
 }
 
+/** Custom-domain management is reserved for control-panel administrators, never clients. */
+export async function requireDomainAdministratorContext(): Promise<DashboardContext> {
+  const context = await requireDashboardContext();
+  const administrator = context.roleKeys.some((role) => role === "owner" || role === "admin");
+  if (!administrator) {
+    throw new DashboardAuthorizationError("website.domain.manage");
+  }
+  return context;
+}
+
 /** Allows a client to change only a website that is assigned to their email address. */
 export async function requireWebsiteMutationContext(
   websiteId: string,

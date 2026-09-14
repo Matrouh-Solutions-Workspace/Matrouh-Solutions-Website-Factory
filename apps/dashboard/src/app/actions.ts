@@ -12,6 +12,7 @@ import {
 } from "@factory/database";
 import { localizeTemplateDefault, localizedTemplateTitle } from "@factory/content";
 import {
+  customDomainRoutes,
   domainChallengeHash,
   domainOwnershipChallenge,
   normalizeHostname as normalizeDomainHostname,
@@ -35,7 +36,11 @@ import {
 import { instantiateTemplateRuntime } from "@factory/template-runtime";
 import { dashboardArtifactStore as artifactStore } from "@/server/artifact-store";
 import { dashboardDatabase } from "@/server/overview";
-import { requireDashboardContext, requireWebsiteMutationContext } from "@/server/auth";
+import {
+  requireDashboardContext,
+  requireDomainAdministratorContext,
+  requireWebsiteMutationContext,
+} from "@/server/auth";
 import { hostedHostname, isHostnameConflict, localHostname } from "@/server/local-hostnames";
 import { dashboardConfig, workspaceRoot } from "@/server/config";
 import { heartbeatProcessId, processIsRunning, startLocalWorker } from "@/server/worker-control";
@@ -1437,6 +1442,7 @@ export async function createDomainAction(formData: FormData): Promise<void> {
     return;
   }
   const isLocal = hostname === "localhost" || hostname.endsWith(".localhost");
+  if (!isLocal) return;
   const context = await requireDashboardContext("domain.create");
   const domainId = randomUUID();
   const verificationAttemptId = isLocal ? null : randomUUID();
@@ -1468,6 +1474,7 @@ export async function createDomainAction(formData: FormData): Promise<void> {
           websiteId,
           hostnameNormalized: hostname,
           hostnameDisplay: hostname,
+          rootHostname: hostname.endsWith(".localhost") ? "localhost" : hostname,
           kind: isLocal ? "subdomain" : "custom",
           status: isLocal ? "active" : "verifying",
         },
@@ -1519,17 +1526,146 @@ export async function createDomainAction(formData: FormData): Promise<void> {
   revalidatePath("/websites");
 }
 
+export async function configureWebsiteCustomDomainAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const rootHostname = cleanText(formData.get("rootHostname"), 253);
+  if (!websiteId || !rootHostname) return;
+  const context = await requireDomainAdministratorContext();
+  const subdomainModeValue = cleanText(formData.get("subdomainMode"), 20);
+  const subdomainMode = ["none", "selected", "wildcard"].includes(subdomainModeValue)
+    ? (subdomainModeValue as "none" | "selected" | "wildcard")
+    : "none";
+  let routes: ReturnType<typeof customDomainRoutes>;
+  try {
+    routes = customDomainRoutes({
+      rootHostname,
+      includeApex: formData.get("includeApex") === "on",
+      includeWww: formData.get("includeWww") === "on",
+      subdomainMode,
+      selectedSubdomains: cleanText(formData.get("selectedSubdomains"), 500)
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    });
+  } catch {
+    return;
+  }
+  await withTenantTransaction(
+    dashboardDatabase(),
+    {
+      organizationId: context.organization.id,
+      actorId: context.actor.id,
+      correlationId: `configure-custom-domain:${websiteId}`,
+    },
+    async (transaction) => {
+      const website = await transaction.website.findFirst({
+        where: { id: websiteId, organizationId: context.organization.id, archivedAt: null },
+        select: { id: true },
+      });
+      if (!website) return;
+      if (routes.some((route) => route.isPrimary)) {
+        await transaction.domain.updateMany({
+          where: {
+            organizationId: context.organization.id,
+            websiteId,
+            kind: "custom",
+            releasedAt: null,
+            isPrimary: true,
+          },
+          data: { isPrimary: false, revision: { increment: 1 } },
+        });
+      }
+      for (const route of routes) {
+        const existingRoute = await transaction.domain.findFirst({
+          where: {
+            organizationId: context.organization.id,
+            hostnameNormalized: route.hostname,
+            releasedAt: null,
+          },
+          select: { websiteId: true, kind: true },
+        });
+        if (existingRoute) {
+          if (existingRoute.websiteId === websiteId && existingRoute.kind === "custom") continue;
+          throw new Error("CUSTOM_DOMAIN_ROUTE_CONFLICT");
+        }
+        const domainId = randomUUID();
+        const attemptId = randomUUID();
+        const challenge = domainOwnershipChallenge(
+          attemptId,
+          dashboardConfig.FACTORY_DOMAIN_CHALLENGE_SECRET ?? dashboardConfig.PREVIEW_SIGNING_SECRET,
+        );
+        await transaction.domain.create({
+          data: {
+            id: domainId,
+            organizationId: context.organization.id,
+            websiteId,
+            hostnameNormalized: route.hostname,
+            hostnameDisplay: route.hostname,
+            rootHostname: route.rootHostname,
+            routingMode: route.routingMode,
+            isPrimary: route.isPrimary,
+            kind: "custom",
+            status: "verifying",
+          },
+        });
+        await transaction.domainVerificationAttempt.create({
+          data: {
+            id: attemptId,
+            organizationId: context.organization.id,
+            domainId,
+            challengeKind: "dns_txt",
+            challengeValueHash: domainChallengeHash(challenge),
+            status: "pending",
+          },
+        });
+        await transaction.job.create({
+          data: {
+            id: randomUUID(),
+            organizationId: context.organization.id,
+            type: "domain.verify",
+            version: 1,
+            payloadJson: jsonInput({ domainId }),
+            status: "queued",
+            priority: 5,
+            maxAttempts: 40,
+            deduplicationKey: `domain.verify:${domainId}`,
+            correlationId: `verify-domain:${domainId}`,
+          },
+        });
+      }
+      await transaction.auditEvent.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          actorType: "user",
+          actorId: context.actor.id,
+          action: "website.custom_domains_configured",
+          resourceType: "website",
+          resourceId: websiteId,
+          correlationId: `configure-custom-domain:${websiteId}`,
+          metadataJson: jsonInput({
+            rootHostname: routes[0]!.rootHostname,
+            routes: routes.map((route) => route.hostname),
+          }),
+          retentionClass: "standard",
+        },
+      });
+    },
+  );
+  revalidatePath(`/websites/${websiteId}`);
+}
+
 export async function verifyDomainAction(formData: FormData): Promise<void> {
   const domainId = cleanText(formData.get("domainId"), 80);
   if (!domainId) return;
-  const context = await requireDashboardContext("domain.create");
+  const context = await requireDomainAdministratorContext();
   await enforceRateLimit(
     dashboardDatabase(),
     `domain-verify:${context.organization.id}:${domainId}`,
     6,
     60,
   );
-  await withTenantTransaction(
+  const websiteId = await withTenantTransaction(
     dashboardDatabase(),
     {
       organizationId: context.organization.id,
@@ -1544,9 +1680,9 @@ export async function verifyDomainAction(formData: FormData): Promise<void> {
           kind: "custom",
           releasedAt: null,
         },
-        select: { id: true },
+        select: { id: true, websiteId: true },
       });
-      if (!domain) return;
+      if (!domain) return null;
       await transaction.domain.update({
         where: { id: domainId },
         data: { status: "verifying", revision: { increment: 1 } },
@@ -1587,15 +1723,68 @@ export async function verifyDomainAction(formData: FormData): Promise<void> {
           },
         });
       }
+      return domain.websiteId;
     },
   );
-  revalidatePath("/domains");
+  if (websiteId) revalidatePath(`/websites/${websiteId}`);
+}
+
+export async function testCustomDomainAction(formData: FormData): Promise<void> {
+  const domainId = cleanText(formData.get("domainId"), 80);
+  if (!domainId) return;
+  const context = await requireDomainAdministratorContext();
+  const domain = await withTenantTransaction(
+    dashboardDatabase(),
+    {
+      organizationId: context.organization.id,
+      actorId: context.actor.id,
+      correlationId: `test-custom-domain:${domainId}`,
+    },
+    (transaction) =>
+      transaction.domain.findFirst({
+        where: {
+          id: domainId,
+          organizationId: context.organization.id,
+          kind: "custom",
+          status: "active",
+          releasedAt: null,
+        },
+        select: {
+          hostnameNormalized: true,
+          rootHostname: true,
+          routingMode: true,
+          websiteId: true,
+          website: { select: { status: true } },
+        },
+      }),
+  );
+  if (!domain?.websiteId || domain.website?.status !== "published") {
+    redirect("/websites?domainTest=unavailable");
+  }
+  const hostname =
+    domain.routingMode === "wildcard"
+      ? `factory-route-check.${domain.rootHostname}`
+      : domain.hostnameNormalized;
+  let result = "failed";
+  try {
+    const response = await fetch(`https://${hostname}/`, {
+      method: "HEAD",
+      redirect: "manual",
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+      headers: { "user-agent": "Matrouh-Solutions-domain-check/1.0" },
+    });
+    if (response.status >= 200 && response.status < 400) result = "ok";
+  } catch {
+    result = "failed";
+  }
+  redirect(`/websites/${domain.websiteId}?setupStep=review&domainTest=${result}#custom-domains`);
 }
 
 export async function rotateDomainChallengeAction(formData: FormData): Promise<void> {
   const domainId = cleanText(formData.get("domainId"), 80);
   if (!domainId) return;
-  const context = await requireDashboardContext("domain.create");
+  const context = await requireDomainAdministratorContext();
   const attemptId = randomUUID();
   const challenge = domainOwnershipChallenge(
     attemptId,
@@ -1668,7 +1857,7 @@ export async function rotateDomainChallengeAction(formData: FormData): Promise<v
 export async function releaseDomainAction(formData: FormData): Promise<void> {
   const domainId = cleanText(formData.get("domainId"), 80);
   if (!domainId) return;
-  const context = await requireDashboardContext("domain.create");
+  const context = await requireDomainAdministratorContext();
   await withTenantTransaction(
     dashboardDatabase(),
     {
@@ -1845,7 +2034,9 @@ async function uploadMedia(formData: FormData): Promise<string | undefined> {
       async (transaction) => {
         const website = await transaction.website.findFirst({
           where: { id: websiteId, organizationId: context.organization.id, archivedAt: null },
-          include: { domains: { orderBy: { createdAt: "asc" }, take: 1 } },
+          include: {
+            domains: { where: { kind: "subdomain" }, orderBy: { createdAt: "asc" }, take: 1 },
+          },
         });
         if (!website) throw new Error("WEBSITE_NOT_FOUND");
         const folderName = website.domains[0]?.hostnameNormalized ?? website.name;

@@ -24,10 +24,10 @@ export default async function DomainsPage() {
         <div>
           <p className="eyebrow">Delivery</p>
           <h1>Domains</h1>
-          <p className="sub">Route each hostname to exactly one published website.</p>
+          <p className="sub">Manage system base domains and generated website hostnames.</p>
         </div>
         <a className="buttonLink" href="#connect-domain">
-          Connect domain
+          Add local route
         </a>
       </header>
       <section className="stats compactStats">
@@ -185,7 +185,7 @@ export default async function DomainsPage() {
           <div className="panelHead">
             <div>
               <p className="eyebrow">New mapping</p>
-              <h2>Connect domain</h2>
+              <h2>Add local development route</h2>
             </div>
           </div>
           <label>
@@ -201,13 +201,18 @@ export default async function DomainsPage() {
           <label>
             Hostname
             <span className="fieldHint">
-              Enter a short name for .localhost, or a complete custom hostname.
+              Enter a short name for .localhost. Custom domains are managed inside each website.
             </span>
-            <input name="hostname" placeholder="my-clinic" required maxLength={253} />
+            <input
+              name="hostname"
+              placeholder="my-clinic"
+              required
+              maxLength={80}
+              pattern="[A-Za-z0-9-]+"
+            />
           </label>
           <p className="formNotice">
-            Local hostnames activate immediately. Custom domains receive a DNS ownership challenge
-            and activate only after verification and certificate provisioning.
+            Local hostnames activate immediately and remain separate from customer custom domains.
           </p>
           <PendingSubmit pendingLabel="Connecting…">Connect domain</PendingSubmit>
         </form>

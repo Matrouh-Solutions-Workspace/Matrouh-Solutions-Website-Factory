@@ -18,6 +18,9 @@ const rendererBase = new URL(
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
   const { pathname, search } = request.nextUrl;
+  // Caddy calls this over loopback with its own Host header while authorizing
+  // on-demand TLS. It must reach the control app rather than a customer site.
+  if (pathname === "/api/internal/domains/authorize") return NextResponse.next();
   if (host && host !== dashboardHost) {
     if (pathname.startsWith("/api/storefront/")) {
       const forwarded = new Headers(request.headers);

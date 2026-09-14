@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { domainChallengeHash, domainOwnershipChallenge } from "@factory/domains";
 import {
   addSectionDraftAction,
   addWebsiteLocaleAction,
@@ -10,8 +11,12 @@ import {
   moveSectionDraftAction,
   previewWebsiteAction,
   retryPublicationJobAction,
+  releaseDomainAction,
+  rotateDomainChallengeAction,
   setWebsiteAvailabilityAction,
+  testCustomDomainAction,
   toggleWebsitePublicationAction,
+  verifyDomainAction,
   uploadMediaAction,
   rollbackPublicationAction,
   updatePageDraftAction,
@@ -28,6 +33,11 @@ import {
   upgradeWebsiteTemplateAction,
 } from "@/app/actions";
 import { ConfirmSubmit } from "@/app/confirm-submit";
+import {
+  CustomDomainSetup,
+  CustomDomainStatusRefresh,
+  CustomSubdomainSetup,
+} from "@/app/custom-domain-setup";
 import { DraftEditorForm } from "@/app/draft-editor-form";
 import { EditorPreviewPane, EditorSaveStatus } from "@/app/editor-studio";
 import { DocumentImportField } from "@/app/document-import-field";
@@ -52,10 +62,10 @@ export default async function WebsiteEditorPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ claimLink?: string; setupStep?: string }>;
+  searchParams: Promise<{ claimLink?: string; setupStep?: string; domainTest?: string }>;
 }) {
   const { id } = await params;
-  const { claimLink, setupStep: requestedSetupStep } = await searchParams;
+  const { claimLink, setupStep: requestedSetupStep, domainTest } = await searchParams;
   const [editor, locale] = await Promise.all([loadWebsiteEditor(id), dashboardLocale()]);
   if (!editor) notFound();
   const setupStep = draftSetupStep(requestedSetupStep);
@@ -69,6 +79,60 @@ export default async function WebsiteEditorPage({
   const availableLocales = editor.supportedLocales.filter(
     (locale) => !editor.website.locales.includes(locale),
   );
+  const activeCustomDomainRoots = [
+    ...new Set(
+      editor.customDomains
+        .filter((domain) => domain.status === "active")
+        .map((domain) => domain.rootHostname),
+    ),
+  ];
+  const ingressIpv4 = dashboardConfig.FACTORY_INGRESS_IPV4 ?? "135.125.202.142";
+  const domainUi =
+    locale === "ar"
+      ? {
+          eyebrow: "توصيل الموقع",
+          title: "الدومينات المخصصة",
+          privacy: "هذه الإعدادات خاصة بهذا الموقع ولا تظهر لحساب العميل.",
+          routes: "مسارات",
+          live: "الدومين يعمل ويعرض هذا الموقع بنجاح.",
+          liveFailed: "تم التحقق من DNS، لكن مسار HTTPS لم يستجب بنجاح حتى الآن.",
+          allSubdomains: "كل النطاقات الفرعية",
+          primary: "رئيسي",
+          exact: "عنوان محدد",
+          verifyTitle: "3. تحقق من الملكية",
+          verifyHelp: "أضف سجل TXT، وانتظر انتشار DNS، ثم اضغط تحقق.",
+          verify: "تحقق من DNS وفعّل",
+          checking: "جارٍ التحقق…",
+          rotate: "غيّر TXT",
+          rotating: "جارٍ التغيير…",
+          open: "افتح الموقع",
+          test: "اختبر الموقع",
+          testing: "جارٍ الاختبار…",
+          disconnect: "فصل",
+          disconnecting: "جارٍ الفصل…",
+        }
+      : {
+          eyebrow: "Website delivery",
+          title: "Custom domains",
+          privacy: "Private to this website. Client accounts cannot view or change these settings.",
+          routes: "routes",
+          live: "Domain is live and serving this website.",
+          liveFailed: "DNS is verified, but the live HTTPS route did not respond successfully yet.",
+          allSubdomains: "All subdomains",
+          primary: "Primary",
+          exact: "Exact hostname",
+          verifyTitle: "3. Verify ownership",
+          verifyHelp: "Add this DNS TXT record, wait for DNS propagation, then verify.",
+          verify: "Verify DNS and activate",
+          checking: "Checking…",
+          rotate: "Rotate TXT",
+          rotating: "Rotating…",
+          open: "Open live route",
+          test: "Test live route",
+          testing: "Testing…",
+          disconnect: "Disconnect",
+          disconnecting: "Disconnecting…",
+        };
 
   return (
     <div
@@ -76,6 +140,11 @@ export default async function WebsiteEditorPage({
       data-editor-step={setupStep}
     >
       <PublicationStatusRefresh active={publishPending && setupStep === "review"} />
+      <CustomDomainStatusRefresh
+        active={editor.customDomains.some((domain) =>
+          ["verifying", "verified", "connecting"].includes(domain.status),
+        )}
+      />
       <header className="websiteEditorHeader">
         <div>
           <p className="eyebrow">Draft editor</p>
@@ -1039,6 +1108,119 @@ export default async function WebsiteEditorPage({
             </div>
           </section>
 
+          <section
+            className="panel followPanel customDomainPanel"
+            hidden={setupStep !== "review"}
+            id="custom-domains"
+          >
+            <div className="panelHead">
+              <div>
+                <p className="eyebrow">{domainUi.eyebrow}</p>
+                <h2>{domainUi.title}</h2>
+                <p>{domainUi.privacy}</p>
+              </div>
+              <span>
+                {editor.customDomains.length} {domainUi.routes}
+              </span>
+            </div>
+            {domainTest === "ok" ? (
+              <div className="flashMessage success">{domainUi.live}</div>
+            ) : null}
+            {domainTest === "failed" ? (
+              <div className="flashMessage error">{domainUi.liveFailed}</div>
+            ) : null}
+            <CustomDomainSetup
+              websiteId={editor.website.id}
+              locale={locale}
+              ingressIpv4={ingressIpv4}
+            />
+            {editor.customDomains.map((domain) => (
+              <article className="dataRow domainRow" key={domain.id}>
+                <div>
+                  <strong>{domain.hostname}</strong>
+                  <p>
+                    {domain.routingMode === "wildcard"
+                      ? domainUi.allSubdomains
+                      : domain.isPrimary
+                        ? domainUi.primary
+                        : domainUi.exact}
+                  </p>
+                  {domain.status !== "active" && domain.verificationAttempt ? (
+                    <div className="domainChallenge">
+                      <strong>{domainUi.verifyTitle}</strong>
+                      <span>{domainUi.verifyHelp}</span>
+                      <div className="dnsRecordRow">
+                        <code>TXT</code>
+                        <code>_factory-verification.{domain.rootHostname}</code>
+                        <code>{customDomainChallenge(domain)}</code>
+                      </div>
+                      {domain.verificationAttempt.failureCode ? (
+                        <small>{domain.verificationAttempt.failureCode}</small>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+                <span
+                  className={`jobStatus ${domain.status === "active" ? "succeeded" : "queued"}`}
+                >
+                  {domain.status}
+                </span>
+                <div className="rowActions">
+                  {domain.status !== "active" ? (
+                    <>
+                      <form action={verifyDomainAction}>
+                        <input name="domainId" type="hidden" value={domain.id} />
+                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.checking}>
+                          {domainUi.verify}
+                        </PendingSubmit>
+                      </form>
+                      <form action={rotateDomainChallengeAction}>
+                        <input name="domainId" type="hidden" value={domain.id} />
+                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.rotating}>
+                          {domainUi.rotate}
+                        </PendingSubmit>
+                      </form>
+                    </>
+                  ) : null}
+                  {domain.status === "active" ? (
+                    <>
+                      <a
+                        className="inlineButton"
+                        href={`https://${domain.routingMode === "wildcard" ? `factory-route-check.${domain.rootHostname}` : domain.hostname}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {domainUi.open}
+                      </a>
+                      <form action={testCustomDomainAction}>
+                        <input name="domainId" type="hidden" value={domain.id} />
+                        <PendingSubmit className="inlineButton" pendingLabel={domainUi.testing}>
+                          {domainUi.test}
+                        </PendingSubmit>
+                      </form>
+                    </>
+                  ) : null}
+                  <form action={releaseDomainAction}>
+                    <input name="domainId" type="hidden" value={domain.id} />
+                    <ConfirmSubmit
+                      className="inlineButton dangerButton"
+                      confirmation={`${domainUi.disconnect} ${domain.hostname}?`}
+                      pendingLabel={domainUi.disconnecting}
+                    >
+                      {domainUi.disconnect}
+                    </ConfirmSubmit>
+                  </form>
+                </div>
+              </article>
+            ))}
+            <CustomSubdomainSetup
+              websiteId={editor.website.id}
+              locale={locale}
+              roots={activeCustomDomainRoots}
+              ingressIpv4={ingressIpv4}
+            />
+          </section>
+
           <section className="panel followPanel" hidden={setupStep !== "review"}>
             <div className="panelHead">
               <div>
@@ -1091,6 +1273,20 @@ export default async function WebsiteEditorPage({
       </div>
     </div>
   );
+}
+
+function customDomainChallenge(domain: {
+  id: string;
+  verificationAttempt: { id: string; challengeValueHash: string } | null;
+}): string {
+  const attempt = domain.verificationAttempt;
+  if (!attempt) return "Challenge unavailable";
+  const secret =
+    dashboardConfig.FACTORY_DOMAIN_CHALLENGE_SECRET ?? dashboardConfig.PREVIEW_SIGNING_SECRET;
+  const current = domainOwnershipChallenge(attempt.id, secret);
+  return domainChallengeHash(current) === attempt.challengeValueHash
+    ? current
+    : domainOwnershipChallenge(domain.id, secret);
 }
 
 function settingsValue(content: string | undefined, key: string): string | undefined {

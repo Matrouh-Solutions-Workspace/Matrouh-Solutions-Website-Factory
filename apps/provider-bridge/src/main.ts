@@ -265,7 +265,10 @@ function assertProviderSigned(request: IncomingMessage, body: Buffer, secret: st
 function connectDomain(input: DomainConnectRequest): DomainConnectResult {
   if (
     !validDomainId(input.domainId) ||
-    !validHostname(input.hostname) ||
+    !(input.routingMode === "wildcard"
+      ? input.hostname === `*.${input.rootHostname}` && validHostname(input.rootHostname)
+      : validHostname(input.hostname)) ||
+    !validHostname(input.rootHostname) ||
     input.idempotencyKey !== input.domainId
   ) {
     throw new HttpError(400, "DOMAIN_REQUEST_INVALID");
@@ -276,7 +279,10 @@ function connectDomain(input: DomainConnectRequest): DomainConnectResult {
 function validateDomainDisconnect(input: DomainDisconnectRequest): void {
   if (
     !validDomainId(input.domainId) ||
-    !validHostname(input.hostname) ||
+    !(input.routingMode === "wildcard"
+      ? input.hostname === `*.${input.rootHostname}` && validHostname(input.rootHostname)
+      : validHostname(input.hostname)) ||
+    !validHostname(input.rootHostname) ||
     input.idempotencyKey !== `release:${input.domainId}`
   ) {
     throw new HttpError(400, "DOMAIN_REQUEST_INVALID");
@@ -422,12 +428,16 @@ interface MailRequest {
 interface DomainConnectRequest {
   readonly domainId: string;
   readonly hostname: string;
+  readonly rootHostname: string;
+  readonly routingMode: "exact" | "wildcard";
   readonly idempotencyKey: string;
 }
 
 interface DomainDisconnectRequest {
   readonly domainId: string;
   readonly hostname: string;
+  readonly rootHostname: string;
+  readonly routingMode: "exact" | "wildcard";
   readonly idempotencyKey: string;
   readonly bindings: readonly {
     readonly providerKey: string;

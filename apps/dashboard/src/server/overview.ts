@@ -105,7 +105,7 @@ export async function loadDashboardOverview(): Promise<DashboardOverview> {
           where: { archivedAt: null },
           orderBy: { updatedAt: "desc" },
           include: {
-            domains: { orderBy: { hostnameNormalized: "asc" } },
+            domains: { where: { kind: "subdomain" }, orderBy: { hostnameNormalized: "asc" } },
             activePublication: { select: { sourceDraftRevision: true } },
             _count: { select: { pages: true } },
           },

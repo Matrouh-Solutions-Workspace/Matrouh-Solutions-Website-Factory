@@ -13,6 +13,10 @@ const environmentSchema = z
     DATABASE_URL: z.url(),
     DATABASE_RENDERER_URL: optionalUrl,
     FACTORY_BASE_DOMAIN: z.string().trim().min(1).default("localhost"),
+    FACTORY_INGRESS_IPV4: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      z.ipv4().optional(),
+    ),
     FACTORY_DASHBOARD_PUBLIC_URL: z.url().default("http://localhost:3000"),
     FACTORY_RENDERER_PUBLIC_URL: z.url().default("http://localhost:3001"),
     FACTORY_ARTIFACT_DRIVER: z.enum(["local", "s3"]).default("local"),

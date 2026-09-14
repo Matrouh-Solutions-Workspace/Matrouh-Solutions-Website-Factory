@@ -131,6 +131,11 @@ enum DomainStatus {
   disconnected
 }
 
+enum DomainRoutingMode {
+  exact
+  wildcard
+}
+
 enum MediaStatus {
   pending_upload
   quarantined
@@ -834,6 +839,9 @@ model Domain {
   websiteId            String                      @map("website_id") @db.Uuid
   hostnameNormalized   String                      @map("hostname_normalized") @db.VarChar(253)
   hostnameDisplay      String                      @map("hostname_display") @db.VarChar(253)
+  rootHostname         String                      @map("root_hostname") @db.VarChar(253)
+  routingMode          DomainRoutingMode           @default(exact) @map("routing_mode")
+  isPrimary            Boolean                     @default(false) @map("is_primary")
   kind                 String                      @db.VarChar(24)
   status               DomainStatus                @default(pending)
   revision             BigInt                      @default(1)
