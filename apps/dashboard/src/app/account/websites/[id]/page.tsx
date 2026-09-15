@@ -11,6 +11,8 @@ import {
   updateWebsiteBrandingAction,
   updateWebsiteIdentityAction,
   updateWebsiteLogoAction,
+  updateWebsiteWhatsAppSettingsAction,
+  updateThemeDraftAction,
   updateNavigationNodeAction,
 } from "@/app/actions";
 import { ClientPublicationAction } from "@/app/client-publication-action";
@@ -18,10 +20,13 @@ import { CoordinatePickerFields, StructuredListField } from "@/app/structured-li
 import { DraftEditorForm } from "@/app/draft-editor-form";
 import { DocumentImportField } from "@/app/document-import-field";
 import { EditorPreviewPane, EditorSaveStatus } from "@/app/editor-studio";
+import { EditorStudioSidebar } from "@/app/editor-studio-sidebar";
+import { EditorDisclosure } from "@/app/editor-disclosure";
 import { MediaPicker } from "@/app/media-picker";
 import { MenuQrCard } from "@/app/menu-qr-card";
 import { createMenuQrDataUrl } from "@/app/menu-qr";
 import { PendingSubmit } from "@/app/pending-submit";
+import { ThemeLiveEditor } from "@/app/theme-live-editor";
 import { dashboardConfig } from "@/server/config";
 import { loadClientWebsiteEditor } from "@/server/editor";
 import { UI_LOCALE_COOKIE, uiLocale } from "@/server/ui-locale";
@@ -45,6 +50,16 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
   const availableLocales = editor.supportedLocales.filter(
     (supportedLocale) => !editor.website.locales.includes(supportedLocale),
   );
+  const sidebarItems = [
+    { href: "#client-identity", label: copy.websiteIdentity },
+    { href: "#client-branding", label: copy.branding },
+    editor.settings ? { href: "#client-whatsapp", label: copy.whatsappContact } : null,
+    editor.theme ? { href: "#client-colors", label: copy.brandColors } : null,
+    menuMode ? { href: "#menu-languages", label: copy.languages } : null,
+    qrMenu ? { href: "#menu-qr", label: copy.qrCode } : null,
+    { href: "#client-content", label: menuMode ? copy.categoriesAndItems : copy.content },
+    editor.navigation.length > 0 ? { href: "#client-navigation", label: copy.navigation } : null,
+  ].filter((item): item is { href: string; label: string } => item !== null);
 
   return (
     <div
@@ -107,48 +122,24 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
       </section>
 
       <div className="editorStudioWorkspace">
-        <aside className="editorStudioSidebar">
+        <EditorStudioSidebar locale={locale}>
           <div className="editorStudioSidebarIntro">
             <span>{menuMode ? copy.menuWorkspace : copy.websiteManager}</span>
             <strong>{copy.chooseWhatToEdit}</strong>
           </div>
           <nav aria-label={menuMode ? copy.menuWorkspace : copy.websiteManager}>
-            <a href="#client-identity">
-              <span>01</span>
-              {copy.websiteIdentity}
-            </a>
-            <a href="#client-branding">
-              <span>02</span>
-              {copy.branding}
-            </a>
-            {menuMode ? (
-              <a href="#menu-languages">
-                <span>03</span>
-                {copy.languages}
+            {sidebarItems.map((item, index) => (
+              <a href={item.href} key={item.href}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                {item.label}
               </a>
-            ) : null}
-            {qrMenu ? (
-              <a href="#menu-qr">
-                <span>04</span>
-                {copy.qrCode}
-              </a>
-            ) : null}
-            <a href="#client-content">
-              <span>{qrMenu ? "05" : menuMode ? "04" : "03"}</span>
-              {menuMode ? copy.categoriesAndItems : copy.content}
-            </a>
-            {editor.navigation.length > 0 ? (
-              <a href="#client-navigation">
-                <span>{qrMenu ? "06" : menuMode ? "05" : "04"}</span>
-                {copy.navigation}
-              </a>
-            ) : null}
+            ))}
           </nav>
           <div className="editorStudioTip">
             <span aria-hidden="true">⌘</span>
             <p>{copy.editorTip}</p>
           </div>
-        </aside>
+        </EditorStudioSidebar>
 
         <div className="editorStudioInspector">
           {qrMenu ? (
@@ -160,71 +151,226 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
               qrDataUrl={qrDataUrl}
             />
           ) : null}
-          <DraftEditorForm
-            action={updateWebsiteIdentityAction}
-            className="panel editForm"
-            id="client-identity"
-          >
-            <input name="websiteId" type="hidden" value={editor.website.id} />
-            <div className="panelHead">
-              <div>
-                <p className="eyebrow">{copy.websiteIdentity}</p>
-                <h2>{copy.dashboardTitle}</h2>
-              </div>
-            </div>
-            <label>
-              {copy.websiteTitle}
-              <input defaultValue={editor.website.name} maxLength={200} name="name" required />
-            </label>
-          </DraftEditorForm>
-
-          <section className="panel editForm" id="client-branding">
-            <div className="panelHead">
-              <div>
-                <p className="eyebrow">{copy.branding}</p>
-                <h2>{copy.brandingTitle}</h2>
-                <p className="sub">{copy.brandingDescription}</p>
-              </div>
-            </div>
-            <div className="inlineUploadGrid">
-              <DraftEditorForm action={updateWebsiteBrandingAction}>
+          <section id="client-identity">
+            <EditorDisclosure eyebrow={copy.websiteIdentity} open title={copy.dashboardTitle}>
+              <DraftEditorForm action={updateWebsiteIdentityAction} className="editForm">
                 <input name="websiteId" type="hidden" value={editor.website.id} />
-                <input name="updatesWhiteLabel" type="hidden" value="1" />
-                <MediaPicker
-                  assets={editor.mediaAssets}
-                  defaultValue={editor.website.faviconAssetId ?? ""}
-                  label={copy.favicon}
-                  name="faviconAssetId"
-                  noneLabel={copy.factoryDefault}
-                  purpose="favicon"
-                  websiteId={editor.website.id}
-                />
-                {menuMode ? (
-                  <label className="checkboxLine">
-                    <input
-                      defaultChecked={!editor.website.whiteLabelEnabled}
-                      name="showWatermark"
-                      type="checkbox"
-                      value="on"
-                    />
-                    {copy.showWatermark}
-                  </label>
-                ) : null}
+                <label>
+                  {copy.websiteTitle}
+                  <input defaultValue={editor.website.name} maxLength={200} name="name" required />
+                </label>
               </DraftEditorForm>
-              <DraftEditorForm action={updateWebsiteLogoAction}>
-                <input name="websiteId" type="hidden" value={editor.website.id} />
-                <MediaPicker
-                  assets={editor.mediaAssets}
-                  defaultValue={settingsValue(editor.settings?.content, "logoMediaId") ?? ""}
-                  label={copy.customLogo}
-                  name="logoMediaId"
-                  noneLabel={copy.templateDefault}
-                  purpose="logo"
-                  websiteId={editor.website.id}
-                />
-              </DraftEditorForm>
-            </div>
+            </EditorDisclosure>
           </section>
+
+          <section id="client-branding">
+            <EditorDisclosure
+              description={copy.brandingDescription}
+              eyebrow={copy.branding}
+              title={copy.brandingTitle}
+            >
+              <div className="inlineUploadGrid">
+                <DraftEditorForm action={updateWebsiteBrandingAction}>
+                  <input name="websiteId" type="hidden" value={editor.website.id} />
+                  <input name="updatesWhiteLabel" type="hidden" value="1" />
+                  <MediaPicker
+                    assets={editor.mediaAssets}
+                    defaultValue={editor.website.faviconAssetId ?? ""}
+                    label={copy.favicon}
+                    name="faviconAssetId"
+                    noneLabel={copy.factoryDefault}
+                    purpose="favicon"
+                    websiteId={editor.website.id}
+                  />
+                  {menuMode ? (
+                    <label className="checkboxLine">
+                      <input
+                        defaultChecked={!editor.website.whiteLabelEnabled}
+                        name="showWatermark"
+                        type="checkbox"
+                        value="on"
+                      />
+                      {copy.showWatermark}
+                    </label>
+                  ) : null}
+                </DraftEditorForm>
+                <DraftEditorForm action={updateWebsiteLogoAction}>
+                  <input name="websiteId" type="hidden" value={editor.website.id} />
+                  <MediaPicker
+                    assets={editor.mediaAssets}
+                    defaultValue={settingsValue(editor.settings?.content, "logoMediaId") ?? ""}
+                    label={copy.customLogo}
+                    name="logoMediaId"
+                    noneLabel={copy.templateDefault}
+                    purpose="logo"
+                    websiteId={editor.website.id}
+                  />
+                </DraftEditorForm>
+              </div>
+            </EditorDisclosure>
+          </section>
+
+          {editor.settings ? (
+            <section id="client-whatsapp">
+              <EditorDisclosure
+                description={copy.whatsappDescription}
+                eyebrow={copy.floatingContact}
+                title={copy.whatsappContact}
+              >
+                <form action={updateWebsiteWhatsAppSettingsAction} className="editForm">
+                  <input name="websiteId" type="hidden" value={editor.website.id} />
+                  <input name="draftId" type="hidden" value={editor.settings.id} />
+                  <input name="expectedRevision" type="hidden" value={editor.settings.revision} />
+                  <input
+                    name="websiteDraftRevision"
+                    type="hidden"
+                    value={editor.website.draftRevision}
+                  />
+                  <label className="checkLabel">
+                    <input
+                      defaultChecked={settingsBoolean(
+                        editor.settings.content,
+                        "whatsappEnabled",
+                        true,
+                      )}
+                      name="whatsappEnabled"
+                      type="checkbox"
+                      value="yes"
+                    />
+                    {copy.showWhatsApp}
+                  </label>
+                  <label>
+                    {copy.whatsappNumber}
+                    <input
+                      defaultValue={
+                        settingsValue(editor.settings.content, "whatsappPhone") ??
+                        settingsValue(editor.settings.content, "centralPhone") ??
+                        settingsValue(editor.settings.content, "phone") ??
+                        "+20 100 000 0000"
+                      }
+                      dir="ltr"
+                      name="whatsappPhone"
+                      placeholder="+20 100 000 0000"
+                      required
+                      type="tel"
+                    />
+                  </label>
+                  <div className="formGrid">
+                    <label>
+                      {copy.greetingEnglish}
+                      <input
+                        defaultValue={
+                          settingsValue(editor.settings.content, "whatsappGreeting") ?? "Welcome"
+                        }
+                        name="whatsappGreeting"
+                        required
+                      />
+                    </label>
+                    <label>
+                      {copy.greetingArabic}
+                      <input
+                        defaultValue={
+                          settingsValue(editor.settings.content, "whatsappGreetingAr") ?? "أهلاً بك"
+                        }
+                        name="whatsappGreetingAr"
+                        required
+                      />
+                    </label>
+                    <label>
+                      {copy.availabilityEnglish}
+                      <input
+                        defaultValue={
+                          settingsValue(editor.settings.content, "whatsappAvailability") ??
+                          "Our team is ready to help"
+                        }
+                        name="whatsappAvailability"
+                        required
+                      />
+                    </label>
+                    <label>
+                      {copy.availabilityArabic}
+                      <input
+                        defaultValue={
+                          settingsValue(editor.settings.content, "whatsappAvailabilityAr") ??
+                          "فريقنا متاح لمساعدتك"
+                        }
+                        name="whatsappAvailabilityAr"
+                        required
+                      />
+                    </label>
+                    <label>
+                      {copy.promptEnglish}
+                      <input
+                        defaultValue={
+                          settingsValue(editor.settings.content, "whatsappPrompt") ??
+                          "How can we help you?"
+                        }
+                        name="whatsappPrompt"
+                        required
+                      />
+                    </label>
+                    <label>
+                      {copy.promptArabic}
+                      <input
+                        defaultValue={
+                          settingsValue(editor.settings.content, "whatsappPromptAr") ??
+                          "كيف يمكننا مساعدتك؟"
+                        }
+                        name="whatsappPromptAr"
+                        required
+                      />
+                    </label>
+                    <label>
+                      {copy.buttonLabelEnglish}
+                      <input
+                        defaultValue={
+                          settingsValue(editor.settings.content, "whatsappButtonLabel") ??
+                          "Contact us on WhatsApp"
+                        }
+                        name="whatsappButtonLabel"
+                        required
+                      />
+                    </label>
+                    <label>
+                      {copy.buttonLabelArabic}
+                      <input
+                        defaultValue={
+                          settingsValue(editor.settings.content, "whatsappButtonLabelAr") ??
+                          "تواصل معنا على واتساب"
+                        }
+                        name="whatsappButtonLabelAr"
+                        required
+                      />
+                    </label>
+                  </div>
+                  <div className="formFooter">
+                    <PendingSubmit pendingLabel={copy.savingWhatsApp}>
+                      {copy.saveWhatsApp}
+                    </PendingSubmit>
+                  </div>
+                </form>
+              </EditorDisclosure>
+            </section>
+          ) : null}
+
+          {editor.theme ? (
+            <section id="client-colors">
+              <EditorDisclosure
+                description={copy.brandColorsDescription}
+                eyebrow={copy.designStudio}
+                title={copy.brandColors}
+              >
+                <ThemeLiveEditor
+                  action={updateThemeDraftAction}
+                  expectedRevision={editor.theme.revision}
+                  initialTokens={editor.theme.tokens}
+                  themeId={editor.theme.id}
+                  websiteDraftRevision={editor.website.draftRevision}
+                  websiteId={editor.website.id}
+                />
+              </EditorDisclosure>
+            </section>
+          ) : null}
 
           {menuMode ? (
             <section className="panel localeManager editorLocaleManager" id="menu-languages">
@@ -307,18 +453,21 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
                 <p className="sub">{copy.autosaveDescription}</p>
               </div>
             </div>
-            {editor.pages.map((page) => (
-              <section className="panel pageContentEditor" key={page.id}>
-                <div className="panelHead">
-                  <div>
-                    <p className="eyebrow">{page.locale}</p>
-                    <h2>{page.title}</h2>
-                  </div>
-                  <span>{page.slug}</span>
-                </div>
+            {editor.pages.map((page, pageIndex) => (
+              <EditorDisclosure
+                description={page.slug}
+                eyebrow={localeName(page.locale, locale)}
+                key={page.id}
+                open={pageIndex === 0}
+                title={page.title}
+              >
                 <div className="sectionStack">
                   {page.sections.map((section) => (
-                    <article className="sectionEditor" key={section.id}>
+                    <EditorDisclosure
+                      description={section.sectionTypeId}
+                      key={section.id}
+                      title={section.title}
+                    >
                       <DraftEditorForm
                         action={updateSectionDraftAction}
                         className="sectionContentForm"
@@ -427,111 +576,108 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
                           </label>
                         )}
                       </DraftEditorForm>
-                    </article>
+                    </EditorDisclosure>
                   ))}
                 </div>
-                <DraftEditorForm action={updateSeoDraftAction} className="sectionSeoForm">
-                  <input name="websiteId" type="hidden" value={editor.website.id} />
-                  <input name="pageId" type="hidden" value={page.id} />
-                  <input
-                    name="websiteDraftRevision"
-                    type="hidden"
-                    value={editor.website.draftRevision}
-                  />
-                  <div className="sectionEditorHead">
-                    <div>
-                      <strong>{copy.searchVisibility}</strong>
-                      <p>{copy.searchVisibilityDescription}</p>
-                    </div>
-                  </div>
-                  <label>
-                    {copy.searchTitle}
-                    <input defaultValue={page.seo.title} maxLength={200} name="title" />
-                  </label>
-                  <label>
-                    {copy.searchDescription}
-                    <textarea
-                      defaultValue={page.seo.description}
-                      maxLength={500}
-                      name="description"
-                      rows={3}
+                <EditorDisclosure
+                  description={copy.searchVisibilityDescription}
+                  title={copy.searchVisibility}
+                >
+                  <DraftEditorForm action={updateSeoDraftAction} className="sectionSeoForm">
+                    <input name="websiteId" type="hidden" value={editor.website.id} />
+                    <input name="pageId" type="hidden" value={page.id} />
+                    <input
+                      name="websiteDraftRevision"
+                      type="hidden"
+                      value={editor.website.draftRevision}
                     />
-                  </label>
-                  <label>
-                    {copy.keywords}
-                    <input defaultValue={page.seo.keywords.join(", ")} name="keywords" />
-                  </label>
-                  <div className="checkboxGroup">
-                    <label className="checkboxLine">
-                      <input defaultChecked={page.seo.index} name="index" type="checkbox" />
-                      {copy.allowIndexing}
+                    <label>
+                      {copy.searchTitle}
+                      <input defaultValue={page.seo.title} maxLength={200} name="title" />
                     </label>
-                    <label className="checkboxLine">
-                      <input defaultChecked={page.seo.follow} name="follow" type="checkbox" />
-                      {copy.allowFollowing}
+                    <label>
+                      {copy.searchDescription}
+                      <textarea
+                        defaultValue={page.seo.description}
+                        maxLength={500}
+                        name="description"
+                        rows={3}
+                      />
                     </label>
-                  </div>
-                </DraftEditorForm>
-              </section>
+                    <label>
+                      {copy.keywords}
+                      <input defaultValue={page.seo.keywords.join(", ")} name="keywords" />
+                    </label>
+                    <div className="checkboxGroup">
+                      <label className="checkboxLine">
+                        <input defaultChecked={page.seo.index} name="index" type="checkbox" />
+                        {copy.allowIndexing}
+                      </label>
+                      <label className="checkboxLine">
+                        <input defaultChecked={page.seo.follow} name="follow" type="checkbox" />
+                        {copy.allowFollowing}
+                      </label>
+                    </div>
+                  </DraftEditorForm>
+                </EditorDisclosure>
+              </EditorDisclosure>
             ))}
           </section>
 
           {editor.navigation.length > 0 ? (
-            <section className="panel followPanel" id="client-navigation">
-              <div className="panelHead">
-                <div>
-                  <p className="eyebrow">{copy.navigation}</p>
-                  <h2>{copy.navigationLabels}</h2>
-                  <p className="sub">{copy.navigationDescription}</p>
-                </div>
-                <span>{copy.menuCount.replace("{count}", String(editor.navigation.length))}</span>
-              </div>
-              {editor.navigation.map((navigation) => {
-                const navigationLocales = navigation.locale
-                  ? [navigation.locale]
-                  : editor.website.locales;
-                return (
-                  <div className="navigationEditor" key={navigation.id}>
-                    <strong>
-                      {navigation.title}
-                      {navigation.locale ? ` — ${localeName(navigation.locale, locale)}` : ""}
-                    </strong>
-                    <div className="navigationNodeGrid">
-                      {navigation.nodes.map((node) => (
-                        <DraftEditorForm
-                          action={updateNavigationNodeAction}
-                          className="inlineEditForm"
-                          key={node.id}
-                        >
-                          <input name="websiteId" type="hidden" value={editor.website.id} />
-                          <input name="nodeId" type="hidden" value={node.id} />
-                          <input name="expectedRevision" type="hidden" value={node.revision} />
-                          <input
-                            name="websiteDraftRevision"
-                            type="hidden"
-                            value={editor.website.draftRevision}
-                          />
-                          <fieldset className="localizedNavigationLabels">
-                            <legend>{copy.navigationLabel}</legend>
-                            {navigationLocales.map((navigationLocale) => (
-                              <label key={navigationLocale}>
-                                {localeName(navigationLocale, locale)}
-                                <input
-                                  defaultValue={node.labels[navigationLocale] ?? ""}
-                                  dir={navigationLocale === "ar" ? "rtl" : "ltr"}
-                                  lang={navigationLocale}
-                                  name={`label:${navigationLocale}`}
-                                  required
-                                />
-                              </label>
-                            ))}
-                          </fieldset>
-                        </DraftEditorForm>
-                      ))}
+            <section id="client-navigation">
+              <EditorDisclosure
+                description={`${copy.navigationDescription} · ${copy.menuCount.replace("{count}", String(editor.navigation.length))}`}
+                eyebrow={copy.navigation}
+                title={copy.navigationLabels}
+              >
+                {editor.navigation.map((navigation) => {
+                  const navigationLocales = navigation.locale
+                    ? [navigation.locale]
+                    : editor.website.locales;
+                  return (
+                    <div className="navigationEditor" key={navigation.id}>
+                      <strong>
+                        {navigation.title}
+                        {navigation.locale ? ` — ${localeName(navigation.locale, locale)}` : ""}
+                      </strong>
+                      <div className="navigationNodeGrid">
+                        {navigation.nodes.map((node) => (
+                          <DraftEditorForm
+                            action={updateNavigationNodeAction}
+                            className="inlineEditForm"
+                            key={node.id}
+                          >
+                            <input name="websiteId" type="hidden" value={editor.website.id} />
+                            <input name="nodeId" type="hidden" value={node.id} />
+                            <input name="expectedRevision" type="hidden" value={node.revision} />
+                            <input
+                              name="websiteDraftRevision"
+                              type="hidden"
+                              value={editor.website.draftRevision}
+                            />
+                            <fieldset className="localizedNavigationLabels">
+                              <legend>{copy.navigationLabel}</legend>
+                              {navigationLocales.map((navigationLocale) => (
+                                <label key={navigationLocale}>
+                                  {localeName(navigationLocale, locale)}
+                                  <input
+                                    defaultValue={node.labels[navigationLocale] ?? ""}
+                                    dir={navigationLocale === "ar" ? "rtl" : "ltr"}
+                                    lang={navigationLocale}
+                                    name={`label:${navigationLocale}`}
+                                    required
+                                  />
+                                </label>
+                              ))}
+                            </fieldset>
+                          </DraftEditorForm>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </EditorDisclosure>
             </section>
           ) : null}
         </div>
@@ -564,6 +710,18 @@ function settingsValue(content: string | undefined, key: string): string | null 
     return typeof value === "string" ? value : null;
   } catch {
     return null;
+  }
+}
+
+function settingsBoolean(content: string | undefined, key: string, fallback: boolean): boolean {
+  if (!content) return fallback;
+  try {
+    const parsed: unknown = JSON.parse(content);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return fallback;
+    const value = (parsed as Record<string, unknown>)[key];
+    return typeof value === "boolean" ? value : fallback;
+  } catch {
+    return fallback;
   }
 }
 
@@ -611,6 +769,24 @@ const english = {
   brandingTitle: "Logo and favicon",
   brandingDescription:
     "Choose an existing image or upload a new one from your website media folder.",
+  floatingContact: "Floating contact",
+  whatsappContact: "WhatsApp contact",
+  whatsappDescription: "Control the WhatsApp button shown to visitors across the website.",
+  showWhatsApp: "Show the WhatsApp contact button",
+  whatsappNumber: "WhatsApp number",
+  greetingEnglish: "Greeting (English)",
+  greetingArabic: "Greeting (Arabic)",
+  availabilityEnglish: "Availability text (English)",
+  availabilityArabic: "Availability text (Arabic)",
+  promptEnglish: "Contact prompt (English)",
+  promptArabic: "Contact prompt (Arabic)",
+  buttonLabelEnglish: "Button label (English)",
+  buttonLabelArabic: "Button label (Arabic)",
+  savingWhatsApp: "Saving WhatsApp contact…",
+  saveWhatsApp: "Save WhatsApp contact",
+  designStudio: "Design studio",
+  brandColors: "Brand colors",
+  brandColorsDescription: "Adjust the website palette and see the result in the live preview.",
   favicon: "Favicon",
   factoryDefault: "Use the Factory default",
   customLogo: "Custom logo",
@@ -674,6 +850,24 @@ const arabic: Record<keyof typeof english, string> = {
   branding: "الهوية البصرية",
   brandingTitle: "الشعار والأيقونة",
   brandingDescription: "اختر صورة موجودة أو ارفع صورة جديدة من مجلد وسائط موقعك.",
+  floatingContact: "زر التواصل العائم",
+  whatsappContact: "التواصل عبر واتساب",
+  whatsappDescription: "تحكم في زر واتساب الذي يظهر للزوار في جميع صفحات الموقع.",
+  showWhatsApp: "إظهار زر التواصل عبر واتساب",
+  whatsappNumber: "رقم واتساب",
+  greetingEnglish: "الترحيب بالإنجليزية",
+  greetingArabic: "الترحيب بالعربية",
+  availabilityEnglish: "نص التوفر بالإنجليزية",
+  availabilityArabic: "نص التوفر بالعربية",
+  promptEnglish: "سؤال التواصل بالإنجليزية",
+  promptArabic: "سؤال التواصل بالعربية",
+  buttonLabelEnglish: "نص الزر بالإنجليزية",
+  buttonLabelArabic: "نص الزر بالعربية",
+  savingWhatsApp: "جارٍ حفظ إعدادات واتساب…",
+  saveWhatsApp: "حفظ إعدادات واتساب",
+  designStudio: "استوديو التصميم",
+  brandColors: "ألوان الهوية",
+  brandColorsDescription: "عدّل ألوان الموقع وشاهد النتيجة مباشرة في المعاينة.",
   favicon: "أيقونة الموقع",
   factoryDefault: "استخدم الإعداد الافتراضي",
   customLogo: "شعار مخصص",

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "pnpm --dir=../.. turbo run build --filter=@templates/* --concurrency=1",
+    "predev": "pnpm --dir=../.. db:generate && pnpm --dir=../.. turbo run build --filter=@factory/config --filter=@factory/database --filter=@factory/domains --concurrency=1 && pnpm --dir=../.. turbo run build --filter=@templates/* --concurrency=1",
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start --port 3000",

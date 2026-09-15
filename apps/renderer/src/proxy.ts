@@ -8,7 +8,7 @@ const platformHost = new URL(process.env.FACTORY_DASHBOARD_PUBLIC_URL ?? "http:/
  * Persist its route locale here so following the Control Portal link keeps
  * the same language without putting locale state in the URL.
  */
-export function middleware(request: NextRequest): NextResponse {
+export function proxy(request: NextRequest): NextResponse {
   const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
   if (host !== platformHost) return NextResponse.next();
 

@@ -35,7 +35,7 @@ try {
   await database.organization.upsert({
     where: { id: organizationId },
     update: {
-      name: "Matrouh Solutions Demo",
+      name: "Matrouh Solutions",
       slug: "matrouh-solutions-demo",
       defaultLocale: "en",
       planKey: "demo",
@@ -43,7 +43,7 @@ try {
     },
     create: {
       id: organizationId,
-      name: "Matrouh Solutions Demo",
+      name: "Matrouh Solutions",
       slug: "matrouh-solutions-demo",
       defaultLocale: "en",
       planKey: "demo",

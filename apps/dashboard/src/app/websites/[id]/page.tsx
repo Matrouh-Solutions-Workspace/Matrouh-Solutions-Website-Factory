@@ -30,6 +30,7 @@ import {
   upgradeWebsiteTemplateAction,
 } from "@/app/actions";
 import { ConfirmSubmit } from "@/app/confirm-submit";
+import { CopyClaimLink } from "@/app/copy-claim-link";
 import {
   CustomDomainSetup,
   CustomDomainStatusRefresh,
@@ -42,6 +43,7 @@ import { DraggableSection } from "@/app/draggable-section";
 import { PendingSubmit } from "@/app/pending-submit";
 import { PublicationStatusRefresh } from "@/app/publication-status-refresh";
 import { DraftSetupSteps, draftSetupStep } from "@/app/draft-setup-steps";
+import { EditorStudioSidebar } from "@/app/editor-studio-sidebar";
 import { CoordinatePickerFields, StructuredListField } from "@/app/structured-list-field";
 import { ThemeLiveEditor } from "@/app/theme-live-editor";
 import { MediaPicker } from "@/app/media-picker";
@@ -249,7 +251,7 @@ export default async function WebsiteEditorPage({
       )}
 
       <div className="editorStudioWorkspace">
-        <aside className="editorStudioSidebar">
+        <EditorStudioSidebar locale={locale}>
           <div className="editorStudioSidebarIntro">
             <span>{locale === "ar" ? "بنية الموقع" : "Site structure"}</span>
             <strong>{locale === "ar" ? "اختر ما تريد تعديله" : "Choose what to edit"}</strong>
@@ -263,7 +265,7 @@ export default async function WebsiteEditorPage({
                 : "Fields autosave. Use Ctrl + S to save the section you are editing immediately."}
             </p>
           </div>
-        </aside>
+        </EditorStudioSidebar>
 
         <div className="editorStudioInspector">
           {qrMenu ? (
@@ -309,7 +311,7 @@ export default async function WebsiteEditorPage({
                   ? "Generate a secure registration or sign-in link for the assigned client."
                   : "The owner can register or sign in, review the website, and claim it."}
               </p>
-              {claimLink ? <output className="claimLink">{claimLink}</output> : null}
+              {claimLink ? <CopyClaimLink value={claimLink} /> : null}
             </div>
             <input name="websiteId" type="hidden" value={editor.website.id} />
             <label>
@@ -910,119 +912,123 @@ export default async function WebsiteEditorPage({
                         websiteId={editor.website.id}
                       >
                         <article className="sectionEditor">
-                          <DraftEditorForm
-                            action={updateSectionDraftAction}
-                            className="sectionContentForm"
-                          >
-                            <input name="websiteId" type="hidden" value={editor.website.id} />
-                            <input name="sectionId" type="hidden" value={section.id} />
-                            <input
-                              name="websiteDraftRevision"
-                              type="hidden"
-                              value={editor.website.draftRevision}
-                            />
-                            <input name="expectedRevision" type="hidden" value={section.revision} />
-                            <div className="sectionEditorHead">
-                              <div>
-                                <strong>{section.title}</strong>
-                                <p>{section.sectionTypeId}</p>
-                              </div>
-                            </div>
-                            {section.fields.length > 0 ? (
-                              section.fields.map((field) =>
-                                field.name === "longitude" ? null : field.name === "latitude" ? (
-                                  <CoordinatePickerFields
-                                    key="location-coordinates"
-                                    latitude={field.value}
-                                    longitude={
-                                      section.fields.find((item) => item.name === "longitude")
-                                        ?.value ?? "0"
-                                    }
-                                  />
-                                ) : field.control === "list" ? (
-                                  <StructuredListField
-                                    fieldName={field.name}
-                                    initialJson={field.value}
-                                    key={field.name}
-                                    label={field.label}
-                                    locationMode={field.label === "Locations"}
-                                    mediaAssets={editor.mediaAssets}
-                                    websiteId={editor.website.id}
-                                  />
-                                ) : field.control === "document-import" ? (
-                                  <DocumentImportField
-                                    fieldName={field.name}
-                                    initialJson={field.value}
-                                    key={field.name}
-                                    label={field.label}
-                                    websiteId={editor.website.id}
-                                  />
-                                ) : field.control === "media" ? (
-                                  <MediaPicker
-                                    assets={editor.mediaAssets}
-                                    defaultValue={field.value === "null" ? "" : field.value}
-                                    key={field.name}
-                                    label={field.label}
-                                    name={`field:${field.name}`}
-                                    websiteId={editor.website.id}
-                                  />
-                                ) : field.control === "textarea" ? (
-                                  <label key={field.name}>
-                                    {field.label}
-                                    <textarea
-                                      name={`field:${field.name}`}
-                                      defaultValue={field.value}
-                                      required={field.required}
-                                      rows={5}
+                          <details className="sectionEditorDisclosure" open>
+                            <summary>
+                              <strong>{section.title}</strong>
+                              <span>{section.sectionTypeId}</span>
+                            </summary>
+                            <DraftEditorForm
+                              action={updateSectionDraftAction}
+                              className="sectionContentForm"
+                            >
+                              <input name="websiteId" type="hidden" value={editor.website.id} />
+                              <input name="sectionId" type="hidden" value={section.id} />
+                              <input
+                                name="websiteDraftRevision"
+                                type="hidden"
+                                value={editor.website.draftRevision}
+                              />
+                              <input
+                                name="expectedRevision"
+                                type="hidden"
+                                value={section.revision}
+                              />
+                              {section.fields.length > 0 ? (
+                                section.fields.map((field) =>
+                                  field.name === "longitude" ? null : field.name === "latitude" ? (
+                                    <CoordinatePickerFields
+                                      key="location-coordinates"
+                                      latitude={field.value}
+                                      longitude={
+                                        section.fields.find((item) => item.name === "longitude")
+                                          ?.value ?? "0"
+                                      }
                                     />
-                                  </label>
-                                ) : (
-                                  <label key={field.name}>
-                                    {field.label}
-                                    {field.control === "group" ? (
+                                  ) : field.control === "list" ? (
+                                    <StructuredListField
+                                      fieldName={field.name}
+                                      initialJson={field.value}
+                                      key={field.name}
+                                      label={field.label}
+                                      locationMode={field.label === "Locations"}
+                                      mediaAssets={editor.mediaAssets}
+                                      websiteId={editor.website.id}
+                                    />
+                                  ) : field.control === "document-import" ? (
+                                    <DocumentImportField
+                                      fieldName={field.name}
+                                      initialJson={field.value}
+                                      key={field.name}
+                                      label={field.label}
+                                      websiteId={editor.website.id}
+                                    />
+                                  ) : field.control === "media" ? (
+                                    <MediaPicker
+                                      assets={editor.mediaAssets}
+                                      defaultValue={field.value === "null" ? "" : field.value}
+                                      key={field.name}
+                                      label={field.label}
+                                      name={`field:${field.name}`}
+                                      websiteId={editor.website.id}
+                                    />
+                                  ) : field.control === "textarea" ? (
+                                    <label key={field.name}>
+                                      {field.label}
                                       <textarea
-                                        name={`jsonField:${field.name}`}
-                                        defaultValue={field.value}
-                                        required={field.required}
-                                        rows={7}
-                                      />
-                                    ) : field.control === "boolean" ? (
-                                      <select
-                                        name={`jsonField:${field.name}`}
-                                        defaultValue={field.value}
-                                        required={field.required}
-                                      >
-                                        <option value="true">Yes</option>
-                                        <option value="false">No</option>
-                                      </select>
-                                    ) : field.control === "number" ? (
-                                      <input
-                                        name={`jsonField:${field.name}`}
-                                        defaultValue={field.value}
-                                        required={field.required}
-                                        type="number"
-                                      />
-                                    ) : (
-                                      <input
                                         name={`field:${field.name}`}
                                         defaultValue={field.value}
                                         required={field.required}
+                                        rows={5}
                                       />
-                                    )}
-                                  </label>
-                                ),
-                              )
-                            ) : (
-                              <label>
-                                Content JSON
-                                <textarea
-                                  name="contentJson"
-                                  defaultValue={JSON.stringify(section.content, null, 2)}
-                                  rows={10}
-                                />
-                              </label>
-                            )}
-                          </DraftEditorForm>
+                                    </label>
+                                  ) : (
+                                    <label key={field.name}>
+                                      {field.label}
+                                      {field.control === "group" ? (
+                                        <textarea
+                                          name={`jsonField:${field.name}`}
+                                          defaultValue={field.value}
+                                          required={field.required}
+                                          rows={7}
+                                        />
+                                      ) : field.control === "boolean" ? (
+                                        <select
+                                          name={`jsonField:${field.name}`}
+                                          defaultValue={field.value}
+                                          required={field.required}
+                                        >
+                                          <option value="true">Yes</option>
+                                          <option value="false">No</option>
+                                        </select>
+                                      ) : field.control === "number" ? (
+                                        <input
+                                          name={`jsonField:${field.name}`}
+                                          defaultValue={field.value}
+                                          required={field.required}
+                                          type="number"
+                                        />
+                                      ) : (
+                                        <input
+                                          name={`field:${field.name}`}
+                                          defaultValue={field.value}
+                                          required={field.required}
+                                        />
+                                      )}
+                                    </label>
+                                  ),
+                                )
+                              ) : (
+                                <label>
+                                  Content JSON
+                                  <textarea
+                                    name="contentJson"
+                                    defaultValue={JSON.stringify(section.content, null, 2)}
+                                    rows={10}
+                                  />
+                                </label>
+                              )}
+                            </DraftEditorForm>
+                          </details>
                           <div className="sectionManage" aria-label={`${section.title} controls`}>
                             {sectionIndex > 0 && (
                               <SectionCommand

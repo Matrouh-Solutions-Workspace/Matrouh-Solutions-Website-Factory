@@ -15,7 +15,7 @@ const rendererBase = new URL(
  * visitors one public origin: the platform at localhost:3000/dashboard and each site at its
  * own subdomain on port 3000.
  */
-export async function middleware(request: NextRequest): Promise<NextResponse> {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
   const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
   const { pathname, search } = request.nextUrl;
   // Caddy calls this over loopback with its own Host header while authorizing

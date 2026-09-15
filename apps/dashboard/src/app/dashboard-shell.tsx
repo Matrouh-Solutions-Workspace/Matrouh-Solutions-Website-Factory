@@ -101,6 +101,7 @@ export function DashboardShell({
     appPathname === "/login" ||
     appPathname === "/forgot-password" ||
     appPathname.startsWith("/reset-password/") ||
+    appPathname.startsWith("/claim/") ||
     appPathname.startsWith("/template-preview/")
   ) {
     return <>{children}</>;

@@ -1,5 +1,6 @@
 import { formatMoney } from "@factory/ecommerce";
 import { createWebsiteClaimLinkAction } from "@/app/actions";
+import { CopyClaimLink } from "@/app/copy-claim-link";
 import {
   adjustEcommerceInventoryAction,
   createEcommerceCategoryAction,
@@ -541,9 +542,10 @@ export default async function EcommerceStorePage({
               </form>
             ) : null}
             {query.claimLink ? (
-              <p className="notice">
-                Claim link: <code>{query.claimLink}</code>
-              </p>
+              <div className="notice">
+                <span>Claim link:</span>
+                <CopyClaimLink value={query.claimLink} />
+              </div>
             ) : null}
           </div>
         </div>

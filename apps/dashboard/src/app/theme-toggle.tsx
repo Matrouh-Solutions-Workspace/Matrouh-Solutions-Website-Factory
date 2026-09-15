@@ -10,12 +10,9 @@ export function ThemeToggle({ locale = "ar" }: { readonly locale?: UiLocale }) {
 
   useEffect(() => {
     const saved = window.localStorage.getItem("factory-dashboard-theme");
-    const selected: DashboardTheme =
-      saved === "dark" || saved === "light"
-        ? saved
-        : window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light";
+    // Light is the dashboard default. Respect an explicit choice, but do not
+    // inherit the operating system's dark-mode preference on first visit.
+    const selected: DashboardTheme = saved === "dark" || saved === "light" ? saved : "light";
     setTheme(selected);
     document.documentElement.dataset.theme = selected;
   }, []);

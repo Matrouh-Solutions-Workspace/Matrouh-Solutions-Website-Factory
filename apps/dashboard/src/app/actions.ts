@@ -624,7 +624,11 @@ export async function createWebsiteClaimLinkAction(formData: FormData): Promise<
       }
     },
   );
-  redirect(`/websites/${websiteId}?claimLink=${encodeURIComponent(`/claim/${token}`)}`);
+  const claimUrl = new URL(
+    `/dashboard/claim/${token}`,
+    dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL,
+  ).toString();
+  redirect(`/websites/${websiteId}?claimLink=${encodeURIComponent(claimUrl)}`);
 }
 
 export async function updateWebsiteBrandingAction(formData: FormData): Promise<void> {

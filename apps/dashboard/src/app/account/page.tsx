@@ -10,10 +10,12 @@ export default async function ClientAccountPage() {
   if (clients.length === 0) notFound();
   const locale = uiLocale((await cookies()).get(UI_LOCALE_COOKIE)?.value);
   const copy = locale === "ar" ? arabic : english;
+  const organizationName =
+    organization.name === "Matrouh Solutions Demo" ? "Matrouh Solutions" : organization.name;
 
   return (
-    <>
-      <header>
+    <div className="clientDashboardPage">
+      <header className="clientDashboardHero">
         <div>
           <p className="eyebrow">{copy.clientDashboard}</p>
           <h1>
@@ -21,11 +23,34 @@ export default async function ClientAccountPage() {
             {locale === "ar" ? "، " : ", "}
             {actor.displayName}
           </h1>
-          <p className="sub">{copy.intro.replace("{organization}", organization.name)}</p>
+          <p className="sub">{copy.intro.replace("{organization}", organizationName)}</p>
+        </div>
+        <div className="clientDashboardHeroMark" aria-hidden="true">
+          MS
         </div>
       </header>
+      <section className="clientDashboardStats" aria-label={copy.summary}>
+        <article>
+          <span>{copy.websites}</span>
+          <strong>{clients.reduce((total, client) => total + client.websites.length, 0)}</strong>
+        </article>
+        <article>
+          <span>{copy.activeSites}</span>
+          <strong>
+            {clients.reduce(
+              (total, client) =>
+                total + client.websites.filter((website) => website.status === "published").length,
+              0,
+            )}
+          </strong>
+        </article>
+        <article>
+          <span>{copy.organization}</span>
+          <strong>{organizationName}</strong>
+        </article>
+      </section>
       {clients.map((client) => (
-        <section className="panel" key={client.id}>
+        <section className="panel clientAccountCard" key={client.id}>
           <div className="panelHead">
             <div>
               <p className="eyebrow">{copy.account}</p>
@@ -33,9 +58,9 @@ export default async function ClientAccountPage() {
             </div>
             <span>{copy.websiteCount.replace("{count}", String(client.websites.length))}</span>
           </div>
-          <div className="tableList">
+          <div className="tableList clientWebsiteList">
             {client.websites.map((website) => (
-              <article className="dataRow" key={website.id}>
+              <article className="dataRow clientWebsiteCard" key={website.id}>
                 <div>
                   <strong>{website.name}</strong>
                   <p>{website.domains[0]?.hostnameNormalized ?? copy.domainPending}</p>
@@ -71,7 +96,7 @@ export default async function ClientAccountPage() {
           )}
         </section>
       ))}
-    </>
+    </div>
   );
 }
 
@@ -106,6 +131,10 @@ const english = {
   manageWebsite: "Manage website",
   noWebsites: "No websites assigned",
   noWebsitesDescription: "Contact support if you expected a website here.",
+  summary: "Account summary",
+  websites: "Websites",
+  activeSites: "Published",
+  organization: "Workspace",
 } as const;
 
 const arabic: Record<keyof typeof english, string> = {
@@ -123,4 +152,8 @@ const arabic: Record<keyof typeof english, string> = {
   manageWebsite: "إدارة الموقع",
   noWebsites: "لا توجد مواقع مخصصة",
   noWebsitesDescription: "تواصل مع الدعم إذا كنت تتوقع وجود موقع هنا.",
+  summary: "ملخص الحساب",
+  websites: "المواقع",
+  activeSites: "منشورة",
+  organization: "مساحة العمل",
 };
