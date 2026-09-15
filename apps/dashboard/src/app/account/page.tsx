@@ -82,7 +82,14 @@ export default async function ClientAccountPage() {
                     )}
                   </p>
                 </div>
-                <a className="buttonLink secondaryButton" href={`/account/websites/${website.id}`}>
+                <a
+                  className="buttonLink secondaryButton"
+                  href={
+                    website.kind === "ecommerce" && website.ecommerceStore
+                      ? `/account/ecommerce/stores/${website.ecommerceStore.id}`
+                      : `/account/websites/${website.id}`
+                  }
+                >
                   {copy.manageWebsite}
                 </a>
               </article>

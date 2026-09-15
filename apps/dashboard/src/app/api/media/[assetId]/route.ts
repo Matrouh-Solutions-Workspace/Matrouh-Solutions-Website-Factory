@@ -18,7 +18,9 @@ export async function GET(
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(assetId)) {
     return new Response("Not found", { status: 404 });
   }
-  const dashboardContext = await requireDashboardContext("media.read");
+  // Authenticated clients can preview images they uploaded for an assigned website.
+  // The lookup below remains organization-scoped, so this does not expose cross-tenant media.
+  const dashboardContext = await requireDashboardContext();
   const asset = await withTenantTransaction(
     dashboardDatabase(),
     {

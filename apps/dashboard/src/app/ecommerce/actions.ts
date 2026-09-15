@@ -12,6 +12,7 @@ import {
 } from "@factory/ecommerce";
 import { withTenantTransaction } from "@factory/database";
 import { dashboardDatabase } from "@/server/database";
+import { DashboardAuthorizationError } from "@/server/auth";
 import {
   loadEcommerceTemplates,
   requireCommerceAdministrator,
@@ -192,11 +193,22 @@ export async function updateEcommerceStoreAction(formData: FormData): Promise<vo
     : "draft";
   const contactEmail = text(formData, "contactEmail", 320) || null;
   const contactPhone = text(formData, "contactPhone", 50) || null;
+  const primaryColor = colorField(formData, "primaryColor", "#171512");
+  const accentColor = colorField(formData, "accentColor", "#a45f3f");
+  const surfaceColor = colorField(formData, "surfaceColor", "#f8f6f1");
+  const whatsappEnabled = formData.get("whatsappEnabled") === "on";
+  const whatsappButtonLabel = text(formData, "whatsappButtonLabel", 100) || null;
   if (!name) return;
   await withTenantTransaction(
     dashboardDatabase(),
     tenant(context, `ecommerce:update-store:${storeId}`),
     async (transaction) => {
+      const current = await transaction.ecommerceStore.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: storeId } },
+        select: { brandingJson: true, settingsJson: true },
+      });
+      const branding = jsonRecord(current?.brandingJson);
+      const settings = jsonRecord(current?.settingsJson);
       await transaction.ecommerceStore.update({
         where: { organizationId_id: { organizationId: context.organization.id, id: storeId } },
         data: {
@@ -205,6 +217,16 @@ export async function updateEcommerceStoreAction(formData: FormData): Promise<vo
           status,
           contactEmail,
           contactPhone,
+          brandingJson: {
+            ...branding,
+            tokens: {
+              ...jsonRecord(branding.tokens),
+              primary: primaryColor,
+              accent: accentColor,
+              surface: surfaceColor,
+            },
+          },
+          settingsJson: { ...settings, whatsappEnabled, whatsappButtonLabel },
           revision: { increment: 1 },
           locales: {
             updateMany: [
@@ -230,7 +252,8 @@ export async function updateEcommerceStoreAction(formData: FormData): Promise<vo
 export async function switchEcommerceTemplateAction(formData: FormData): Promise<void> {
   const storeId = requiredId(formData, "storeId");
   const templateVersionId = requiredId(formData, "templateVersionId");
-  const { context } = await requireEcommerceStoreContext(storeId);
+  const { context, administrator } = await requireEcommerceStoreContext(storeId);
+  if (!administrator) throw new DashboardAuthorizationError("ecommerce.admin");
   await withTenantTransaction(
     dashboardDatabase(),
     tenant(context, `ecommerce:switch-template:${storeId}`),
@@ -265,13 +288,24 @@ export async function createEcommerceCategoryAction(formData: FormData): Promise
   const { context } = await requireEcommerceStoreContext(storeId);
   const nameEn = text(formData, "nameEn", 200);
   const nameAr = text(formData, "nameAr", 200) || nameEn;
-  const slug = normalizeStoreSlug(text(formData, "slug", 160) || nameEn);
   if (!nameEn) return;
+  const requestedSlug = normalizeStoreSlug(text(formData, "slug", 160) || nameEn);
   await withTenantTransaction(
     dashboardDatabase(),
     tenant(context, `ecommerce:create-category:${storeId}`),
     async (transaction) => {
       const position = await transaction.ecommerceCategory.count({ where: { storeId } });
+      let slug = requestedSlug;
+      let suffix = 2;
+      while (
+        await transaction.ecommerceCategory.findFirst({
+          where: { storeId, slug },
+          select: { id: true },
+        })
+      ) {
+        slug = `${requestedSlug.slice(0, 154)}-${suffix}`;
+        suffix += 1;
+      }
       await transaction.ecommerceCategory.create({
         data: {
           id: randomUUID(),
@@ -297,22 +331,56 @@ export async function createEcommerceProductAction(formData: FormData): Promise<
   const { context } = await requireEcommerceStoreContext(storeId);
   const nameEn = text(formData, "nameEn", 240);
   const nameAr = text(formData, "nameAr", 240) || nameEn;
-  const slug = normalizeStoreSlug(text(formData, "slug", 180) || nameEn);
+  const shortDescriptionEn = text(formData, "shortDescriptionEn", 5000);
+  const shortDescriptionAr = text(formData, "shortDescriptionAr", 5000) || shortDescriptionEn;
+  const descriptionEn = text(formData, "descriptionEn", 5000);
+  const descriptionAr = text(formData, "descriptionAr", 5000) || descriptionEn;
+  const imageMediaId = text(formData, "imageMediaId", 80) || null;
+  const imageAltText = text(formData, "imageAltText", 300);
+  const colors = formData
+    .getAll("colors")
+    .flatMap((value) => String(value).split(/[\s,;]+/))
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => /^#[0-9a-f]{6}$/i.test(value))
+    .slice(0, 12);
   const sku = text(formData, "sku", 120) || null;
   const priceMinor = amountField(formData, "price");
   const stockQuantity = integerField(formData, "stockQuantity", 0);
   const categoryId = text(formData, "categoryId", 80) || null;
   if (!nameEn) return;
+  const requestedSlug = normalizeStoreSlug(text(formData, "slug", 180) || nameEn);
   const productId = randomUUID();
   await withTenantTransaction(
     dashboardDatabase(),
     tenant(context, `ecommerce:create-product:${productId}`),
     async (transaction) => {
+      if (imageMediaId) {
+        const imageAsset = await transaction.mediaAsset.count({
+          where: {
+            id: imageMediaId,
+            organizationId: context.organization.id,
+            status: "ready",
+            kind: "image",
+          },
+        });
+        if (imageAsset !== 1) throw new Error("ECOMMERCE_IMAGE_NOT_FOUND");
+      }
       if (categoryId) {
         const category = await transaction.ecommerceCategory.count({
           where: { id: categoryId, organizationId: context.organization.id, storeId },
         });
         if (category !== 1) throw new Error("ECOMMERCE_CATEGORY_NOT_FOUND");
+      }
+      let slug = requestedSlug;
+      let suffix = 2;
+      while (
+        await transaction.ecommerceProduct.findFirst({
+          where: { storeId, slug },
+          select: { id: true },
+        })
+      ) {
+        slug = `${requestedSlug.slice(0, 174)}-${suffix}`;
+        suffix += 1;
       }
       await transaction.ecommerceProduct.create({
         data: {
@@ -325,10 +393,21 @@ export async function createEcommerceProductAction(formData: FormData): Promise<
           basePriceMinor: priceMinor,
           currency: text(formData, "currency", 3).toUpperCase() || "EGP",
           sku,
+          attributesJson: colors.length ? { colors } : {},
           translations: {
             create: [
-              { locale: "en", name: nameEn, description: text(formData, "descriptionEn", 5000) },
-              { locale: "ar", name: nameAr, description: text(formData, "descriptionAr", 5000) },
+              {
+                locale: "en",
+                name: nameEn,
+                shortDescription: shortDescriptionEn,
+                description: descriptionEn,
+              },
+              {
+                locale: "ar",
+                name: nameAr,
+                shortDescription: shortDescriptionAr,
+                description: descriptionAr,
+              },
             ],
           },
           variants: {
@@ -341,9 +420,125 @@ export async function createEcommerceProductAction(formData: FormData): Promise<
             },
           },
           ...(categoryId ? { categories: { create: { categoryId } } } : {}),
+          ...(imageMediaId
+            ? {
+                images: {
+                  create: {
+                    id: randomUUID(),
+                    mediaAssetId: imageMediaId,
+                    altText: imageAltText,
+                    isPrimary: true,
+                    position: 0,
+                  },
+                },
+              }
+            : {}),
         },
       });
     },
+  );
+  refreshStore(storeId);
+}
+
+export async function toggleEcommerceProductStatusAction(formData: FormData): Promise<void> {
+  const storeId = requiredId(formData, "storeId");
+  const productId = requiredId(formData, "productId");
+  const nextStatus = text(formData, "status", 20) === "published" ? "published" : "draft";
+  const { context } = await requireEcommerceStoreContext(storeId);
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenant(context, `ecommerce:product-status:${productId}`),
+    async (transaction) => {
+      await transaction.ecommerceProduct.updateMany({
+        where: {
+          id: productId,
+          organizationId: context.organization.id,
+          storeId,
+          archivedAt: null,
+        },
+        data: { status: nextStatus },
+      });
+    },
+  );
+  refreshStore(storeId);
+}
+
+export async function updateEcommerceProductAction(formData: FormData): Promise<void> {
+  const storeId = requiredId(formData, "storeId");
+  const productId = requiredId(formData, "productId");
+  const nameEn = text(formData, "nameEn", 240);
+  if (!nameEn) return;
+  const nameAr = text(formData, "nameAr", 240) || nameEn;
+  const descriptionEn = text(formData, "descriptionEn", 5000);
+  const descriptionAr = text(formData, "descriptionAr", 5000) || descriptionEn;
+  const shortDescriptionEn = text(formData, "shortDescriptionEn", 5000);
+  const shortDescriptionAr = text(formData, "shortDescriptionAr", 5000) || shortDescriptionEn;
+  const colors = formData
+    .getAll("colors")
+    .flatMap((value) => String(value).split(/[\s,;]+/))
+    .filter((value) => /^#[0-9a-f]{6}$/i.test(value))
+    .slice(0, 12);
+  const { context } = await requireEcommerceStoreContext(storeId);
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenant(context, `ecommerce:update-product:${productId}`),
+    async (transaction) => {
+      const product = await transaction.ecommerceProduct.findFirst({
+        where: {
+          id: productId,
+          organizationId: context.organization.id,
+          storeId,
+          archivedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!product) throw new Error("ECOMMERCE_PRODUCT_NOT_FOUND");
+      await transaction.ecommerceProduct.update({
+        where: { organizationId_id: { organizationId: context.organization.id, id: productId } },
+        data: { attributesJson: colors.length ? { colors } : {} },
+      });
+      for (const translation of [
+        {
+          locale: "en",
+          name: nameEn,
+          shortDescription: shortDescriptionEn,
+          description: descriptionEn,
+        },
+        {
+          locale: "ar",
+          name: nameAr,
+          shortDescription: shortDescriptionAr,
+          description: descriptionAr,
+        },
+      ]) {
+        await transaction.ecommerceProductTranslation.upsert({
+          where: { productId_locale: { productId, locale: translation.locale } },
+          update: translation,
+          create: { productId, ...translation },
+        });
+      }
+    },
+  );
+  refreshStore(storeId);
+}
+
+export async function deleteEcommerceProductAction(formData: FormData): Promise<void> {
+  const storeId = requiredId(formData, "storeId");
+  const productId = requiredId(formData, "productId");
+  const { context } = await requireEcommerceStoreContext(storeId);
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenant(context, `ecommerce:delete-product:${productId}`),
+    (transaction) =>
+      transaction.ecommerceProduct.updateMany({
+        where: {
+          id: productId,
+          organizationId: context.organization.id,
+          storeId,
+          archivedAt: null,
+        },
+        data: { archivedAt: new Date() },
+      }),
   );
   refreshStore(storeId);
 }
@@ -491,6 +686,17 @@ function requiredId(formData: FormData, key: string): string {
 function text(formData: FormData, key: string, maximum: number): string {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim().slice(0, maximum) : "";
+}
+
+function colorField(formData: FormData, key: string, fallback: string): string {
+  const value = text(formData, key, 7);
+  return /^#[0-9a-f]{6}$/i.test(value) ? value : fallback;
+}
+
+function jsonRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function integerField(formData: FormData, key: string, fallback = 0): number {

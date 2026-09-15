@@ -136,10 +136,20 @@ async function loadWebsiteEditorForContext(
           id: websiteId,
           ...(clientScoped
             ? {
-                client: {
-                  archivedAt: null,
-                  contactEmail: { equals: context.actor.email, mode: "insensitive" as const },
-                },
+                OR: [
+                  {
+                    client: {
+                      archivedAt: null,
+                      contactEmail: { equals: context.actor.email, mode: "insensitive" as const },
+                    },
+                  },
+                  { ecommerceStore: { ownerUserId: context.actor.id } },
+                  {
+                    ecommerceStore: {
+                      contactEmail: { equals: context.actor.email, mode: "insensitive" as const },
+                    },
+                  },
+                ],
               }
             : {}),
         },

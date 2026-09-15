@@ -548,13 +548,18 @@ export async function updateWebsiteIdentityAction(formData: FormData): Promise<v
   revalidatePath(`/websites/${websiteId}`);
 }
 
-export async function createWebsiteClaimLinkAction(formData: FormData): Promise<void> {
+async function createWebsiteClaimLink(
+  formData: FormData,
+  queueEmail: boolean,
+): Promise<{ claimUrl: string; emailedTo: string | null; returnPath: string }> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const requestedEmail = cleanText(formData.get("intendedEmail"), 320).toLowerCase() || null;
-  if (!websiteId) return;
+  const requestedReturnPath = cleanText(formData.get("returnTo"), 500);
+  if (!websiteId) throw new Error("WEBSITE_ID_REQUIRED");
   const context = await requireDashboardContext("website.edit");
   const token = randomBytes(32).toString("base64url");
   const tokenHash = createHash("sha256").update(token).digest("hex");
+  let emailedTo: string | null = null;
   await withTenantTransaction(
     dashboardDatabase(),
     tenantActionContext(context, `website-claim:${websiteId}`),
@@ -568,7 +573,6 @@ export async function createWebsiteClaimLinkAction(formData: FormData): Promise<
         select: {
           id: true,
           name: true,
-          clientId: true,
           client: { select: { contactEmail: true } },
         },
       });
@@ -578,7 +582,6 @@ export async function createWebsiteClaimLinkAction(formData: FormData): Promise<
         throw new Error("CLAIM_EMAIL_MUST_MATCH_ASSIGNED_CLIENT");
       }
       const intendedEmail = assignedEmail ?? requestedEmail;
-      if (website.clientId && !intendedEmail) throw new Error("CLIENT_EMAIL_REQUIRED");
       await transaction.websiteClaim.updateMany({
         where: { organizationId: context.organization.id, websiteId, status: "pending" },
         data: { status: "revoked" },
@@ -593,7 +596,8 @@ export async function createWebsiteClaimLinkAction(formData: FormData): Promise<
           expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1_000),
         },
       });
-      if (intendedEmail) {
+      if (intendedEmail && queueEmail) {
+        emailedTo = intendedEmail;
         const claimUrl = new URL(
           `/dashboard/claim/${token}`,
           dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL,
@@ -628,7 +632,34 @@ export async function createWebsiteClaimLinkAction(formData: FormData): Promise<
     `/dashboard/claim/${token}`,
     dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL,
   ).toString();
-  redirect(`/websites/${websiteId}?claimLink=${encodeURIComponent(claimUrl)}`);
+  const returnPath = /^\/ecommerce\/stores\/[A-Za-z0-9_-]+$/.test(requestedReturnPath)
+    ? requestedReturnPath
+    : `/websites/${websiteId}`;
+  return { claimUrl, emailedTo, returnPath };
+}
+
+export async function createWebsiteClaimLinkAction(formData: FormData): Promise<void> {
+  const result = await createWebsiteClaimLink(formData, true);
+  redirect(`${result.returnPath}?claimLink=${encodeURIComponent(result.claimUrl)}`);
+}
+
+export interface EcommerceClaimLinkState {
+  readonly status: "idle" | "success" | "error";
+  readonly claimUrl?: string;
+  readonly emailedTo?: string | null;
+}
+
+export async function createEcommerceClaimLinkAction(
+  _previousState: EcommerceClaimLinkState,
+  formData: FormData,
+): Promise<EcommerceClaimLinkState> {
+  try {
+    const queueEmail = cleanText(formData.get("delivery"), 20) === "email";
+    const result = await createWebsiteClaimLink(formData, queueEmail);
+    return { status: "success", claimUrl: result.claimUrl, emailedTo: result.emailedTo };
+  } catch {
+    return { status: "error" };
+  }
 }
 
 export async function updateWebsiteBrandingAction(formData: FormData): Promise<void> {
@@ -867,6 +898,7 @@ export async function saveWebsiteSubscriptionAction(formData: FormData): Promise
   revalidatePath("/clients");
   revalidatePath("/websites");
   revalidatePath(`/websites/${websiteId}`);
+  revalidatePath("/ecommerce", "layout");
 }
 
 export async function previewWebsiteAction(formData: FormData): Promise<void> {

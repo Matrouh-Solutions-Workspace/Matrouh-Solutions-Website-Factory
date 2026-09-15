@@ -37,6 +37,21 @@ export function EcommerceStorefront({
   const kind = storefrontKind(store.template.rendererKey);
   const rtl = store.locale === "ar";
   const copy = commerceCopy(store.locale, kind);
+  const brandingTokens =
+    store.branding.tokens && typeof store.branding.tokens === "object"
+      ? (store.branding.tokens as Record<string, unknown>)
+      : {};
+  const presentationTokensValue =
+    store.presentation.tokens && typeof store.presentation.tokens === "object"
+      ? (store.presentation.tokens as Record<string, unknown>)
+      : {};
+  const storePresentation = presentationTokens({
+    ...store.presentation,
+    tokens: {
+      ...presentationTokensValue,
+      ...brandingTokens,
+    },
+  });
   const storageKey = `factory:commerce-cart:${store.storeId}`;
   const themeStorageKey = `factory:commerce-theme:${store.storeId}`;
   const defaultTheme = store.presentation.defaultTheme === "dark" ? "dark" : "light";
@@ -55,6 +70,7 @@ export function EcommerceStorefront({
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutPending, setCheckoutPending] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const catalogRef = useRef<HTMLElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const route = path[0] ?? "";
@@ -391,7 +407,7 @@ export function EcommerceStorefront({
         data-theme={theme}
         dir={rtl ? "rtl" : "ltr"}
         lang={store.locale}
-        style={presentationTokens(store.presentation)}
+        style={storePresentation}
       >
         {header}
         <main className="commerceOrderSuccess">
@@ -424,7 +440,7 @@ export function EcommerceStorefront({
         data-theme={theme}
         dir={rtl ? "rtl" : "ltr"}
         lang={store.locale}
-        style={presentationTokens(store.presentation)}
+        style={storePresentation}
       >
         {header}
         <main className={`commerceCartPage${lines.length === 0 ? " commerceCartPage--empty" : ""}`}>
@@ -562,13 +578,14 @@ export function EcommerceStorefront({
   if (product) {
     const stock = product.variants.reduce((sum, variant) => sum + variant.stockQuantity, 0);
     const productBrand = attribute(product, "brand");
+    const productColors = productColorValues(product);
     return (
       <div
         className={`commercePublicRoot shopTheme--${kind}`}
         data-theme={theme}
         dir={rtl ? "rtl" : "ltr"}
         lang={store.locale}
-        style={presentationTokens(store.presentation)}
+        style={storePresentation}
       >
         {header}
         <main className="commerceProductPage">
@@ -593,6 +610,24 @@ export function EcommerceStorefront({
             </div>
             <p className="shopProductLead">{product.description || product.shortDescription}</p>
             <Price product={product} store={store} />
+            {productColors.length ? (
+              <div className="shopProductColors">
+                <span>{copy.color}</span>
+                <div role="group" aria-label={copy.color}>
+                  {productColors.map((color) => (
+                    <button
+                      aria-label={color}
+                      aria-pressed={selectedColor === color}
+                      className={selectedColor === color ? "isSelected" : ""}
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      style={{ backgroundColor: color }}
+                      type="button"
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div className="shopProductFacts">
               {Object.entries(product.attributes)
                 .slice(0, 6)
@@ -704,7 +739,7 @@ export function EcommerceStorefront({
       data-theme={theme}
       dir={rtl ? "rtl" : "ltr"}
       lang={store.locale}
-      style={presentationTokens(store.presentation)}
+      style={storePresentation}
     >
       {header}
       <main>
@@ -1300,9 +1335,12 @@ function ProductCard({
           </div>
         ) : (
           <div className="shopSwatches" aria-label={copy.availableColors}>
-            <span />
-            <span />
-            <span />
+            {(productColorValues(product).length
+              ? productColorValues(product)
+              : ["#2f3536", "#c5aa8d", "#d8d4ca"]
+            ).map((color) => (
+              <span key={color} style={{ backgroundColor: color }} />
+            ))}
           </div>
         )}
         <div className="shopProductCardFoot">
@@ -1455,6 +1493,15 @@ function StoreFooter({
   readonly store: EcommerceStorefrontData;
 }) {
   const whatsappUrl = buildWhatsAppContactUrl(store.contactPhone);
+  const settings =
+    store.settings && typeof store.settings === "object"
+      ? (store.settings as Record<string, unknown>)
+      : {};
+  const whatsappEnabled = settings.whatsappEnabled !== false;
+  const whatsappLabel =
+    typeof settings.whatsappButtonLabel === "string" && settings.whatsappButtonLabel
+      ? settings.whatsappButtonLabel
+      : copy.contactUs;
   return (
     <footer className="commercePublicFooter">
       <div className="shopFooterLead">
@@ -1475,9 +1522,16 @@ function StoreFooter({
           <a aria-label="Facebook" href="#">
             <Icon name="facebook" />
           </a>
-          {whatsappUrl ? (
-            <a aria-label="WhatsApp" href={whatsappUrl} rel="noreferrer" target="_blank">
+          {whatsappUrl && whatsappEnabled ? (
+            <a
+              aria-label={whatsappLabel}
+              className="shopWhatsAppButton commerceWhatsAppContact"
+              href={whatsappUrl}
+              rel="noreferrer"
+              target="_blank"
+            >
               <Icon name="message" />
+              <span>{whatsappLabel}</span>
             </a>
           ) : null}
         </div>
@@ -1733,6 +1787,15 @@ function pcProductIcon(index: number): IconName {
   return ["gpu", "cpu", "memory", "monitor", "fan", "toolbox"][index % 6] as IconName;
 }
 
+function productColorValues(product: StorefrontProduct): string[] {
+  const colors = product.attributes.colors;
+  return Array.isArray(colors)
+    ? colors.filter(
+        (value): value is string => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value),
+      )
+    : [];
+}
+
 function humanize(value: string): string {
   return value
     .replace(/([A-Z])/g, " $1")
@@ -1793,6 +1856,7 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     backToProducts: "Back to products",
     rating: "Rating",
     verifiedReviews: "verified reviews",
+    color: "Color",
     inStock: "In stock",
     readyToShip: "Ready to ship",
     outOfStock: "Out of stock",
@@ -2043,6 +2107,7 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     backToProducts: "العودة إلى المنتجات",
     rating: "التقييم",
     verifiedReviews: "تقييماً موثقاً",
+    color: "اللون",
     inStock: "متوفر",
     readyToShip: "جاهز للشحن",
     outOfStock: "غير متوفر",

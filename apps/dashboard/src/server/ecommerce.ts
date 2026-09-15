@@ -186,7 +186,10 @@ export async function loadEcommerceStoreDashboard(storeId: string) {
           locales: { orderBy: { locale: "asc" } },
           templateVersion: { include: { template: true } },
           website: {
-            include: { domains: { where: { releasedAt: null }, orderBy: { createdAt: "asc" } } },
+            include: {
+              domains: { where: { releasedAt: null }, orderBy: { createdAt: "asc" } },
+              subscription: true,
+            },
           },
           paymentMethods: { orderBy: { position: "asc" } },
           shippingMethods: { orderBy: { position: "asc" } },
@@ -200,10 +203,37 @@ export async function loadEcommerceStoreDashboard(storeId: string) {
         orderBy: { updatedAt: "desc" },
         include: {
           translations: true,
+          images: {
+            orderBy: { position: "asc" },
+            take: 1,
+            select: { mediaAssetId: true, altText: true },
+          },
           variants: { orderBy: { position: "asc" } },
           categories: { include: { category: { include: { translations: true } } } },
         },
       });
+      const mediaFolder = await transaction.mediaFolder.findFirst({
+        where: {
+          organizationId: context.organization.id,
+          parentFolderId: null,
+          archivedAt: null,
+          name: store.website.domains[0]?.hostnameNormalized ?? store.website.name,
+        },
+        select: { id: true },
+      });
+      const mediaAssets = mediaFolder
+        ? await transaction.mediaAsset.findMany({
+            where: {
+              organizationId: context.organization.id,
+              folderId: mediaFolder.id,
+              status: "ready",
+              kind: "image",
+            },
+            orderBy: { createdAt: "desc" },
+            select: { id: true, originalFilename: true },
+            take: 100,
+          })
+        : [];
       const categories = await transaction.ecommerceCategory.findMany({
         where: { organizationId: context.organization.id, storeId },
         orderBy: [{ position: "asc" }, { createdAt: "asc" }],
@@ -239,7 +269,17 @@ export async function loadEcommerceStoreDashboard(storeId: string) {
         where: { organizationId: context.organization.id, storeId },
         _count: { _all: true },
       });
-      return { store, products, categories, orders, customers, coupons, sales, eventCounts };
+      return {
+        store,
+        products,
+        categories,
+        orders,
+        customers,
+        coupons,
+        sales,
+        eventCounts,
+        mediaAssets,
+      };
     },
   );
   return { ...result, context, administrator } as const;

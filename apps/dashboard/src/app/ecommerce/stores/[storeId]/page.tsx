@@ -1,17 +1,28 @@
 import { formatMoney } from "@factory/ecommerce";
-import { createWebsiteClaimLinkAction } from "@/app/actions";
-import { CopyClaimLink } from "@/app/copy-claim-link";
+import { redirect } from "next/navigation";
+import { saveWebsiteSubscriptionAction } from "@/app/actions";
+import { EcommerceClaimLinkForm } from "@/app/ecommerce-claim-link-form";
+import { EcommerceStorePreview } from "@/app/ecommerce-store-preview";
+import { CommerceSectionToggle } from "@/app/commerce-section-toggle";
+import { PendingSubmit } from "@/app/pending-submit";
+import { MediaPicker } from "@/app/media-picker";
+import { EcommerceColorPicker } from "@/app/ecommerce-color-picker";
+import { EcommerceProductActions } from "@/app/ecommerce-product-actions";
 import {
   adjustEcommerceInventoryAction,
   createEcommerceCategoryAction,
   createEcommerceCouponAction,
   createEcommerceProductAction,
+  toggleEcommerceProductStatusAction,
   switchEcommerceTemplateAction,
   toggleEcommerceMethodAction,
   updateEcommerceOrderStatusAction,
   updateEcommerceStoreAction,
 } from "@/app/ecommerce/actions";
 import { loadEcommerceStoreDashboard, loadEcommerceTemplates } from "@/server/ecommerce";
+import { dashboardConfig } from "@/server/config";
+import { defaultSubscriptionExpiry } from "@/server/subscription-dates";
+import { dashboardMediaPath } from "@/server/media-storage";
 
 export const dynamic = "force-dynamic";
 
@@ -25,13 +36,21 @@ const nextStatuses = {
   refunded: [],
 } as const;
 
-export default async function EcommerceStorePage({
+interface EcommerceStorePageProps {
+  readonly params: Promise<{ storeId: string }>;
+  readonly searchParams: Promise<{ claimLink?: string }>;
+  readonly clientView?: boolean;
+}
+
+export default function EcommerceStorePage(props: EcommerceStorePageProps) {
+  return <EcommerceStoreDashboard {...props} />;
+}
+
+export async function EcommerceStoreDashboard({
   params,
   searchParams,
-}: {
-  params: Promise<{ storeId: string }>;
-  searchParams: Promise<{ claimLink?: string }>;
-}) {
+  clientView = false,
+}: EcommerceStorePageProps) {
   const { storeId } = await params;
   const query = await searchParams;
   const data = await loadEcommerceStoreDashboard(storeId);
@@ -46,7 +65,11 @@ export default async function EcommerceStorePage({
     sales,
     eventCounts,
     administrator,
+    mediaAssets,
   } = data;
+  if (!administrator && !clientView) {
+    redirect(`/account/ecommerce/stores/${store.id}`);
+  }
   const locale = store.defaultLocale === "ar" ? "ar-EG" : "en-US";
   const templateVersions = templates.flatMap((template) =>
     template.versions
@@ -57,10 +80,29 @@ export default async function EcommerceStorePage({
       })),
   );
   const primaryDomain = store.website.domains[0]?.hostnameDisplay;
+  const liveStorefrontUrl = primaryDomain ? publicWebsiteUrl(primaryDomain) : null;
+  const templatePreviewUrl = templatePreviewWebsiteUrl(
+    store.templateVersion.rendererKey,
+    store.defaultLocale === "ar" ? "ar" : "en",
+  );
+  const storefrontUrl =
+    primaryDomain && store.status === "active" && store.website.status === "published"
+      ? liveStorefrontUrl
+      : templatePreviewUrl;
+  const websiteContentHref = `${clientView ? "/account/websites" : "/websites"}/${store.websiteId}`;
   const eventMap = new Map(eventCounts.map((row) => [row.eventType, row._count._all]));
+  const subscription = store.website.subscription;
+  const defaultPlanExpiry = defaultSubscriptionExpiry("monthly");
+  const brandTokens = jsonRecord(jsonRecord(store.brandingJson).tokens);
+  const whatsappSettings = jsonRecord(store.settingsJson);
+  const mediaPickerAssets = mediaAssets.map((asset) => ({
+    id: asset.id,
+    name: asset.originalFilename,
+    url: dashboardMediaPath(asset.id),
+  }));
 
   return (
-    <>
+    <div className={clientView ? "commerceStorePage clientCommerceStorePage" : "commerceStorePage"}>
       <header>
         <div>
           <p className="eyebrow">Commerce control center</p>
@@ -74,27 +116,51 @@ export default async function EcommerceStorePage({
           {primaryDomain ? (
             <a
               className="buttonLink secondaryButton"
-              href={`http://${primaryDomain}:3000`}
+              href={storefrontUrl ?? undefined}
               rel="noreferrer"
               target="_blank"
             >
               Open storefront
             </a>
           ) : null}
-          <a className="buttonLink" href="/ecommerce">
-            All stores
+          <a className="buttonLink secondaryButton" href={websiteContentHref}>
+            Website content
+          </a>
+          <a className="buttonLink" href={clientView ? "/account" : "/ecommerce"}>
+            {clientView ? "My websites" : "All stores"}
           </a>
         </div>
       </header>
 
       <nav aria-label="Commerce sections" className="commerceSectionNav">
-        <a href="#overview">Overview</a>
-        <a href="#catalog">Catalog</a>
-        <a href="#inventory">Inventory</a>
-        <a href="#orders">Orders</a>
-        <a href="#customers">Customers</a>
-        <a href="#discounts">Discounts</a>
-        <a href="#settings">Settings</a>
+        <div className="commerceSectionNavIntro">
+          <span>Website content</span>
+          <strong>Edit your website</strong>
+        </div>
+        <a className="commerceSectionNavContentLink" href={websiteContentHref}>
+          <span>✎</span> Website content
+        </a>
+        <a href="#overview">
+          <span>01</span> Overview
+        </a>
+        <a href="#catalog">
+          <span>02</span> Catalog
+        </a>
+        <a href="#inventory">
+          <span>03</span> Inventory
+        </a>
+        <a href="#orders">
+          <span>04</span> Orders
+        </a>
+        <a href="#customers">
+          <span>05</span> Customers
+        </a>
+        <a href="#discounts">
+          <span>06</span> Discounts
+        </a>
+        <a href="#settings">
+          <span>07</span> Settings
+        </a>
       </nav>
 
       <section className="websiteSummary" id="overview">
@@ -122,12 +188,15 @@ export default async function EcommerceStorePage({
         </article>
       </section>
 
-      <section className="panel commerceAnalyticsPanel">
+      <section className="panel commerceAnalyticsPanel" id="analytics">
         <div className="panelHead">
           <div>
             <p className="eyebrow">Store activity</p>
             <h2>Analytics</h2>
           </div>
+          {clientView ? (
+            <CommerceSectionToggle initiallyCollapsed={false} targetId="analytics" />
+          ) : null}
         </div>
         <div className="websiteSummary compactSummary">
           <article>
@@ -155,6 +224,7 @@ export default async function EcommerceStorePage({
             <p className="eyebrow">Products and categories</p>
             <h2>Catalog</h2>
           </div>
+          {clientView ? <CommerceSectionToggle targetId="catalog" /> : null}
         </div>
         <div className="commerceSplit">
           <div>
@@ -204,8 +274,28 @@ export default async function EcommerceStorePage({
                 <input dir="rtl" name="nameAr" />
               </label>
               <label>
+                Short description (English)
+                <textarea name="shortDescriptionEn" rows={2} />
+              </label>
+              <label>
+                Short description (Arabic)
+                <textarea dir="rtl" name="shortDescriptionAr" rows={2} />
+              </label>
+              <label>
+                Full description (English)
+                <textarea name="descriptionEn" rows={4} />
+              </label>
+              <label>
+                Full description (Arabic)
+                <textarea dir="rtl" name="descriptionAr" rows={4} />
+              </label>
+              <label>
                 SKU
                 <input name="sku" />
+              </label>
+              <label>
+                Product colors
+                <EcommerceColorPicker name="colors" />
               </label>
               <label>
                 Price ({store.currency})
@@ -227,7 +317,22 @@ export default async function EcommerceStorePage({
                 </select>
               </label>
               <label className="checkboxLabel">
-                <input name="published" type="checkbox" /> Publish immediately
+                <input defaultChecked name="published" type="checkbox" /> Publish immediately
+              </label>
+              <MediaPicker
+                assets={mediaPickerAssets}
+                label="Product photo"
+                name="imageMediaId"
+                noneLabel="No product photo"
+                websiteId={store.websiteId}
+              />
+              <label>
+                Image alt text
+                <input name="imageAltText" placeholder="Describe the product photo" />
+              </label>
+              <label>
+                Slug
+                <input name="slug" />
               </label>
               <button type="submit">Add product</button>
             </form>
@@ -243,18 +348,44 @@ export default async function EcommerceStorePage({
                 <th>Price</th>
                 <th>Variants</th>
                 <th>Stock</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {products.map((product) => (
                 <tr key={product.id}>
                   <td>
-                    <strong>{translation(product.translations, "en")}</strong>
-                    <small>{translation(product.translations, "ar")}</small>
+                    <div className="commerceProductIdentity">
+                      {product.images[0] ? (
+                        <img alt="" src={dashboardMediaPath(product.images[0].mediaAssetId)} />
+                      ) : null}
+                      <div>
+                        <strong>{translation(product.translations, "en")}</strong>
+                        <small>{translation(product.translations, "ar")}</small>
+                        <small className="commerceProductDescription">
+                          {translationField(product.translations, "shortDescription", "en")}
+                        </small>
+                      </div>
+                    </div>
                   </td>
                   <td>{product.sku ?? "—"}</td>
                   <td>
                     <span className={`status ${product.status}`}>{product.status}</span>
+                    <form
+                      action={toggleEcommerceProductStatusAction}
+                      className="commerceInlineAction"
+                    >
+                      <input name="storeId" type="hidden" value={store.id} />
+                      <input name="productId" type="hidden" value={product.id} />
+                      <input
+                        name="status"
+                        type="hidden"
+                        value={product.status === "published" ? "draft" : "published"}
+                      />
+                      <button type="submit">
+                        {product.status === "published" ? "Unpublish" : "Publish"}
+                      </button>
+                    </form>
                   </td>
                   <td>
                     {formatMoney(
@@ -266,6 +397,9 @@ export default async function EcommerceStorePage({
                   <td>{product.variants.length}</td>
                   <td>
                     {product.variants.reduce((sum, variant) => sum + variant.stockQuantity, 0)}
+                  </td>
+                  <td>
+                    <EcommerceProductActions product={product} storeId={store.id} />
                   </td>
                 </tr>
               ))}
@@ -280,6 +414,7 @@ export default async function EcommerceStorePage({
             <p className="eyebrow">Audited adjustments</p>
             <h2>Inventory</h2>
           </div>
+          {clientView ? <CommerceSectionToggle targetId="inventory" /> : null}
         </div>
         <div className="commerceInventoryGrid">
           {products.flatMap((product) =>
@@ -321,6 +456,7 @@ export default async function EcommerceStorePage({
             <h2>Orders</h2>
           </div>
           <span>{orders.length} recent</span>
+          {clientView ? <CommerceSectionToggle targetId="orders" /> : null}
         </div>
         <div className="commerceTableWrap">
           <table className="commerceTable">
@@ -386,6 +522,7 @@ export default async function EcommerceStorePage({
             <h2>Customers</h2>
           </div>
           <span>{customers.length} recent</span>
+          {clientView ? <CommerceSectionToggle targetId="customers" /> : null}
         </div>
         <div className="commerceTableWrap">
           <table className="commerceTable">
@@ -419,6 +556,7 @@ export default async function EcommerceStorePage({
             <p className="eyebrow">Promotion engine</p>
             <h2>Coupons</h2>
           </div>
+          {clientView ? <CommerceSectionToggle targetId="discounts" /> : null}
         </div>
         <form action={createEcommerceCouponAction} className="settingsForm commerceInlineForm">
           <input name="storeId" type="hidden" value={store.id} />
@@ -467,6 +605,7 @@ export default async function EcommerceStorePage({
             <p className="eyebrow">Configuration</p>
             <h2>Store settings</h2>
           </div>
+          {clientView ? <CommerceSectionToggle targetId="settings" /> : null}
         </div>
         <div className="commerceSplit">
           <form action={updateEcommerceStoreAction} className="settingsForm commerceCompactForm">
@@ -504,48 +643,117 @@ export default async function EcommerceStorePage({
                 required
               />
             </label>
+            <div className="commerceColorFields">
+              <label>
+                Primary brand color
+                <input
+                  defaultValue={colorValue(brandTokens.primary, "#171512")}
+                  name="primaryColor"
+                  type="color"
+                />
+              </label>
+              <label>
+                Accent brand color
+                <input
+                  defaultValue={colorValue(brandTokens.accent, "#a45f3f")}
+                  name="accentColor"
+                  type="color"
+                />
+              </label>
+              <label>
+                Surface color
+                <input
+                  defaultValue={colorValue(brandTokens.surface, "#f8f6f1")}
+                  name="surfaceColor"
+                  type="color"
+                />
+              </label>
+            </div>
+            <label className="checkboxLabel">
+              <input
+                defaultChecked={whatsappSettings.whatsappEnabled !== false}
+                name="whatsappEnabled"
+                type="checkbox"
+              />
+              Show floating WhatsApp button
+            </label>
+            <label>
+              WhatsApp button label
+              <input
+                defaultValue={textValue(whatsappSettings.whatsappButtonLabel)}
+                name="whatsappButtonLabel"
+                placeholder="Chat on WhatsApp"
+              />
+            </label>
             <button type="submit">Save store settings</button>
           </form>
           <div>
-            <form
-              action={switchEcommerceTemplateAction}
-              className="settingsForm commerceCompactForm"
-            >
-              <input name="storeId" type="hidden" value={store.id} />
-              <label>
-                Presentation template
-                <select defaultValue={store.ecommerceTemplateVersionId} name="templateVersionId">
-                  {templateVersions.map((version) => (
-                    <option key={version.id} value={version.id}>
-                      {version.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <p>
-                Switching presentation never copies, resets, or deletes products, orders, customers,
-                or settings.
-              </p>
-              <button type="submit">Switch presentation</button>
-            </form>
             {administrator ? (
               <form
-                action={createWebsiteClaimLinkAction}
-                className="settingsForm commerceCompactForm"
+                action={saveWebsiteSubscriptionAction}
+                className="settingsForm commerceCompactForm ecommercePlanForm"
               >
+                <div className="ecommercePlanHeader">
+                  <div>
+                    <span>Subscription plan</span>
+                    <strong>{subscription?.status ?? "No active plan"}</strong>
+                  </div>
+                  {subscription ? (
+                    <small>Active until {formatDate(subscription.expiresAt)}</small>
+                  ) : null}
+                </div>
                 <input name="websiteId" type="hidden" value={store.websiteId} />
+                <input name="clientId" type="hidden" value={store.website.clientId ?? ""} />
                 <label>
-                  Owner email
-                  <input name="intendedEmail" required type="email" />
+                  Plan
+                  <select defaultValue={subscription?.cadence ?? "monthly"} name="cadence">
+                    <option value="trial">Trial</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
                 </label>
-                <button type="submit">Create owner claim link</button>
+                <label>
+                  Expiry (UTC)
+                  <input
+                    defaultValue={dateTimeValue(subscription?.expiresAt ?? defaultPlanExpiry)}
+                    name="expiresAt"
+                    required
+                    step="1"
+                    type="datetime-local"
+                  />
+                </label>
+                <PendingSubmit pendingLabel="Saving plan…">Save plan</PendingSubmit>
               </form>
             ) : null}
-            {query.claimLink ? (
-              <div className="notice">
-                <span>Claim link:</span>
-                <CopyClaimLink value={query.claimLink} />
-              </div>
+            {!clientView ? (
+              <form
+                action={switchEcommerceTemplateAction}
+                className="settingsForm commerceCompactForm"
+              >
+                <input name="storeId" type="hidden" value={store.id} />
+                <label>
+                  Presentation template
+                  <select defaultValue={store.ecommerceTemplateVersionId} name="templateVersionId">
+                    {templateVersions.map((version) => (
+                      <option key={version.id} value={version.id}>
+                        {version.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p>
+                  Switching presentation never copies, resets, or deletes products, orders,
+                  customers, or settings.
+                </p>
+                <button type="submit">Switch presentation</button>
+              </form>
+            ) : null}
+            {administrator ? (
+              <EcommerceClaimLinkForm
+                initialClaimLink={query.claimLink}
+                returnTo={`/ecommerce/stores/${store.id}`}
+                websiteId={store.websiteId}
+              />
             ) : null}
           </div>
         </div>
@@ -577,10 +785,74 @@ export default async function EcommerceStorePage({
           ))}
         </div>
       </section>
-    </>
+      {clientView ? (
+        <EcommerceStorePreview
+          openUrl={liveStorefrontUrl}
+          storeName={store.name}
+          storefrontUrl={storefrontUrl}
+        />
+      ) : null}
+    </div>
   );
 }
 
 function translation(rows: readonly { locale: string; name: string }[], locale: string): string {
   return rows.find((row) => row.locale === locale)?.name ?? rows[0]?.name ?? "Untitled";
+}
+
+function translationField(
+  rows: readonly { locale: string; [key: string]: unknown }[],
+  field: string,
+  locale: string,
+): string {
+  const preferred = rows.find((row) => row.locale === locale)?.[field];
+  const fallback = rows[0]?.[field];
+  return typeof preferred === "string" && preferred.trim()
+    ? preferred
+    : typeof fallback === "string"
+      ? fallback
+      : "";
+}
+
+function dateTimeValue(value: Date): string {
+  return value.toISOString().slice(0, 19);
+}
+
+function formatDate(value: Date): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(value);
+}
+
+function publicWebsiteUrl(hostname: string): string {
+  const dashboard = new URL(dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL);
+  dashboard.hostname = hostname;
+  dashboard.pathname = "/";
+  dashboard.search = "";
+  return dashboard.toString();
+}
+
+function templatePreviewWebsiteUrl(rendererKey: string, locale: "en" | "ar"): string {
+  const preview = new URL(
+    `/commerce-template-preview/${encodeURIComponent(rendererKey)}`,
+    dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL,
+  );
+  preview.searchParams.set("lang", locale);
+  return preview.toString();
+}
+
+function jsonRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function colorValue(value: unknown, fallback: string): string {
+  return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback;
+}
+
+function textValue(value: unknown): string {
+  return typeof value === "string" ? value : "";
 }

@@ -9,7 +9,7 @@ import {
 
 type SaveStatus = "saved" | "unsaved" | "saving" | "conflict" | "error";
 type PreviewViewport = "desktop" | "tablet" | "mobile";
-type PreviewIconName = PreviewViewport | "refresh" | "open" | "empty";
+type PreviewIconName = PreviewViewport | "refresh" | "open" | "empty" | "close";
 
 const PREVIEW_DIMENSIONS: Record<PreviewViewport, { width: number; height: number }> = {
   desktop: { width: 1440, height: 900 },
@@ -66,6 +66,13 @@ function PreviewIcon({ name }: { readonly name: PreviewIconName }) {
       <svg aria-hidden="true" viewBox="0 0 24 24">
         <path d="M14 4h6v6M20 4l-9 9" />
         <path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6" />
+      </svg>
+    );
+  }
+  if (name === "close") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="m6 6 12 12M18 6 6 18" />
       </svg>
     );
   }
@@ -131,6 +138,7 @@ export function EditorPreviewPane({
   const [previewScale, setPreviewScale] = useState(1);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [previewStatus, setPreviewStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [mobileOpen, setMobileOpen] = useState(false);
   const previewCanvasRef = useRef<HTMLDivElement>(null);
   const previewFrameRef = useRef<HTMLIFrameElement>(null);
   const previewColorsRef = useRef<Record<string, string>>({});
@@ -154,6 +162,8 @@ export function EditorPreviewPane({
           desktop: "سطح المكتب",
           tablet: "جهاز لوحي",
           mobile: "هاتف",
+          showPreview: "عرض معاينة الموقع",
+          closePreview: "إغلاق المعاينة",
         }
       : {
           title: "Website preview",
@@ -168,7 +178,28 @@ export function EditorPreviewPane({
           desktop: "Desktop",
           tablet: "Tablet",
           mobile: "Mobile",
+          showPreview: "Show website preview",
+          closePreview: "Close preview",
         };
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileOpen]);
+
+  function openMobilePreview() {
+    setViewport("mobile");
+    setMobileOpen(true);
+  }
 
   const refreshDraftPreview = useCallback(async () => {
     const requestId = previewRequestRef.current + 1;
@@ -245,95 +276,117 @@ export function EditorPreviewPane({
   }, [previewDimensions.height, previewDimensions.width]);
 
   return (
-    <aside
-      aria-busy={previewStatus === "loading"}
-      aria-label={copy.title}
-      className="editorStudioPreview"
-    >
-      <div className="editorPreviewToolbar">
-        <div>
-          <span>{copy.title}</span>
-          <strong aria-live="polite">
-            {previewStatus === "loading"
-              ? copy.preparing
-              : previewStatus === "error"
-                ? copy.unavailable
-                : copy.draft}
-          </strong>
-        </div>
-        <div className="editorPreviewActions">
-          <div className="editorViewportSwitch" role="group" aria-label={copy.title}>
-            {(["desktop", "tablet", "mobile"] as const).map((option) => (
-              <button
-                aria-label={copy[option]}
-                aria-pressed={viewport === option}
-                key={option}
-                onClick={() => setViewport(option)}
-                title={copy[option]}
-                type="button"
-              >
-                <PreviewIcon name={option} />
-              </button>
-            ))}
-          </div>
-          <button
-            aria-label={copy.refresh}
-            className="editorPreviewRefresh"
-            disabled={previewStatus === "loading"}
-            onClick={() => void refreshDraftPreview()}
-            title={copy.refresh}
-            type="button"
-          >
-            <PreviewIcon name="refresh" />
-          </button>
-          {previewSrc ? (
-            <a
-              aria-label={copy.open}
-              href={previewSrc}
-              rel="noreferrer"
-              target="_blank"
-              title={copy.open}
-            >
-              <PreviewIcon name="open" />
-            </a>
-          ) : null}
-        </div>
-      </div>
-      <div
-        className={`editorPreviewCanvas editorPreviewCanvas--${viewport}`}
-        ref={previewCanvasRef}
+    <>
+      <button
+        aria-expanded={mobileOpen}
+        className={`mobileEditorPreviewLauncher${mobileOpen ? " mobileEditorPreviewLauncher--open" : ""}`}
+        onClick={openMobilePreview}
+        type="button"
       >
-        {previewSrc ? (
-          <div
-            className="editorPreviewFrame"
-            style={
-              {
-                "--preview-height": `${previewDimensions.height}px`,
-                "--preview-rendered-height": `${previewDimensions.height * previewScale}px`,
-                "--preview-rendered-width": `${previewDimensions.width * previewScale}px`,
-                "--preview-scale": previewScale,
-                "--preview-width": `${previewDimensions.width}px`,
-              } as CSSProperties
-            }
-          >
-            <iframe
-              key={`${previewSrc}-${revision}`}
-              onLoad={() => applyPreviewColors(previewFrameRef.current, previewColorsRef.current)}
-              ref={previewFrameRef}
-              src={previewSrc}
-              title={`${title} — ${copy.draft}`}
-            />
+        <PreviewIcon name="mobile" />
+        <span>{copy.showPreview}</span>
+      </button>
+      <aside
+        aria-busy={previewStatus === "loading"}
+        aria-label={copy.title}
+        aria-modal={mobileOpen || undefined}
+        className={`editorStudioPreview${mobileOpen ? " editorStudioPreview--mobileOpen" : ""}`}
+        role={mobileOpen ? "dialog" : undefined}
+      >
+        <div className="editorPreviewToolbar">
+          <div>
+            <span>{copy.title}</span>
+            <strong aria-live="polite">
+              {previewStatus === "loading"
+                ? copy.preparing
+                : previewStatus === "error"
+                  ? copy.unavailable
+                  : copy.draft}
+            </strong>
           </div>
-        ) : (
-          <div className="editorPreviewEmpty">
-            <span aria-hidden="true">
-              <PreviewIcon name="empty" />
-            </span>
-            <strong>{previewStatus === "error" ? copy.unavailable : copy.emptyTitle}</strong>
-            <p>{previewStatus === "error" ? copy.errorBody : copy.emptyBody}</p>
+          <div className="editorPreviewActions">
+            <button
+              aria-label={copy.closePreview}
+              className="mobileEditorPreviewClose"
+              onClick={() => setMobileOpen(false)}
+              title={copy.closePreview}
+              type="button"
+            >
+              <PreviewIcon name="close" />
+            </button>
+            <div className="editorViewportSwitch" role="group" aria-label={copy.title}>
+              {(["desktop", "tablet", "mobile"] as const).map((option) => (
+                <button
+                  aria-label={copy[option]}
+                  aria-pressed={viewport === option}
+                  key={option}
+                  onClick={() => setViewport(option)}
+                  title={copy[option]}
+                  type="button"
+                >
+                  <PreviewIcon name={option} />
+                </button>
+              ))}
+            </div>
+            <button
+              aria-label={copy.refresh}
+              className="editorPreviewRefresh"
+              disabled={previewStatus === "loading"}
+              onClick={() => void refreshDraftPreview()}
+              title={copy.refresh}
+              type="button"
+            >
+              <PreviewIcon name="refresh" />
+            </button>
+            {previewSrc ? (
+              <a
+                aria-label={copy.open}
+                href={previewSrc}
+                rel="noreferrer"
+                target="_blank"
+                title={copy.open}
+              >
+                <PreviewIcon name="open" />
+              </a>
+            ) : null}
           </div>
-        )}
-      </div>
-    </aside>
+        </div>
+        <div
+          className={`editorPreviewCanvas editorPreviewCanvas--${viewport}`}
+          ref={previewCanvasRef}
+        >
+          {previewSrc ? (
+            <div
+              className="editorPreviewFrame"
+              style={
+                {
+                  "--preview-height": `${previewDimensions.height}px`,
+                  "--preview-rendered-height": `${previewDimensions.height * previewScale}px`,
+                  "--preview-rendered-width": `${previewDimensions.width * previewScale}px`,
+                  "--preview-scale": previewScale,
+                  "--preview-width": `${previewDimensions.width}px`,
+                } as CSSProperties
+              }
+            >
+              <iframe
+                key={`${previewSrc}-${revision}`}
+                onLoad={() => applyPreviewColors(previewFrameRef.current, previewColorsRef.current)}
+                ref={previewFrameRef}
+                src={previewSrc}
+                title={`${title} — ${copy.draft}`}
+              />
+            </div>
+          ) : (
+            <div className="editorPreviewEmpty">
+              <span aria-hidden="true">
+                <PreviewIcon name="empty" />
+              </span>
+              <strong>{previewStatus === "error" ? copy.unavailable : copy.emptyTitle}</strong>
+              <p>{previewStatus === "error" ? copy.errorBody : copy.emptyBody}</p>
+            </div>
+          )}
+        </div>
+      </aside>
+    </>
   );
 }

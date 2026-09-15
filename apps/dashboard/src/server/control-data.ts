@@ -145,6 +145,7 @@ export async function loadClientAccount() {
             orderBy: { name: "asc" },
             include: {
               subscription: true,
+              ecommerceStore: { select: { id: true } },
               domains: {
                 where: { releasedAt: null, kind: "subdomain" },
                 orderBy: { createdAt: "asc" },
@@ -157,6 +158,40 @@ export async function loadClientAccount() {
       });
       return { clients, actor: context.actor, organization: context.organization };
     },
+  );
+}
+
+export async function loadClientWebsiteManagementTarget(websiteId: string) {
+  const context = await requireClientAccountContext();
+  return withTenantTransaction(
+    dashboardDatabase(),
+    tenantContext(context, `client-website-target:${websiteId}`),
+    (transaction) =>
+      transaction.website.findFirst({
+        where: {
+          id: websiteId,
+          organizationId: context.organization.id,
+          archivedAt: null,
+          OR: [
+            {
+              client: {
+                archivedAt: null,
+                contactEmail: { equals: context.actor.email, mode: "insensitive" },
+              },
+            },
+            { ecommerceStore: { ownerUserId: context.actor.id } },
+            {
+              ecommerceStore: {
+                contactEmail: { equals: context.actor.email, mode: "insensitive" },
+              },
+            },
+          ],
+        },
+        select: {
+          kind: true,
+          ecommerceStore: { select: { id: true } },
+        },
+      }),
   );
 }
 

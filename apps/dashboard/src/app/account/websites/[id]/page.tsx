@@ -22,6 +22,7 @@ import { DocumentImportField } from "@/app/document-import-field";
 import { EditorPreviewPane, EditorSaveStatus } from "@/app/editor-studio";
 import { EditorStudioSidebar } from "@/app/editor-studio-sidebar";
 import { EditorDisclosure } from "@/app/editor-disclosure";
+import { Icon, type IconName } from "@/app/icons";
 import { MediaPicker } from "@/app/media-picker";
 import { MenuQrCard } from "@/app/menu-qr-card";
 import { createMenuQrDataUrl } from "@/app/menu-qr";
@@ -29,12 +30,15 @@ import { PendingSubmit } from "@/app/pending-submit";
 import { ThemeLiveEditor } from "@/app/theme-live-editor";
 import { dashboardConfig } from "@/server/config";
 import { loadClientWebsiteEditor } from "@/server/editor";
+import { loadClientWebsiteManagementTarget } from "@/server/control-data";
 import { UI_LOCALE_COOKIE, uiLocale } from "@/server/ui-locale";
 
 export const dynamic = "force-dynamic";
 
 export default async function ClientWebsitePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const managementTarget = await loadClientWebsiteManagementTarget(id);
+  if (!managementTarget) notFound();
   const editor = await loadClientWebsiteEditor(id);
   if (!editor) notFound();
 
@@ -51,15 +55,23 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
     (supportedLocale) => !editor.website.locales.includes(supportedLocale),
   );
   const sidebarItems = [
-    { href: "#client-identity", label: copy.websiteIdentity },
-    { href: "#client-branding", label: copy.branding },
-    editor.settings ? { href: "#client-whatsapp", label: copy.whatsappContact } : null,
-    editor.theme ? { href: "#client-colors", label: copy.brandColors } : null,
-    menuMode ? { href: "#menu-languages", label: copy.languages } : null,
-    qrMenu ? { href: "#menu-qr", label: copy.qrCode } : null,
-    { href: "#client-content", label: menuMode ? copy.categoriesAndItems : copy.content },
-    editor.navigation.length > 0 ? { href: "#client-navigation", label: copy.navigation } : null,
-  ].filter((item): item is { href: string; label: string } => item !== null);
+    { href: "#client-identity", icon: "settings", label: copy.websiteIdentity },
+    { href: "#client-branding", icon: "spark", label: copy.branding },
+    editor.settings
+      ? { href: "#client-whatsapp", icon: "mail", label: copy.whatsappContact }
+      : null,
+    editor.theme ? { href: "#client-colors", icon: "spark", label: copy.brandColors } : null,
+    menuMode ? { href: "#menu-languages", icon: "menu", label: copy.languages } : null,
+    qrMenu ? { href: "#menu-qr", icon: "copy", label: copy.qrCode } : null,
+    {
+      href: "#client-content",
+      icon: "templates",
+      label: menuMode ? copy.categoriesAndItems : copy.content,
+    },
+    editor.navigation.length > 0
+      ? { href: "#client-navigation", icon: "menu", label: copy.navigation }
+      : null,
+  ].filter((item): item is { href: string; icon: IconName; label: string } => item !== null);
 
   return (
     <div
@@ -130,7 +142,10 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
           <nav aria-label={menuMode ? copy.menuWorkspace : copy.websiteManager}>
             {sidebarItems.map((item, index) => (
               <a href={item.href} key={item.href}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
+                <span className="editorStudioSidebarStep">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <Icon className="editorStudioSidebarItemIcon" name={item.icon} />
                 {item.label}
               </a>
             ))}
