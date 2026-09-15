@@ -1596,8 +1596,14 @@
   pointer-events: none;
 }
 @keyframes shopCartConfirm {
-  from { transform: scale(0.94); opacity: 0.7; }
-  to { transform: scale(1.08); opacity: 0; }
+  from {
+    transform: scale(0.94);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1.08);
+    opacity: 0;
+  }
 }
 .commerceProductMedia {
   min-width: 0;

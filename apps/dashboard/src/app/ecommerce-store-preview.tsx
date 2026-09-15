@@ -68,10 +68,12 @@ function PreviewIcon({ name }: { readonly name: StorefrontPreviewIcon }) {
 }
 
 export function EcommerceStorePreview({
+  initiallyVisible = true,
   openUrl,
   storeName,
   storefrontUrl,
 }: {
+  readonly initiallyVisible?: boolean;
   readonly openUrl?: string | null;
   readonly storeName: string;
   readonly storefrontUrl: string | null;
@@ -80,7 +82,7 @@ export function EcommerceStorePreview({
   const [revision, setRevision] = useState(0);
   const [previewScale, setPreviewScale] = useState(1);
   const [loading, setLoading] = useState(Boolean(storefrontUrl));
-  const [previewVisible, setPreviewVisible] = useState(true);
+  const [previewVisible, setPreviewVisible] = useState(initiallyVisible);
   const [mobileOpen, setMobileOpen] = useState(false);
   const previewCanvasRef = useRef<HTMLDivElement>(null);
   const dimensions = STOREFRONT_DIMENSIONS[viewport];
@@ -153,108 +155,114 @@ export function EcommerceStorePreview({
         <PreviewIcon name="store" />
         <span>Preview storefront</span>
       </button>
-      {previewVisible ? <aside
-        aria-busy={loading}
-        aria-label="Storefront preview"
-        aria-modal={mobileOpen || undefined}
-        className={`editorStudioPreview ecommerceStorePreview${
-          mobileOpen ? " ecommerceStorePreview--mobileOpen" : ""
-        }`}
-        role={mobileOpen ? "dialog" : undefined}
-      >
-        <div className="editorPreviewToolbar">
-          <div>
-            <span>Storefront preview</span>
-            <strong aria-live="polite">
-              {storefrontUrl ? (loading ? "Loading storefront…" : "Live storefront") : "No domain"}
-            </strong>
-          </div>
-          <div className="editorPreviewActions">
-            <button
-              aria-label="Close preview"
-              className="ecommercePreviewClose"
-              onClick={() => {
-                setMobileOpen(false);
-                setPreviewVisible(false);
-              }}
-              title="Close preview"
-              type="button"
-            >
-              <PreviewIcon name="close" />
-              <span>Close preview</span>
-            </button>
-            <div className="editorViewportSwitch" role="group" aria-label="Preview size">
-              {(["desktop", "tablet", "mobile"] as const).map((option) => (
-                <button
-                  aria-label={`${option} preview`}
-                  aria-pressed={viewport === option}
-                  key={option}
-                  onClick={() => setViewport(option)}
-                  title={option}
-                  type="button"
-                >
-                  <PreviewIcon name={option} />
-                </button>
-              ))}
-            </div>
-            <button
-              aria-label="Refresh preview"
-              className="editorPreviewRefresh"
-              disabled={!storefrontUrl}
-              onClick={refreshPreview}
-              title="Refresh preview"
-              type="button"
-            >
-              <PreviewIcon name="refresh" />
-            </button>
-            {storefrontUrl ? (
-              <a
-                aria-label="Open storefront in new tab"
-                href={openUrl ?? storefrontUrl}
-                rel="noreferrer"
-                target="_blank"
-                title="Open storefront in new tab"
-              >
-                <PreviewIcon name="open" />
-              </a>
-            ) : null}
-          </div>
-        </div>
-        <div
-          className={`editorPreviewCanvas editorPreviewCanvas--${viewport}`}
-          ref={previewCanvasRef}
+      {previewVisible ? (
+        <aside
+          aria-busy={loading}
+          aria-label="Storefront preview"
+          aria-modal={mobileOpen || undefined}
+          className={`editorStudioPreview ecommerceStorePreview${
+            mobileOpen ? " ecommerceStorePreview--mobileOpen" : ""
+          }`}
+          role={mobileOpen ? "dialog" : undefined}
         >
-          {storefrontUrl ? (
-            <div
-              className="editorPreviewFrame"
-              style={
-                {
-                  "--preview-height": `${dimensions.height}px`,
-                  "--preview-rendered-height": `${dimensions.height * previewScale}px`,
-                  "--preview-rendered-width": `${dimensions.width * previewScale}px`,
-                  "--preview-scale": previewScale,
-                  "--preview-width": `${dimensions.width}px`,
-                } as CSSProperties
-              }
-            >
-              <iframe
-                key={`${storefrontUrl}-${revision}`}
-                onLoad={() => setLoading(false)}
-                src={storefrontUrl}
-                title={`${storeName} — Live storefront`}
-              />
+          <div className="editorPreviewToolbar">
+            <div>
+              <span>Storefront preview</span>
+              <strong aria-live="polite">
+                {storefrontUrl
+                  ? loading
+                    ? "Loading storefront…"
+                    : "Live storefront"
+                  : "No domain"}
+              </strong>
             </div>
-          ) : (
-            <div className="editorPreviewEmpty">
-              <span aria-hidden="true">
-                <PreviewIcon name="store" />
-              </span>
-              <strong>Storefront preview is unavailable</strong>
-              <p>Connect a domain to this store and its live storefront will appear here.</p>
+            <div className="editorPreviewActions">
+              <button
+                aria-label="Close preview"
+                className="ecommercePreviewClose"
+                onClick={() => {
+                  setMobileOpen(false);
+                  setPreviewVisible(false);
+                }}
+                title="Close preview"
+                type="button"
+              >
+                <PreviewIcon name="close" />
+                <span>Close preview</span>
+              </button>
+              <div className="editorViewportSwitch" role="group" aria-label="Preview size">
+                {(["desktop", "tablet", "mobile"] as const).map((option) => (
+                  <button
+                    aria-label={`${option} preview`}
+                    aria-pressed={viewport === option}
+                    key={option}
+                    onClick={() => setViewport(option)}
+                    title={option}
+                    type="button"
+                  >
+                    <PreviewIcon name={option} />
+                  </button>
+                ))}
+              </div>
+              <button
+                aria-label="Refresh preview"
+                className="editorPreviewRefresh"
+                disabled={!storefrontUrl}
+                onClick={refreshPreview}
+                title="Refresh preview"
+                type="button"
+              >
+                <PreviewIcon name="refresh" />
+              </button>
+              {storefrontUrl ? (
+                <a
+                  aria-label="Open storefront in new tab"
+                  href={openUrl ?? storefrontUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                  title="Open storefront in new tab"
+                >
+                  <PreviewIcon name="open" />
+                </a>
+              ) : null}
             </div>
-          )}
-        </div>
-      </aside> : null}
+          </div>
+          <div
+            className={`editorPreviewCanvas editorPreviewCanvas--${viewport}`}
+            ref={previewCanvasRef}
+          >
+            {storefrontUrl ? (
+              <div
+                className="editorPreviewFrame"
+                style={
+                  {
+                    "--preview-height": `${dimensions.height}px`,
+                    "--preview-rendered-height": `${dimensions.height * previewScale}px`,
+                    "--preview-rendered-width": `${dimensions.width * previewScale}px`,
+                    "--preview-scale": previewScale,
+                    "--preview-width": `${dimensions.width}px`,
+                  } as CSSProperties
+                }
+              >
+                <iframe
+                  key={`${storefrontUrl}-${revision}`}
+                  onLoad={() => setLoading(false)}
+                  src={storefrontUrl}
+                  title={`${storeName} — Live storefront`}
+                />
+              </div>
+            ) : (
+              <div className="editorPreviewEmpty">
+                <span aria-hidden="true">
+                  <PreviewIcon name="store" />
+                </span>
+                <strong>Storefront preview is unavailable</strong>
+                <p>Connect a domain to this store and its live storefront will appear here.</p>
+              </div>
+            )}
+          </div>
+        </aside>
+      ) : null}
     </>
   );
 }

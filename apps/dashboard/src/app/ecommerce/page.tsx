@@ -257,7 +257,7 @@ export default async function EcommercePage({
                       {hostname ? (
                         <a
                           className="commerceStorefrontLink"
-                          href={`http://${hostname}:3000`}
+                          href={publicWebsiteUrl(hostname)}
                           rel="noreferrer"
                           target="_blank"
                         >
@@ -386,4 +386,10 @@ export default async function EcommercePage({
       </div>
     </div>
   );
+}
+
+function publicWebsiteUrl(hostname: string): string {
+  return hostname === "localhost" || hostname.endsWith(".localhost")
+    ? `http://${hostname}:3000`
+    : `https://${hostname}`;
 }

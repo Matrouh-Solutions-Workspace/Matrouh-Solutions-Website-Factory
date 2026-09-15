@@ -5168,18 +5168,23 @@
 
 .clinicWhatsApp {
   position: fixed;
-  z-index: 90;
-  right: clamp(1rem, 2vw, 2rem);
-  bottom: clamp(1rem, 2vw, 2rem);
+  z-index: 1000;
+  right: auto;
+  bottom: max(clamp(1rem, 2vw, 2rem), env(safe-area-inset-bottom));
+  inset-inline-end: max(clamp(1rem, 2vw, 2rem), env(safe-area-inset-right));
   display: grid;
   justify-items: end;
   gap: 0.75rem;
   direction: ltr;
   pointer-events: none;
+  isolation: isolate;
 }
 
 .clinicWhatsAppCard {
+  box-sizing: border-box;
   width: min(22rem, calc(100vw - 2rem));
+  max-height: min(32rem, calc(100dvh - 7rem));
+  overflow: auto;
   padding: 1.2rem;
   border: 1px solid color-mix(in srgb, #25d366 24%, var(--theme-colors-border));
   border-radius: 1.35rem 1.35rem 0.35rem 1.35rem;
@@ -5219,6 +5224,7 @@
 .clinicWhatsAppCardHead > div {
   display: grid;
   gap: 0.18rem;
+  min-width: 0;
 }
 
 .clinicWhatsAppCardHead strong {
@@ -5324,6 +5330,10 @@
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 180ms ease;
   pointer-events: auto;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  padding: 0;
+  line-height: 1;
 }
 
 .clinicWhatsAppToggle:hover,
@@ -5349,8 +5359,9 @@
 
 @media (max-width: 600px) {
   .clinicWhatsApp {
-    right: 1rem;
-    bottom: 1rem;
+    right: auto;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    inset-inline-end: max(1rem, env(safe-area-inset-right));
   }
   .clinicWhatsAppToggle {
     width: 3.6rem;

@@ -784,6 +784,8 @@ const commerceArabicText: Readonly<Record<string, string>> = {
 };
 
 export const dashboardArabicCopy: Readonly<Record<string, string>> = {
+  "Edit the existing storefront text. No sections are added.":
+    "عدّل نصوص واجهة المتجر الحالية دون إضافة أقسام جديدة.",
   ...arabicText,
   ...arabicAttributes,
   ...supplementalArabicText,

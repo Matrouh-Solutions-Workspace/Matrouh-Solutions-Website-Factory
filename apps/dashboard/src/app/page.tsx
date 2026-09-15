@@ -159,7 +159,7 @@ export default async function Dashboard() {
                 <a href={`/websites/${website.id}`}>Edit</a>
                 {website.domains[0] && (
                   <a
-                    href={`http://${website.domains[0].hostname}:3000`}
+                    href={publicWebsiteUrl(website.domains[0].hostname)}
                     rel="noreferrer"
                     target="_blank"
                   >
@@ -320,6 +320,12 @@ function initials(value: string): string {
     .map((part) => part[0])
     .join("")
     .toUpperCase();
+}
+
+function publicWebsiteUrl(hostname: string): string {
+  return hostname === "localhost" || hostname.endsWith(".localhost")
+    ? `http://${hostname}:3000`
+    : `https://${hostname}`;
 }
 
 function relativeDate(value: Date, locale: "ar" | "en"): string {

@@ -10638,21 +10638,103 @@ input[type="file"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-.ecommerceContentEditor { max-width: 1180px; margin: 2rem auto; padding: 0 1.25rem 4rem; }
-.ecommerceLocaleTabs { display:flex; gap:.4rem; margin-bottom:.75rem; }
-.ecommerceLocaleTabs button { border:1px solid var(--line,#ccc); background:var(--surface,#fff); padding:.45rem .8rem; cursor:pointer; }
-.ecommerceLocaleTabs button.active { background:var(--ink,#111); color:#fff; }
-.ecommerceLocalizedFields > label[hidden] { display:none; }
-.ecommerceContentEditor > header { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; padding:1.5rem; background:var(--surface,#fff); border:1px solid var(--line,#ddd); }
-.ecommerceContentEditor h1 { margin:.25rem 0; }
-.contentLocaleLinks { display:flex; gap:.5rem; margin:1.25rem 0; }
-.contentLocaleLinks a { padding:.65rem 1rem; border:1px solid var(--line,#ccc); background:var(--surface,#fff); }
-.contentLocaleLinks a.active { background:var(--ink,#111); color:#fff; }
-.ecommerceContentForm { background:var(--surface,#fff); border:1px solid var(--line,#ddd); padding:1.5rem; }
-.ecommerceContentGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin-bottom:1.5rem; }
-.ecommerceContentMediaGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin-bottom:1.5rem; }
-.ecommerceContentGrid label { display:grid; gap:.4rem; font-weight:600; }
-.ecommerceContentGrid input,.ecommerceContentGrid textarea { width:100%; border:1px solid var(--line,#ccc); padding:.7rem; font:inherit; background:var(--background,#fff); }
-.ecommerceContentGrid textarea { resize:vertical; }
-@media (max-width: 700px) { .ecommerceContentEditor { margin:1rem auto; padding:0 .75rem 2rem; } .ecommerceContentEditor > header { align-items:stretch; flex-direction:column; } .ecommerceContentGrid { grid-template-columns:1fr; } }
-@media (max-width: 700px) { .ecommerceContentMediaGrid { grid-template-columns:1fr; } }
+.ecommerceContentEditor {
+  max-width: 1180px;
+  margin: 2rem auto;
+  padding: 0 1.25rem 4rem;
+}
+.ecommerceLocaleTabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.ecommerceLocaleTabs button {
+  border: 1px solid var(--line, #ccc);
+  background: var(--surface, #fff);
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+}
+.ecommerceLocaleTabs button.active {
+  background: var(--ink, #111);
+  color: #fff;
+}
+.ecommerceLocalizedFields > label[hidden] {
+  display: none;
+}
+.ecommerceContentEditor > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--surface, #fff);
+  border: 1px solid var(--line, #ddd);
+}
+.ecommerceContentEditor h1 {
+  margin: 0.25rem 0;
+}
+.contentLocaleLinks {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1.25rem 0;
+}
+.contentLocaleLinks a {
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--line, #ccc);
+  background: var(--surface, #fff);
+}
+.contentLocaleLinks a.active {
+  background: var(--ink, #111);
+  color: #fff;
+}
+.ecommerceContentForm {
+  background: var(--surface, #fff);
+  border: 1px solid var(--line, #ddd);
+  padding: 1.5rem;
+}
+.ecommerceContentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.ecommerceContentMediaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.ecommerceContentGrid label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+.ecommerceContentGrid input,
+.ecommerceContentGrid textarea {
+  width: 100%;
+  border: 1px solid var(--line, #ccc);
+  padding: 0.7rem;
+  font: inherit;
+  background: var(--background, #fff);
+}
+.ecommerceContentGrid textarea {
+  resize: vertical;
+}
+@media (max-width: 700px) {
+  .ecommerceContentEditor {
+    margin: 1rem auto;
+    padding: 0 0.75rem 2rem;
+  }
+  .ecommerceContentEditor > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .ecommerceContentGrid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 700px) {
+  .ecommerceContentMediaGrid {
+    grid-template-columns: 1fr;
+  }
+}

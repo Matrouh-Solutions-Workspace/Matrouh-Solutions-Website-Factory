@@ -65,7 +65,16 @@ export function EcommerceProductActions({
               ×
             </button>
           </div>
-          <EcommerceLocalizedFields values={{ nameEn: value(product.translations, "en", "name"), nameAr: value(product.translations, "ar", "name"), shortDescriptionEn: value(product.translations, "en", "shortDescription"), shortDescriptionAr: value(product.translations, "ar", "shortDescription"), descriptionEn: value(product.translations, "en", "description"), descriptionAr: value(product.translations, "ar", "description") }} />
+          <EcommerceLocalizedFields
+            values={{
+              nameEn: value(product.translations, "en", "name"),
+              nameAr: value(product.translations, "ar", "name"),
+              shortDescriptionEn: value(product.translations, "en", "shortDescription"),
+              shortDescriptionAr: value(product.translations, "ar", "shortDescription"),
+              descriptionEn: value(product.translations, "en", "description"),
+              descriptionAr: value(product.translations, "ar", "description"),
+            }}
+          />
           <label>
             Product colors
             <EcommerceColorPicker defaultValue={colors} name="colors" />

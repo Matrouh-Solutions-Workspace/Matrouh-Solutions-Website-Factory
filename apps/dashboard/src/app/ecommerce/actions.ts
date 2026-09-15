@@ -266,11 +266,16 @@ export async function updateEcommerceContentAction(formData: FormData): Promise<
       const mediaIds = [heroMediaId, logoMediaId].filter(Boolean);
       const media = mediaIds.length
         ? await transaction.mediaAsset.findMany({
-            where: { organizationId: context.organization.id, id: { in: mediaIds }, status: "ready", kind: "image" },
-            select: { id: true, originalFilename: true },
+            where: {
+              organizationId: context.organization.id,
+              id: { in: mediaIds },
+              status: "ready",
+              kind: "image",
+            },
+            select: { id: true, storageKey: true },
           })
         : [];
-      const mediaById = new Map(media.map((asset) => [asset.id, asset.originalFilename]));
+      const mediaById = new Map(media.map((asset) => [asset.id, asset.storageKey]));
       const settings = jsonRecord(current.settingsJson);
       const localizedContent = jsonRecord(settings.content);
       await transaction.ecommerceStore.update({
@@ -279,8 +284,12 @@ export async function updateEcommerceContentAction(formData: FormData): Promise<
           settingsJson: {
             ...settings,
             content: { ...localizedContent, [locale]: content },
-            ...(mediaById.has(heroMediaId) ? { heroMediaId, heroImageFilename: mediaById.get(heroMediaId) } : {}),
-            ...(mediaById.has(logoMediaId) ? { logoMediaId, logoImageFilename: mediaById.get(logoMediaId) } : {}),
+            ...(mediaById.has(heroMediaId)
+              ? { heroMediaId, heroImageFilename: mediaById.get(heroMediaId) }
+              : {}),
+            ...(mediaById.has(logoMediaId)
+              ? { logoMediaId, logoImageFilename: mediaById.get(logoMediaId) }
+              : {}),
           } as never,
           revision: { increment: 1 },
         },

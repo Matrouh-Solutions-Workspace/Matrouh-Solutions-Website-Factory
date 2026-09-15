@@ -132,7 +132,7 @@ export default async function WebsitesPage({
                 {website.domains[0] && (
                   <a
                     className="websiteDomain"
-                    href={`http://${website.domains[0].hostname}:3000`}
+                    href={publicWebsiteUrl(website.domains[0].hostname)}
                     rel="noreferrer"
                     target="_blank"
                   >
@@ -389,4 +389,10 @@ function initials(value: string): string {
     .map((part) => part[0])
     .join("")
     .toUpperCase();
+}
+
+function publicWebsiteUrl(hostname: string): string {
+  return hostname === "localhost" || hostname.endsWith(".localhost")
+    ? `http://${hostname}:3000`
+    : `https://${hostname}`;
 }

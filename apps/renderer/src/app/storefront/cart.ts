@@ -14,7 +14,8 @@ export function addCartLine(
 ): readonly CartLine[] {
   if (stockQuantity < 1) return cart;
   const existing = cart.find((line) => line.variantId === variantId && line.color === color);
-  if (!existing) return [...cart, { productId, variantId, quantity: 1, ...(color ? { color } : {}) }];
+  if (!existing)
+    return [...cart, { productId, variantId, quantity: 1, ...(color ? { color } : {}) }];
   return cart.map((line) =>
     line.variantId === variantId
       ? { ...line, quantity: Math.min(line.quantity + 1, stockQuantity) }
@@ -28,9 +29,12 @@ export function updateCartQuantity(
   quantity: number,
   color?: string,
 ): readonly CartLine[] {
-  if (quantity <= 0) return cart.filter((line) => !(line.variantId === variantId && line.color === color));
+  if (quantity <= 0)
+    return cart.filter((line) => !(line.variantId === variantId && line.color === color));
   return cart.map((line) =>
-    line.variantId === variantId && line.color === color ? { ...line, quantity: Math.min(quantity, 99) } : line,
+    line.variantId === variantId && line.color === color
+      ? { ...line, quantity: Math.min(quantity, 99) }
+      : line,
   );
 }
 

@@ -47,8 +47,10 @@ export function EcommerceStorefront({
       ? (store.branding.tokens as Record<string, unknown>)
       : {};
   const commerceMedia = store.settings as Record<string, unknown>;
-  const logoImageFilename = typeof commerceMedia.logoImageFilename === "string" ? commerceMedia.logoImageFilename : null;
-  const heroImageFilename = typeof commerceMedia.heroImageFilename === "string" ? commerceMedia.heroImageFilename : null;
+  const logoImageFilename =
+    typeof commerceMedia.logoImageFilename === "string" ? commerceMedia.logoImageFilename : null;
+  const heroImageFilename =
+    typeof commerceMedia.heroImageFilename === "string" ? commerceMedia.heroImageFilename : null;
   const presentationTokensValue =
     store.presentation.tokens && typeof store.presentation.tokens === "object"
       ? (store.presentation.tokens as Record<string, unknown>)
@@ -181,7 +183,13 @@ export function EcommerceStorefront({
     if (!variant || variant.stockQuantity < 1) return;
     void recordEvent("add_to_cart", productItem.id);
     setCart((current) => {
-      return addCartLine(current, productItem.id, variant.id, variant.stockQuantity, color ?? productColorValues(productItem)[0]);
+      return addCartLine(
+        current,
+        productItem.id,
+        variant.id,
+        variant.stockQuantity,
+        color ?? productColorValues(productItem)[0],
+      );
     });
     setAddedProductId(productItem.id);
     window.setTimeout(
@@ -332,7 +340,14 @@ export function EcommerceStorefront({
             aria-label={`${store.name} · ${copy.home}`}
           >
             <span className="shopBrandMark">
-              <img alt="" src={logoImageFilename ? mediaUrl(store.organizationId, logoImageFilename) : "/matrouh-logo.png"} />
+              <img
+                alt=""
+                src={
+                  logoImageFilename
+                    ? mediaUrl(store.organizationId, logoImageFilename)
+                    : "/matrouh-logo.png"
+                }
+              />
             </span>
             <span>
               <strong>{store.name}</strong>
@@ -478,7 +493,28 @@ export function EcommerceStorefront({
                   <div>
                     <strong>{item.name}</strong>
                     <span>{variant.title}</span>
-                    {productColorValues(item).length ? <div className="commerceCartColors" aria-label={copy.color}>{productColorValues(item).map((color) => <button aria-label={color} className={line.color === color ? "isSelected" : ""} key={color} onClick={() => setCart((current) => current.map((candidate) => candidate.variantId === line.variantId ? { ...candidate, color } : candidate))} style={{ backgroundColor: color }} type="button" />)}</div> : null}
+                    {productColorValues(item).length ? (
+                      <div className="commerceCartColors" aria-label={copy.color}>
+                        {productColorValues(item).map((color) => (
+                          <button
+                            aria-label={color}
+                            className={line.color === color ? "isSelected" : ""}
+                            key={color}
+                            onClick={() =>
+                              setCart((current) =>
+                                current.map((candidate) =>
+                                  candidate.variantId === line.variantId
+                                    ? { ...candidate, color }
+                                    : candidate,
+                                ),
+                              )
+                            }
+                            style={{ backgroundColor: color }}
+                            type="button"
+                          />
+                        ))}
+                      </div>
+                    ) : null}
                     <button onClick={() => updateQuantity(variant.id, 0, line.color)} type="button">
                       {copy.remove}
                     </button>
@@ -488,7 +524,9 @@ export function EcommerceStorefront({
                     <input
                       aria-label={`${copy.quantity}: ${item.name}`}
                       min="0"
-                      onChange={(event) => updateQuantity(variant.id, Number(event.target.value), line.color)}
+                      onChange={(event) =>
+                        updateQuantity(variant.id, Number(event.target.value), line.color)
+                      }
                       type="number"
                       value={line.quantity}
                     />
@@ -811,14 +849,16 @@ export function EcommerceStorefront({
             ) : null}
           </div>
           <div className="shopHeroVisual" data-slide={heroSlide}>
-              <img
+            <img
               alt=""
               aria-hidden="true"
               className="shopHeroPhoto"
-                src={heroImageFilename && heroSlide === 0 ? mediaUrl(store.organizationId, heroImageFilename) :
-                kind === "fashion"
-                  ? "/commerce-heroes/fashion-everyday-v2.jpg"
-                  : `/commerce-heroes/${kind === "pc" ? "pc-retail" : kind}.jpg`
+              src={
+                heroImageFilename && heroSlide === 0
+                  ? mediaUrl(store.organizationId, heroImageFilename)
+                  : kind === "fashion"
+                    ? "/commerce-heroes/fashion-everyday-v2.jpg"
+                    : `/commerce-heroes/${kind === "pc" ? "pc-retail" : kind}.jpg`
               }
             />
             <div className="shopHeroShape">
@@ -1198,11 +1238,11 @@ export function EcommerceStorefront({
               {visibleProducts.length > 0 ? (
                 <div className="commerceProductGrid">
                   {visibleProducts.map((item, index) => (
-                <ProductCard
-                  add={add}
-                  addedProductId={addedProductId}
-                  copy={copy}
-                  rtl={rtl}
+                    <ProductCard
+                      add={add}
+                      addedProductId={addedProductId}
+                      copy={copy}
+                      rtl={rtl}
                       index={index}
                       key={item.id}
                       kind={kind}
@@ -1288,10 +1328,21 @@ export function EcommerceStorefront({
 }
 
 function contentOverrides(settings: unknown, locale: "en" | "ar", allowed: Set<string>) {
-  const root = settings && typeof settings === "object" ? (settings as Record<string, unknown>) : {};
-  const content = root.content && typeof root.content === "object" ? (root.content as Record<string, unknown>) : {};
-  const localized = content[locale] && typeof content[locale] === "object" ? (content[locale] as Record<string, unknown>) : {};
-  return Object.fromEntries(Object.entries(localized).filter(([key, value]) => allowed.has(key) && typeof value === "string" && value.trim()));
+  const root =
+    settings && typeof settings === "object" ? (settings as Record<string, unknown>) : {};
+  const content =
+    root.content && typeof root.content === "object"
+      ? (root.content as Record<string, unknown>)
+      : {};
+  const localized =
+    content[locale] && typeof content[locale] === "object"
+      ? (content[locale] as Record<string, unknown>)
+      : {};
+  return Object.fromEntries(
+    Object.entries(localized).filter(
+      ([key, value]) => allowed.has(key) && typeof value === "string" && value.trim(),
+    ),
+  );
 }
 
 function ProductCard({
@@ -1386,7 +1437,9 @@ function ProductCard({
             type="button"
           >
             <Icon name="bag" />
-            <span>{addedProductId === product.id ? (rtl ? "تمت الإضافة ✓" : "Added ✓") : copy.quickAdd}</span>
+            <span>
+              {addedProductId === product.id ? (rtl ? "تمت الإضافة ✓" : "Added ✓") : copy.quickAdd}
+            </span>
           </button>
         </div>
       </div>
@@ -1532,78 +1585,109 @@ function StoreFooter({
       ? (store.settings as Record<string, unknown>)
       : {};
   const whatsappEnabled = settings.whatsappEnabled !== false;
-  const whatsappLabel =
-    typeof settings.whatsappButtonLabel === "string" && settings.whatsappButtonLabel
-      ? settings.whatsappButtonLabel
-      : copy.contactUs;
-  const whatsappContact = whatsappUrl && whatsappEnabled ? (
-    <WhatsAppContact
-      availability={store.locale === "ar" ? "فريقنا جاهز للمساعدة" : "Our team is ready to help"}
-      buttonLabel={whatsappLabel}
-      greeting={store.locale === "ar" ? "أهلاً بك" : "Welcome"}
-      phone={store.contactPhone ?? ""}
-      prompt={store.locale === "ar" ? "كيف يمكننا مساعدتك؟" : "How can we help you?"}
-    />
-  ) : null;
+  const whatsappLabel = localizedSetting(
+    settings,
+    "whatsappButtonLabel",
+    store.locale,
+    copy.contactUs,
+  );
+  const whatsappContact =
+    whatsappUrl && whatsappEnabled ? (
+      <WhatsAppContact
+        availability={localizedSetting(
+          settings,
+          "whatsappAvailability",
+          store.locale,
+          store.locale === "ar" ? "فريقنا جاهز للمساعدة" : "Our team is ready to help",
+        )}
+        buttonLabel={whatsappLabel}
+        greeting={localizedSetting(
+          settings,
+          "whatsappGreeting",
+          store.locale,
+          store.locale === "ar" ? "أهلاً بك" : "Welcome",
+        )}
+        phone={store.contactPhone ?? ""}
+        prompt={localizedSetting(
+          settings,
+          "whatsappPrompt",
+          store.locale,
+          store.locale === "ar" ? "كيف يمكننا مساعدتك؟" : "How can we help you?",
+        )}
+      />
+    ) : null;
   return (
     <>
-    <footer className="commercePublicFooter">
-      <div className="shopFooterLead">
-        <a className="shopBrand" href={homeHref}>
-          <span className="shopBrandMark">
-            <img alt="" src="/matrouh-logo.png" />
-          </span>
-          <span>
-            <strong>{store.name}</strong>
-            <small>{kind === "fashion" ? copy.fashionDescriptor : copy.hardwareDescriptor}</small>
-          </span>
-        </a>
-        <p>{store.footerText || store.description}</p>
-        <div className="shopSocials">
-          <a aria-label="Instagram" href="#">
-            <Icon name="instagram" />
+      <footer className="commercePublicFooter">
+        <div className="shopFooterLead">
+          <a className="shopBrand" href={homeHref}>
+            <span className="shopBrandMark">
+              <img alt="" src="/matrouh-logo.png" />
+            </span>
+            <span>
+              <strong>{store.name}</strong>
+              <small>{kind === "fashion" ? copy.fashionDescriptor : copy.hardwareDescriptor}</small>
+            </span>
           </a>
-          <a aria-label="Facebook" href="#">
-            <Icon name="facebook" />
-          </a>
+          <p>{store.footerText || store.description}</p>
+          <div className="shopSocials">
+            <a aria-label="Instagram" href="#">
+              <Icon name="instagram" />
+            </a>
+            <a aria-label="Facebook" href="#">
+              <Icon name="facebook" />
+            </a>
+          </div>
         </div>
-      </div>
-      <div>
-        <strong>{copy.shop}</strong>
-        <a href={productsHref}>{copy.newAndFeatured}</a>
-        {store.categories.slice(0, 4).map((item) => (
-          <a href={productsHref} key={item.id}>
-            {item.name}
-          </a>
-        ))}
-      </div>
-      <div>
-        <strong>{copy.help}</strong>
-        <a href="#services">{copy.deliveryAndReturns}</a>
-        <a href="#services">{copy.orderTracking}</a>
-        <a href="#services">{kind === "fashion" ? copy.sizeGuide : copy.buyingGuides}</a>
-        <a href="#services">{copy.contactUs}</a>
-      </div>
-      <div>
-        <strong>{copy.contact}</strong>
-        {store.contactEmail ? (
-          <a href={`mailto:${store.contactEmail}`}>{store.contactEmail}</a>
-        ) : null}
-        {store.contactPhone ? <a href={`tel:${store.contactPhone}`}>{store.contactPhone}</a> : null}
-        <span>{copy.cairoEgypt}</span>
-        <small>{copy.hours}</small>
-      </div>
-      <div className="shopFooterBottom">
-        <span>© 2026 {store.name}</span>
-        <span>
-          {copy.privacy} · {copy.terms}
-        </span>
-        <small>{copy.commerceBy}</small>
-      </div>
-    </footer>
-    {whatsappContact}
+        <div>
+          <strong>{copy.shop}</strong>
+          <a href={productsHref}>{copy.newAndFeatured}</a>
+          {store.categories.slice(0, 4).map((item) => (
+            <a href={productsHref} key={item.id}>
+              {item.name}
+            </a>
+          ))}
+        </div>
+        <div>
+          <strong>{copy.help}</strong>
+          <a href="#services">{copy.deliveryAndReturns}</a>
+          <a href="#services">{copy.orderTracking}</a>
+          <a href="#services">{kind === "fashion" ? copy.sizeGuide : copy.buyingGuides}</a>
+          <a href="#services">{copy.contactUs}</a>
+        </div>
+        <div>
+          <strong>{copy.contact}</strong>
+          {store.contactEmail ? (
+            <a href={`mailto:${store.contactEmail}`}>{store.contactEmail}</a>
+          ) : null}
+          {store.contactPhone ? (
+            <a href={`tel:${store.contactPhone}`}>{store.contactPhone}</a>
+          ) : null}
+          <span>{copy.cairoEgypt}</span>
+          <small>{copy.hours}</small>
+        </div>
+        <div className="shopFooterBottom">
+          <span>© 2026 {store.name}</span>
+          <span>
+            {copy.privacy} · {copy.terms}
+          </span>
+          <small>{copy.commerceBy}</small>
+        </div>
+      </footer>
+      {whatsappContact}
     </>
   );
+}
+
+function localizedSetting(
+  settings: Readonly<Record<string, unknown>>,
+  key: string,
+  locale: "ar" | "en",
+  fallback: string,
+): string {
+  const localizedKey = locale === "ar" ? `${key}Ar` : key;
+  const value = settings[localizedKey];
+  return typeof value === "string" && value.trim() ? value : fallback;
 }
 
 type IconName =

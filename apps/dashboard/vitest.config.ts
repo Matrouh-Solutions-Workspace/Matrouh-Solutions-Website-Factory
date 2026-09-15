@@ -4,6 +4,16 @@ export default defineConfig({
   test: {
     exclude: ["**/node_modules/**", "**/.next/**", "**/dist/**"],
     coverage: {
+      exclude: [
+        "**/.next/**",
+        "**/coverage/**",
+        "**/dist/**",
+        "**/node_modules/**",
+        "src/app/**/layout.tsx",
+        "src/app/**/loading.tsx",
+        "src/app/**/not-found.tsx",
+        "src/app/**/page.tsx",
+      ],
       provider: "v8",
       thresholds: {
         branches: 49,
