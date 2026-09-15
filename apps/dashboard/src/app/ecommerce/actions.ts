@@ -339,7 +339,7 @@ export async function createEcommerceProductAction(formData: FormData): Promise<
   const imageAltText = text(formData, "imageAltText", 300);
   const colors = formData
     .getAll("colors")
-    .flatMap((value) => String(value).split(/[\s,;]+/))
+    .flatMap((value) => (typeof value === "string" ? value.split(/[\s,;]+/) : []))
     .map((value) => value.trim().toLowerCase())
     .filter((value) => /^#[0-9a-f]{6}$/i.test(value))
     .slice(0, 12);
@@ -475,7 +475,7 @@ export async function updateEcommerceProductAction(formData: FormData): Promise<
   const shortDescriptionAr = text(formData, "shortDescriptionAr", 5000) || shortDescriptionEn;
   const colors = formData
     .getAll("colors")
-    .flatMap((value) => String(value).split(/[\s,;]+/))
+    .flatMap((value) => (typeof value === "string" ? value.split(/[\s,;]+/) : []))
     .filter((value) => /^#[0-9a-f]{6}$/i.test(value))
     .slice(0, 12);
   const { context } = await requireEcommerceStoreContext(storeId);
