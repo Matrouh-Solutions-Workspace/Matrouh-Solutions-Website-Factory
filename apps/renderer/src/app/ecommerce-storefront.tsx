@@ -12,6 +12,7 @@ import {
 import { filterCatalog, type StorefrontSortKey } from "./storefront/catalog";
 import { addCartLine, isCartLine, updateCartQuantity, type CartLine } from "./storefront/cart";
 import { parseCheckoutResult, readCheckoutRequest } from "./storefront/checkout";
+import { WhatsAppContact } from "./whatsapp-contact";
 import {
   attribute,
   mediaUrl,
@@ -36,11 +37,18 @@ export function EcommerceStorefront({
 }) {
   const kind = storefrontKind(store.template.rendererKey);
   const rtl = store.locale === "ar";
-  const copy = commerceCopy(store.locale, kind);
+  const baseCopy = commerceCopy(store.locale, kind);
+  const copy = {
+    ...baseCopy,
+    ...contentOverrides(store.settings, store.locale, new Set(Object.keys(baseCopy))),
+  };
   const brandingTokens =
     store.branding.tokens && typeof store.branding.tokens === "object"
       ? (store.branding.tokens as Record<string, unknown>)
       : {};
+  const commerceMedia = store.settings as Record<string, unknown>;
+  const logoImageFilename = typeof commerceMedia.logoImageFilename === "string" ? commerceMedia.logoImageFilename : null;
+  const heroImageFilename = typeof commerceMedia.heroImageFilename === "string" ? commerceMedia.heroImageFilename : null;
   const presentationTokensValue =
     store.presentation.tokens && typeof store.presentation.tokens === "object"
       ? (store.presentation.tokens as Record<string, unknown>)
@@ -71,6 +79,7 @@ export function EcommerceStorefront({
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutPending, setCheckoutPending] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const catalogRef = useRef<HTMLElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const route = path[0] ?? "";
@@ -166,18 +175,23 @@ export function EcommerceStorefront({
       : null,
   ].filter((value): value is string => Boolean(value));
 
-  function add(productItem: StorefrontProduct, variantId?: string) {
+  function add(productItem: StorefrontProduct, variantId?: string, color?: string) {
     const variant =
       productItem.variants.find((item) => item.id === variantId) ?? productItem.variants[0];
     if (!variant || variant.stockQuantity < 1) return;
     void recordEvent("add_to_cart", productItem.id);
     setCart((current) => {
-      return addCartLine(current, productItem.id, variant.id, variant.stockQuantity);
+      return addCartLine(current, productItem.id, variant.id, variant.stockQuantity, color ?? productColorValues(productItem)[0]);
     });
+    setAddedProductId(productItem.id);
+    window.setTimeout(
+      () => setAddedProductId((current) => (current === productItem.id ? null : current)),
+      2200,
+    );
   }
 
-  function updateQuantity(variantId: string, quantity: number) {
-    setCart((current) => updateCartQuantity(current, variantId, quantity));
+  function updateQuantity(variantId: string, quantity: number, color?: string) {
+    setCart((current) => updateCartQuantity(current, variantId, quantity, color));
   }
 
   function resetFilters() {
@@ -262,6 +276,7 @@ export function EcommerceStorefront({
         name: item.name,
         variant: variant.title,
         sku: variant.sku ?? item.sku,
+        color: line.color,
         quantity: line.quantity,
         unitPriceMinor: unitPrice(item, variant),
         totalMinor: unitPrice(item, variant) * line.quantity,
@@ -317,7 +332,7 @@ export function EcommerceStorefront({
             aria-label={`${store.name} · ${copy.home}`}
           >
             <span className="shopBrandMark">
-              <img alt="" src="/matrouh-logo.png" />
+              <img alt="" src={logoImageFilename ? mediaUrl(store.organizationId, logoImageFilename) : "/matrouh-logo.png"} />
             </span>
             <span>
               <strong>{store.name}</strong>
@@ -463,7 +478,8 @@ export function EcommerceStorefront({
                   <div>
                     <strong>{item.name}</strong>
                     <span>{variant.title}</span>
-                    <button onClick={() => updateQuantity(variant.id, 0)} type="button">
+                    {productColorValues(item).length ? <div className="commerceCartColors" aria-label={copy.color}>{productColorValues(item).map((color) => <button aria-label={color} className={line.color === color ? "isSelected" : ""} key={color} onClick={() => setCart((current) => current.map((candidate) => candidate.variantId === line.variantId ? { ...candidate, color } : candidate))} style={{ backgroundColor: color }} type="button" />)}</div> : null}
+                    <button onClick={() => updateQuantity(variant.id, 0, line.color)} type="button">
                       {copy.remove}
                     </button>
                   </div>
@@ -472,7 +488,7 @@ export function EcommerceStorefront({
                     <input
                       aria-label={`${copy.quantity}: ${item.name}`}
                       min="0"
-                      onChange={(event) => updateQuantity(variant.id, Number(event.target.value))}
+                      onChange={(event) => updateQuantity(variant.id, Number(event.target.value), line.color)}
                       type="number"
                       value={line.quantity}
                     />
@@ -630,6 +646,7 @@ export function EcommerceStorefront({
             ) : null}
             <div className="shopProductFacts">
               {Object.entries(product.attributes)
+                .filter(([key]) => key !== "colors")
                 .slice(0, 6)
                 .map(([key, value]) => (
                   <div key={key}>
@@ -645,13 +662,14 @@ export function EcommerceStorefront({
               </strong>
             </div>
             <button
-              className="shopPrimaryButton shopProductAdd"
+              aria-live="polite"
+              className={`shopPrimaryButton shopProductAdd${addedProductId === product.id ? " isAdded" : ""}`}
               disabled={stock < 1}
               onClick={() => add(product)}
               type="button"
             >
               <Icon name="bag" />
-              {copy.addToCart}
+              {addedProductId === product.id ? (rtl ? "تمت الإضافة ✓" : "Added ✓") : copy.addToCart}
             </button>
             <div className="shopProductPromises">
               <span>
@@ -793,11 +811,11 @@ export function EcommerceStorefront({
             ) : null}
           </div>
           <div className="shopHeroVisual" data-slide={heroSlide}>
-            <img
+              <img
               alt=""
               aria-hidden="true"
               className="shopHeroPhoto"
-              src={
+                src={heroImageFilename && heroSlide === 0 ? mediaUrl(store.organizationId, heroImageFilename) :
                 kind === "fashion"
                   ? "/commerce-heroes/fashion-everyday-v2.jpg"
                   : `/commerce-heroes/${kind === "pc" ? "pc-retail" : kind}.jpg`
@@ -980,7 +998,9 @@ export function EcommerceStorefront({
             {store.products.slice(0, 6).map((item, index) => (
               <ProductCard
                 add={add}
+                addedProductId={addedProductId}
                 copy={copy}
+                rtl={rtl}
                 index={index}
                 key={item.id}
                 kind={kind}
@@ -1178,9 +1198,11 @@ export function EcommerceStorefront({
               {visibleProducts.length > 0 ? (
                 <div className="commerceProductGrid">
                   {visibleProducts.map((item, index) => (
-                    <ProductCard
-                      add={add}
-                      copy={copy}
+                <ProductCard
+                  add={add}
+                  addedProductId={addedProductId}
+                  copy={copy}
+                  rtl={rtl}
                       index={index}
                       key={item.id}
                       kind={kind}
@@ -1265,9 +1287,18 @@ export function EcommerceStorefront({
   );
 }
 
+function contentOverrides(settings: unknown, locale: "en" | "ar", allowed: Set<string>) {
+  const root = settings && typeof settings === "object" ? (settings as Record<string, unknown>) : {};
+  const content = root.content && typeof root.content === "object" ? (root.content as Record<string, unknown>) : {};
+  const localized = content[locale] && typeof content[locale] === "object" ? (content[locale] as Record<string, unknown>) : {};
+  return Object.fromEntries(Object.entries(localized).filter(([key, value]) => allowed.has(key) && typeof value === "string" && value.trim()));
+}
+
 function ProductCard({
   add,
+  addedProductId,
   copy,
+  rtl,
   index,
   kind,
   product,
@@ -1275,7 +1306,9 @@ function ProductCard({
   store,
 }: {
   readonly add: (product: StorefrontProduct) => void;
+  readonly addedProductId: string | null;
   readonly copy: ReturnType<typeof commerceCopy>;
+  readonly rtl: boolean;
   readonly index: number;
   readonly kind: StorefrontKind;
   readonly product: StorefrontProduct;
@@ -1347,12 +1380,13 @@ function ProductCard({
           <Price product={product} store={store} compact />
           <button
             aria-label={`${copy.addToCart}: ${product.name}`}
+            className={addedProductId === product.id ? "isAdded" : ""}
             disabled={stock < 1}
             onClick={() => add(product)}
             type="button"
           >
             <Icon name="bag" />
-            <span>{copy.quickAdd}</span>
+            <span>{addedProductId === product.id ? (rtl ? "تمت الإضافة ✓" : "Added ✓") : copy.quickAdd}</span>
           </button>
         </div>
       </div>
@@ -1502,7 +1536,17 @@ function StoreFooter({
     typeof settings.whatsappButtonLabel === "string" && settings.whatsappButtonLabel
       ? settings.whatsappButtonLabel
       : copy.contactUs;
+  const whatsappContact = whatsappUrl && whatsappEnabled ? (
+    <WhatsAppContact
+      availability={store.locale === "ar" ? "فريقنا جاهز للمساعدة" : "Our team is ready to help"}
+      buttonLabel={whatsappLabel}
+      greeting={store.locale === "ar" ? "أهلاً بك" : "Welcome"}
+      phone={store.contactPhone ?? ""}
+      prompt={store.locale === "ar" ? "كيف يمكننا مساعدتك؟" : "How can we help you?"}
+    />
+  ) : null;
   return (
+    <>
     <footer className="commercePublicFooter">
       <div className="shopFooterLead">
         <a className="shopBrand" href={homeHref}>
@@ -1522,18 +1566,6 @@ function StoreFooter({
           <a aria-label="Facebook" href="#">
             <Icon name="facebook" />
           </a>
-          {whatsappUrl && whatsappEnabled ? (
-            <a
-              aria-label={whatsappLabel}
-              className="shopWhatsAppButton commerceWhatsAppContact"
-              href={whatsappUrl}
-              rel="noreferrer"
-              target="_blank"
-            >
-              <Icon name="message" />
-              <span>{whatsappLabel}</span>
-            </a>
-          ) : null}
         </div>
       </div>
       <div>
@@ -1569,6 +1601,8 @@ function StoreFooter({
         <small>{copy.commerceBy}</small>
       </div>
     </footer>
+    {whatsappContact}
+    </>
   );
 }
 

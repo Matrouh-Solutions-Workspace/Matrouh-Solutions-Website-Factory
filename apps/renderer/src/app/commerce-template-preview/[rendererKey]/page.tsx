@@ -107,6 +107,7 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
           brand: locale === "ar" ? "ستايل يومي" : "Everyday Label",
           material: locale === "ar" ? "خامة مريحة" : "Comfort fabric",
           badge: index === 0 ? "New" : undefined,
+          colors: ["#20252a", "#c5aa8d", "#d8d4ca", "#ef4444", "#3b82f6"].slice(0, 2 + (index % 4)),
         }
       : pc
         ? {

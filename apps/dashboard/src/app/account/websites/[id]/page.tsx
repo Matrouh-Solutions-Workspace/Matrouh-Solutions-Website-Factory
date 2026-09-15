@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   addWebsiteLocaleAction,
   createWebsiteDraftPreviewAction,
@@ -39,6 +39,9 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
   const { id } = await params;
   const managementTarget = await loadClientWebsiteManagementTarget(id);
   if (!managementTarget) notFound();
+  if (managementTarget.kind === "ecommerce" && managementTarget.ecommerceStore) {
+    redirect(`/account/ecommerce/stores/${managementTarget.ecommerceStore.id}/content`);
+  }
   const editor = await loadClientWebsiteEditor(id);
   if (!editor) notFound();
 

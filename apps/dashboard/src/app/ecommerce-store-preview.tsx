@@ -80,6 +80,7 @@ export function EcommerceStorePreview({
   const [revision, setRevision] = useState(0);
   const [previewScale, setPreviewScale] = useState(1);
   const [loading, setLoading] = useState(Boolean(storefrontUrl));
+  const [previewVisible, setPreviewVisible] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const previewCanvasRef = useRef<HTMLDivElement>(null);
   const dimensions = STOREFRONT_DIMENSIONS[viewport];
@@ -131,6 +132,7 @@ export function EcommerceStorePreview({
   }, [storefrontUrl]);
 
   function showPreview() {
+    setPreviewVisible(true);
     setViewport("mobile");
     setMobileOpen(true);
   }
@@ -151,7 +153,7 @@ export function EcommerceStorePreview({
         <PreviewIcon name="store" />
         <span>Preview storefront</span>
       </button>
-      <aside
+      {previewVisible ? <aside
         aria-busy={loading}
         aria-label="Storefront preview"
         aria-modal={mobileOpen || undefined}
@@ -171,7 +173,10 @@ export function EcommerceStorePreview({
             <button
               aria-label="Close preview"
               className="ecommercePreviewClose"
-              onClick={() => setMobileOpen(false)}
+              onClick={() => {
+                setMobileOpen(false);
+                setPreviewVisible(false);
+              }}
               title="Close preview"
               type="button"
             >
@@ -249,7 +254,7 @@ export function EcommerceStorePreview({
             </div>
           )}
         </div>
-      </aside>
+      </aside> : null}
     </>
   );
 }

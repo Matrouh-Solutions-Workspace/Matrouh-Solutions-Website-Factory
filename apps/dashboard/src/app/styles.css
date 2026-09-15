@@ -942,6 +942,99 @@
   border-color: #dc2626;
   color: #dc2626;
 }
+.commerceProductTable th,
+.commerceProductTable td {
+  vertical-align: middle;
+}
+.commerceProductTable tbody tr:hover {
+  background: var(--surface-soft);
+}
+.commerceProductTable .status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.6rem;
+}
+.commerceProductTable .commerceInlineAction button,
+.commerceProductTable .commerceProductActions button {
+  min-height: 2.25rem;
+  border-color: var(--line-strong);
+  font-weight: 700;
+}
+.commerceProductTable .commerceProductActions {
+  flex-wrap: nowrap;
+}
+.commerceProductTable .commerceProductActions form {
+  display: block;
+}
+@media (max-width: 720px) {
+  .commerceTableWrap:has(.commerceProductTable) {
+    overflow: visible;
+  }
+  .commerceProductTable {
+    display: block;
+    min-width: 0;
+  }
+  .commerceProductTable thead {
+    display: none;
+  }
+  .commerceProductTable tbody {
+    display: grid;
+    gap: 0.85rem;
+  }
+  .commerceProductTable tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding: 0.85rem;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .commerceProductTable td,
+  .commerceProductTable td:first-child,
+  .commerceProductTable td:nth-child(2),
+  .commerceProductTable td:nth-child(3),
+  .commerceProductTable td:nth-child(4),
+  .commerceProductTable td:nth-child(5),
+  .commerceProductTable td:nth-child(6),
+  .commerceProductTable td:last-child {
+    display: grid;
+    width: auto;
+    gap: 0.35rem;
+    padding: 0.65rem 0.35rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .commerceProductTable td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .commerceProductTable td:first-child,
+  .commerceProductTable td:last-child {
+    grid-column: 1 / -1;
+  }
+  .commerceProductTable td:last-child {
+    border-bottom: 0;
+  }
+  .commerceProductIdentity {
+    min-width: 0;
+  }
+  .commerceProductDescription {
+    max-width: calc(100vw - 9rem);
+  }
+  .commerceProductTable .commerceProductActions,
+  .commerceProductTable .commerceProductActions form,
+  .commerceProductTable .commerceProductActions button {
+    width: 100%;
+  }
+  .commerceProductTable .commerceProductActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 .commerceProductDialog {
   width: min(560px, calc(100% - 2rem));
   max-height: min(720px, calc(100dvh - 2rem));
@@ -10545,3 +10638,21 @@ input[type="file"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+.ecommerceContentEditor { max-width: 1180px; margin: 2rem auto; padding: 0 1.25rem 4rem; }
+.ecommerceLocaleTabs { display:flex; gap:.4rem; margin-bottom:.75rem; }
+.ecommerceLocaleTabs button { border:1px solid var(--line,#ccc); background:var(--surface,#fff); padding:.45rem .8rem; cursor:pointer; }
+.ecommerceLocaleTabs button.active { background:var(--ink,#111); color:#fff; }
+.ecommerceLocalizedFields > label[hidden] { display:none; }
+.ecommerceContentEditor > header { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; padding:1.5rem; background:var(--surface,#fff); border:1px solid var(--line,#ddd); }
+.ecommerceContentEditor h1 { margin:.25rem 0; }
+.contentLocaleLinks { display:flex; gap:.5rem; margin:1.25rem 0; }
+.contentLocaleLinks a { padding:.65rem 1rem; border:1px solid var(--line,#ccc); background:var(--surface,#fff); }
+.contentLocaleLinks a.active { background:var(--ink,#111); color:#fff; }
+.ecommerceContentForm { background:var(--surface,#fff); border:1px solid var(--line,#ddd); padding:1.5rem; }
+.ecommerceContentGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin-bottom:1.5rem; }
+.ecommerceContentMediaGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin-bottom:1.5rem; }
+.ecommerceContentGrid label { display:grid; gap:.4rem; font-weight:600; }
+.ecommerceContentGrid input,.ecommerceContentGrid textarea { width:100%; border:1px solid var(--line,#ccc); padding:.7rem; font:inherit; background:var(--background,#fff); }
+.ecommerceContentGrid textarea { resize:vertical; }
+@media (max-width: 700px) { .ecommerceContentEditor { margin:1rem auto; padding:0 .75rem 2rem; } .ecommerceContentEditor > header { align-items:stretch; flex-direction:column; } .ecommerceContentGrid { grid-template-columns:1fr; } }
+@media (max-width: 700px) { .ecommerceContentMediaGrid { grid-template-columns:1fr; } }

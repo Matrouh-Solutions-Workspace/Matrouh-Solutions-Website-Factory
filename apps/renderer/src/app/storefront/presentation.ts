@@ -24,9 +24,11 @@ export function attribute(product: StorefrontProduct, key: string): string {
     ? String(value)
     : "";
 }
-export function mediaUrl(organizationId: string, storageKey: string): string {
+export function mediaUrl(_organizationId: string, storageKey: string): string {
   const filename = storageKey.split("/").at(-1) ?? "";
-  return `/factory-media/${organizationId}/${encodeURIComponent(filename)}`;
+  // The renderer's media route resolves the current site's organization and
+  // serves local/provider-backed assets from the filename.
+  return `/media/${encodeURIComponent(filename)}`;
 }
 export function presentationTokens(value: Readonly<Record<string, unknown>>): CSSProperties {
   const raw =

@@ -8,6 +8,7 @@ import { PendingSubmit } from "@/app/pending-submit";
 import { MediaPicker } from "@/app/media-picker";
 import { EcommerceColorPicker } from "@/app/ecommerce-color-picker";
 import { EcommerceProductActions } from "@/app/ecommerce-product-actions";
+import { EcommerceLocalizedFields } from "@/app/ecommerce-localized-fields";
 import {
   adjustEcommerceInventoryAction,
   createEcommerceCategoryAction,
@@ -89,7 +90,7 @@ export async function EcommerceStoreDashboard({
     primaryDomain && store.status === "active" && store.website.status === "published"
       ? liveStorefrontUrl
       : templatePreviewUrl;
-  const websiteContentHref = `${clientView ? "/account/websites" : "/websites"}/${store.websiteId}`;
+  const websiteContentHref = `${clientView ? "/account" : ""}/ecommerce/stores/${store.id}/content`;
   const eventMap = new Map(eventCounts.map((row) => [row.eventType, row._count._all]));
   const subscription = store.website.subscription;
   const defaultPlanExpiry = defaultSubscriptionExpiry("monthly");
@@ -234,14 +235,7 @@ export async function EcommerceStoreDashboard({
               className="settingsForm commerceCompactForm"
             >
               <input name="storeId" type="hidden" value={store.id} />
-              <label>
-                English name
-                <input name="nameEn" required />
-              </label>
-              <label>
-                Arabic name
-                <input dir="rtl" name="nameAr" />
-              </label>
+              <EcommerceLocalizedFields namesOnly />
               <label>
                 Slug
                 <input name="slug" />
@@ -265,30 +259,7 @@ export async function EcommerceStoreDashboard({
             >
               <input name="storeId" type="hidden" value={store.id} />
               <input name="currency" type="hidden" value={store.currency} />
-              <label>
-                English name
-                <input name="nameEn" required />
-              </label>
-              <label>
-                Arabic name
-                <input dir="rtl" name="nameAr" />
-              </label>
-              <label>
-                Short description (English)
-                <textarea name="shortDescriptionEn" rows={2} />
-              </label>
-              <label>
-                Short description (Arabic)
-                <textarea dir="rtl" name="shortDescriptionAr" rows={2} />
-              </label>
-              <label>
-                Full description (English)
-                <textarea name="descriptionEn" rows={4} />
-              </label>
-              <label>
-                Full description (Arabic)
-                <textarea dir="rtl" name="descriptionAr" rows={4} />
-              </label>
+              <EcommerceLocalizedFields />
               <label>
                 SKU
                 <input name="sku" />
@@ -339,7 +310,7 @@ export async function EcommerceStoreDashboard({
           </div>
         </div>
         <div className="commerceTableWrap">
-          <table className="commerceTable">
+          <table className="commerceTable commerceProductTable">
             <thead>
               <tr>
                 <th>Product</th>
@@ -354,7 +325,7 @@ export async function EcommerceStoreDashboard({
             <tbody>
               {products.map((product) => (
                 <tr key={product.id}>
-                  <td>
+                  <td data-label="Product">
                     <div className="commerceProductIdentity">
                       {product.images[0] ? (
                         <img alt="" src={dashboardMediaPath(product.images[0].mediaAssetId)} />
@@ -368,8 +339,8 @@ export async function EcommerceStoreDashboard({
                       </div>
                     </div>
                   </td>
-                  <td>{product.sku ?? "—"}</td>
-                  <td>
+                  <td data-label="SKU">{product.sku ?? "—"}</td>
+                  <td data-label="Status">
                     <span className={`status ${product.status}`}>{product.status}</span>
                     <form
                       action={toggleEcommerceProductStatusAction}
@@ -387,18 +358,18 @@ export async function EcommerceStoreDashboard({
                       </button>
                     </form>
                   </td>
-                  <td>
+                  <td data-label="Price">
                     {formatMoney(
                       product.salePriceMinor ?? product.basePriceMinor,
                       product.currency,
                       locale,
                     )}
                   </td>
-                  <td>{product.variants.length}</td>
-                  <td>
+                  <td data-label="Variants">{product.variants.length}</td>
+                  <td data-label="Stock">
                     {product.variants.reduce((sum, variant) => sum + variant.stockQuantity, 0)}
                   </td>
-                  <td>
+                  <td data-label="Actions">
                     <EcommerceProductActions product={product} storeId={store.id} />
                   </td>
                 </tr>
@@ -764,7 +735,9 @@ export async function EcommerceStoreDashboard({
         </p>
         <div className="commerceMethodGrid">
           {[
-            ...store.paymentMethods.map((method) => ({ ...method, kind: "payment" })),
+            ...store.paymentMethods
+              .filter((method) => method.key !== "bank_transfer")
+              .map((method) => ({ ...method, kind: "payment" })),
             ...store.shippingMethods.map((method) => ({ ...method, kind: "shipping" })),
           ].map((method) => (
             <article key={`${method.kind}-${method.id}`}>

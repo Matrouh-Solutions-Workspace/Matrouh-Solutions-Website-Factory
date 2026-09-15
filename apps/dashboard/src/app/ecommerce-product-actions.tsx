@@ -6,6 +6,7 @@ import {
   updateEcommerceProductAction,
 } from "@/app/ecommerce/actions";
 import { EcommerceColorPicker } from "@/app/ecommerce-color-picker";
+import { EcommerceLocalizedFields } from "@/app/ecommerce-localized-fields";
 
 interface EcommerceProductLike {
   readonly id: string;
@@ -64,56 +65,7 @@ export function EcommerceProductActions({
               ×
             </button>
           </div>
-          <label>
-            English name
-            <input
-              defaultValue={value(product.translations, "en", "name")}
-              name="nameEn"
-              required
-            />
-          </label>
-          <label>
-            Arabic name
-            <input
-              defaultValue={value(product.translations, "ar", "name")}
-              dir="rtl"
-              name="nameAr"
-            />
-          </label>
-          <label>
-            Short description (English)
-            <textarea
-              defaultValue={value(product.translations, "en", "shortDescription")}
-              name="shortDescriptionEn"
-              rows={2}
-            />
-          </label>
-          <label>
-            Short description (Arabic)
-            <textarea
-              defaultValue={value(product.translations, "ar", "shortDescription")}
-              dir="rtl"
-              name="shortDescriptionAr"
-              rows={2}
-            />
-          </label>
-          <label>
-            Full description (English)
-            <textarea
-              defaultValue={value(product.translations, "en", "description")}
-              name="descriptionEn"
-              rows={3}
-            />
-          </label>
-          <label>
-            Full description (Arabic)
-            <textarea
-              defaultValue={value(product.translations, "ar", "description")}
-              dir="rtl"
-              name="descriptionAr"
-              rows={3}
-            />
-          </label>
+          <EcommerceLocalizedFields values={{ nameEn: value(product.translations, "en", "name"), nameAr: value(product.translations, "ar", "name"), shortDescriptionEn: value(product.translations, "en", "shortDescription"), shortDescriptionAr: value(product.translations, "ar", "shortDescription"), descriptionEn: value(product.translations, "en", "description"), descriptionAr: value(product.translations, "ar", "description") }} />
           <label>
             Product colors
             <EcommerceColorPicker defaultValue={colors} name="colors" />

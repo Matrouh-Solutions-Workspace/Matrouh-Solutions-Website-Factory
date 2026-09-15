@@ -12,6 +12,7 @@ import {
 } from "@factory/ecommerce";
 import { withTenantTransaction } from "@factory/database";
 import { dashboardDatabase } from "@/server/database";
+import { ecommerceContentFields } from "@/server/ecommerce-content";
 import { DashboardAuthorizationError } from "@/server/auth";
 import {
   loadEcommerceTemplates,
@@ -121,13 +122,6 @@ export async function createEcommerceStoreAction(formData: FormData): Promise<vo
                   displayName: "Cash on delivery",
                   enabled: true,
                   position: 0,
-                },
-                {
-                  id: randomUUID(),
-                  key: "bank_transfer",
-                  displayName: "Bank transfer",
-                  enabled: false,
-                  position: 1,
                 },
               ],
             },
@@ -247,6 +241,55 @@ export async function updateEcommerceStoreAction(formData: FormData): Promise<vo
     },
   );
   refreshStore(storeId);
+}
+
+export async function updateEcommerceContentAction(formData: FormData): Promise<void> {
+  const storeId = requiredId(formData, "storeId");
+  const locale = text(formData, "locale", 2) === "ar" ? "ar" : "en";
+  const { context } = await requireEcommerceStoreContext(storeId);
+  const content = Object.fromEntries(
+    ecommerceContentFields
+      .map((field) => [field, text(formData, field, 5000)] as const)
+      .filter(([, value]) => value !== ""),
+  );
+  const heroMediaId = text(formData, "heroMediaId", 80);
+  const logoMediaId = text(formData, "logoMediaId", 80);
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenant(context, `ecommerce:update-content:${storeId}:${locale}`),
+    async (transaction) => {
+      const current = await transaction.ecommerceStore.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: storeId } },
+        select: { settingsJson: true },
+      });
+      if (!current) throw new Error("ECOMMERCE_STORE_NOT_FOUND");
+      const mediaIds = [heroMediaId, logoMediaId].filter(Boolean);
+      const media = mediaIds.length
+        ? await transaction.mediaAsset.findMany({
+            where: { organizationId: context.organization.id, id: { in: mediaIds }, status: "ready", kind: "image" },
+            select: { id: true, originalFilename: true },
+          })
+        : [];
+      const mediaById = new Map(media.map((asset) => [asset.id, asset.originalFilename]));
+      const settings = jsonRecord(current.settingsJson);
+      const localizedContent = jsonRecord(settings.content);
+      await transaction.ecommerceStore.update({
+        where: { organizationId_id: { organizationId: context.organization.id, id: storeId } },
+        data: {
+          settingsJson: {
+            ...settings,
+            content: { ...localizedContent, [locale]: content },
+            ...(mediaById.has(heroMediaId) ? { heroMediaId, heroImageFilename: mediaById.get(heroMediaId) } : {}),
+            ...(mediaById.has(logoMediaId) ? { logoMediaId, logoImageFilename: mediaById.get(logoMediaId) } : {}),
+          } as never,
+          revision: { increment: 1 },
+        },
+      });
+    },
+  );
+  refreshStore(storeId);
+  revalidatePath(`/account/ecommerce/stores/${storeId}/content`);
+  revalidatePath(`/ecommerce/stores/${storeId}/content`);
 }
 
 export async function switchEcommerceTemplateAction(formData: FormData): Promise<void> {

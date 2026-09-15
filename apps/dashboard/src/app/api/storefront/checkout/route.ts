@@ -135,7 +135,7 @@ export async function POST(request: Request): Promise<Response> {
             organizationId: store.organization_id,
             storeId: store.store_id,
             enabled: true,
-            key: { in: ["cash_on_delivery", "bank_transfer"] },
+            key: "cash_on_delivery",
           },
           orderBy: { position: "asc" },
         });
