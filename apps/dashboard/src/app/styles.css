@@ -593,12 +593,28 @@
 .commerceSectionNav a:hover {
   background: var(--surface-soft);
 }
+.commerceSectionNavContentLink {
+  border-color: color-mix(in srgb, var(--primary) 65%, var(--line)) !important;
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface)) !important;
+  color: var(--ink) !important;
+  font-weight: 850;
+}
+.commerceSectionNavContentLink > span {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #171914;
+  font-size: 0.9rem;
+}
 .compactSummary {
   margin: 0;
 }
 .commerceSplit {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(220px, 0.78fr) minmax(360px, 1.22fr);
   gap: 1.25rem;
 }
 .commerceCompactForm {
@@ -608,6 +624,34 @@
 .commerceCompactForm label {
   display: grid;
   gap: 0.3rem;
+}
+.ecommercePlanForm {
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 55%, var(--line));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+}
+.ecommercePlanHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+.ecommercePlanHeader > div {
+  display: grid;
+  gap: 2px;
+}
+.ecommercePlanHeader span,
+.ecommercePlanHeader small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.ecommercePlanHeader strong {
+  color: var(--ink);
+  font-size: 1rem;
+  text-transform: capitalize;
 }
 .commerceChipList {
   display: flex;
@@ -632,7 +676,8 @@
 .commerceTable {
   width: 100%;
   border-collapse: collapse;
-  min-width: 760px;
+  min-width: 680px;
+  table-layout: fixed;
 }
 .commerceTable th,
 .commerceTable td {
@@ -647,13 +692,290 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.commerceTable th:first-child,
+.commerceTable td:first-child {
+  width: 28%;
+}
+.commerceTable th:nth-child(2),
+.commerceTable td:nth-child(2) {
+  width: 9%;
+}
+.commerceTable th:nth-child(3),
+.commerceTable td:nth-child(3) {
+  width: 13%;
+}
+.commerceTable th:nth-child(4),
+.commerceTable td:nth-child(4) {
+  width: 13%;
+}
+.commerceTable th:nth-child(5),
+.commerceTable td:nth-child(5),
+.commerceTable th:nth-child(6),
+.commerceTable td:nth-child(6) {
+  width: 9%;
+}
+.commerceTable th:last-child,
+.commerceTable td:last-child {
+  width: 19%;
+}
 .commerceTable td > small {
   display: block;
   color: var(--muted);
 }
+.commerceProductIdentity {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-width: 220px;
+}
+.commerceProductIdentity > img {
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+.commerceProductIdentity > div {
+  min-width: 0;
+}
+.commerceProductIdentity strong,
+.commerceProductIdentity small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.commerceProductIdentity strong {
+  line-height: 1.35;
+}
+.commerceProductDescription {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.commerceColorPalette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  padding: 0.45rem 0;
+}
+.commerceColorSwatch {
+  position: relative;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+}
+.commerceColorSwatch > span {
+  width: 1.65rem;
+  height: 1.65rem;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line);
+  pointer-events: none;
+}
+.commerceColorSwatch > input {
+  position: absolute;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.commerceColorSwatch > input:checked + span {
+  box-shadow:
+    0 0 0 2px var(--primary),
+    0 0 0 4px var(--surface);
+}
+.commerceColorMore {
+  position: relative;
+}
+.commerceColorMore > summary {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  list-style: none;
+}
+.commerceColorMore > summary::-webkit-details-marker {
+  display: none;
+}
+.commerceColorMore[open] > summary {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+.commerceColorMorePanel {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 0.45rem);
+  inset-inline-start: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 12rem;
+  padding: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 10px 24px rgba(23, 25, 20, 0.14);
+}
+.commerceColorPicker {
+  display: grid;
+  gap: 0.45rem;
+}
+.commerceColorPickerList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+.commerceColorPickerItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.commerceColorPickerItem input[type="color"] {
+  width: 1.65rem !important;
+  min-height: 1.65rem !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  overflow: hidden;
+  cursor: pointer;
+}
+.commerceColorPickerItem button,
+.commerceColorPickerAdd {
+  display: grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.commerceColorPickerItem button:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.commerceColorPickerAdd {
+  width: 2rem;
+  height: 2rem;
+  border: 1px dashed var(--primary);
+  color: var(--primary);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
 .commerceTable form {
   display: flex;
   gap: 0.35rem;
+}
+
+@media (max-width: 600px) {
+  .commerceTable {
+    min-width: 680px;
+  }
+  .commerceTable th,
+  .commerceTable td {
+    padding: 0.6rem 0.5rem;
+  }
+  .commerceProductActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .commerceProductActions form,
+  .commerceProductActions button {
+    width: 100%;
+  }
+}
+.commerceInlineAction {
+  margin-top: 0.4rem;
+  display: block !important;
+}
+.commerceInlineAction button {
+  padding: 0.2rem 0.45rem;
+  min-width: 5.2rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.commerceInlineAction button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.commerceProductActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.commerceProductActions button {
+  white-space: nowrap;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+.commerceProductActions button:hover {
+  border-color: var(--primary);
+}
+.commerceProductActions .commerceDeleteButton:hover {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+.commerceProductDialog {
+  width: min(560px, calc(100% - 2rem));
+  max-height: min(720px, calc(100dvh - 2rem));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 24px 80px rgba(17, 17, 17, 0.3);
+}
+.commerceProductDialog::backdrop {
+  background: rgba(17, 17, 17, 0.52);
+}
+.commerceProductDialog > form {
+  max-height: inherit;
+  overflow-y: auto;
+  padding: 1.2rem;
+}
+.commerceDialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.commerceDialogHeader h3 {
+  margin: 0;
+}
+.commerceDialogHeader button {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
 }
 
 .commerceInventoryGrid,
@@ -1227,6 +1549,67 @@ a {
 .appShell .claimLinkCopy svg {
   height: 17px;
   width: 17px;
+}
+.appShell .claimLinkSubmit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.appShell .claimLinkSubmit:disabled::before {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  content: "";
+  animation: editorPreviewSpin 700ms linear infinite;
+}
+.appShell .claimLinkSuccess {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, #18864b 42%, var(--line));
+  border-radius: 12px;
+  background: color-mix(in srgb, #18864b 7%, var(--surface));
+}
+.appShell .claimLinkSuccessHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #126b3b;
+}
+.appShell .claimLinkSuccessHead > div {
+  display: grid;
+  gap: 2px;
+}
+.appShell .claimLinkSuccessHead small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+.appShell .ecommerceClaimLinkManager {
+  display: grid;
+  gap: 10px;
+}
+.appShell .ecommerceClaimActions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+.appShell .ecommerceClaimActions > button {
+  width: 100%;
+}
+.appShell .claimLinkSuccessHead > span {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: #18864b;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
 }
 .sidebar {
   position: fixed;
@@ -6681,7 +7064,7 @@ input[type="file"] {
     top: 112px;
     max-height: none;
     min-height: 132px;
-    padding: 52px 10px 10px;
+    padding: 42px 8px 8px;
   }
   .appShell.clientShell
     .editorStudioClient
@@ -6728,6 +7111,7 @@ input[type="file"] {
     .editorStudioClient
     .editorStudioSidebar--collapsed
     .editorStudioSidebarToggle {
+    display: none !important;
     position: static;
     width: 40px;
   }
@@ -8331,6 +8715,9 @@ input[type="file"] {
   stroke-linejoin: round;
   stroke-width: 2;
 }
+.editorStudioSidebarItemIcon {
+  display: none;
+}
 .editorStudioSidebarToggle:hover:not(:disabled) {
   border-color: var(--primary);
   background: var(--primary-soft);
@@ -8679,6 +9066,10 @@ input[type="file"] {
   background: #dedede;
   box-shadow: 0 12px 34px rgba(17, 17, 17, 0.09);
 }
+.mobileEditorPreviewLauncher,
+.mobileEditorPreviewClose {
+  display: none;
+}
 .editorPreviewToolbar {
   display: flex;
   min-height: 52px;
@@ -8726,6 +9117,21 @@ input[type="file"] {
   color: var(--ink);
   font-size: 14px;
   text-decoration: none;
+}
+.editorPreviewActions .ecommercePreviewClose {
+  width: auto;
+  min-width: 0;
+  padding: 0 0.7rem;
+  gap: 0.4rem;
+  border-color: #171914;
+  background: #f5a623;
+  color: #171914;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+.ecommercePreviewClose span {
+  display: inline;
+  white-space: nowrap;
 }
 .editorPreviewActions svg,
 .editorPreviewEmpty svg {
@@ -9549,54 +9955,68 @@ input[type="file"] {
 /* On phones the editor navigation is a compact, touch-friendly strip. Keep
    the collapse affordance separate so it never competes with section links. */
 @media (max-width: 820px) {
+  .appShell.clientShell .editorStudioClient .editorStudioSidebarToggle {
+    display: none;
+  }
   .appShell.clientShell .editorStudioClient .editorStudioSidebar {
     position: relative;
     top: auto;
     z-index: 1;
     min-height: auto;
     max-height: none;
-    padding: 52px 10px 10px;
+    padding: 8px;
     overflow: visible;
   }
   .appShell.clientShell .editorStudioClient .editorStudioSidebarToggle {
     position: absolute;
-    inset-block-start: 10px;
-    inset-inline-end: 10px;
-    width: 40px;
-    min-height: 34px;
+    top: 7px;
+    right: 7px !important;
+    left: auto !important;
+    inset-inline-start: auto !important;
+    inset-inline-end: auto !important;
+    width: 34px;
+    min-height: 30px;
     margin: 0;
   }
   .appShell.clientShell .editorStudioClient .editorStudioSidebar > nav {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     width: 100%;
-    gap: 8px;
+    gap: 3px;
     margin: 0;
     padding: 0;
     overflow: visible;
   }
   .appShell.clientShell .editorStudioClient .editorStudioSidebar > nav a {
-    display: grid;
+    display: flex;
     min-width: 0;
-    min-height: 54px;
-    grid-template-columns: 24px minmax(0, 1fr);
-    align-content: center;
+    min-height: 34px;
+    align-items: center;
     gap: 7px;
-    padding: 8px;
+    padding: 4px 7px;
     white-space: normal;
     text-align: start;
   }
   .appShell.clientShell .editorStudioClient .editorStudioSidebar > nav a span {
-    width: 24px;
-    min-width: 24px;
-    height: 24px;
+    width: 22px;
+    min-width: 22px;
+    height: 22px;
+  }
+  .appShell.clientShell .editorStudioClient .editorStudioSidebarStep {
+    display: none;
+  }
+  .appShell.clientShell .editorStudioClient .editorStudioSidebarItemIcon {
+    display: block;
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
   }
   .appShell.clientShell .editorStudioClient .editorStudioSidebar--collapsed {
-    width: 58px;
-    min-height: 58px;
-    max-height: 58px;
+    width: 48px;
+    min-height: 46px;
+    max-height: 46px;
     justify-self: end;
-    padding: 8px;
+    padding: 7px;
     overflow: hidden;
   }
   .appShell.clientShell
@@ -9604,7 +10024,10 @@ input[type="file"] {
     .editorStudioSidebar--collapsed
     .editorStudioSidebarToggle {
     position: static;
-    width: 40px;
+    width: 34px;
+    min-height: 30px;
+    margin-inline-start: 0;
+    margin-left: auto;
   }
   .appShell.clientShell .editorStudioClient .clientContentWorkspace {
     gap: 10px;
@@ -9616,9 +10039,73 @@ input[type="file"] {
 
 @media (max-width: 420px) {
   .appShell.clientShell .editorStudioClient .editorStudioSidebar > nav a {
-    min-height: 50px;
-    padding: 7px;
-    font-size: 0.72rem;
+    min-height: 32px;
+    padding: 4px 6px;
+    font-size: 0.69rem;
+  }
+}
+
+@media (max-width: 820px) {
+  .appShell.clientShell .editorStudioClient .mobileEditorPreviewLauncher {
+    position: fixed;
+    z-index: 90;
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(14px, env(safe-area-inset-bottom));
+    display: inline-flex;
+    min-height: 46px;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border: 2px solid #171914;
+    border-radius: 999px;
+    background: var(--primary);
+    color: #171914;
+    box-shadow:
+      3px 3px 0 #171914,
+      0 12px 30px rgba(17, 17, 17, 0.2);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 850;
+    cursor: pointer;
+  }
+  .appShell.clientShell .editorStudioClient .mobileEditorPreviewLauncher svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+  .appShell.clientShell .editorStudioClient .mobileEditorPreviewLauncher--open {
+    display: none;
+  }
+  .appShell.clientShell .editorStudioClient .editorStudioPreview--mobileOpen {
+    position: fixed;
+    z-index: 100;
+    inset: 0;
+    top: 0;
+    display: block !important;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none;
+  }
+  .appShell.clientShell .editorStudioClient .editorStudioPreview--mobileOpen .editorPreviewToolbar {
+    min-height: 58px;
+    padding: max(8px, env(safe-area-inset-top)) 10px 8px;
+  }
+  .appShell.clientShell .editorStudioClient .editorStudioPreview--mobileOpen .editorPreviewCanvas {
+    height: calc(100dvh - 58px);
+    padding: 10px;
+  }
+  .appShell.clientShell .editorStudioClient .mobileEditorPreviewClose {
+    display: grid;
+    border-color: #f5a623;
+    color: #171914;
   }
 }
 
@@ -9630,4 +10117,418 @@ input[type="file"] {
   background: var(--danger-soft) !important;
   color: var(--danger) !important;
   box-shadow: 2px 2px 0 color-mix(in srgb, var(--danger) 35%, transparent) !important;
+}
+
+/* Client commerce uses the same visual system as the standard website editor:
+   a calm workspace, compact dark section rail, and focused editing panels. */
+.appShell.clientShell .clientCommerceStorePage {
+  --commerce-client-line: #dedbd2;
+  --commerce-client-muted: #67675f;
+  --commerce-client-surface: #fffdf8;
+  display: grid;
+  width: min(100%, 1540px);
+  grid-template-columns: 218px minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+  margin: 0 auto;
+  padding: 22px;
+}
+.appShell.clientShell .clientCommerceStorePage > header {
+  position: relative;
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 24px;
+  overflow: hidden;
+  border: 1px solid var(--commerce-client-line);
+  border-radius: 18px;
+  background: var(--commerce-client-surface);
+  box-shadow: 0 10px 28px rgba(35, 33, 27, 0.06);
+}
+.appShell.clientShell .clientCommerceStorePage > header::after {
+  position: absolute;
+  right: 24px;
+  bottom: 0;
+  width: 116px;
+  height: 4px;
+  background: var(--primary);
+  content: "";
+}
+.appShell.clientShell .clientCommerceStorePage > header h1 {
+  margin-block: 3px 5px;
+}
+.appShell.clientShell .clientCommerceStorePage > header .headerActions {
+  flex: 0 0 auto;
+}
+.appShell.clientShell .clientCommerceStorePage > .commerceSectionNav {
+  position: sticky;
+  z-index: 8;
+  top: 84px;
+  display: grid;
+  grid-column: 1;
+  grid-row: 2 / span 20;
+  gap: 5px;
+  padding: 10px;
+  overflow: hidden;
+  border: 1px solid #343932;
+  border-radius: 16px;
+  background: #20231f;
+  box-shadow: 0 18px 40px rgba(19, 22, 19, 0.16);
+}
+.appShell.clientShell .clientCommerceStorePage .commerceSectionNavIntro {
+  display: grid;
+  gap: 3px;
+  margin: 2px 4px 8px;
+  padding: 6px 7px 13px;
+  border-bottom: 1px solid #3d433c;
+}
+.appShell.clientShell .clientCommerceStorePage .commerceSectionNavIntro span {
+  color: #f5a623;
+  font-size: 0.58rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.appShell.clientShell .clientCommerceStorePage .commerceSectionNavIntro strong {
+  color: #fffdf8;
+  font-size: 0.86rem;
+}
+.appShell.clientShell .clientCommerceStorePage > .commerceSectionNav a {
+  display: flex;
+  min-height: 42px;
+  padding: 9px 11px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 10px;
+  color: #dedfd8;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.appShell.clientShell .clientCommerceStorePage > .commerceSectionNav a > span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #596155;
+  border-radius: 8px;
+  background: #272c26;
+  color: #f5a623;
+  font-size: 0.58rem;
+}
+.appShell.clientShell .clientCommerceStorePage > .commerceSectionNav a:hover,
+.appShell.clientShell .clientCommerceStorePage > .commerceSectionNav a:focus-visible {
+  background: #30362f;
+  color: #fffdf8;
+}
+.appShell.clientShell .clientCommerceStorePage > section {
+  grid-column: 2;
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--commerce-client-line);
+  border-radius: 16px;
+  background: var(--commerce-client-surface);
+  box-shadow: 0 8px 24px rgba(35, 33, 27, 0.045);
+}
+.appShell.clientShell .clientCommerceStorePage > .websiteSummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--commerce-client-line);
+}
+.appShell.clientShell .clientCommerceStorePage > .websiteSummary article {
+  min-height: 96px;
+  padding: 18px;
+  border: 0;
+  background: var(--commerce-client-surface);
+}
+.appShell.clientShell .clientCommerceStorePage > .panel {
+  padding: 20px;
+}
+.appShell.clientShell .clientCommerceStorePage .panelHead {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--commerce-client-line);
+}
+.appShell.clientShell .clientCommerceStorePage .panelHead > div:first-child {
+  min-width: 0;
+}
+.appShell.clientShell .clientCommerceStorePage .commerceSectionToggle {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--commerce-client-line);
+  border-radius: 9px;
+  background: var(--commerce-client-surface);
+  color: var(--commerce-client-muted);
+  font: inherit;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.appShell.clientShell .clientCommerceStorePage .commerceSectionToggle:hover,
+.appShell.clientShell .clientCommerceStorePage .commerceSectionToggle:focus-visible {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--client-ink, #171817);
+}
+.appShell.clientShell .clientCommerceStorePage .commercePanel--collapsed {
+  min-height: 0;
+}
+.appShell.clientShell .clientCommerceStorePage .commercePanel--collapsed > *:not(.panelHead) {
+  display: none !important;
+}
+.appShell.clientShell .clientCommerceStorePage .commercePanel--collapsed > .panelHead {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.appShell.clientShell .clientCommerceStorePage .commerceSplit > div {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+.appShell.clientShell .clientCommerceStorePage .commerceCompactForm {
+  padding: 16px;
+  border: 1px solid var(--commerce-client-line);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--commerce-client-surface) 82%, var(--canvas));
+}
+.appShell.clientShell .clientCommerceStorePage .commerceColorFields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding-top: 4px;
+}
+.appShell.clientShell .clientCommerceStorePage .commerceColorFields label {
+  display: grid;
+  gap: 7px;
+  color: var(--commerce-client-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.appShell.clientShell .clientCommerceStorePage .commerceColorFields input[type="color"] {
+  width: 100%;
+  min-height: 42px;
+  padding: 4px;
+  cursor: pointer;
+}
+.appShell.clientShell .clientCommerceStorePage :is(input, select, textarea) {
+  border: 1px solid var(--commerce-client-line);
+  border-radius: 9px;
+  background: #ffffff;
+}
+.appShell.clientShell .clientCommerceStorePage :is(input, select, textarea):focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(245, 166, 35, 0.15);
+}
+.appShell.clientShell .clientCommerceStorePage > .ecommerceStorePreview {
+  position: sticky;
+  top: 86px;
+  display: none;
+  grid-column: 3;
+  grid-row: 2 / span 20;
+  height: calc(100vh - 108px);
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #343932;
+  border-radius: 18px;
+  background: #20231f;
+  box-shadow: 0 18px 40px rgba(19, 22, 19, 0.18);
+}
+.appShell.clientShell .clientCommerceStorePage .ecommerceStorePreview .editorPreviewToolbar {
+  padding: 14px 16px;
+  border-bottom-color: #3d433c;
+  background: #20231f;
+  color: #fffdf8;
+}
+.appShell.clientShell .clientCommerceStorePage .ecommerceStorePreview .editorPreviewToolbar strong {
+  color: #f5a623;
+}
+.appShell.clientShell .clientCommerceStorePage .ecommerceStorePreview .editorPreviewCanvas {
+  background: #e9e7e0;
+}
+.appShell.clientShell .clientCommerceStorePage .ecommercePreviewLauncher,
+.appShell.clientShell .clientCommerceStorePage .ecommercePreviewClose {
+  display: none;
+}
+
+@media (min-width: 1320px) {
+  .appShell.clientShell .clientCommerceStorePage {
+    width: min(100%, 1800px);
+    grid-template-columns: 218px minmax(520px, 1fr) minmax(380px, 0.72fr);
+  }
+  .appShell.clientShell .clientCommerceStorePage > .ecommerceStorePreview {
+    display: block;
+  }
+}
+
+@media (max-width: 1319px) {
+  .appShell.clientShell .clientCommerceStorePage .ecommercePreviewLauncher {
+    position: fixed;
+    z-index: 90;
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(14px, env(safe-area-inset-bottom));
+    display: inline-flex;
+    min-height: 46px;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border: 2px solid #171914;
+    border-radius: 999px;
+    background: var(--primary);
+    color: #171914;
+    box-shadow:
+      3px 3px 0 #171914,
+      0 12px 30px rgba(17, 17, 17, 0.2);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 850;
+    cursor: pointer;
+  }
+  .appShell.clientShell .clientCommerceStorePage .ecommercePreviewLauncher svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+  .appShell.clientShell .clientCommerceStorePage .ecommercePreviewLauncher--open {
+    display: none;
+  }
+  .appShell.clientShell .clientCommerceStorePage > .ecommerceStorePreview--mobileOpen {
+    position: fixed;
+    z-index: 100;
+    inset: 0;
+    top: 0;
+    display: block;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .appShell.clientShell
+    .clientCommerceStorePage
+    > .ecommerceStorePreview--mobileOpen
+    .editorPreviewToolbar {
+    min-height: 58px;
+    padding: max(8px, env(safe-area-inset-top)) 10px 8px;
+  }
+  .appShell.clientShell
+    .clientCommerceStorePage
+    > .ecommerceStorePreview--mobileOpen
+    .editorPreviewCanvas {
+    height: calc(100dvh - 58px);
+    padding: 10px;
+  }
+  .appShell.clientShell .clientCommerceStorePage .ecommercePreviewClose {
+    display: grid;
+    width: auto;
+    min-width: 7.8rem;
+    min-height: 38px;
+    padding: 0 0.8rem;
+    border-color: #f5a623;
+    background: #f5a623;
+    color: #fffdf8;
+  }
+}
+
+@media (max-width: 980px) {
+  .appShell.clientShell .clientCommerceStorePage {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+  .appShell.clientShell .clientCommerceStorePage > header,
+  .appShell.clientShell .clientCommerceStorePage > section {
+    grid-column: 1;
+  }
+  .appShell.clientShell .clientCommerceStorePage > .commerceSectionNav {
+    position: sticky;
+    top: 72px;
+    display: flex;
+    grid-column: 1;
+    grid-row: auto;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+  .appShell.clientShell .clientCommerceStorePage .commerceSectionNavIntro {
+    display: none;
+  }
+  .appShell.clientShell .clientCommerceStorePage > .commerceSectionNav a {
+    flex: 0 0 auto;
+  }
+  .appShell.clientShell .clientCommerceStorePage > .websiteSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .appShell.clientShell .clientCommerceStorePage {
+    gap: 12px;
+    padding: 10px;
+  }
+  .appShell.clientShell .clientCommerceStorePage > header {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 17px;
+    border-radius: 14px;
+  }
+  .appShell.clientShell .clientCommerceStorePage > header .headerActions,
+  .appShell.clientShell .clientCommerceStorePage > header .headerActions > * {
+    width: 100%;
+  }
+  .appShell.clientShell .clientCommerceStorePage > .commerceSectionNav {
+    top: 96px;
+    padding: 7px;
+    border-radius: 12px;
+  }
+  .appShell.clientShell .clientCommerceStorePage > .commerceSectionNav a {
+    min-height: 36px;
+    padding: 7px 9px;
+    font-size: 0.72rem;
+  }
+  .appShell.clientShell .clientCommerceStorePage > .commerceSectionNav a > span {
+    width: 24px;
+    height: 24px;
+  }
+  .appShell.clientShell .clientCommerceStorePage > .websiteSummary article {
+    min-height: 78px;
+    padding: 13px;
+  }
+  .appShell.clientShell .clientCommerceStorePage > .panel {
+    padding: 14px;
+    border-radius: 14px;
+  }
+  .appShell.clientShell .clientCommerceStorePage .panelHead {
+    align-items: center;
+    flex-direction: row;
+    text-align: start;
+  }
+  .appShell.clientShell .clientCommerceStorePage .panelHead > div:first-child {
+    flex: 1 1 auto;
+  }
+  .appShell.clientShell .clientCommerceStorePage .commerceSectionToggle {
+    margin-inline-start: auto;
+  }
+  .appShell.clientShell .clientCommerceStorePage .commerceColorFields {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
