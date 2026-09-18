@@ -245,7 +245,7 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
                 eyebrow={copy.floatingContact}
                 title={copy.whatsappContact}
               >
-                <form action={updateWebsiteWhatsAppSettingsAction} className="editForm">
+                <DraftEditorForm action={updateWebsiteWhatsAppSettingsAction} className="editForm">
                   <input name="websiteId" type="hidden" value={editor.website.id} />
                   <input name="draftId" type="hidden" value={editor.settings.id} />
                   <input name="expectedRevision" type="hidden" value={editor.settings.revision} />
@@ -376,7 +376,7 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
                       {copy.saveWhatsApp}
                     </PendingSubmit>
                   </div>
-                </form>
+                </DraftEditorForm>
               </EditorDisclosure>
             </section>
           ) : null}

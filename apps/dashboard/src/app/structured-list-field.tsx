@@ -122,73 +122,119 @@ function StructuredObjectList({
   readonly onChange: (items: StructuredObject[]) => void;
   readonly websiteId: string;
 }) {
+  const [expandedItems, setExpandedItems] = useState<ReadonlySet<string>>(() => new Set());
+  const itemKeys = items.map(itemKey);
+  const allExpanded = itemKeys.length > 0 && itemKeys.every((key) => expandedItems.has(key));
+
+  function toggleItem(key: string): void {
+    setExpandedItems((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   return (
     <div className="structuredListItems">
-      {items.map((item, index) => (
-        <article
-          className="structuredListItem"
-          key={typeof item.id === "string" || typeof item.id === "number" ? item.id : index}
-        >
-          <div className="structuredListHead">
-            <strong>
-              {label} {index + 1}
-            </strong>
-            <div>
-              {index > 0 ? (
-                <button
-                  aria-label={`Move ${label.toLowerCase()} ${index + 1} up`}
-                  className="textButton"
-                  onClick={() => onChange(swap(items, index, index - 1))}
-                  type="button"
-                >
-                  Move up
-                </button>
-              ) : null}
-              {index < items.length - 1 ? (
-                <button
-                  aria-label={`Move ${label.toLowerCase()} ${index + 1} down`}
-                  className="textButton"
-                  onClick={() => onChange(swap(items, index, index + 1))}
-                  type="button"
-                >
-                  Move down
-                </button>
-              ) : null}
+      {items.length > 1 ? (
+        <div className="structuredListControls">
+          <span>
+            <strong>{items.length}</strong> Items
+          </span>
+          <button
+            className="textButton"
+            onClick={() => setExpandedItems(allExpanded ? new Set() : new Set(itemKeys))}
+            type="button"
+          >
+            {allExpanded ? "Collapse all" : "Expand all"}
+          </button>
+        </div>
+      ) : null}
+      {items.map((item, index) => {
+        const key = itemKey(item, index);
+        const expanded = expandedItems.has(key);
+        const summary = itemSummary(item, label, index);
+        const fieldsId = `structured-item-${safeDomId(key)}-fields`;
+        return (
+          <article className="structuredListItem" key={key}>
+            <div className="structuredListHead">
               <button
-                aria-label={`Remove ${label.toLowerCase()} ${index + 1}`}
-                className="textButton dangerButton"
-                onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== index))}
+                aria-controls={fieldsId}
+                aria-expanded={expanded}
+                className="structuredListToggle"
+                onClick={() => toggleItem(key)}
                 type="button"
               >
-                Remove
+                <span aria-hidden="true">{expanded ? "−" : "+"}</span>
+                <span>
+                  <strong>
+                    {label} {index + 1}
+                  </strong>
+                  <small>{summary}</small>
+                </span>
               </button>
+              <div>
+                {index > 0 ? (
+                  <button
+                    aria-label={`Move ${label.toLowerCase()} ${index + 1} up`}
+                    className="textButton"
+                    onClick={() => onChange(swap(items, index, index - 1))}
+                    type="button"
+                  >
+                    Move up
+                  </button>
+                ) : null}
+                {index < items.length - 1 ? (
+                  <button
+                    aria-label={`Move ${label.toLowerCase()} ${index + 1} down`}
+                    className="textButton"
+                    onClick={() => onChange(swap(items, index, index + 1))}
+                    type="button"
+                  >
+                    Move down
+                  </button>
+                ) : null}
+                <button
+                  aria-label={`Remove ${label.toLowerCase()} ${index + 1}`}
+                  className="textButton dangerButton"
+                  onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== index))}
+                  type="button"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="structuredListFields">
-            {orderedFields(item).flatMap(([key, value]) =>
-              key === "id"
-                ? []
-                : [
-                    <StructuredValueField
-                      blueprint={blueprint[key]}
-                      fieldKey={key}
-                      key={key}
-                      mediaAssets={mediaAssets}
-                      onChange={(next) =>
-                        onChange(
-                          items.map((candidate, itemIndex) =>
-                            itemIndex === index ? { ...candidate, [key]: next } : candidate,
-                          ),
-                        )
-                      }
-                      value={value}
-                      websiteId={websiteId}
-                    />,
-                  ],
-            )}
-          </div>
-        </article>
-      ))}
+            {expanded ? (
+              <div className="structuredListFields" id={fieldsId}>
+                {orderedFields(item).flatMap(([fieldKey, value]) =>
+                  fieldKey === "id"
+                    ? []
+                    : [
+                        <StructuredValueField
+                          blueprint={blueprint[fieldKey]}
+                          fieldKey={fieldKey}
+                          key={fieldKey}
+                          mediaAssets={mediaAssets}
+                          onChange={(next) =>
+                            onChange(
+                              items.map((candidate, itemIndex) =>
+                                itemIndex === index
+                                  ? { ...candidate, [fieldKey]: next }
+                                  : candidate,
+                              ),
+                            )
+                          }
+                          value={value}
+                          websiteId={websiteId}
+                        />,
+                      ],
+                )}
+              </div>
+            ) : null}
+          </article>
+        );
+      })}
       {items.length === 0 ? (
         <p className="structuredListEmpty">No {label.toLowerCase()}s yet.</p>
       ) : null}
@@ -201,6 +247,24 @@ function StructuredObjectList({
       </button>
     </div>
   );
+}
+
+function itemKey(item: StructuredObject, index = 0): string {
+  return typeof item.id === "string" || typeof item.id === "number"
+    ? String(item.id)
+    : `item-${index}`;
+}
+
+function itemSummary(item: StructuredObject, label: string, index: number): string {
+  for (const key of ["name", "title", "label", "heading"]) {
+    const value = item[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return `${label} ${index + 1}`;
+}
+
+function safeDomId(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]/g, "-");
 }
 
 function StructuredValueField({

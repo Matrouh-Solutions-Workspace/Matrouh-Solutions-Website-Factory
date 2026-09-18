@@ -2606,7 +2606,7 @@ export async function updateWebsiteWhatsAppSettingsAction(formData: FormData): P
   const websiteDraftRevision = parseRevision(formData.get("websiteDraftRevision"));
   if (!websiteId || !draftId || !expectedRevision || !websiteDraftRevision) return;
 
-  const context = await requireDashboardContext("website.edit");
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
   const prepared = await withTenantTransaction(
     dashboardDatabase(),
     tenantActionContext(context, `prepare-whatsapp-settings:${websiteId}`),

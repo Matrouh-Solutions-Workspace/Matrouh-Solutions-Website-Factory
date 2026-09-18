@@ -96,6 +96,33 @@ describe("shared website editor studio", () => {
     expect(studio).toContain("Changes need attention");
   });
 
+  it("saves client WhatsApp settings through the coordinated website editor", async () => {
+    const [actions, adminEditor, clientEditor] = await Promise.all([
+      readFile(resolve(appRoot, "actions.ts"), "utf8"),
+      readFile(resolve(appRoot, "websites/[id]/page.tsx"), "utf8"),
+      readFile(resolve(appRoot, "account/websites/[id]/page.tsx"), "utf8"),
+    ]);
+    const whatsappAction = actions.slice(
+      actions.indexOf("export async function updateWebsiteWhatsAppSettingsAction"),
+      actions.indexOf("export async function updateThemeDraftAction"),
+    );
+
+    expect(whatsappAction).toContain('requireWebsiteMutationContext(websiteId, "website.edit")');
+    expect(whatsappAction).not.toContain('requireDashboardContext("website.edit")');
+    for (const editor of [adminEditor, clientEditor]) {
+      expect(editor).toContain("<DraftEditorForm");
+      expect(editor).toContain("action={updateWebsiteWhatsAppSettingsAction}");
+    }
+  });
+
+  it("lets menu editors collapse individual items or the whole list", async () => {
+    const structuredList = await readFile(resolve(appRoot, "structured-list-field.tsx"), "utf8");
+
+    expect(structuredList).toContain("aria-expanded={expanded}");
+    expect(structuredList).toContain('{allExpanded ? "Collapse all" : "Expand all"}');
+    expect(structuredList).toContain("itemSummary(item, label, index)");
+  });
+
   it("renders secure draft snapshots and refreshes them after successful autosaves", async () => {
     const [actions, adminEditor, clientEditor, form, studio] = await Promise.all([
       readFile(resolve(appRoot, "actions.ts"), "utf8"),

@@ -4253,6 +4253,18 @@ input[type="file"] {
   display: grid;
   gap: 9px;
 }
+.structuredListControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.structuredListControls > span {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
 .structuredListItem {
   overflow: hidden;
   border: 1px solid var(--line);
@@ -4272,6 +4284,56 @@ input[type="file"] {
 .structuredListHead > strong {
   color: var(--ink-soft);
   font-size: 10px;
+}
+.structuredListToggle {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 9px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: start;
+}
+.structuredListToggle:hover,
+.structuredListToggle:focus-visible {
+  color: var(--primary);
+  transform: none;
+  box-shadow: none;
+}
+.structuredListToggle > span:first-child {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 18px;
+  line-height: 1;
+}
+.structuredListToggle > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.structuredListToggle strong,
+.structuredListToggle small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.structuredListToggle strong {
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.structuredListToggle small {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
 }
 .structuredListHead > div {
   display: flex;

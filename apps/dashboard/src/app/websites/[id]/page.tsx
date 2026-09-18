@@ -581,7 +581,10 @@ export default async function WebsiteEditorPage({
               </form>
             )}
             {editor.settings && (
-              <form action={updateWebsiteWhatsAppSettingsAction} className="panel editForm">
+              <DraftEditorForm
+                action={updateWebsiteWhatsAppSettingsAction}
+                className="panel editForm"
+              >
                 <div className="panelHead">
                   <div>
                     <p className="eyebrow">Floating contact</p>
@@ -719,7 +722,7 @@ export default async function WebsiteEditorPage({
                     Save WhatsApp contact
                   </PendingSubmit>
                 </div>
-              </form>
+              </DraftEditorForm>
             )}
             {editor.theme && (
               <ThemeLiveEditor

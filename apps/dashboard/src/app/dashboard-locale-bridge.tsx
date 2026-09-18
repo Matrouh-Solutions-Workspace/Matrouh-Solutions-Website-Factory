@@ -581,6 +581,8 @@ const remainingArabicText: Readonly<Record<string, string>> = {
   Name: "الاسم",
   "Move down": "نقل لأسفل",
   "Move up": "نقل لأعلى",
+  "Expand all": "فتح الكل",
+  "Collapse all": "طي الكل",
   "Opening hours": "ساعات العمل",
   "Page labels": "تسميات الصفحة",
   "Page title": "عنوان الصفحة",
