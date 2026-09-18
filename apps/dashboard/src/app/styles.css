@@ -6399,6 +6399,201 @@ input[type="file"] {
 .clientContentWorkspace > .panelHead {
   padding: 0 4px;
 }
+.websiteLanguageToolbar {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(210px, 0.82fr) minmax(300px, 1.18fr);
+  align-items: center;
+  gap: 18px;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--primary) 48%, var(--border));
+  border-radius: 18px;
+  background:
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--primary) 19%, transparent),
+      transparent 42%
+    ),
+    var(--surface);
+  box-shadow: 0 12px 32px rgba(37, 31, 24, 0.07);
+}
+.websiteLanguageToolbar::after {
+  position: absolute;
+  width: 78px;
+  height: 78px;
+  border: 18px solid color-mix(in srgb, var(--primary) 12%, transparent);
+  border-radius: 999px;
+  content: "";
+  inset-inline-end: -42px;
+  inset-block-end: -48px;
+  pointer-events: none;
+}
+.websiteLanguageToolbarIntro {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 13px;
+}
+.websiteLanguageToolbarIntro > span:last-child {
+  min-width: 0;
+}
+.websiteLanguageToolbarIntro small,
+.websiteLanguageToolbarIntro strong,
+.websiteLanguageToolbarIntro p {
+  display: block;
+}
+.websiteLanguageToolbarIntro small {
+  margin-bottom: 2px;
+  color: var(--primary-dark);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.websiteLanguageToolbarIntro strong {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 900;
+}
+.websiteLanguageToolbarIntro p {
+  max-width: 42ch;
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+.websiteLanguageGlyph {
+  position: relative;
+  display: grid;
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 2px solid #171914;
+  border-radius: 15px;
+  background: var(--primary);
+  box-shadow: 3px 3px 0 #171914;
+  color: #171914;
+}
+.websiteLanguageGlyph b {
+  translate: -7px -6px;
+  font-size: 1rem;
+  line-height: 1;
+}
+.websiteLanguageGlyph i {
+  position: absolute;
+  translate: 8px 7px;
+  font-size: 1.05rem;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+}
+.websiteLanguageTabs {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 7px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-muted) 90%, #fff);
+}
+.websiteLanguageTabs button {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  min-width: 0;
+  min-height: 54px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink-soft);
+  text-align: start;
+  transform: none;
+}
+.websiteLanguageTabs button:hover,
+.websiteLanguageTabs button:focus-visible {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  transform: none;
+}
+.websiteLanguageTabs button.active {
+  border-color: #171914;
+  background: #171914;
+  color: #fff;
+  box-shadow: 2px 2px 0 var(--primary);
+}
+.websiteLanguageTabs button > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+.websiteLanguageTabs button strong {
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.websiteLanguageTabs button small {
+  color: inherit;
+  font-size: 0.58rem;
+  font-weight: 750;
+  opacity: 0.66;
+}
+.websiteLanguageCode {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 9px;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+}
+.websiteLanguageCheck {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.68rem;
+}
+.websiteLanguageCurrent {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: -6px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.69rem;
+  font-weight: 800;
+}
+.websiteLanguageCurrent > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #22a55b;
+  box-shadow: 0 0 0 3px rgba(34, 165, 91, 0.13);
+}
+.websiteLocalePanel[hidden],
+.websiteLocaleFields[hidden] {
+  display: none !important;
+}
+.websiteLocalePanel:not([hidden]) {
+  display: grid;
+  gap: 14px;
+}
+.websiteLocaleFields:not([hidden]) {
+  display: contents;
+}
 @media (max-width: 700px) {
   .clientWebsiteManager {
     padding: 0;
@@ -6409,6 +6604,37 @@ input[type="file"] {
   }
   .menuLanguageActions {
     grid-template-columns: 1fr;
+  }
+  .websiteLanguageToolbar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    margin-inline: 10px;
+    padding: 14px;
+    border-radius: 15px;
+  }
+  .websiteLanguageGlyph {
+    flex-basis: 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+  }
+  .websiteLanguageTabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .websiteLanguageTabs button {
+    min-height: 50px;
+    gap: 7px;
+    padding: 7px;
+  }
+  .websiteLanguageCode {
+    width: 27px;
+    height: 27px;
+  }
+  .websiteLanguageCheck {
+    display: none;
+  }
+  .websiteLanguageCurrent {
+    margin-top: -4px;
   }
   .loginShell .authCard {
     padding: 26px;

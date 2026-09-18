@@ -2,6 +2,35 @@ import { withTenantTransaction } from "@factory/database";
 import { requireClientAccountContext, requireDashboardContext } from "./auth";
 import { dashboardDatabase } from "./database";
 
+interface ClientAccountRow {
+  clientId: string;
+  clientName: string;
+  websiteId: string | null;
+  websiteName: string | null;
+  websiteKind: "standard" | "ecommerce" | null;
+  websiteStatus: "draft" | "published" | "unpublished" | "disabled" | "archived" | null;
+  subscriptionCadence: "trial" | "monthly" | "yearly" | null;
+  subscriptionStatus: "active" | "expired" | "cancelled" | null;
+  subscriptionExpiresAt: Date | null;
+  ecommerceStoreId: string | null;
+  domainHostname: string | null;
+  domainStatus: string | null;
+}
+
+interface ClientAccountWebsite {
+  id: string;
+  name: string;
+  kind: "standard" | "ecommerce";
+  status: "draft" | "published" | "unpublished" | "disabled" | "archived";
+  subscription: {
+    cadence: "trial" | "monthly" | "yearly";
+    status: "active" | "expired" | "cancelled";
+    expiresAt: Date;
+  } | null;
+  ecommerceStore: { id: string } | null;
+  domains: { hostnameNormalized: string; status: string }[];
+}
+
 export async function loadClients(query = "") {
   const context = await requireDashboardContext("client.read");
   return withTenantTransaction(
@@ -132,30 +161,80 @@ export async function loadClientAccount() {
     dashboardDatabase(),
     tenantContext(context, "client-account"),
     async (transaction) => {
-      const clients = await transaction.client.findMany({
-        where: {
-          organizationId: context.organization.id,
-          archivedAt: null,
-          contactEmail: { equals: context.actor.email, mode: "insensitive" },
-        },
-        orderBy: { createdAt: "asc" },
-        include: {
-          websites: {
-            where: { archivedAt: null },
-            orderBy: { name: "asc" },
-            include: {
-              subscription: true,
-              ecommerceStore: { select: { id: true } },
-              domains: {
-                where: { releasedAt: null, kind: "subdomain" },
-                orderBy: { createdAt: "asc" },
-                take: 1,
-                select: { hostnameNormalized: true, status: true },
-              },
-            },
-          },
-        },
-      });
+      // Nested Prisma includes fan out into concurrent operations on the one pg.Client
+      // reserved by this interactive transaction. Read the complete account projection
+      // in one statement so pg never receives an overlapping client.query() call.
+      const rows = await transaction.$queryRaw<ClientAccountRow[]>`
+        SELECT
+          client.id AS "clientId",
+          client.name AS "clientName",
+          website.id AS "websiteId",
+          website.name AS "websiteName",
+          website.kind::text AS "websiteKind",
+          website.status::text AS "websiteStatus",
+          subscription.cadence::text AS "subscriptionCadence",
+          subscription.status::text AS "subscriptionStatus",
+          subscription.expires_at AS "subscriptionExpiresAt",
+          store.id AS "ecommerceStoreId",
+          domain.hostname_normalized AS "domainHostname",
+          domain.status::text AS "domainStatus"
+        FROM clients client
+        LEFT JOIN websites website
+          ON website.organization_id = client.organization_id
+          AND website.client_id = client.id
+          AND website.archived_at IS NULL
+        LEFT JOIN website_subscriptions subscription
+          ON subscription.organization_id = website.organization_id
+          AND subscription.website_id = website.id
+        LEFT JOIN ecommerce_stores store
+          ON store.organization_id = website.organization_id
+          AND store.website_id = website.id
+          AND store.archived_at IS NULL
+        LEFT JOIN LATERAL (
+          SELECT candidate.hostname_normalized, candidate.status
+          FROM domains candidate
+          WHERE candidate.organization_id = website.organization_id
+            AND candidate.website_id = website.id
+            AND candidate.released_at IS NULL
+            AND candidate.kind = 'subdomain'
+          ORDER BY candidate.created_at ASC
+          LIMIT 1
+        ) domain ON true
+        WHERE client.organization_id = ${context.organization.id}::uuid
+          AND client.archived_at IS NULL
+          AND lower(client.contact_email) = lower(${context.actor.email})
+        ORDER BY client.created_at ASC, website.name ASC NULLS LAST
+      `;
+      const clients: { id: string; name: string; websites: ClientAccountWebsite[] }[] = [];
+      const clientsById = new Map<string, (typeof clients)[number]>();
+      for (const row of rows) {
+        let client = clientsById.get(row.clientId);
+        if (!client) {
+          client = { id: row.clientId, name: row.clientName, websites: [] };
+          clientsById.set(row.clientId, client);
+          clients.push(client);
+        }
+        if (!row.websiteId || !row.websiteName || !row.websiteKind || !row.websiteStatus) continue;
+        client.websites.push({
+          id: row.websiteId,
+          name: row.websiteName,
+          kind: row.websiteKind,
+          status: row.websiteStatus,
+          subscription:
+            row.subscriptionCadence && row.subscriptionStatus && row.subscriptionExpiresAt
+              ? {
+                  cadence: row.subscriptionCadence,
+                  status: row.subscriptionStatus,
+                  expiresAt: row.subscriptionExpiresAt,
+                }
+              : null,
+          ecommerceStore: row.ecommerceStoreId ? { id: row.ecommerceStoreId } : null,
+          domains:
+            row.domainHostname && row.domainStatus
+              ? [{ hostnameNormalized: row.domainHostname, status: row.domainStatus }]
+              : [],
+        });
+      }
       return { clients, actor: context.actor, organization: context.organization };
     },
   );

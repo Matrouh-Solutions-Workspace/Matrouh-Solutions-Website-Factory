@@ -28,6 +28,11 @@ import { MenuQrCard } from "@/app/menu-qr-card";
 import { createMenuQrDataUrl } from "@/app/menu-qr";
 import { PendingSubmit } from "@/app/pending-submit";
 import { ThemeLiveEditor } from "@/app/theme-live-editor";
+import {
+  WebsiteLanguageToolbar,
+  WebsiteLanguageWorkspace,
+  WebsiteLocalePanel,
+} from "@/app/website-language-workspace";
 import { dashboardConfig } from "@/server/config";
 import { loadClientWebsiteEditor } from "@/server/editor";
 import { loadClientWebsiteManagementTarget } from "@/server/control-data";
@@ -57,6 +62,11 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
   const availableLocales = editor.supportedLocales.filter(
     (supportedLocale) => !editor.website.locales.includes(supportedLocale),
   );
+  const editorLanguages = editor.website.locales.map((value) => ({
+    code: value,
+    label: localeName(value, locale),
+    shortLabel: value.toUpperCase(),
+  }));
   const sidebarItems = [
     { href: "#client-identity", icon: "settings", label: copy.websiteIdentity },
     { href: "#client-branding", icon: "spark", label: copy.branding },
@@ -463,241 +473,281 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
             </section>
           ) : null}
 
-          <section className="clientContentWorkspace" id="client-content">
-            <div className="panelHead">
-              <div>
-                <p className="eyebrow">{copy.content}</p>
-                <h2>{menuMode ? copy.editMenu : copy.editPages}</h2>
-                <p className="sub">{copy.autosaveDescription}</p>
-              </div>
-            </div>
-            {editor.pages.map((page, pageIndex) => (
-              <EditorDisclosure
-                description={page.slug}
-                eyebrow={localeName(page.locale, locale)}
-                key={page.id}
-                open={pageIndex === 0}
-                title={page.title}
-              >
-                <div className="sectionStack">
-                  {page.sections.map((section) => (
-                    <EditorDisclosure
-                      description={section.sectionTypeId}
-                      key={section.id}
-                      title={section.title}
-                    >
-                      <DraftEditorForm
-                        action={updateSectionDraftAction}
-                        className="sectionContentForm"
-                      >
-                        <input name="websiteId" type="hidden" value={editor.website.id} />
-                        <input name="sectionId" type="hidden" value={section.id} />
-                        <input name="expectedRevision" type="hidden" value={section.revision} />
-                        <div className="sectionEditorHead">
-                          <div>
-                            <strong>{section.title}</strong>
-                            <p>{section.sectionTypeId}</p>
-                          </div>
-                        </div>
-                        {section.fields.length > 0 ? (
-                          section.fields.map((field) =>
-                            field.name === "longitude" ? null : field.name === "latitude" ? (
-                              <CoordinatePickerFields
-                                key="location-coordinates"
-                                latitude={field.value}
-                                longitude={
-                                  section.fields.find((item) => item.name === "longitude")?.value ??
-                                  "0"
-                                }
-                              />
-                            ) : field.control === "list" ? (
-                              <StructuredListField
-                                fieldName={field.name}
-                                initialJson={field.value}
-                                key={field.name}
-                                label={field.label}
-                                locationMode={field.label === "Locations"}
-                                mediaAssets={editor.mediaAssets}
-                                websiteId={editor.website.id}
-                              />
-                            ) : field.control === "document-import" ? (
-                              <DocumentImportField
-                                fieldName={field.name}
-                                initialJson={field.value}
-                                key={field.name}
-                                label={field.label}
-                                websiteId={editor.website.id}
-                              />
-                            ) : field.control === "media" ? (
-                              <MediaPicker
-                                assets={editor.mediaAssets}
-                                defaultValue={field.value === "null" ? "" : field.value}
-                                key={field.name}
-                                label={field.label}
-                                name={`field:${field.name}`}
-                                websiteId={editor.website.id}
-                              />
-                            ) : field.control === "textarea" ? (
-                              <label key={field.name}>
-                                {field.label}
-                                <textarea
-                                  defaultValue={field.value}
-                                  name={`field:${field.name}`}
-                                  required={field.required}
-                                  rows={5}
-                                />
-                              </label>
-                            ) : (
-                              <label key={field.name}>
-                                {field.label}
-                                {field.control === "group" ? (
-                                  <textarea
-                                    defaultValue={field.value}
-                                    name={`jsonField:${field.name}`}
-                                    required={field.required}
-                                    rows={7}
-                                  />
-                                ) : field.control === "boolean" ? (
-                                  <select
-                                    defaultValue={field.value}
-                                    name={`jsonField:${field.name}`}
-                                    required={field.required}
-                                  >
-                                    <option value="true">{copy.yes}</option>
-                                    <option value="false">{copy.no}</option>
-                                  </select>
-                                ) : field.control === "number" ? (
-                                  <input
-                                    defaultValue={field.value}
-                                    name={`jsonField:${field.name}`}
-                                    required={field.required}
-                                    type="number"
-                                  />
-                                ) : (
-                                  <input
-                                    defaultValue={field.value}
-                                    name={`field:${field.name}`}
-                                    required={field.required}
-                                  />
-                                )}
-                              </label>
-                            ),
-                          )
-                        ) : (
-                          <label>
-                            {copy.contentJson}
-                            <textarea
-                              defaultValue={JSON.stringify(section.content, null, 2)}
-                              name="contentJson"
-                              rows={10}
-                            />
-                          </label>
-                        )}
-                      </DraftEditorForm>
-                    </EditorDisclosure>
-                  ))}
+          <WebsiteLanguageWorkspace
+            defaultLocale={editor.website.defaultLocale}
+            languages={editorLanguages}
+          >
+            <section className="clientContentWorkspace" id="client-content">
+              <div className="panelHead">
+                <div>
+                  <p className="eyebrow">{copy.content}</p>
+                  <h2>{menuMode ? copy.editMenu : copy.editPages}</h2>
+                  <p className="sub">{copy.autosaveDescription}</p>
                 </div>
-                <EditorDisclosure
-                  description={copy.searchVisibilityDescription}
-                  title={copy.searchVisibility}
-                >
-                  <DraftEditorForm action={updateSeoDraftAction} className="sectionSeoForm">
-                    <input name="websiteId" type="hidden" value={editor.website.id} />
-                    <input name="pageId" type="hidden" value={page.id} />
-                    <input
-                      name="websiteDraftRevision"
-                      type="hidden"
-                      value={editor.website.draftRevision}
-                    />
-                    <label>
-                      {copy.searchTitle}
-                      <input defaultValue={page.seo.title} maxLength={200} name="title" />
-                    </label>
-                    <label>
-                      {copy.searchDescription}
-                      <textarea
-                        defaultValue={page.seo.description}
-                        maxLength={500}
-                        name="description"
-                        rows={3}
-                      />
-                    </label>
-                    <label>
-                      {copy.keywords}
-                      <input defaultValue={page.seo.keywords.join(", ")} name="keywords" />
-                    </label>
-                    <div className="checkboxGroup">
-                      <label className="checkboxLine">
-                        <input defaultChecked={page.seo.index} name="index" type="checkbox" />
-                        {copy.allowIndexing}
-                      </label>
-                      <label className="checkboxLine">
-                        <input defaultChecked={page.seo.follow} name="follow" type="checkbox" />
-                        {copy.allowFollowing}
-                      </label>
-                    </div>
-                  </DraftEditorForm>
-                </EditorDisclosure>
-              </EditorDisclosure>
-            ))}
-          </section>
-
-          {editor.navigation.length > 0 ? (
-            <section id="client-navigation">
-              <EditorDisclosure
-                description={`${copy.navigationDescription} · ${copy.menuCount.replace("{count}", String(editor.navigation.length))}`}
-                eyebrow={copy.navigation}
-                title={copy.navigationLabels}
-              >
-                {editor.navigation.map((navigation) => {
-                  const navigationLocales = navigation.locale
-                    ? [navigation.locale]
-                    : editor.website.locales;
-                  return (
-                    <div className="navigationEditor" key={navigation.id}>
-                      <strong>
-                        {navigation.title}
-                        {navigation.locale ? ` — ${localeName(navigation.locale, locale)}` : ""}
-                      </strong>
-                      <div className="navigationNodeGrid">
-                        {navigation.nodes.map((node) => (
-                          <DraftEditorForm
-                            action={updateNavigationNodeAction}
-                            className="inlineEditForm"
-                            key={node.id}
-                          >
+              </div>
+              {editorLanguages.length > 1 ? (
+                <WebsiteLanguageToolbar
+                  activeLabel={copy.editingLanguage}
+                  defaultLabel={copy.defaultLanguageBadge}
+                  defaultLocale={editor.website.defaultLocale}
+                  description={copy.languageWorkspaceDescription}
+                  eyebrow={copy.languages}
+                  languages={editorLanguages}
+                  title={copy.languageWorkspaceTitle}
+                />
+              ) : null}
+              {editorLanguages.map((language) => (
+                <WebsiteLocalePanel key={language.code} locale={language.code} panel>
+                  {editor.pages
+                    .filter((page) => page.locale === language.code)
+                    .map((page, pageIndex) => (
+                      <EditorDisclosure
+                        description={page.slug}
+                        eyebrow={localeName(page.locale, locale)}
+                        key={page.id}
+                        open={pageIndex === 0}
+                        title={page.title}
+                      >
+                        <div className="sectionStack">
+                          {page.sections.map((section) => (
+                            <EditorDisclosure
+                              description={section.sectionTypeId}
+                              key={section.id}
+                              title={section.title}
+                            >
+                              <DraftEditorForm
+                                action={updateSectionDraftAction}
+                                className="sectionContentForm"
+                              >
+                                <input name="websiteId" type="hidden" value={editor.website.id} />
+                                <input name="sectionId" type="hidden" value={section.id} />
+                                <input
+                                  name="expectedRevision"
+                                  type="hidden"
+                                  value={section.revision}
+                                />
+                                <div className="sectionEditorHead">
+                                  <div>
+                                    <strong>{section.title}</strong>
+                                    <p>{section.sectionTypeId}</p>
+                                  </div>
+                                </div>
+                                {section.fields.length > 0 ? (
+                                  section.fields.map((field) =>
+                                    field.name === "longitude" ? null : field.name ===
+                                      "latitude" ? (
+                                      <CoordinatePickerFields
+                                        key="location-coordinates"
+                                        latitude={field.value}
+                                        longitude={
+                                          section.fields.find((item) => item.name === "longitude")
+                                            ?.value ?? "0"
+                                        }
+                                      />
+                                    ) : field.control === "list" ? (
+                                      <StructuredListField
+                                        fieldName={field.name}
+                                        initialJson={field.value}
+                                        key={field.name}
+                                        label={field.label}
+                                        locationMode={field.label === "Locations"}
+                                        mediaAssets={editor.mediaAssets}
+                                        websiteId={editor.website.id}
+                                      />
+                                    ) : field.control === "document-import" ? (
+                                      <DocumentImportField
+                                        fieldName={field.name}
+                                        initialJson={field.value}
+                                        key={field.name}
+                                        label={field.label}
+                                        websiteId={editor.website.id}
+                                      />
+                                    ) : field.control === "media" ? (
+                                      <MediaPicker
+                                        assets={editor.mediaAssets}
+                                        defaultValue={field.value === "null" ? "" : field.value}
+                                        key={field.name}
+                                        label={field.label}
+                                        name={`field:${field.name}`}
+                                        websiteId={editor.website.id}
+                                      />
+                                    ) : field.control === "textarea" ? (
+                                      <label key={field.name}>
+                                        {field.label}
+                                        <textarea
+                                          defaultValue={field.value}
+                                          name={`field:${field.name}`}
+                                          required={field.required}
+                                          rows={5}
+                                        />
+                                      </label>
+                                    ) : (
+                                      <label key={field.name}>
+                                        {field.label}
+                                        {field.control === "group" ? (
+                                          <textarea
+                                            defaultValue={field.value}
+                                            name={`jsonField:${field.name}`}
+                                            required={field.required}
+                                            rows={7}
+                                          />
+                                        ) : field.control === "boolean" ? (
+                                          <select
+                                            defaultValue={field.value}
+                                            name={`jsonField:${field.name}`}
+                                            required={field.required}
+                                          >
+                                            <option value="true">{copy.yes}</option>
+                                            <option value="false">{copy.no}</option>
+                                          </select>
+                                        ) : field.control === "number" ? (
+                                          <input
+                                            defaultValue={field.value}
+                                            name={`jsonField:${field.name}`}
+                                            required={field.required}
+                                            type="number"
+                                          />
+                                        ) : (
+                                          <input
+                                            defaultValue={field.value}
+                                            name={`field:${field.name}`}
+                                            required={field.required}
+                                          />
+                                        )}
+                                      </label>
+                                    ),
+                                  )
+                                ) : (
+                                  <label>
+                                    {copy.contentJson}
+                                    <textarea
+                                      defaultValue={JSON.stringify(section.content, null, 2)}
+                                      name="contentJson"
+                                      rows={10}
+                                    />
+                                  </label>
+                                )}
+                              </DraftEditorForm>
+                            </EditorDisclosure>
+                          ))}
+                        </div>
+                        <EditorDisclosure
+                          description={copy.searchVisibilityDescription}
+                          title={copy.searchVisibility}
+                        >
+                          <DraftEditorForm action={updateSeoDraftAction} className="sectionSeoForm">
                             <input name="websiteId" type="hidden" value={editor.website.id} />
-                            <input name="nodeId" type="hidden" value={node.id} />
-                            <input name="expectedRevision" type="hidden" value={node.revision} />
+                            <input name="pageId" type="hidden" value={page.id} />
                             <input
                               name="websiteDraftRevision"
                               type="hidden"
                               value={editor.website.draftRevision}
                             />
-                            <fieldset className="localizedNavigationLabels">
-                              <legend>{copy.navigationLabel}</legend>
-                              {navigationLocales.map((navigationLocale) => (
-                                <label key={navigationLocale}>
-                                  {localeName(navigationLocale, locale)}
-                                  <input
-                                    defaultValue={node.labels[navigationLocale] ?? ""}
-                                    dir={navigationLocale === "ar" ? "rtl" : "ltr"}
-                                    lang={navigationLocale}
-                                    name={`label:${navigationLocale}`}
-                                    required
-                                  />
-                                </label>
-                              ))}
-                            </fieldset>
+                            <label>
+                              {copy.searchTitle}
+                              <input defaultValue={page.seo.title} maxLength={200} name="title" />
+                            </label>
+                            <label>
+                              {copy.searchDescription}
+                              <textarea
+                                defaultValue={page.seo.description}
+                                maxLength={500}
+                                name="description"
+                                rows={3}
+                              />
+                            </label>
+                            <label>
+                              {copy.keywords}
+                              <input defaultValue={page.seo.keywords.join(", ")} name="keywords" />
+                            </label>
+                            <div className="checkboxGroup">
+                              <label className="checkboxLine">
+                                <input
+                                  defaultChecked={page.seo.index}
+                                  name="index"
+                                  type="checkbox"
+                                />
+                                {copy.allowIndexing}
+                              </label>
+                              <label className="checkboxLine">
+                                <input
+                                  defaultChecked={page.seo.follow}
+                                  name="follow"
+                                  type="checkbox"
+                                />
+                                {copy.allowFollowing}
+                              </label>
+                            </div>
                           </DraftEditorForm>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </EditorDisclosure>
+                        </EditorDisclosure>
+                      </EditorDisclosure>
+                    ))}
+                </WebsiteLocalePanel>
+              ))}
             </section>
-          ) : null}
+
+            {editor.navigation.length > 0 ? (
+              <section id="client-navigation">
+                <EditorDisclosure
+                  description={`${copy.navigationDescription} · ${copy.menuCount.replace("{count}", String(editor.navigation.length))}`}
+                  eyebrow={copy.navigation}
+                  title={copy.navigationLabels}
+                >
+                  {editor.navigation.map((navigation) => {
+                    const navigationLocales = navigation.locale
+                      ? [navigation.locale]
+                      : editor.website.locales;
+                    return (
+                      <div className="navigationEditor" key={navigation.id}>
+                        <strong>
+                          {navigation.title}
+                          {navigation.locale ? ` — ${localeName(navigation.locale, locale)}` : ""}
+                        </strong>
+                        <div className="navigationNodeGrid">
+                          {navigation.nodes.map((node) => (
+                            <DraftEditorForm
+                              action={updateNavigationNodeAction}
+                              className="inlineEditForm"
+                              key={node.id}
+                            >
+                              <input name="websiteId" type="hidden" value={editor.website.id} />
+                              <input name="nodeId" type="hidden" value={node.id} />
+                              <input name="expectedRevision" type="hidden" value={node.revision} />
+                              <input
+                                name="websiteDraftRevision"
+                                type="hidden"
+                                value={editor.website.draftRevision}
+                              />
+                              <fieldset className="localizedNavigationLabels">
+                                <legend>{copy.navigationLabel}</legend>
+                                {navigationLocales.map((navigationLocale) => (
+                                  <WebsiteLocalePanel
+                                    key={navigationLocale}
+                                    locale={navigationLocale}
+                                  >
+                                    <label>
+                                      {localeName(navigationLocale, locale)}
+                                      <input
+                                        defaultValue={node.labels[navigationLocale] ?? ""}
+                                        dir={navigationLocale === "ar" ? "rtl" : "ltr"}
+                                        lang={navigationLocale}
+                                        name={`label:${navigationLocale}`}
+                                        required
+                                      />
+                                    </label>
+                                  </WebsiteLocalePanel>
+                                ))}
+                              </fieldset>
+                            </DraftEditorForm>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </EditorDisclosure>
+              </section>
+            ) : null}
+          </WebsiteLanguageWorkspace>
         </div>
 
         <EditorPreviewPane
@@ -811,6 +861,11 @@ const english = {
   templateDefault: "Use the template logo",
   content: "Content",
   editPages: "Edit your pages",
+  languageWorkspaceTitle: "Choose your editing language",
+  languageWorkspaceDescription:
+    "Switch once and the page content and navigation below follow the same language.",
+  editingLanguage: "Editing {language}",
+  defaultLanguageBadge: "Default",
   autosaveDescription:
     "Every change is autosaved. Select existing images or upload a new one from the image picker.",
   yes: "Yes",
@@ -892,6 +947,10 @@ const arabic: Record<keyof typeof english, string> = {
   templateDefault: "استخدم شعار القالب",
   content: "المحتوى",
   editPages: "تعديل صفحاتك",
+  languageWorkspaceTitle: "اختر لغة التعديل",
+  languageWorkspaceDescription: "بدّل اللغة مرة واحدة وستتبعها حقول محتوى الصفحة والتنقل بالأسفل.",
+  editingLanguage: "تعدّل الآن: {language}",
+  defaultLanguageBadge: "الافتراضية",
   autosaveDescription:
     "يتم حفظ كل تغيير تلقائيًا. اختر الصور الموجودة أو ارفع صورة جديدة من منتقي الصور.",
   yes: "نعم",
