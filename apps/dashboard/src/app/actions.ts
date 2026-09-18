@@ -58,6 +58,7 @@ import {
 } from "@/server/actions/publication-actions";
 import { createMediaFolder, requestMediaDeletion } from "@/server/actions/media-actions";
 import { updateWebsiteIdentity } from "@/server/actions/website-actions";
+import { requireEcommerceStoreContext } from "@/server/ecommerce";
 import { parseWebsiteCreationInput } from "@/server/actions/website-create";
 import { persistWebsiteCreation } from "@/server/actions/website-create-persistence";
 import {
@@ -2075,9 +2076,16 @@ async function uploadMedia(formData: FormData): Promise<string | undefined> {
   let folderId = input.folderId;
   const websiteId = input.websiteId;
   const purpose = input.purpose;
-  const context = websiteId
-    ? await requireWebsiteMutationContext(websiteId, "media.create")
-    : await requireDashboardContext("media.create");
+  const storeId = cleanText(formData.get("storeId"), 80);
+  const ecommerce = storeId ? await requireEcommerceStoreContext(storeId, "media.create") : null;
+  if (ecommerce && ecommerce.store.websiteId !== websiteId) {
+    throw new Error("ECOMMERCE_WEBSITE_MISMATCH");
+  }
+  const context =
+    ecommerce?.context ??
+    (websiteId
+      ? await requireWebsiteMutationContext(websiteId, "media.create")
+      : await requireDashboardContext("media.create"));
   if (websiteId && context.roleKeys.includes("client")) folderId = "";
   await enforceRateLimit(
     dashboardDatabase(),

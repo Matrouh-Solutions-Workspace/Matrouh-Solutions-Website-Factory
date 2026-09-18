@@ -295,6 +295,7 @@ export async function EcommerceStoreDashboard({
                 label="Product photo"
                 name="imageMediaId"
                 noneLabel="No product photo"
+                storeId={store.id}
                 websiteId={store.websiteId}
               />
               <label>

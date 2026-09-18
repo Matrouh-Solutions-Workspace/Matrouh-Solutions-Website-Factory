@@ -132,6 +132,7 @@ export async function EcommerceContentEditor({
             label="Hero photo"
             name="heroMediaId"
             noneLabel="Use template hero photo"
+            storeId={store.id}
             websiteId={store.websiteId}
           />
           <MediaPicker
@@ -140,6 +141,7 @@ export async function EcommerceContentEditor({
             label="Logo photo"
             name="logoMediaId"
             noneLabel="Use template logo"
+            storeId={store.id}
             websiteId={store.websiteId}
           />
         </div>

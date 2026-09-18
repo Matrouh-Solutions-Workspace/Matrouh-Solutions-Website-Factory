@@ -19,6 +19,7 @@ export function MediaPicker({
   purpose,
   value,
   websiteId,
+  storeId,
 }: {
   readonly assets: readonly MediaPickerAsset[];
   readonly defaultValue?: string;
@@ -29,6 +30,7 @@ export function MediaPicker({
   readonly purpose?: "favicon" | "logo";
   readonly value?: string;
   readonly websiteId: string;
+  readonly storeId?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const field = useRef<HTMLInputElement>(null);
@@ -73,6 +75,7 @@ export function MediaPicker({
     setUploadStatus("Uploading and processing image…");
     const formData = new FormData();
     formData.set("websiteId", websiteId);
+    if (storeId) formData.set("storeId", storeId);
     formData.set("file", file);
     if (purpose) formData.set("purpose", purpose);
     try {
