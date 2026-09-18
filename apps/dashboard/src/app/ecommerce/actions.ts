@@ -305,6 +305,7 @@ export async function updateEcommerceStoreAction(formData: FormData): Promise<vo
           website: {
             update: {
               name,
+              kind: "ecommerce",
               status: status === "active" ? "published" : "draft",
               defaultLocale,
               revision: { increment: 1 },

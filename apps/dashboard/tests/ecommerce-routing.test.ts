@@ -26,4 +26,19 @@ describe("ecommerce storefront routing", () => {
       "GRANT EXECUTE ON FUNCTION get_ecommerce_storefront(text, text) TO factory_app",
     );
   });
+
+  it("repairs legacy ecommerce websites that kept the standard kind", async () => {
+    const actions = await readFile(resolve(appRoot, "src/app/ecommerce/actions.ts"), "utf8");
+    const migration = await readFile(
+      resolve(
+        appRoot,
+        "../../packages/database/prisma/migrations/0032_repair_ecommerce_website_kind/migration.sql",
+      ),
+      "utf8",
+    );
+
+    expect(actions).toContain('kind: "ecommerce"');
+    expect(migration).toContain("FROM ecommerce_stores AS store");
+    expect(migration).toContain("SET kind = 'ecommerce'");
+  });
 });
