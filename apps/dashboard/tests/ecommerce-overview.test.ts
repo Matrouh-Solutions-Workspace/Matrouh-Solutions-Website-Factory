@@ -30,6 +30,9 @@ describe("commerce overview", () => {
     expect(page).toContain('className="commerceOverviewStats"');
     expect(page).toContain('className="panel commerceCreatePanel"');
     expect(page).toContain("defaultValue={text.storeNamePlaceholder}");
+    expect(page).toContain("loadHostingDomainChoices");
+    expect(page).toContain("placeholder={hostnamePlaceholder}");
+    expect(page).not.toContain("defaultValue={text.hostnamePlaceholder}");
     expect(page).toContain("pendingLabel={text.creatingStore}");
     expect(page).toContain("EcommerceStoreDeleteAction");
     expect(page).toContain("deleteStoreConfirmation");

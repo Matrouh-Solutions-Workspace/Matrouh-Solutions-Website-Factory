@@ -3,6 +3,8 @@ import { PendingSubmit } from "@/app/pending-submit";
 import { EcommerceStoreDeleteAction } from "@/app/ecommerce-store-delete-action";
 import { createEcommerceStoreAction } from "./actions";
 import { dashboardLocale } from "@/server/dashboard-locale";
+import { dashboardConfig } from "@/server/config";
+import { loadHostingDomainChoices } from "@/server/control-data";
 import { loadEcommerceStores, loadEcommerceTemplates } from "@/server/ecommerce";
 
 export const dynamic = "force-dynamic";
@@ -49,8 +51,8 @@ const copy = {
     storeSlugHint: "Used as the internal store identifier",
     storeSlugPlaceholder: "matrouh-market",
     hostname: "Hostname",
-    hostnameHint: "The local or custom storefront domain",
-    hostnamePlaceholder: "market.localhost",
+    hostnameHint: "Enter a subdomain, or leave it blank to use the store slug.",
+    hostnamePlaceholder: "market",
     whatsapp: "Store WhatsApp number",
     whatsappHint: "Receives complete customer orders with delivery details",
     whatsappPlaceholder: "+20 128 428 9997",
@@ -109,8 +111,8 @@ const copy = {
     storeSlugHint: "يُستخدم كمعرّف داخلي للمتجر",
     storeSlugPlaceholder: "matrouh-market",
     hostname: "اسم النطاق",
-    hostnameHint: "نطاق المتجر المحلي أو المخصص",
-    hostnamePlaceholder: "market.localhost",
+    hostnameHint: "أدخل نطاقًا فرعيًا، أو اتركه فارغًا لاستخدام معرّف المتجر.",
+    hostnamePlaceholder: "market",
     whatsapp: "رقم واتساب المتجر",
     whatsappHint: "يستقبل طلب العميل كاملاً مع بيانات التوصيل",
     whatsappPlaceholder: "+20 128 428 9997",
@@ -139,6 +141,7 @@ export default async function EcommercePage({
   const query = await searchParams;
   const { stores, administrator } = await loadEcommerceStores();
   const templates = await loadEcommerceTemplates();
+  const hostingDomains = administrator ? await loadHostingDomainChoices() : [];
   const locale = await dashboardLocale();
   const text = copy[locale];
   const readyVersions = templates.flatMap((template) =>
@@ -149,6 +152,11 @@ export default async function EcommercePage({
   const activeStoreCount = stores.filter((store) => store.status === "active").length;
   const productCount = stores.reduce((sum, store) => sum + store._count.products, 0);
   const orderCount = stores.reduce((sum, store) => sum + store._count.orders, 0);
+  const defaultHostingDomain =
+    hostingDomains.find((domain) => domain.isDefault) ?? hostingDomains[0];
+  const fallbackHostname = new URL(dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL).hostname;
+  const storefrontRoot = defaultHostingDomain?.hostnameNormalized ?? fallbackHostname;
+  const hostnamePlaceholder = `${text.hostnamePlaceholder}.${storefrontRoot}`;
 
   return (
     <div className="commerceOverviewPage">
@@ -342,13 +350,16 @@ export default async function EcommercePage({
                 <small>{text.hostnameHint}</small>
                 <input
                   autoCapitalize="none"
-                  defaultValue={text.hostnamePlaceholder}
                   dir="ltr"
                   maxLength={253}
                   name="hostname"
+                  placeholder={hostnamePlaceholder}
                   spellCheck={false}
                 />
               </label>
+              {defaultHostingDomain ? (
+                <input name="hostingDomainId" type="hidden" value={defaultHostingDomain.id} />
+              ) : null}
               <label>
                 <span>{text.whatsapp}</span>
                 <small>{text.whatsappHint}</small>

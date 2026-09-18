@@ -41,4 +41,26 @@ describe("ecommerce storefront routing", () => {
     expect(migration).toContain("FROM ecommerce_stores AS store");
     expect(migration).toContain("SET kind = 'ecommerce'");
   });
+
+  it("repairs production ecommerce domains that were stored as localhost", async () => {
+    const [actions, migration] = await Promise.all([
+      readFile(resolve(appRoot, "src/app/ecommerce/actions.ts"), "utf8"),
+      readFile(
+        resolve(
+          appRoot,
+          "../../packages/database/prisma/migrations/0033_repair_ecommerce_localhost_domains/migration.sql",
+        ),
+        "utf8",
+      ),
+    ]);
+
+    expect(actions).toContain('.replace(/\\.localhost\\.?$/i, "") || slug');
+    expect(actions).toContain("hostedHostname(hostnameSeed");
+    expect(actions).toContain(
+      "hostingDomain?.hostnameNormalized ?? fallbackHostingDomain ?? hostname",
+    );
+    expect(migration).toContain("domain_row.hostname_normalized LIKE '%.localhost'");
+    expect(migration).toContain("FROM hosting_domains AS configured");
+    expect(migration).toContain("fallback_hostname");
+  });
 });

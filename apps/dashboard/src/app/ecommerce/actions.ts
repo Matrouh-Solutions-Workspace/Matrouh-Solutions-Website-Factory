@@ -12,7 +12,9 @@ import {
 } from "@factory/ecommerce";
 import { withTenantTransaction } from "@factory/database";
 import { dashboardDatabase } from "@/server/database";
+import { dashboardConfig } from "@/server/config";
 import { ecommerceContentFields } from "@/server/ecommerce-content";
+import { hostedHostname } from "@/server/local-hostnames";
 import { DashboardAuthorizationError } from "@/server/auth";
 import {
   loadEcommerceTemplates,
@@ -29,7 +31,28 @@ export async function createEcommerceStoreAction(formData: FormData): Promise<vo
   } catch {
     redirect("/ecommerce?createError=invalid#new-commerce-store");
   }
-  const hostname = normalizeHostname(text(formData, "hostname", 253) || `${slug}.localhost`);
+  const hostnameInput = text(formData, "hostname", 253);
+  const hostnameSeed =
+    hostnameInput
+      .replace(/^https?:\/\//i, "")
+      .split("/")[0]
+      ?.replace(/\.localhost\.?$/i, "") || slug;
+  const hostingDomainId = text(formData, "hostingDomainId", 80);
+  const hostingDomain = hostingDomainId
+    ? await dashboardDatabase().hostingDomain.findFirst({
+        where: { id: hostingDomainId, organizationId: context.organization.id },
+      })
+    : await dashboardDatabase().hostingDomain.findFirst({
+        where: { organizationId: context.organization.id },
+        orderBy: [{ isDefault: "desc" }, { hostnameNormalized: "asc" }],
+      });
+  const dashboardHostname = new URL(dashboardConfig.FACTORY_DASHBOARD_PUBLIC_URL).hostname;
+  const fallbackHostingDomain = dashboardHostname === "localhost" ? null : dashboardHostname;
+  const hostname = hostingDomain
+    ? hostedHostname(hostnameSeed, hostingDomain.hostnameNormalized)
+    : fallbackHostingDomain
+      ? hostedHostname(hostnameSeed, fallbackHostingDomain)
+      : normalizeHostname(`${hostnameSeed}.localhost`);
   const templateVersionId = text(formData, "templateVersionId", 80);
   const contactPhone = text(formData, "contactPhone", 50);
   const defaultLocale = text(formData, "defaultLocale", 35) === "ar" ? "ar" : "en";
@@ -82,9 +105,14 @@ export async function createEcommerceStoreAction(formData: FormData): Promise<vo
                 id: randomUUID(),
                 hostnameNormalized: hostname,
                 hostnameDisplay: hostname,
-                rootHostname: hostname,
-                kind: hostname.endsWith(".localhost") ? "subdomain" : "custom",
+                rootHostname:
+                  hostingDomain?.hostnameNormalized ?? fallbackHostingDomain ?? hostname,
+                kind:
+                  hostingDomain || fallbackHostingDomain || hostname.endsWith(".localhost")
+                    ? "subdomain"
+                    : "custom",
                 status: "active",
+                isPrimary: true,
               },
             },
           },
