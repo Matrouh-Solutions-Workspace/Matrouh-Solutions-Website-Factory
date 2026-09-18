@@ -63,4 +63,20 @@ describe("ecommerce storefront routing", () => {
     expect(migration).toContain("FROM hosting_domains AS configured");
     expect(migration).toContain("fallback_hostname");
   });
+
+  it("allows owner-backed storefront functions to read ecommerce rows in production", async () => {
+    const migration = await readFile(
+      resolve(
+        appRoot,
+        "../../packages/database/prisma/migrations/0034_ecommerce_security_definer_runtime_access/migration.sql",
+      ),
+      "utf8",
+    );
+
+    expect(migration).toContain("NO FORCE ROW LEVEL SECURITY");
+    expect(migration).toContain("c.relname LIKE 'ecommerce\\_%'");
+    expect(migration).toContain("FROM ecommerce_stores AS store");
+    expect(migration).toContain("SET kind = 'ecommerce'");
+    expect(migration).toContain("domain_row.hostname_normalized LIKE '%.localhost'");
+  });
 });
