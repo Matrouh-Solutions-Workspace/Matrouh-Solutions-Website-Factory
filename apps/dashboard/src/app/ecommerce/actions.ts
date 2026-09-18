@@ -176,6 +176,80 @@ export async function createEcommerceStoreAction(formData: FormData): Promise<vo
   redirect(`/ecommerce/stores/${storeId}`);
 }
 
+export async function deleteEcommerceStoreAction(formData: FormData): Promise<void> {
+  const storeId = requiredId(formData, "storeId");
+  const context = await requireCommerceAdministrator();
+  const now = new Date();
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenant(context, `ecommerce:archive-store:${storeId}`),
+    async (transaction) => {
+      const store = await transaction.ecommerceStore.findFirst({
+        where: {
+          id: storeId,
+          organizationId: context.organization.id,
+          archivedAt: null,
+        },
+        select: { id: true, websiteId: true, name: true },
+      });
+      if (!store) throw new Error("ECOMMERCE_STORE_NOT_FOUND");
+
+      await transaction.ecommerceStore.update({
+        where: { organizationId_id: { organizationId: context.organization.id, id: storeId } },
+        data: { status: "archived", archivedAt: now, revision: { increment: 1 } },
+      });
+      await transaction.website.update({
+        where: {
+          organizationId_id: {
+            organizationId: context.organization.id,
+            id: store.websiteId,
+          },
+        },
+        data: {
+          status: "archived",
+          archivedAt: now,
+          activePublicationId: null,
+          revision: { increment: 1 },
+        },
+      });
+      await transaction.domain.updateMany({
+        where: {
+          organizationId: context.organization.id,
+          websiteId: store.websiteId,
+          releasedAt: null,
+        },
+        data: { status: "disconnected", releasedAt: now, revision: { increment: 1 } },
+      });
+      await transaction.websiteSubscription.updateMany({
+        where: { organizationId: context.organization.id, websiteId: store.websiteId },
+        data: {
+          status: "cancelled",
+          disabledAt: now,
+          disabledReason: "store_archived",
+          resumeStatus: null,
+        },
+      });
+      await transaction.auditEvent.create({
+        data: {
+          id: randomUUID(),
+          organizationId: context.organization.id,
+          actorType: "user",
+          actorId: context.actor.id,
+          action: "ecommerce.store_archived",
+          resourceType: "ecommerce_store",
+          resourceId: storeId,
+          correlationId: `ecommerce:archive-store:${storeId}`,
+          metadataJson: { websiteId: store.websiteId, name: store.name },
+          retentionClass: "standard",
+        },
+      });
+    },
+  );
+  revalidatePath("/ecommerce", "layout");
+  revalidatePath("/websites", "layout");
+  revalidatePath("/clients", "layout");
+}
+
 export async function updateEcommerceStoreAction(formData: FormData): Promise<void> {
   const storeId = requiredId(formData, "storeId");
   const { context } = await requireEcommerceStoreContext(storeId);

@@ -31,9 +31,26 @@ describe("commerce overview", () => {
     expect(page).toContain('className="panel commerceCreatePanel"');
     expect(page).toContain("defaultValue={text.storeNamePlaceholder}");
     expect(page).toContain("pendingLabel={text.creatingStore}");
+    expect(page).toContain("EcommerceStoreDeleteAction");
+    expect(page).toContain("deleteStoreConfirmation");
     expect(page).toContain('className="commerceCreateError"');
     expect(styles).toContain(".commerceOverviewGrid");
     expect(styles).toContain(':root[data-theme="dark"] .appShell .commerceStatCard--primary');
+    expect(styles).toContain(".commerceStoreDeleteForm");
+  });
+
+  it("archives stores through an administrator-only audited workflow", async () => {
+    const [actions, control] = await Promise.all([
+      readFile(resolve(appRoot, "src/app/ecommerce/actions.ts"), "utf8"),
+      readFile(resolve(appRoot, "src/app/ecommerce-store-delete-action.tsx"), "utf8"),
+    ]);
+
+    expect(actions).toContain("export async function deleteEcommerceStoreAction");
+    expect(actions).toContain("requireCommerceAdministrator()");
+    expect(actions).toContain('status: "archived", archivedAt: now');
+    expect(actions).toContain('status: "disconnected", releasedAt: now');
+    expect(actions).toContain('action: "ecommerce.store_archived"');
+    expect(control).toContain("window.confirm");
   });
 
   it("shows live storefront previews in the commerce template library", async () => {

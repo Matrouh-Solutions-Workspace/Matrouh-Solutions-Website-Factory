@@ -397,7 +397,7 @@
 
 .commerceStoreActions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: stretch;
   gap: 10px;
 }
@@ -405,6 +405,15 @@
 .commerceStoreActions .buttonLink {
   min-width: 150px;
   justify-content: center;
+}
+
+.commerceStoreDeleteForm {
+  display: flex;
+}
+
+.commerceStoreDeleteForm button {
+  min-width: 120px;
+  margin: 0;
 }
 
 .commerceStorefrontLink {
@@ -543,6 +552,11 @@
   }
 
   .commerceStoreActions .buttonLink {
+    width: 100%;
+  }
+
+  .commerceStoreDeleteForm,
+  .commerceStoreDeleteForm button {
     width: 100%;
   }
 }

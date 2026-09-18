@@ -9,6 +9,9 @@ const rendererBase = new URL(
     process.env.FACTORY_RENDERER_PUBLIC_URL ??
     "http://localhost:3001",
 );
+const dashboardInternalBase = new URL(
+  process.env.FACTORY_DASHBOARD_INTERNAL_URL ?? `http://127.0.0.1:${process.env.PORT ?? "3000"}`,
+);
 
 /**
  * The dashboard remains its own Next application during development, but this gateway gives
@@ -21,6 +24,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Caddy calls this over loopback with its own Host header while authorizing
   // on-demand TLS. It must reach the control app rather than a customer site.
   if (pathname === "/api/internal/domains/authorize") return NextResponse.next();
+  // The public gateway checks commerce routes against the dashboard's primary
+  // database connection. Let that loopback probe reach the route handler even
+  // though its Host header is 127.0.0.1 rather than the public dashboard host.
+  if (pathname === "/api/internal/ecommerce/resolve") return NextResponse.next();
   if (host && host !== dashboardHost) {
     if (pathname.startsWith("/api/storefront/")) {
       const forwarded = new Headers(request.headers);
@@ -164,7 +171,10 @@ async function rendererProxy(
 }
 
 async function resolvesToCommerceStore(host: string): Promise<boolean> {
-  const destination = new URL("/api/storefront/resolve", rendererBase);
+  // Domain ownership and store administration live in the dashboard database.
+  // Using the renderer connection here can incorrectly route a valid commerce
+  // hostname as a normal website when the two production URLs are misaligned.
+  const destination = new URL("/api/internal/ecommerce/resolve", dashboardInternalBase);
   destination.searchParams.set("host", host);
   try {
     const response = await fetch(destination, { cache: "no-store" });

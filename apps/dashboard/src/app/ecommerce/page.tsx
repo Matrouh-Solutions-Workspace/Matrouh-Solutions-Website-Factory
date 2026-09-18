@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PendingSubmit } from "@/app/pending-submit";
+import { EcommerceStoreDeleteAction } from "@/app/ecommerce-store-delete-action";
 import { createEcommerceStoreAction } from "./actions";
 import { dashboardLocale } from "@/server/dashboard-locale";
 import { loadEcommerceStores, loadEcommerceTemplates } from "@/server/ecommerce";
@@ -33,6 +34,10 @@ const copy = {
     ownerNotClaimed: "Owner not claimed",
     viewStorefront: "View storefront",
     manageStore: "Manage store",
+    deleteStore: "Delete store",
+    deletingStore: "Deleting…",
+    deleteStoreConfirmation:
+      'Delete "{name}"? Its storefront will stop working and its hostname will be released. Existing commerce records are retained for recovery.',
     provisioning: "Provisioning",
     createStore: "Create a commerce store",
     createDescription:
@@ -89,6 +94,10 @@ const copy = {
     ownerNotClaimed: "لم تتم المطالبة بالملكية",
     viewStorefront: "فتح واجهة المتجر",
     manageStore: "إدارة المتجر",
+    deleteStore: "حذف المتجر",
+    deletingStore: "جاري الحذف…",
+    deleteStoreConfirmation:
+      'هل تريد حذف "{name}"؟ ستتوقف واجهة المتجر وسيتم تحرير اسم النطاق. ستُحفظ سجلات التجارة لإمكانية الاستعادة.',
     provisioning: "إنشاء متجر",
     createStore: "إنشاء متجر إلكتروني",
     createDescription:
@@ -270,6 +279,15 @@ export default async function EcommercePage({
                       <Link className="buttonLink" href={`/ecommerce/stores/${store.id}`}>
                         {text.manageStore}
                       </Link>
+                      {administrator ? (
+                        <EcommerceStoreDeleteAction
+                          confirmation={text.deleteStoreConfirmation}
+                          label={text.deleteStore}
+                          pendingLabel={text.deletingStore}
+                          storeId={store.id}
+                          storeName={store.name}
+                        />
+                      ) : null}
                     </div>
                   </article>
                 );
