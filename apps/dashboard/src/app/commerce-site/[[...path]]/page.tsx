@@ -35,7 +35,7 @@ export default async function StorefrontPage({ params, searchParams }: Storefron
   const { path = [] } = await params;
   return (
     <>
-      <link href="/commerce-storefront.css" rel="stylesheet" />
+      <link href="/commerce-storefront.css?v=20260918-1" rel="stylesheet" />
       <EcommerceStorefront path={path} store={store} />
     </>
   );

@@ -19,6 +19,7 @@ import { ClientPublicationAction } from "@/app/client-publication-action";
 import { CoordinatePickerFields, StructuredListField } from "@/app/structured-list-field";
 import { DraftEditorForm } from "@/app/draft-editor-form";
 import { DocumentImportField } from "@/app/document-import-field";
+import { MenuUploadField } from "@/app/menu-upload-field";
 import { EditorPreviewPane, EditorSaveStatus } from "@/app/editor-studio";
 import { EditorStudioSidebar } from "@/app/editor-studio-sidebar";
 import { EditorDisclosure } from "@/app/editor-disclosure";
@@ -556,6 +557,14 @@ export default async function ClientWebsitePage({ params }: { params: Promise<{ 
                                       />
                                     ) : field.control === "document-import" ? (
                                       <DocumentImportField
+                                        fieldName={field.name}
+                                        initialJson={field.value}
+                                        key={field.name}
+                                        label={field.label}
+                                        websiteId={editor.website.id}
+                                      />
+                                    ) : field.control === "menu-upload" ? (
+                                      <MenuUploadField
                                         fieldName={field.name}
                                         initialJson={field.value}
                                         key={field.name}

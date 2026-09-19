@@ -27,6 +27,7 @@ export interface PublicTemplateCatalogItem {
   readonly category: string;
   readonly categoryAr: string | null;
   readonly version: string;
+  readonly previewImage: string | null;
   readonly features: readonly string[];
   readonly supportsDarkMode: boolean;
   readonly featured: boolean;
@@ -320,6 +321,7 @@ export const loadPublicTemplateCatalog = cache(
             category: row.catalog_category || row.category,
             categoryAr: row.catalog_category_ar,
             version: row.template_version,
+            previewImage: artifact.definition.manifest.previewImage ?? null,
             features: [...(artifact.definition.manifest.features ?? [])],
             supportsDarkMode: artifact.definition.websiteSchema.safeParse({
               ...settingsRecord,
@@ -501,6 +503,7 @@ function commerceCatalogItem(
     category: "E-commerce",
     categoryAr: "التجارة الإلكترونية",
     version,
+    previewImage: null,
     features: ["ecommerce", "product-catalog", "whatsapp-ordering"],
     supportsDarkMode: true,
     featured: false,
@@ -534,6 +537,7 @@ function stringArray(value: unknown): readonly string[] {
 
 function localCatalogDetails(overrides: Partial<PublicTemplateCatalogItem> = {}) {
   return {
+    previewImage: null,
     featured: false,
     badge: null,
     badgeAr: null,

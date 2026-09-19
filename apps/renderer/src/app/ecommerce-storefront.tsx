@@ -1070,7 +1070,10 @@ export function EcommerceStorefront({
                 <b>{activeFilters.length || ""}</b>
               </button>
               <label>
-                <span>{copy.sortBy}</span>
+                <span className="commerceSortLabel">
+                  <Icon name="sort" />
+                  {copy.sortBy}
+                </span>
                 <select onChange={(event) => setSort(event.target.value as SortKey)} value={sort}>
                   <option value="featured">{copy.featured}</option>
                   <option value="newest">{copy.newest}</option>
@@ -1585,6 +1588,8 @@ function StoreFooter({
       ? (store.settings as Record<string, unknown>)
       : {};
   const whatsappEnabled = settings.whatsappEnabled !== false;
+  const logoImageFilename =
+    typeof settings.logoImageFilename === "string" ? settings.logoImageFilename : null;
   const whatsappLabel = localizedSetting(
     settings,
     "whatsappButtonLabel",
@@ -1622,7 +1627,14 @@ function StoreFooter({
         <div className="shopFooterLead">
           <a className="shopBrand" href={homeHref}>
             <span className="shopBrandMark">
-              <img alt="" src="/matrouh-logo.png" />
+              <img
+                alt=""
+                src={
+                  logoImageFilename
+                    ? mediaUrl(store.organizationId, logoImageFilename)
+                    : "/matrouh-logo.png"
+                }
+              />
             </span>
             <span>
               <strong>{store.name}</strong>
@@ -1719,6 +1731,7 @@ type IconName =
   | "search"
   | "shield"
   | "spark"
+  | "sort"
   | "sun"
   | "toolbox"
   | "truck"
@@ -1853,6 +1866,12 @@ function Icon({ name }: { readonly name: IconName }) {
     ),
     shield: <path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6l-8-3Z" />,
     spark: <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" />,
+    sort: (
+      <>
+        <path d="M5 6h14M5 12h10M5 18h6" />
+        <path d="m16 10 3 2-3 2M12 16l3 2-3 2" />
+      </>
+    ),
     sun: (
       <>
         <circle cx="12" cy="12" r="4" />

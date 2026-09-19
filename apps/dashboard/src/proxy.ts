@@ -37,6 +37,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     if (
       pathname === "/commerce-storefront.css" ||
       pathname === "/matrouh-logo.png" ||
+      pathname.startsWith("/templates/menu-qr/") ||
       pathname.startsWith("/commerce-heroes/")
     ) {
       return rendererProxy(request, host);
@@ -105,6 +106,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (
     pathname === "/commerce-storefront.css" ||
     pathname === "/matrouh-logo.png" ||
+    pathname.startsWith("/templates/menu-qr/") ||
     pathname.startsWith("/commerce-heroes/")
   ) {
     return rendererProxy(request, dashboardHost);

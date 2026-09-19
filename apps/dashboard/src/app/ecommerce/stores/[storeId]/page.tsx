@@ -72,6 +72,7 @@ export async function EcommerceStoreDashboard({
     redirect(`/account/ecommerce/stores/${store.id}`);
   }
   const locale = store.defaultLocale === "ar" ? "ar-EG" : "en-US";
+  const isArabic = store.defaultLocale === "ar";
   const templateVersions = templates.flatMap((template) =>
     template.versions
       .filter((version) => version.status === "ready")
@@ -227,7 +228,7 @@ export async function EcommerceStoreDashboard({
           </div>
           {clientView ? <CommerceSectionToggle targetId="catalog" /> : null}
         </div>
-        <div className="commerceSplit">
+        <div className={`commerceSplit${administrator ? "" : " commerceSplit--single"}`}>
           <div>
             <h3>Add category</h3>
             <form
@@ -431,7 +432,7 @@ export async function EcommerceStoreDashboard({
           {clientView ? <CommerceSectionToggle targetId="orders" /> : null}
         </div>
         <div className="commerceTableWrap">
-          <table className="commerceTable">
+          <table className="commerceTable commerceOrderTable">
             <thead>
               <tr>
                 <th>Order</th>
@@ -448,20 +449,26 @@ export async function EcommerceStoreDashboard({
                 const customer = order.customerSnapshot as { name?: string; email?: string };
                 return (
                   <tr key={order.id}>
-                    <td>
+                    <td data-label={isArabic ? "الطلب" : "Order"}>
                       <strong>{order.orderNumber}</strong>
                       <small>{order.createdAt.toLocaleDateString(locale)}</small>
                     </td>
-                    <td>{customer.name ?? customer.email ?? "Guest"}</td>
-                    <td>{order.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
-                    <td>{formatMoney(order.totalMinor, order.currency, locale)}</td>
-                    <td>
+                    <td data-label={isArabic ? "العميل" : "Customer"}>
+                      {customer.name ?? customer.email ?? "Guest"}
+                    </td>
+                    <td data-label={isArabic ? "العناصر" : "Items"}>
+                      {order.items.reduce((sum, item) => sum + item.quantity, 0)}
+                    </td>
+                    <td data-label={isArabic ? "الإجمالي" : "Total"}>
+                      {formatMoney(order.totalMinor, order.currency, locale)}
+                    </td>
+                    <td data-label={isArabic ? "الدفع" : "Payment"}>
                       <span className={`status ${order.paymentStatus}`}>{order.paymentStatus}</span>
                     </td>
-                    <td>
+                    <td data-label={isArabic ? "الحالة" : "Status"}>
                       <span className={`status ${order.status}`}>{order.status}</span>
                     </td>
-                    <td>
+                    <td data-label={isArabic ? "الإجراء" : "Action"}>
                       {nextStatuses[order.status].length ? (
                         <form action={updateEcommerceOrderStatusAction}>
                           <input name="storeId" type="hidden" value={store.id} />
@@ -497,7 +504,7 @@ export async function EcommerceStoreDashboard({
           {clientView ? <CommerceSectionToggle targetId="customers" /> : null}
         </div>
         <div className="commerceTableWrap">
-          <table className="commerceTable">
+          <table className="commerceTable commerceCustomerTable">
             <thead>
               <tr>
                 <th>Name</th>
@@ -510,11 +517,15 @@ export async function EcommerceStoreDashboard({
             <tbody>
               {customers.map((customer) => (
                 <tr key={customer.id}>
-                  <td>{customer.name}</td>
-                  <td>{customer.email ?? customer.phone ?? "—"}</td>
-                  <td>{customer.status}</td>
-                  <td>{customer._count.orders}</td>
-                  <td>{customer.createdAt.toLocaleDateString(locale)}</td>
+                  <td data-label={isArabic ? "الاسم" : "Name"}>{customer.name}</td>
+                  <td data-label={isArabic ? "التواصل" : "Contact"}>
+                    {customer.email ?? customer.phone ?? "—"}
+                  </td>
+                  <td data-label={isArabic ? "الحالة" : "Status"}>{customer.status}</td>
+                  <td data-label={isArabic ? "الطلبات" : "Orders"}>{customer._count.orders}</td>
+                  <td data-label={isArabic ? "تاريخ الإنشاء" : "Created"}>
+                    {customer.createdAt.toLocaleDateString(locale)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -637,6 +648,46 @@ export async function EcommerceStoreDashboard({
                 <input
                   defaultValue={colorValue(brandTokens.surface, "#f8f6f1")}
                   name="surfaceColor"
+                  type="color"
+                />
+              </label>
+              <label>
+                Surface alt color
+                <input
+                  defaultValue={colorValue(brandTokens.surfaceAlt, "#eee9df")}
+                  name="surfaceAltColor"
+                  type="color"
+                />
+              </label>
+              <label>
+                Text color
+                <input
+                  defaultValue={colorValue(brandTokens.ink, "#171512")}
+                  name="inkColor"
+                  type="color"
+                />
+              </label>
+              <label>
+                Muted text color
+                <input
+                  defaultValue={colorValue(brandTokens.muted, "#716c64")}
+                  name="mutedColor"
+                  type="color"
+                />
+              </label>
+              <label>
+                Border color
+                <input
+                  defaultValue={colorValue(brandTokens.border, "#d8d2c8")}
+                  name="borderColor"
+                  type="color"
+                />
+              </label>
+              <label>
+                Success color
+                <input
+                  defaultValue={colorValue(brandTokens.success, "#128c4a")}
+                  name="successColor"
                   type="color"
                 />
               </label>

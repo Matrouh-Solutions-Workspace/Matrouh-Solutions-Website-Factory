@@ -39,6 +39,7 @@ import {
 import { DraftEditorForm } from "@/app/draft-editor-form";
 import { EditorPreviewPane, EditorSaveStatus } from "@/app/editor-studio";
 import { DocumentImportField } from "@/app/document-import-field";
+import { MenuUploadField } from "@/app/menu-upload-field";
 import { DraggableSection } from "@/app/draggable-section";
 import { PendingSubmit } from "@/app/pending-submit";
 import { PublicationStatusRefresh } from "@/app/publication-status-refresh";
@@ -959,6 +960,14 @@ export default async function WebsiteEditorPage({
                                     />
                                   ) : field.control === "document-import" ? (
                                     <DocumentImportField
+                                      fieldName={field.name}
+                                      initialJson={field.value}
+                                      key={field.name}
+                                      label={field.label}
+                                      websiteId={editor.website.id}
+                                    />
+                                  ) : field.control === "menu-upload" ? (
+                                    <MenuUploadField
                                       fieldName={field.name}
                                       initialJson={field.value}
                                       key={field.name}

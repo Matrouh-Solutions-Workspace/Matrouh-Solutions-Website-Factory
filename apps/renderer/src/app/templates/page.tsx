@@ -197,6 +197,7 @@ function TemplatePackageCard({
 }) {
   const text = copy[locale];
   const preview = previewHref(template.templateId, template.version, locale);
+  const previewDisplayHref = template.previewImage ?? preview;
   const configuredHighlights = locale === "ar" ? template.highlightsAr : template.highlights;
   const highlights = configuredHighlights.length
     ? configuredHighlights
@@ -217,12 +218,21 @@ function TemplatePackageCard({
     >
       <div className="templateGalleryVisual">
         {badge ? <span className="templateGalleryBadge">{badge}</span> : null}
-        <iframe
-          loading="lazy"
-          src={preview}
-          tabIndex={-1}
-          title={`${template.displayName} ${text.preview}`}
-        />
+        {template.previewImage ? (
+          <img
+            alt={`${template.displayName} ${text.preview}`}
+            className="templateGalleryCover"
+            loading="lazy"
+            src={template.previewImage}
+          />
+        ) : (
+          <iframe
+            loading="lazy"
+            src={preview}
+            tabIndex={-1}
+            title={`${template.displayName} ${text.preview}`}
+          />
+        )}
       </div>
       <div className="templateGalleryCardBody">
         <div className="templateGalleryCardTopline">
@@ -251,7 +261,7 @@ function TemplatePackageCard({
           >
             {ctaLabel} <span aria-hidden>↗</span>
           </a>
-          <a className="templateGalleryPreviewLink" href={preview}>
+          <a className="templateGalleryPreviewLink" href={previewDisplayHref}>
             {text.openPreview} <span aria-hidden>→</span>
           </a>
         </div>

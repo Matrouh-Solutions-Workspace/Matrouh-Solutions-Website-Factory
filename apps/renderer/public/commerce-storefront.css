@@ -100,6 +100,172 @@
   height: 1.25rem;
   flex: none;
 }
+
+/* The ecommerce storefront is also rendered through the dashboard proxy, where
+   the renderer app stylesheet is not present. Keep the shared WhatsApp contact
+   self-contained in the commerce stylesheet so it never falls back to raw HTML. */
+.commercePublicRoot .clinicWhatsApp {
+  position: fixed;
+  z-index: 1000;
+  right: auto;
+  bottom: max(clamp(1rem, 2vw, 2rem), env(safe-area-inset-bottom));
+  inset-inline-end: max(clamp(1rem, 2vw, 2rem), env(safe-area-inset-right));
+  display: grid;
+  justify-items: end;
+  gap: 0.75rem;
+  direction: ltr;
+  pointer-events: none;
+  isolation: isolate;
+}
+.commercePublicRoot .clinicWhatsAppCard {
+  box-sizing: border-box;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: min(32rem, calc(100dvh - 7rem));
+  overflow: auto;
+  padding: 1.2rem;
+  border: 1px solid color-mix(in srgb, #25d366 25%, var(--shop-surface-2, #dedbd4));
+  border-radius: 1.35rem 1.35rem 0.35rem 1.35rem;
+  background: color-mix(in srgb, var(--shop-surface, #fff) 96%, transparent);
+  color: var(--shop-ink, #171512);
+  box-shadow: 0 24px 70px rgba(4, 40, 35, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(0.8rem) scale(0.96);
+  transform-origin: bottom right;
+  backdrop-filter: blur(18px) saturate(140%);
+  transition:
+    opacity 220ms ease,
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 220ms;
+  pointer-events: auto;
+}
+.commercePublicRoot .clinicWhatsApp[data-open="true"] .clinicWhatsAppCard {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+.commercePublicRoot .clinicWhatsAppCardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--shop-surface-2, #dedbd4);
+}
+.commercePublicRoot[dir="rtl"] .clinicWhatsAppCard {
+  direction: rtl;
+  border-radius: 1.35rem 1.35rem 1.35rem 0.35rem;
+  transform-origin: bottom left;
+}
+.commercePublicRoot .clinicWhatsAppCardHead > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.18rem;
+}
+.commercePublicRoot .clinicWhatsAppCardHead strong {
+  color: var(--shop-ink, #171512);
+  font-size: 0.98rem;
+}
+.commercePublicRoot .clinicWhatsAppCardHead small {
+  color: var(--shop-muted, #6f6b63);
+  font-size: 0.76rem;
+}
+.commercePublicRoot .clinicWhatsAppPresence {
+  position: relative;
+  width: 2.65rem;
+  height: 2.65rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: color-mix(in srgb, #25d366 15%, var(--shop-surface, #fff));
+}
+.commercePublicRoot .clinicWhatsAppPresence::before,
+.commercePublicRoot .clinicWhatsAppPresence::after {
+  position: absolute;
+  content: "";
+  border-radius: 50%;
+}
+.commercePublicRoot .clinicWhatsAppPresence::before {
+  inset: 0.72rem;
+  border: 2px solid #128c7e;
+}
+.commercePublicRoot .clinicWhatsAppPresence::after {
+  top: 0;
+  right: 0.1rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 2px solid var(--shop-surface, #fff);
+  background: #25d366;
+}
+.commercePublicRoot .clinicWhatsAppCard > p {
+  margin: 1rem 0;
+  color: var(--shop-ink, #171512);
+  font-size: 1.12rem;
+  font-weight: 760;
+}
+.commercePublicRoot .clinicWhatsAppCard > a {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  min-height: 3.25rem;
+  gap: 0.65rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #1daf57;
+  border-radius: 0.9rem;
+  background: #25d366;
+  color: #062f1b;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: inset 0 -3px 0 rgba(4, 77, 39, 0.28);
+}
+.commercePublicRoot .clinicWhatsAppCard svg,
+.commercePublicRoot .clinicWhatsAppToggle svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: currentColor;
+}
+.commercePublicRoot .clinicWhatsAppToggle svg {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+.commercePublicRoot .clinicWhatsAppToggle {
+  display: grid;
+  box-sizing: border-box;
+  width: 4rem;
+  height: 4rem;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 1px #128c7e,
+    0 14px 34px rgba(6, 95, 55, 0.35);
+  pointer-events: auto;
+}
+.commercePublicRoot .clinicWhatsAppToggle:hover,
+.commercePublicRoot .clinicWhatsAppToggle:focus-visible {
+  background: #20bd5a;
+  transform: translateY(-3px);
+}
+.commercePublicRoot .clinicWhatsAppToggle > span {
+  font:
+    400 2rem/1 Arial,
+    sans-serif;
+}
+@media (max-width: 600px) {
+  .commercePublicRoot .clinicWhatsApp {
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    inset-inline-end: max(1rem, env(safe-area-inset-right));
+  }
+  .commercePublicRoot .clinicWhatsAppToggle {
+    width: 3.6rem;
+    height: 3.6rem;
+  }
+}
 .srOnly,
 .commercePublicRoot .srOnly {
   position: absolute;
@@ -969,6 +1135,20 @@
   color: var(--shop-muted);
   font-size: 0.68rem;
   font-weight: 700;
+}
+.commerceSortLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.commerceSortLabel svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 .commerceCatalogActions select,
 .shopFilterToggle {
@@ -2567,6 +2747,7 @@
     overflow-wrap: anywhere;
   }
 }
+
 @media (max-width: 760px) {
   .commerceCartPage,
   .shopTheme--fashion .commerceCartPage {
@@ -4548,4 +4729,69 @@ p {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+/* Final RTL fashion-hero tuning must stay after the theme bundle overrides. */
+@media (min-width: 761px) {
+  .commercePublicRoot.shopTheme--fashion .shopHeroCopy {
+    width: min(52%, 820px);
+    min-height: 100% !important;
+    justify-content: center;
+    padding-block: clamp(2rem, 5vh, 4rem);
+  }
+  .commercePublicRoot.shopTheme--fashion .shopHeroCopy h1 {
+    width: min(100%, 12ch);
+    max-width: 12ch;
+    margin-block: 0.75rem 1.15rem;
+    font-size: clamp(3.2rem, 5vw, 6rem);
+    line-height: 1;
+    letter-spacing: -0.045em;
+    text-wrap: balance;
+  }
+  .commercePublicRoot.shopTheme--fashion .shopHeroCopy > p:not(.shopEyebrow) {
+    width: min(100%, 38rem);
+    line-height: 1.75;
+  }
+  .commercePublicRoot.shopTheme--fashion .shopHeroActions {
+    margin-top: 1.65rem;
+  }
+  .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy {
+    width: min(52%, 820px);
+    margin-inline: 0 auto;
+    padding-inline: clamp(2rem, 5vw, 5rem) clamp(1.25rem, 3vw, 3rem);
+    align-items: stretch;
+  }
+  .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy h1 {
+    width: auto;
+    max-width: 12ch;
+    margin-block: 0.85rem 1.25rem;
+    font-size: clamp(3.2rem, 5vw, 6rem);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    white-space: normal;
+  }
+  .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy > p:not(.shopEyebrow) {
+    width: min(100%, 35rem);
+    line-height: 1.9;
+  }
+  .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroActions {
+    align-self: flex-start;
+    margin-top: 1.85rem;
+  }
+}
+
+/* Account-level branding tokens are final so they win over theme defaults. */
+.commercePublicRoot {
+  --shop-bg: var(--commerce-surface, #f8f6f1);
+  --shop-surface: var(--commerce-surface, #f8f6f1);
+  --shop-ink: var(--commerce-ink, #171512);
+  --shop-muted: var(--commerce-muted, #716c64);
+  --shop-border: var(--commerce-border, rgba(23, 21, 18, 0.16));
+  --shop-surface-2: var(--commerce-surface-alt, #eee9df);
+  --shop-accent: var(--commerce-accent, #a45f3f);
+}
+.commercePublicRoot .shopWhatsAppButton,
+.commercePublicRoot .clinicWhatsAppToggle {
+  background: var(--commerce-success, #128c4a);
 }

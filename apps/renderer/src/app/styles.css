@@ -163,6 +163,13 @@
   transform: scale(0.25);
   transform-origin: top left;
 }
+.templateGalleryCover {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
 .templateGallery[dir="rtl"] .templateGalleryVisual iframe {
   right: 0;
   left: auto;

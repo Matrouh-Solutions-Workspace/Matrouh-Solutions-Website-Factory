@@ -1,0 +1,503 @@
+{
+  "manifestFormatVersion": 1,
+  "manifest": {
+    "id": "com.matrouh.menu-qr",
+    "version": "1.0.0",
+    "displayName": "Menu QR",
+    "author": "Matrouh Solutions",
+    "description": "A clean QR destination for one uploaded PDF or photo menu.",
+    "category": "restaurant",
+    "previewImage": "/templates/menu-qr/menu-qr-cover.png",
+    "features": [
+      "qr-menu",
+      "uploaded-menu",
+      "pdf-viewer",
+      "image-menu",
+      "responsive"
+    ]
+  },
+  "compatibility": {
+    "sdkVersion": "1.0.0",
+    "minimumFactoryVersion": "0.1.0",
+    "minimumRendererVersion": "0.1.0",
+    "contentSchemaVersion": 1,
+    "themeSchemaVersion": 1,
+    "publicationSnapshotVersion": 1
+  },
+  "websiteSchema": {
+    "formatVersion": 1,
+    "typeName": "ZodObject",
+    "description": "Identity settings for a simple QR menu.",
+    "jsonSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "siteName": {
+          "default": "Our menu",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        }
+      },
+      "additionalProperties": false
+    },
+    "schemaHash": "e86c14406dbcd874da597e25c04ee8d5",
+    "fields": {
+      "/siteName": {
+        "label": "Website name",
+        "control": "text",
+        "order": 1
+      }
+    }
+  },
+  "capabilities": [],
+  "routes": [
+    {
+      "id": "com.matrouh.menu-qr/route/page",
+      "pattern": "/:slug?",
+      "priority": 0,
+      "pageTypes": [
+        "com.matrouh.menu-qr/page/home"
+      ],
+      "localePolicy": "prefix-except-default",
+      "indexingPolicy": "inherit-page"
+    }
+  ],
+  "pages": [
+    {
+      "id": "com.matrouh.menu-qr/page/home",
+      "title": "Menu",
+      "slug": {
+        "kind": "fixed",
+        "defaultValue": "/",
+        "maximumLength": 1
+      },
+      "allowedSections": [
+        "com.matrouh.menu-qr/section/menu"
+      ],
+      "requiredSections": [
+        {
+          "sectionTypeId": "com.matrouh.menu-qr/section/menu",
+          "minimum": 1,
+          "maximum": 1
+        }
+      ],
+      "defaultSections": [
+        {
+          "sectionTypeId": "com.matrouh.menu-qr/section/menu"
+        }
+      ],
+      "supportsSEO": true,
+      "supportsNavigation": false,
+      "supportsIndexing": true,
+      "editor": {
+        "description": "A simple uploaded menu",
+        "icon": "file"
+      }
+    }
+  ],
+  "navigation": [
+    {
+      "id": "com.matrouh.menu-qr/navigation/main",
+      "title": "Main navigation",
+      "maximumDepth": 1,
+      "allowedPageTypes": "all",
+      "ordering": "manual",
+      "localization": "localized-labels",
+      "allowedNodeKinds": [
+        "page"
+      ],
+      "editor": {
+        "description": "Menu navigation"
+      }
+    }
+  ],
+  "components": [
+    {
+      "id": "com.matrouh.menu-qr/section/menu",
+      "kind": "section",
+      "title": "Uploaded menu",
+      "description": "One clean page for a PDF or photo menu.",
+      "category": "content",
+      "schema": {
+        "formatVersion": 1,
+        "typeName": "ZodObject",
+        "description": "Upload a single menu PDF or image for customers to view.",
+        "jsonSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "menu": {
+              "default": {
+                "mediaId": null,
+                "mediaKind": null,
+                "filename": ""
+              },
+              "type": "object",
+              "properties": {
+                "mediaId": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "mediaKind": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "image",
+                        "document"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "filename": {
+                  "default": "",
+                  "type": "string",
+                  "maxLength": 255
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "schemaHash": "7e0760b8cd1aeff0e58db88975f85c61",
+        "fields": {
+          "/menu": {
+            "label": "Menu PDF or photo",
+            "control": "menu-upload",
+            "order": 1
+          }
+        }
+      },
+      "composedOf": [],
+      "capabilities": []
+    }
+  ],
+  "theme": {
+    "id": "com.matrouh.menu-qr/theme/default",
+    "schemaVersion": 1,
+    "schema": {
+      "formatVersion": 1,
+      "typeName": "ZodObject",
+      "description": "Clean menu design tokens.",
+      "jsonSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "colors": {
+            "type": "object",
+            "properties": {
+              "background": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "surface": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "surfaceVariant": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "primary": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "primaryForeground": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "secondary": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "accent": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "success": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "warning": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "danger": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "info": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "border": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "muted": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              },
+              "heading": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([0-9.,%\\s/-]+\\)|[a-z]+)$"
+              }
+            },
+            "required": [
+              "background",
+              "surface",
+              "surfaceVariant",
+              "primary",
+              "primaryForeground",
+              "secondary",
+              "accent",
+              "success",
+              "warning",
+              "danger",
+              "info",
+              "border",
+              "muted",
+              "text",
+              "heading"
+            ],
+            "additionalProperties": false
+          },
+          "layout": {
+            "type": "object",
+            "properties": {
+              "radii": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "shadows": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^[^;{}]+$"
+                }
+              },
+              "spacing": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "containerWidths": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "breakpoints": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              }
+            },
+            "required": [
+              "radii",
+              "shadows",
+              "spacing",
+              "containerWidths",
+              "breakpoints"
+            ],
+            "additionalProperties": false
+          },
+          "typography": {
+            "type": "object",
+            "properties": {
+              "fontFamilies": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160,
+                  "pattern": "^[^;{}]+$"
+                }
+              },
+              "fontSizes": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "pattern": "^-?(?:\\d+(?:\\.\\d+)?)(?:px|rem|em|%|vw|vh)$"
+                }
+              },
+              "fontWeights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 1000
+                }
+              },
+              "lineHeights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "number",
+                  "minimum": 0.8,
+                  "maximum": 3
+                }
+              }
+            },
+            "required": [
+              "fontFamilies",
+              "fontSizes",
+              "fontWeights",
+              "lineHeights"
+            ],
+            "additionalProperties": false
+          },
+          "motion": {
+            "type": "object",
+            "properties": {
+              "durations": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^\\d+(?:\\.\\d+)?(?:ms|s)$"
+                }
+              },
+              "curves": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100,
+                  "pattern": "^[^;{}]+$"
+                }
+              }
+            },
+            "required": [
+              "durations",
+              "curves"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "colors",
+          "layout",
+          "typography",
+          "motion"
+        ],
+        "additionalProperties": false
+      },
+      "schemaHash": "35816f87467157bae17e0e8404c713e8",
+      "fields": {}
+    }
+  },
+  "migrations": [],
+  "manifestHash": "030d804edd66caf6927992368a61d591"
+}

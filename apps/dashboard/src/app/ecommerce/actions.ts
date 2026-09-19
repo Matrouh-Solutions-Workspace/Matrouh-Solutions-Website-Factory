@@ -292,6 +292,11 @@ export async function updateEcommerceStoreAction(formData: FormData): Promise<vo
   const primaryColor = colorField(formData, "primaryColor", "#171512");
   const accentColor = colorField(formData, "accentColor", "#a45f3f");
   const surfaceColor = colorField(formData, "surfaceColor", "#f8f6f1");
+  const surfaceAltColor = colorField(formData, "surfaceAltColor", "#eee9df");
+  const inkColor = colorField(formData, "inkColor", "#171512");
+  const mutedColor = colorField(formData, "mutedColor", "#716c64");
+  const borderColor = colorField(formData, "borderColor", "#d8d2c8");
+  const successColor = colorField(formData, "successColor", "#128c4a");
   const whatsappEnabled = formData.get("whatsappEnabled") === "on";
   const whatsappButtonLabel = text(formData, "whatsappButtonLabel", 100) || null;
   if (!name) return;
@@ -320,6 +325,11 @@ export async function updateEcommerceStoreAction(formData: FormData): Promise<vo
               primary: primaryColor,
               accent: accentColor,
               surface: surfaceColor,
+              surfaceAlt: surfaceAltColor,
+              ink: inkColor,
+              muted: mutedColor,
+              border: borderColor,
+              success: successColor,
             },
           },
           settingsJson: { ...settings, whatsappEnabled, whatsappButtonLabel },

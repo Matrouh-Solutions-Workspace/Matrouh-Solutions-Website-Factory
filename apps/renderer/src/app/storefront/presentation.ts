@@ -40,6 +40,11 @@ export function presentationTokens(value: Readonly<Record<string, unknown>>): CS
     "--commerce-primary": typeof raw.primary === "string" ? raw.primary : "#171512",
     "--commerce-accent": typeof raw.accent === "string" ? raw.accent : "#a45f3f",
     "--commerce-surface": typeof raw.surface === "string" ? raw.surface : "#f8f6f1",
+    "--commerce-surface-alt": typeof raw.surfaceAlt === "string" ? raw.surfaceAlt : "#eee9df",
+    "--commerce-ink": typeof raw.ink === "string" ? raw.ink : "#171512",
+    "--commerce-muted": typeof raw.muted === "string" ? raw.muted : "#716c64",
+    "--commerce-border": typeof raw.border === "string" ? raw.border : "#d8d2c8",
+    "--commerce-success": typeof raw.success === "string" ? raw.success : "#128c4a",
     "--commerce-radius": typeof raw.radius === "string" ? raw.radius : "18px",
   } as CSSProperties;
 }

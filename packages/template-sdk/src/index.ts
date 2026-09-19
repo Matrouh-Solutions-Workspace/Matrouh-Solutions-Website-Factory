@@ -124,7 +124,8 @@ export type EditorControlId =
   | "color"
   | "group"
   | "list"
-  | "document-import";
+  | "document-import"
+  | "menu-upload";
 
 export interface PortableCondition {
   readonly path: string;

@@ -18,4 +18,10 @@ describe("public renderer asset gateway", () => {
     expect(middleware).toContain('pathname === "/matrouh-logo.png"');
     expect(middleware).toContain('pathname.startsWith("/commerce-heroes/")');
   });
+
+  it("forwards generated template cover images to the renderer", async () => {
+    const middleware = await readFile(resolve(process.cwd(), "src/proxy.ts"), "utf8");
+
+    expect(middleware).toContain('pathname.startsWith("/templates/menu-qr/")');
+  });
 });

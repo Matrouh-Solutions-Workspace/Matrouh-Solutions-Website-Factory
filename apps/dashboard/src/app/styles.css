@@ -631,6 +631,9 @@
   grid-template-columns: minmax(220px, 0.78fr) minmax(360px, 1.22fr);
   gap: 1.25rem;
 }
+.commerceSplit--single {
+  grid-template-columns: minmax(0, 1fr);
+}
 .commerceCompactForm {
   display: grid;
   gap: 0.75rem;
@@ -900,6 +903,46 @@
 .commerceTable form {
   display: flex;
   gap: 0.35rem;
+}
+.commerceOrderTable,
+.commerceCustomerTable {
+  min-width: 0;
+  table-layout: auto;
+}
+.commerceOrderTable tbody tr,
+.commerceCustomerTable tbody tr {
+  transition: background 160ms ease;
+}
+.commerceOrderTable tbody tr:hover,
+.commerceCustomerTable tbody tr:hover {
+  background: var(--surface-soft);
+}
+.commerceOrderTable td:first-child strong {
+  display: block;
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+.commerceOrderTable td:first-child small {
+  margin-top: 0.2rem;
+}
+.commerceOrderTable td:last-child {
+  min-width: 11rem;
+}
+.commerceOrderTable td:last-child form {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.commerceOrderTable td:last-child select {
+  min-width: 7rem;
+}
+.commerceOrderTable td:last-child button {
+  min-height: 2.2rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--primary);
+  color: #111;
+  background: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 @media (max-width: 600px) {
@@ -10716,7 +10759,7 @@ input[type="file"] {
 }
 .appShell.clientShell .clientCommerceStorePage .commerceColorFields {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   padding-top: 4px;
 }
@@ -10890,8 +10933,12 @@ input[type="file"] {
 
 @media (max-width: 620px) {
   .appShell.clientShell .clientCommerceStorePage {
+    width: 100%;
+    max-width: 100vw;
+    min-width: 0;
     gap: 12px;
     padding: 10px;
+    overflow-x: clip;
   }
   .appShell.clientShell .clientCommerceStorePage > header {
     align-items: stretch;
@@ -10922,8 +10969,15 @@ input[type="file"] {
     padding: 13px;
   }
   .appShell.clientShell .clientCommerceStorePage > .panel {
+    width: 100%;
+    min-width: 0;
     padding: 14px;
     border-radius: 14px;
+  }
+  .appShell.clientShell .clientCommerceStorePage .commerceTableWrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
   .appShell.clientShell .clientCommerceStorePage .panelHead {
     align-items: center;
@@ -10937,7 +10991,7 @@ input[type="file"] {
     margin-inline-start: auto;
   }
   .appShell.clientShell .clientCommerceStorePage .commerceColorFields {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 .ecommerceContentEditor {
@@ -11038,5 +11092,118 @@ input[type="file"] {
 @media (max-width: 700px) {
   .ecommerceContentMediaGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .commerceTableWrap:has(.commerceOrderTable),
+  .commerceTableWrap:has(.commerceCustomerTable) {
+    overflow: visible;
+  }
+  .commerceOrderTable,
+  .commerceCustomerTable {
+    display: block;
+    width: 100%;
+  }
+  .commerceOrderTable thead,
+  .commerceCustomerTable thead {
+    display: none;
+  }
+  .commerceOrderTable tbody,
+  .commerceCustomerTable tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .commerceOrderTable tr,
+  .commerceCustomerTable tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding: 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    background: var(--surface);
+  }
+  .commerceOrderTable td,
+  .commerceCustomerTable td {
+    display: grid;
+    width: auto !important;
+    gap: 0.25rem;
+    padding: 0.65rem 0.4rem;
+    border-bottom: 1px solid var(--line);
+    overflow-wrap: anywhere;
+  }
+  .commerceOrderTable td::before,
+  .commerceCustomerTable td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .commerceOrderTable td:first-child,
+  .commerceOrderTable td:nth-child(2),
+  .commerceCustomerTable td:first-child,
+  .commerceCustomerTable td:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+  .commerceOrderTable td:last-child,
+  .commerceCustomerTable td:last-child {
+    min-width: 0;
+    border-bottom: 0;
+  }
+  .commerceOrderTable td:last-child form {
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+  }
+  .commerceOrderTable td:last-child select,
+  .commerceOrderTable td:last-child button {
+    flex: 1 1 8rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 721px) {
+  .commerceOrderTable th:first-child,
+  .commerceOrderTable td:first-child {
+    width: 18%;
+  }
+  .commerceOrderTable th:nth-child(2),
+  .commerceOrderTable td:nth-child(2) {
+    width: 18%;
+  }
+  .commerceOrderTable th:nth-child(3),
+  .commerceOrderTable td:nth-child(3) {
+    width: 8%;
+  }
+  .commerceOrderTable th:nth-child(4),
+  .commerceOrderTable td:nth-child(4) {
+    width: 14%;
+  }
+  .commerceOrderTable th:nth-child(5),
+  .commerceOrderTable td:nth-child(5) {
+    width: 12%;
+  }
+  .commerceOrderTable th:nth-child(6),
+  .commerceOrderTable td:nth-child(6) {
+    width: 12%;
+  }
+  .commerceOrderTable th:last-child,
+  .commerceOrderTable td:last-child {
+    width: 18%;
+    min-width: 0;
+  }
+  .commerceOrderTable td:last-child form {
+    flex-wrap: nowrap;
+  }
+  .commerceOrderTable td:last-child select {
+    min-width: 0;
+    width: 6.8rem;
+  }
+  .commerceOrderTable td:last-child button {
+    flex: 0 0 auto;
   }
 }
