@@ -4070,6 +4070,27 @@ section.hero::before {
 .shopTheme--hardware .shopHeroNumber {
   display: none;
 }
+
+/* Keep the long Forge trust statement readable at every storefront width.
+   The generic 2fr/1fr/1fr grid can squeeze its copy column far below the
+   heading's usable measure inside scaled previews and intermediate screens. */
+.shopTheme--hardware .shopStoryGrid {
+  grid-template-columns: minmax(22rem, 2fr) repeat(2, minmax(12rem, 1fr));
+}
+.shopTheme--hardware .shopStoryGrid > div {
+  min-width: 0;
+  padding: clamp(2rem, 3.5vw, 4.5rem);
+}
+.shopTheme--hardware .shopStoryGrid h2 {
+  width: 100%;
+  max-width: 18ch;
+  font-size: clamp(2.25rem, 3.2vw, 3.8rem);
+  line-height: 1.02;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+  text-wrap: pretty;
+}
 @media (max-width: 960px) {
   .shopTheme--hardware .shopHero {
     width: min(calc(100% - 2rem), 1500px);
@@ -4094,6 +4115,15 @@ section.hero::before {
   .shopTheme--hardware[dir="rtl"] .shopHeroPhoto {
     object-position: 58% center;
   }
+  .shopTheme--hardware .shopStoryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .shopTheme--hardware .shopStoryGrid > div:first-child {
+    grid-column: 1 / -1;
+  }
+  .shopTheme--hardware .shopStoryGrid h2 {
+    max-width: 20ch;
+  }
 }
 @media (max-width: 560px) {
   .shopTheme--hardware .shopHero {
@@ -4110,6 +4140,26 @@ section.hero::before {
   }
   .shopTheme--hardware .shopHeroActions a {
     justify-content: center;
+  }
+  .shopTheme--hardware .shopStoryGrid {
+    grid-template-columns: 1fr;
+  }
+  .shopTheme--hardware .shopStoryGrid > div,
+  .shopTheme--hardware .shopStoryGrid > div:nth-child(2) {
+    min-height: 0;
+    padding: 2rem 1.25rem;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--shop-border);
+  }
+  .shopTheme--hardware .shopStoryGrid > div:first-child {
+    grid-column: auto;
+  }
+  .shopTheme--hardware .shopStoryGrid > div:last-child {
+    border-bottom: 0;
+  }
+  .shopTheme--hardware .shopStoryGrid h2 {
+    max-width: 16ch;
+    font-size: clamp(2rem, 10vw, 2.8rem);
   }
 }
 .shopTheme--pc .shopCategoryCard,

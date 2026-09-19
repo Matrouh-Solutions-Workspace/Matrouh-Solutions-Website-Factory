@@ -1262,6 +1262,113 @@ export async function prepareClientPortalAction(formData: FormData): Promise<voi
   revalidatePath("/mail");
 }
 
+export async function updateClientAction(formData: FormData): Promise<void> {
+  const clientId = cleanText(formData.get("clientId"), 80);
+  const name = cleanText(formData.get("name"), 200);
+  const contactName = cleanText(formData.get("contactName"), 200) || null;
+  const contactEmail = cleanText(formData.get("contactEmail"), 320).toLowerCase() || null;
+  const contactPhone = cleanText(formData.get("contactPhone"), 50) || null;
+  const notes = cleanText(formData.get("notes"), 4000) || null;
+  if (!clientId || !name) return;
+  if (contactEmail && !/^\S+@\S+\.\S+$/.test(contactEmail)) {
+    throw new Error("CLIENT_EMAIL_INVALID");
+  }
+  const context = await requireDashboardContext("client.create");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `client-update:${clientId}`),
+    async (transaction) => {
+      const existing = await transaction.client.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: clientId } },
+        select: { id: true, archivedAt: true },
+      });
+      if (!existing || existing.archivedAt) throw new Error("CLIENT_NOT_FOUND");
+      await transaction.client.update({
+        where: { organizationId_id: { organizationId: context.organization.id, id: clientId } },
+        data: {
+          name,
+          contactName,
+          contactEmail,
+          contactPhone,
+          notes,
+          revision: { increment: 1 },
+        },
+      });
+    },
+  );
+  revalidatePath("/clients");
+  revalidatePath("/billing");
+}
+
+export async function archiveClientAction(formData: FormData): Promise<void> {
+  const clientId = cleanText(formData.get("clientId"), 80);
+  if (!clientId) return;
+  const context = await requireDashboardContext("client.create");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `client-archive:${clientId}`),
+    async (transaction) => {
+      const existing = await transaction.client.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: clientId } },
+        select: { id: true, archivedAt: true },
+      });
+      if (!existing || existing.archivedAt) throw new Error("CLIENT_NOT_FOUND");
+      const archivedAt = new Date();
+      await transaction.client.update({
+        where: { organizationId_id: { organizationId: context.organization.id, id: clientId } },
+        data: { archivedAt, revision: { increment: 1 } },
+      });
+      await transaction.website.updateMany({
+        where: { organizationId: context.organization.id, clientId },
+        data: { clientId: null, revision: { increment: 1 } },
+      });
+      await transaction.websiteSubscription.updateMany({
+        where: { organizationId: context.organization.id, clientId },
+        data: { clientId: null },
+      });
+    },
+  );
+  revalidatePath("/clients");
+  revalidatePath("/billing");
+  revalidatePath("/websites");
+}
+
+export async function updateWebsiteOwnerAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const clientId = cleanText(formData.get("clientId"), 80) || null;
+  if (!websiteId) return;
+  const context = await requireDashboardContext("website.edit");
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `website-owner:${websiteId}`),
+    async (transaction) => {
+      const website = await transaction.website.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        select: { id: true },
+      });
+      if (!website) throw new Error("WEBSITE_NOT_FOUND");
+      if (clientId) {
+        const client = await transaction.client.findUnique({
+          where: { organizationId_id: { organizationId: context.organization.id, id: clientId } },
+          select: { id: true, archivedAt: true },
+        });
+        if (!client || client.archivedAt) throw new Error("CLIENT_NOT_FOUND");
+      }
+      await transaction.website.update({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        data: { clientId, revision: { increment: 1 } },
+      });
+      await transaction.websiteSubscription.updateMany({
+        where: { organizationId: context.organization.id, websiteId },
+        data: { clientId },
+      });
+    },
+  );
+  revalidatePath("/clients");
+  revalidatePath("/billing");
+  revalidatePath("/websites");
+}
+
 async function ensureClientPortalMembership(
   transaction: DatabaseTransaction,
   organizationId: string,

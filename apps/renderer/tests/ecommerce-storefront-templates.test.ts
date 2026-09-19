@@ -67,6 +67,20 @@ describe("commerce storefront templates", () => {
     expect(styles).toContain("@media (max-width: 560px)");
   });
 
+  it("keeps the hardware trust statement readable in previews and on mobile", async () => {
+    const styles = await readFile(resolve(process.cwd(), "public/commerce-storefront.css"), "utf8");
+
+    expect(styles).toMatch(
+      /\.shopTheme--hardware \.shopStoryGrid\s*\{[^}]*grid-template-columns:\s*minmax\(22rem, 2fr\) repeat\(2, minmax\(12rem, 1fr\)\);/s,
+    );
+    expect(styles).toMatch(
+      /\.shopTheme--hardware \.shopStoryGrid h2\s*\{[^}]*overflow-wrap:\s*normal;[^}]*word-break:\s*normal;[^}]*hyphens:\s*none;/s,
+    );
+    expect(styles).toMatch(
+      /@media \(max-width: 560px\)[\s\S]*?\.shopTheme--hardware \.shopStoryGrid\s*\{\s*grid-template-columns:\s*1fr;/s,
+    );
+  });
+
   it("positions fashion as a flexible everyday clothing store with a product-first hero", async () => {
     const source = await readFile(
       resolve(process.cwd(), "src/app/ecommerce-storefront.tsx"),

@@ -31,9 +31,14 @@ interface ClientAccountWebsite {
   domains: { hostnameNormalized: string; status: string }[];
 }
 
-export async function loadClients(query = "") {
+const websiteStatusValues = ["draft", "published", "unpublished", "disabled", "archived"] as const;
+
+export async function loadClients(
+  query = "",
+  filters: { websiteCount?: string | undefined; websiteStatus?: string | undefined } = {},
+) {
   const context = await requireDashboardContext("client.read");
-  return withTenantTransaction(
+  const clients = await withTenantTransaction(
     dashboardDatabase(),
     tenantContext(context, "clients-list"),
     (transaction) =>
@@ -63,11 +68,48 @@ export async function loadClients(query = "") {
                 ],
               }
             : {}),
+          ...(filters.websiteStatus && websiteStatusValues.includes(filters.websiteStatus as never)
+            ? {
+                websites: {
+                  some: {
+                    status: filters.websiteStatus as (typeof websiteStatusValues)[number],
+                  },
+                },
+              }
+            : {}),
         },
         orderBy: [{ name: "asc" }, { createdAt: "asc" }],
-        include: { _count: { select: { websites: true } } },
+        include: {
+          websites: {
+            where: { archivedAt: null },
+            orderBy: { updatedAt: "desc" },
+            select: {
+              id: true,
+              name: true,
+              kind: true,
+              status: true,
+              templateId: true,
+              updatedAt: true,
+              domains: {
+                where: { releasedAt: null },
+                orderBy: { createdAt: "asc" },
+                take: 2,
+                select: { hostnameNormalized: true },
+              },
+              subscription: { select: { status: true, expiresAt: true } },
+            },
+          },
+          _count: { select: { websites: true, subscriptions: true, outboundMessages: true } },
+        },
       }),
   );
+  if (filters.websiteCount === "none")
+    return clients.filter((client) => client.websites.length === 0);
+  if (filters.websiteCount === "one")
+    return clients.filter((client) => client.websites.length === 1);
+  if (filters.websiteCount === "many")
+    return clients.filter((client) => client.websites.length > 1);
+  return clients;
 }
 
 export async function loadBillingWorkspace(query = "") {
