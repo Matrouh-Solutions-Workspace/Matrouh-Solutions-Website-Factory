@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addCartLine, isCartLine, updateCartQuantity } from "../src/app/storefront/cart";
+import { addCartLine, changeCartColor, isCartLine, updateCartQuantity } from "../src/app/storefront/cart";
 
 describe("storefront cart", () => {
   it("adds new lines, preserves unrelated lines, and rejects unavailable stock", () => {
@@ -31,6 +31,25 @@ describe("storefront cart", () => {
     ).toEqual([
       { productId: "p", variantId: "v", quantity: 99 },
       { productId: "other", variantId: "other-v", quantity: 2 },
+    ]);
+  });
+
+  it("keeps different colors of the same variant as separate lines", () => {
+    const cart = [
+      { productId: "p", variantId: "v", color: "black", quantity: 1 },
+      { productId: "p", variantId: "v", color: "white", quantity: 1 },
+    ];
+    expect(addCartLine(cart, "p", "v", 3, "black")).toEqual([
+      { ...cart[0], quantity: 2 },
+      cart[1],
+    ]);
+    expect(addCartLine(cart, "p", "v", 2, "black")).toEqual(cart);
+    expect(updateCartQuantity(cart, "v", 5, "black", 3)).toEqual([
+      { ...cart[0], quantity: 2 },
+      cart[1],
+    ]);
+    expect(changeCartColor(cart, "v", "black", "white")).toEqual([
+      { ...cart[1], quantity: 2 },
     ]);
   });
 

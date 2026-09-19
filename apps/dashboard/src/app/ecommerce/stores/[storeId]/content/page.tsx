@@ -92,7 +92,7 @@ export async function EcommerceContentEditor({
     url: dashboardMediaPath(asset.id),
   }));
   return (
-    <main className="ecommerceContentEditor">
+    <main className={`ecommerceContentEditor${clientView ? "" : " adminEcommerceContentEditor"}`}>
       <header>
         <div>
           <p className="eyebrow">Website content</p>

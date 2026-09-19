@@ -458,6 +458,12 @@
 .shopTextControl {
   font-size: 0.77rem;
   font-weight: 800;
+  /* Language is a labeled control, not an icon-only action. Keep it
+     rectangular so the EN/ع label has a clear hit area in every storefront. */
+  min-width: 3.25rem;
+  border-color: var(--shop-border);
+  border-radius: 0.45rem;
+  background: var(--shop-surface);
 }
 .shopCartButton {
   display: inline-flex;
@@ -1127,7 +1133,36 @@
 .commerceCatalogActions {
   display: flex;
   align-items: end;
+  flex-wrap: wrap;
   gap: 0.7rem;
+}
+.shopSavedFilter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.9rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--shop-border);
+  border-radius: 999px;
+  color: var(--shop-ink);
+  background: var(--shop-surface);
+  font: inherit;
+  cursor: pointer;
+}
+.shopSavedFilter.isActive {
+  border-color: var(--shop-accent);
+  color: var(--shop-accent);
+}
+.shopSavedFilter svg {
+  width: 1rem;
+  height: 1rem;
+}
+.shopContactCTA > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
 }
 .commerceCatalogActions label {
   display: grid;
@@ -1447,6 +1482,13 @@
   background: rgba(255, 255, 255, 0.84);
   cursor: pointer;
   backdrop-filter: blur(8px);
+}
+.shopWishlist.isSaved {
+  color: #fff;
+  background: var(--shop-accent);
+}
+.shopWishlist.isSaved svg {
+  fill: currentColor;
 }
 .shopProductCardBody {
   padding: 1rem;
@@ -1879,6 +1921,46 @@
 .shopProductColors button.isSelected,
 .shopProductColors button:hover {
   box-shadow: 0 0 0 2px var(--shop-accent);
+}
+.shopProductVariants {
+  margin: 1rem 0;
+  padding: 0;
+  border: 0;
+}
+.shopProductVariants legend {
+  margin-bottom: 0.55rem;
+  color: var(--shop-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.shopProductVariants > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.shopProductVariants button {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 7rem;
+  min-height: 3rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--shop-border);
+  border-radius: 0.6rem;
+  color: var(--shop-ink);
+  background: var(--shop-surface);
+  text-align: start;
+  cursor: pointer;
+}
+.shopProductVariants button[aria-pressed="true"] {
+  border-color: var(--shop-accent);
+  box-shadow: 0 0 0 1px var(--shop-accent);
+}
+.shopProductVariants button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.shopProductVariants small {
+  color: var(--shop-muted);
 }
 .shopProductFacts {
   display: grid;
@@ -4697,6 +4779,14 @@ p {
   line-height: 1.16;
   text-wrap: balance;
 }
+/* Arabic hardware headlines are naturally taller and should not dominate the
+   whole hero. Keep the workshop message compact while preserving readability
+   on desktop and narrow preview canvases. */
+.commercePublicRoot[lang="ar"].shopTheme--hardware .shopHeroCopy h1 {
+  max-width: 12ch;
+  font-size: clamp(2.25rem, 3.05vw, 3.55rem) !important;
+  line-height: 1.18;
+}
 .commercePublicRoot[lang="ar"]
   :is(.shopSectionHeading h2, .shopEditorial h2, .shopStoryGrid h2, .shopNewsletter h2) {
   max-width: 18ch;
@@ -4736,6 +4826,197 @@ p {
 .shopTheme--fashion .commerceCartLine > b {
   justify-self: end;
   text-align: end;
+}
+.shopTheme--hardware .commerceCartPage {
+  align-items: start;
+  grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.72fr);
+  gap: clamp(2rem, 4vw, 5rem);
+  padding-top: clamp(2.5rem, 5vw, 5rem);
+  padding-bottom: clamp(3rem, 6vw, 6rem);
+}
+.shopTheme--hardware .commerceCartLines {
+  min-width: 0;
+  padding: clamp(1.25rem, 2.4vw, 2rem);
+  border: 1px solid var(--shop-border);
+  border-radius: var(--commerce-radius);
+  background: var(--shop-surface);
+}
+.shopTheme--hardware .commerceCartLine {
+  grid-template-columns: 96px minmax(0, 1fr) 76px minmax(110px, auto);
+  min-height: 112px;
+  padding: 1.1rem 0;
+  border-bottom: 0;
+  border-top: 1px solid var(--shop-border);
+}
+.shopTheme--hardware .commerceCartLine:first-of-type {
+  border-top: 0;
+}
+.shopTheme--hardware .commerceCartLine + .commerceCartLine {
+  margin-top: 0.35rem;
+}
+.shopTheme--hardware .commerceCartLine > b {
+  justify-self: end;
+  text-align: end;
+}
+.shopTheme--hardware .commerceCheckoutForm {
+  align-self: start;
+  justify-self: center;
+  width: min(100%, 540px);
+  max-height: max-content;
+  margin-top: 0.25rem;
+  position: sticky;
+  top: 7rem;
+}
+@media (max-width: 1050px) {
+  .shopTheme--hardware .commerceCartPage {
+    grid-template-columns: 1fr;
+  }
+  .shopTheme--hardware .commerceCheckoutForm {
+    position: static;
+    justify-self: stretch;
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* Shared cart system: all storefront themes use the same resilient line-item
+   structure. Theme rules above only provide colors and type; these rules keep
+   product, quantity, and price from colliding at narrow/intermediate widths. */
+.commercePublicRoot .commerceCartPage {
+  container-type: inline-size;
+  align-items: start;
+  width: min(100%, 1450px);
+  box-sizing: border-box;
+}
+.commercePublicRoot .commerceCartLines {
+  min-width: 0;
+  padding: clamp(1rem, 2.4vw, 2rem);
+  border: 1px solid var(--shop-border);
+  border-radius: var(--commerce-radius);
+  background: var(--shop-surface);
+}
+.commercePublicRoot .commerceCartLine {
+  grid-template-columns: 88px minmax(0, 1fr) 72px minmax(96px, auto);
+  min-width: 0;
+  min-height: 104px;
+  align-items: center;
+  gap: clamp(0.65rem, 1.4vw, 1rem);
+  padding: 1rem 0;
+  border-bottom: 0;
+  border-top: 1px solid var(--shop-border);
+}
+.commercePublicRoot .commerceCartLine:first-of-type {
+  border-top: 0;
+}
+.commercePublicRoot .commerceCartLine > .commerceProductThumb,
+.commercePublicRoot .commerceCartLine > .shopProductPlaceholder {
+  min-width: 0;
+}
+.commercePublicRoot .commerceCartLine > div:nth-child(2) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.commercePublicRoot .commerceCartLine > div:nth-child(2) strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.commercePublicRoot .commerceCartLine label {
+  min-width: 0;
+}
+.commercePublicRoot .commerceCartLine > b {
+  min-width: 0;
+  justify-self: end;
+  text-align: end;
+  white-space: nowrap;
+}
+.commercePublicRoot .commerceCheckoutForm {
+  align-self: start;
+  justify-self: center;
+  width: min(100%, 540px);
+  max-height: max-content;
+  margin-top: 0;
+}
+
+@container (max-width: 720px) {
+  .commercePublicRoot .commerceCartLine {
+    grid-template-columns: 76px minmax(0, 1fr);
+    grid-template-areas:
+      "thumb info"
+      "thumb quantity"
+      "thumb price";
+    align-items: start;
+    gap: 0.6rem 0.75rem;
+    min-height: 0;
+  }
+  .commercePublicRoot .commerceCartLine > .commerceProductThumb,
+  .commercePublicRoot .commerceCartLine > .shopProductPlaceholder {
+    grid-area: thumb;
+    width: 76px;
+    height: 76px;
+  }
+  .commercePublicRoot .commerceCartLine > div:nth-child(2) {
+    grid-area: info;
+  }
+  .commercePublicRoot .commerceCartLine label {
+    grid-area: quantity;
+    width: 5rem;
+    justify-self: start;
+  }
+  .commercePublicRoot .commerceCartLine > b {
+    grid-area: price;
+    justify-self: end;
+    align-self: center;
+  }
+  .commercePublicRoot .commerceCartTotal {
+    align-items: start;
+    padding-top: 1.2rem;
+  }
+}
+@container (max-width: 430px) {
+  .commercePublicRoot .commerceCartPage {
+    width: min(100% - 1rem, 620px);
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+  .commercePublicRoot .commerceCartLines {
+    padding: 0.85rem;
+  }
+  .commercePublicRoot .commerceCartPage h1 {
+    margin-bottom: 1rem;
+    font-size: clamp(2.2rem, 12vw, 3.5rem);
+  }
+}
+@media (max-width: 760px) {
+  .shopTheme--hardware .commerceCartPage {
+    width: min(100% - 1.5rem, 620px);
+    margin: 1rem auto 3rem;
+    padding: 1rem 0;
+  }
+  .shopTheme--hardware .commerceCartLines {
+    padding: 1rem;
+  }
+  .shopTheme--hardware .commerceCartLine {
+    grid-template-columns: 76px minmax(0, 1fr);
+    min-height: 0;
+    gap: 0.75rem;
+    align-items: start;
+    padding: 1rem 0;
+  }
+  .shopTheme--hardware .commerceCartLine > .commerceProductThumb {
+    grid-row: 1 / span 2;
+    width: 76px;
+    height: 76px;
+  }
+  .shopTheme--hardware .commerceCartLine label {
+    grid-column: 2;
+    width: 5rem;
+    justify-self: start;
+  }
+  .shopTheme--hardware .commerceCartLine > b {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
 }
 @media (max-width: 1050px) {
   .shopTheme--fashion .commerceCartPage {
@@ -4795,6 +5076,69 @@ p {
     min-height: 100% !important;
     padding-block: clamp(2rem, 5vh, 4rem);
   }
+}
+
+/* Final PC light-mode contrast pass. Kept at the end so it wins over the
+   template's image-first dark hero layer declared earlier in this file. */
+.commercePublicRoot.shopTheme--pc:not([data-theme="dark"]) .shopHero {
+  border-color: rgba(18, 116, 166, 0.28);
+  background: #ffffff;
+  box-shadow:
+    0 32px 85px rgba(16, 50, 84, 0.14),
+    0 0 0 7px rgba(0, 168, 232, 0.04);
+}
+.commercePublicRoot.shopTheme--pc:not([data-theme="dark"]) .shopHeroCopy {
+  color: #0a1425;
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0.98) 62%,
+    rgba(255, 255, 255, 0.78) 82%,
+    transparent 100%
+  );
+}
+.commercePublicRoot.shopTheme--pc:not([data-theme="dark"])[dir="rtl"] .shopHeroCopy {
+  background: linear-gradient(
+    270deg,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0.98) 62%,
+    rgba(255, 255, 255, 0.78) 82%,
+    transparent 100%
+  );
+}
+.commercePublicRoot.shopTheme--pc:not([data-theme="dark"]) .shopHeroCopy > p:not(.shopEyebrow) {
+  color: #5a687c;
+}
+.commercePublicRoot.shopTheme--pc:not([data-theme="dark"]) .shopHeroCopy .shopPrimaryButton {
+  border-color: #0a1425;
+  color: #ffffff;
+  background: #0a1425;
+}
+.commercePublicRoot.shopTheme--pc:not([data-theme="dark"]) .shopHeroCopy .shopSecondaryButton {
+  border-color: rgba(10, 20, 37, 0.35);
+  color: #0a1425;
+  background: rgba(255, 255, 255, 0.7);
+}
+.commercePublicRoot.shopTheme--pc:not([data-theme="dark"]) .shopHeroCopy .shopHeroControls {
+  color: #12446a;
+}
+.commercePublicRoot.shopTheme--pc:not([data-theme="dark"]) .shopHeroCopy .shopHeroControls button {
+  border-color: rgba(18, 116, 166, 0.42);
+  color: #0a1425;
+  background: rgba(255, 255, 255, 0.86);
+}
+.commercePublicRoot.shopTheme--pc:not([data-theme="dark"]) .shopHeroVisual {
+  background: #e6edf5;
+}
+.commercePublicRoot.shopTheme--pc:not([data-theme="dark"]) .shopHeroVisual::before {
+  background:
+    linear-gradient(0deg, rgba(230, 237, 245, 0.18), transparent 42%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.58), transparent 64%);
+}
+.commercePublicRoot.shopTheme--pc:not([data-theme="dark"])[dir="rtl"] .shopHeroVisual::before {
+  background:
+    linear-gradient(0deg, rgba(230, 237, 245, 0.18), transparent 42%),
+    linear-gradient(270deg, rgba(255, 255, 255, 0.58), transparent 64%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4871,4 +5215,91 @@ p {
 .commercePublicRoot .shopWhatsAppButton,
 .commercePublicRoot .clinicWhatsAppToggle {
   background: var(--commerce-success, #128c4a);
+}
+
+/* Keep dark commerce themes readable after account branding tokens are applied.
+   Branding tokens intentionally win for light themes, but the dark canvas still
+   needs a light foreground and dark controls for sufficient contrast. */
+.commercePublicRoot.shopTheme--pc[data-theme="dark"],
+.commercePublicRoot.shopTheme--hardware[data-theme="dark"] {
+  --shop-bg: #050912;
+  --shop-surface: #0c1421;
+  --shop-surface-2: #121f31;
+  --shop-ink: #eff8ff;
+  --shop-muted: #9eb0c5;
+  --shop-border: rgba(91, 201, 255, 0.28);
+  color: var(--shop-ink);
+  color-scheme: dark;
+}
+
+.commercePublicRoot.shopTheme--pc[data-theme="dark"] .commerceCartPage,
+.commercePublicRoot.shopTheme--pc[data-theme="dark"]
+  .commerceCartPage
+  :is(h1, h2, strong, b, p, span, label),
+.commercePublicRoot.shopTheme--hardware[data-theme="dark"] .commerceCartPage,
+.commercePublicRoot.shopTheme--hardware[data-theme="dark"]
+  .commerceCartPage
+  :is(h1, h2, strong, b, p, span, label) {
+  color: var(--shop-ink);
+}
+.commercePublicRoot.shopTheme--pc[data-theme="dark"] .commerceCartPage :is(.shopEyebrow, small),
+.commercePublicRoot.shopTheme--pc[data-theme="dark"]
+  .commerceCartPage
+  .commerceCartLine
+  > div:nth-child(2)
+  span,
+.commercePublicRoot.shopTheme--pc[data-theme="dark"]
+  .commerceCartPage
+  .commerceCartLine
+  > div:nth-child(2)
+  button,
+.commercePublicRoot.shopTheme--hardware[data-theme="dark"]
+  .commerceCartPage
+  :is(.shopEyebrow, small),
+.commercePublicRoot.shopTheme--hardware[data-theme="dark"]
+  .commerceCartPage
+  .commerceCartLine
+  > div:nth-child(2)
+  span,
+.commercePublicRoot.shopTheme--hardware[data-theme="dark"]
+  .commerceCartPage
+  .commerceCartLine
+  > div:nth-child(2)
+  button {
+  color: var(--shop-muted);
+}
+.commercePublicRoot.shopTheme--pc[data-theme="dark"] .commerceCartPage :is(input, select, textarea),
+.commercePublicRoot.shopTheme--hardware[data-theme="dark"]
+  .commerceCartPage
+  :is(input, select, textarea) {
+  color: var(--shop-ink);
+  background: var(--shop-bg);
+  border-color: var(--shop-border);
+}
+
+/* Maison cart: constrain the workspace to the readable content width so the
+   two panels stay centered instead of drifting to the viewport edges. */
+.commercePublicRoot.shopTheme--fashion .commerceCartPage {
+  width: min(calc(100% - 2rem), 1280px);
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 0;
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.82fr);
+  justify-content: center;
+  gap: clamp(1.5rem, 3vw, 3.5rem);
+}
+.commercePublicRoot.shopTheme--fashion .commerceCheckoutForm {
+  width: min(100%, 520px);
+  justify-self: center;
+}
+@media (max-width: 1050px) {
+  .commercePublicRoot.shopTheme--fashion .commerceCartPage {
+    width: min(calc(100% - 2rem), 720px);
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .commercePublicRoot.shopTheme--fashion .commerceCheckoutForm {
+    width: 100%;
+    max-width: none;
+  }
 }

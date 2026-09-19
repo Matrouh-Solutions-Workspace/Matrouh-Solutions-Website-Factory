@@ -10,7 +10,7 @@ import {
   normalizeWhatsAppNumber,
 } from "./whatsapp-order";
 import { filterCatalog, type StorefrontSortKey } from "./storefront/catalog";
-import { addCartLine, isCartLine, updateCartQuantity, type CartLine } from "./storefront/cart";
+import { addCartLine, changeCartColor, isCartLine, updateCartQuantity, type CartLine } from "./storefront/cart";
 import { parseCheckoutResult, readCheckoutRequest } from "./storefront/checkout";
 import { WhatsAppContact } from "./whatsapp-contact";
 import {
@@ -65,10 +65,14 @@ export function EcommerceStorefront({
     },
   });
   const storageKey = `factory:commerce-cart:${store.storeId}`;
+  const savedKey = `factory:commerce-saved:${store.storeId}`;
+  const isPreview = store.storeId.startsWith("preview-");
   const themeStorageKey = `factory:commerce-theme:${store.storeId}`;
   const defaultTheme = store.presentation.defaultTheme === "dark" ? "dark" : "light";
   const [cart, setCart] = useState<readonly CartLine[]>([]);
   const [cartLoaded, setCartLoaded] = useState(false);
+  const [savedProducts, setSavedProducts] = useState<readonly string[]>([]);
+  const [savedOnly, setSavedOnly] = useState(false);
   const [theme, setTheme] = useState<Theme>(defaultTheme);
   const [menuOpen, setMenuOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -83,19 +87,26 @@ export function EcommerceStorefront({
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutPending, setCheckoutPending] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const catalogRef = useRef<HTMLElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const route = path[0] ?? "";
   const previewPath = previewBasePath?.replace(/\/$/, "") ?? "";
-  const storefrontHref = (routePath = "", hash = "") => {
-    if (!previewPath) return `${routePath || "/"}${hash}`;
+  const storefrontHref = (routePath = "", hash = "", filters?: Record<string, string>) => {
+    const params = new URLSearchParams(filters);
+    if (previewPath) params.set("lang", store.locale);
+    const search = params.size ? `?${params.toString()}` : "";
+    if (!previewPath) return `${routePath || "/"}${search}${hash}`;
     const normalizedRoute = routePath === "/" ? "" : routePath;
-    return `${previewPath}${normalizedRoute}?lang=${store.locale}${hash}`;
+    return `${previewPath}${normalizedRoute}${search}${hash}`;
   };
   const languageHref = `${previewPath}${path.length ? `/${path.join("/")}` : ""}?lang=${rtl ? "en" : "ar"}`;
   const product =
     route === "products" ? store.products.find((item) => item.slug === path[1]) : undefined;
+  const selectedVariant = product?.variants.find((variant) => variant.id === selectedVariantId)
+    ?? product?.variants.find((variant) => variant.stockQuantity > 0)
+    ?? product?.variants[0];
   const prices = store.products.map(productPrice);
   const maxCatalogPrice = Math.max(...prices, 1);
   const [maxPrice, setMaxPrice] = useState(maxCatalogPrice);
@@ -119,8 +130,25 @@ export function EcommerceStorefront({
     } catch {
       localStorage.removeItem(storageKey);
     }
+    try {
+      const saved = JSON.parse(localStorage.getItem(savedKey) ?? "[]") as unknown;
+      if (Array.isArray(saved)) setSavedProducts(saved.filter((id): id is string => typeof id === "string"));
+    } catch {
+      localStorage.removeItem(savedKey);
+    }
     setCartLoaded(true);
-  }, [storageKey, themeStorageKey]);
+  }, [savedKey, storageKey, themeStorageKey]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedCategory = params.get("category");
+    if (requestedCategory && store.categories.some((item) => item.id === requestedCategory)) {
+      setCategory(requestedCategory);
+    }
+    const requestedQuery = params.get("q");
+    if (requestedQuery) setQuery(requestedQuery);
+    if (params.get("sale") === "1") setSaleOnly(true);
+  }, [store.categories]);
 
   useEffect(() => {
     void recordEvent(product ? "product_view" : "page_view", product?.id);
@@ -129,6 +157,10 @@ export function EcommerceStorefront({
   useEffect(() => {
     if (cartLoaded) localStorage.setItem(storageKey, JSON.stringify(cart));
   }, [cart, cartLoaded, storageKey]);
+
+  useEffect(() => {
+    if (cartLoaded) localStorage.setItem(savedKey, JSON.stringify(savedProducts));
+  }, [cartLoaded, savedKey, savedProducts]);
 
   const lines = useMemo(
     () =>
@@ -156,7 +188,7 @@ export function EcommerceStorefront({
         inStockOnly,
         saleOnly,
         sort,
-      }),
+      }).filter((item) => !savedOnly || savedProducts.includes(item.id)),
     [
       brand,
       category,
@@ -164,6 +196,8 @@ export function EcommerceStorefront({
       maxPrice,
       normalizedQuery,
       saleOnly,
+      savedOnly,
+      savedProducts,
       sort,
       store.locale,
       store.products,
@@ -174,6 +208,7 @@ export function EcommerceStorefront({
     brand || null,
     inStockOnly ? copy.inStock : null,
     saleOnly ? copy.onSale : null,
+    savedOnly ? copy.savedProducts : null,
     maxPrice < maxCatalogPrice
       ? `${copy.upTo} ${formatMoney(maxPrice, store.currency, store.locale)}`
       : null,
@@ -181,7 +216,8 @@ export function EcommerceStorefront({
 
   function add(productItem: StorefrontProduct, variantId?: string, color?: string) {
     const variant =
-      productItem.variants.find((item) => item.id === variantId) ?? productItem.variants[0];
+      productItem.variants.find((item) => item.id === variantId) ??
+      productItem.variants.find((item) => item.stockQuantity > 0);
     if (!variant || variant.stockQuantity < 1) return;
     void recordEvent("add_to_cart", productItem.id);
     setCart((current) => {
@@ -201,14 +237,24 @@ export function EcommerceStorefront({
   }
 
   function updateQuantity(variantId: string, quantity: number, color?: string) {
-    setCart((current) => updateCartQuantity(current, variantId, quantity, color));
+    const stockQuantity = store.products.flatMap((item) => item.variants)
+      .find((variant) => variant.id === variantId)?.stockQuantity ?? 0;
+    setCart((current) => updateCartQuantity(current, variantId, quantity, color, stockQuantity));
+  }
+
+  function toggleSaved(productId: string) {
+    setSavedProducts((current) => current.includes(productId)
+      ? current.filter((id) => id !== productId)
+      : [...current, productId]);
   }
 
   function resetFilters() {
     setCategory("");
     setBrand("");
+    setQuery("");
     setInStockOnly(false);
     setSaleOnly(false);
+    setSavedOnly(false);
     setMaxPrice(maxCatalogPrice);
   }
 
@@ -223,7 +269,24 @@ export function EcommerceStorefront({
   async function checkout(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setCheckoutError(null);
+    setCheckoutPending(true);
+    const { customer, address, couponCode, shippingMethodId } = readCheckoutRequest(
+      new FormData(event.currentTarget),
+    );
+    const shipping = store.shippingMethods.find((method) => method.id === shippingMethodId);
+    if (!shipping) {
+      setCheckoutPending(false);
+      setCheckoutError(copy.checkoutFailed);
+      return;
+    }
+    if (isPreview) {
+      setCart([]);
+      setOrderNumber(`DEMO-${Date.now().toString(36).toUpperCase()}`);
+      setCheckoutPending(false);
+      return;
+    }
     if (!normalizeWhatsAppNumber(store.contactPhone)) {
+      setCheckoutPending(false);
       setCheckoutError(copy.whatsappUnavailable);
       return;
     }
@@ -233,18 +296,7 @@ export function EcommerceStorefront({
       whatsappWindow.document.body.textContent = copy.preparingWhatsApp;
       whatsappWindow.opener = null;
     }
-    setCheckoutPending(true);
     void recordEvent("checkout_started");
-    const { customer, address, couponCode, shippingMethodId } = readCheckoutRequest(
-      new FormData(event.currentTarget),
-    );
-    const shipping = store.shippingMethods.find((method) => method.id === shippingMethodId);
-    if (!shipping) {
-      whatsappWindow?.close();
-      setCheckoutPending(false);
-      setCheckoutError(copy.checkoutFailed);
-      return;
-    }
     let response: Response;
     try {
       response = await fetch("/api/storefront/checkout", {
@@ -360,7 +412,8 @@ export function EcommerceStorefront({
             className="shopGlobalSearch"
             onSubmit={(event) => {
               event.preventDefault();
-              catalogRef.current?.scrollIntoView({ behavior: "smooth" });
+              if (catalogRef.current) catalogRef.current.scrollIntoView({ behavior: "smooth" });
+              else window.location.assign(storefrontHref("", "#products", { q: query }));
             }}
             role="search"
           >
@@ -404,24 +457,32 @@ export function EcommerceStorefront({
           </a>
           {store.categories.slice(0, 5).map((item) => (
             <a
-              href="#products"
+              href={storefrontHref("", "#products", { category: item.id })}
               key={item.id}
-              onClick={() => {
-                setCategory(item.id);
+              onClick={(event) => {
+                if (catalogRef.current) {
+                  event.preventDefault();
+                  setCategory(item.id);
+                  catalogRef.current.scrollIntoView({ behavior: "smooth" });
+                }
                 setMenuOpen(false);
               }}
             >
               {item.name}
             </a>
           ))}
-          <a href="#services" onClick={() => setMenuOpen(false)}>
+          <a href={storefrontHref("", "#services")} onClick={() => setMenuOpen(false)}>
             {copy.services}
           </a>
           <a
             className="shopNavSale"
-            href="#products"
-            onClick={() => {
-              setSaleOnly(true);
+            href={storefrontHref("", "#products", { sale: "1" })}
+            onClick={(event) => {
+              if (catalogRef.current) {
+                event.preventDefault();
+                setSaleOnly(true);
+                catalogRef.current.scrollIntoView({ behavior: "smooth" });
+              }
               setMenuOpen(false);
             }}
           >
@@ -448,7 +509,9 @@ export function EcommerceStorefront({
           </span>
           <p className="shopEyebrow">{copy.thankYou}</p>
           <h1>{copy.orderReceived}</h1>
-          <p>{copy.orderConfirmation}</p>
+          <p>{isPreview
+            ? (rtl ? "هذه تجربة للقالب فقط. لم يُحفظ طلب حقيقي ولم تُرسل رسالة واتساب." : "This is a template demo. No real order was saved or WhatsApp message sent.")
+            : copy.orderConfirmation}</p>
           <strong>{orderNumber}</strong>
           <a className="shopPrimaryButton" href={storefrontHref()}>
             {copy.continueShopping}
@@ -456,6 +519,7 @@ export function EcommerceStorefront({
         </main>
         <StoreFooter
           copy={copy}
+          categoryHref={(id) => storefrontHref("", "#products", { category: id })}
           homeHref={storefrontHref()}
           productsHref={storefrontHref("", "#products")}
           store={store}
@@ -490,7 +554,7 @@ export function EcommerceStorefront({
               </div>
             ) : (
               lines.map(({ line, item, variant }, index) => (
-                <article className="commerceCartLine" key={variant.id}>
+                <article className="commerceCartLine" key={`${variant.id}:${line.color ?? ""}`}>
                   <ProductVisual index={index} kind={kind} product={item} store={store} />
                   <div>
                     <strong>{item.name}</strong>
@@ -503,13 +567,7 @@ export function EcommerceStorefront({
                             className={line.color === color ? "isSelected" : ""}
                             key={color}
                             onClick={() =>
-                              setCart((current) =>
-                                current.map((candidate) =>
-                                  candidate.variantId === line.variantId
-                                    ? { ...candidate, color }
-                                    : candidate,
-                                ),
-                              )
+                              setCart((current) => changeCartColor(current, line.variantId, line.color, color))
                             }
                             style={{ backgroundColor: color }}
                             type="button"
@@ -611,17 +669,22 @@ export function EcommerceStorefront({
                 type="submit"
               >
                 <Icon name="message" />
-                {checkoutPending ? copy.preparingWhatsApp : copy.placeOrder}
+                {checkoutPending ? copy.preparingWhatsApp : isPreview
+                  ? (rtl ? "إكمال طلب تجريبي" : "Complete demo checkout")
+                  : copy.placeOrder}
               </button>
               <small className="shopSecureNote">
                 <Icon name="message" />
-                {copy.secureNote}
+                {isPreview
+                  ? (rtl ? "معاينة فقط — لن يُرسل هذا الطلب إلى أي متجر." : "Preview only — this order will not be sent to a store.")
+                  : copy.secureNote}
               </small>
             </form>
           ) : null}
         </main>
         <StoreFooter
           copy={copy}
+          categoryHref={(id) => storefrontHref("", "#products", { category: id })}
           homeHref={storefrontHref()}
           productsHref={storefrontHref("", "#products")}
           store={store}
@@ -632,7 +695,7 @@ export function EcommerceStorefront({
   }
 
   if (product) {
-    const stock = product.variants.reduce((sum, variant) => sum + variant.stockQuantity, 0);
+    const stock = selectedVariant?.stockQuantity ?? 0;
     const productBrand = attribute(product, "brand");
     const productColors = productColorValues(product);
     return (
@@ -660,12 +723,33 @@ export function EcommerceStorefront({
             </a>
             <p className="shopEyebrow">{productBrand || product.sku || copy.featured}</p>
             <h1>{product.name}</h1>
-            <div className="shopRating" aria-label={`${copy.rating}: 4.8`}>
-              <span>★★★★★</span>
-              <small>4.8 · {copy.verifiedReviews}</small>
-            </div>
+            {kind === "fashion" ? (
+              <div className="shopRating" aria-label={`${copy.rating}: 4.8`}>
+                <span>★★★★★</span>
+                <small>4.8 · {copy.verifiedReviews}</small>
+              </div>
+            ) : null}
             <p className="shopProductLead">{product.description || product.shortDescription}</p>
-            <Price product={product} store={store} />
+            <Price product={product} store={store} variant={selectedVariant} />
+            {product.variants.length > 1 ? (
+              <fieldset className="shopProductVariants">
+                <legend>{copy.model}</legend>
+                <div>
+                  {product.variants.map((variant) => (
+                    <button
+                      aria-pressed={selectedVariant?.id === variant.id}
+                      disabled={variant.stockQuantity < 1}
+                      key={variant.id}
+                      onClick={() => setSelectedVariantId(variant.id)}
+                      type="button"
+                    >
+                      <strong>{variant.title}</strong>
+                      <small>{variant.stockQuantity > 0 ? copy.inStock : copy.outOfStock}</small>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            ) : null}
             {productColors.length ? (
               <div className="shopProductColors">
                 <span>{copy.color}</span>
@@ -705,7 +789,7 @@ export function EcommerceStorefront({
               aria-live="polite"
               className={`shopPrimaryButton shopProductAdd${addedProductId === product.id ? " isAdded" : ""}`}
               disabled={stock < 1}
-              onClick={() => add(product)}
+              onClick={() => add(product, selectedVariant?.id, selectedColor ?? undefined)}
               type="button"
             >
               <Icon name="bag" />
@@ -729,6 +813,7 @@ export function EcommerceStorefront({
         </main>
         <StoreFooter
           copy={copy}
+          categoryHref={(id) => storefrontHref("", "#products", { category: id })}
           homeHref={storefrontHref()}
           productsHref={storefrontHref("", "#products")}
           store={store}
@@ -1042,6 +1127,8 @@ export function EcommerceStorefront({
                 add={add}
                 addedProductId={addedProductId}
                 copy={copy}
+                isSaved={savedProducts.includes(item.id)}
+                onToggleSaved={() => toggleSaved(item.id)}
                 rtl={rtl}
                 index={index}
                 key={item.id}
@@ -1062,6 +1149,14 @@ export function EcommerceStorefront({
               text={kind === "fashion" ? copy.catalogFashionText : copy.catalogHardwareText}
             />
             <div className="commerceCatalogActions">
+              <button
+                aria-pressed={savedOnly}
+                className={savedOnly ? "shopSavedFilter isActive" : "shopSavedFilter"}
+                onClick={() => setSavedOnly((value) => !value)}
+                type="button"
+              >
+                <Icon name="heart" /> {copy.savedProducts} ({savedProducts.length})
+              </button>
               <button
                 className="shopFilterToggle"
                 onClick={() => setFiltersOpen((value) => !value)}
@@ -1115,6 +1210,7 @@ export function EcommerceStorefront({
                     if (filter === brand) setBrand("");
                     else if (filter === copy.inStock) setInStockOnly(false);
                     else if (filter === copy.onSale) setSaleOnly(false);
+                    else if (filter === copy.savedProducts) setSavedOnly(false);
                     else if (filter.startsWith(copy.upTo)) setMaxPrice(maxCatalogPrice);
                     else setCategory("");
                   }}
@@ -1247,6 +1343,8 @@ export function EcommerceStorefront({
                       add={add}
                       addedProductId={addedProductId}
                       copy={copy}
+                      isSaved={savedProducts.includes(item.id)}
+                      onToggleSaved={() => toggleSaved(item.id)}
                       rtl={rtl}
                       index={index}
                       key={item.id}
@@ -1287,19 +1385,19 @@ export function EcommerceStorefront({
             <p>{kind === "fashion" ? copy.storyText : copy.hardwareStoryText}</p>
           </div>
           <div className="shopMetric">
-            <strong>{kind === "fashion" ? "30" : "48h"}</strong>
-            <span>{kind === "fashion" ? copy.dayReturns : copy.deliveryWindow}</span>
+            <strong>{kind === "fashion" ? "30" : store.products.length}</strong>
+            <span>{kind === "fashion" ? copy.dayReturns : copy.results}</span>
           </div>
           <div className="shopMetric">
-            <strong>{kind === "fashion" ? "2×" : "100%"}</strong>
-            <span>{kind === "fashion" ? copy.qualityChecked : copy.genuineTools}</span>
+            <strong>{kind === "fashion" ? "2×" : store.categories.length}</strong>
+            <span>{kind === "fashion" ? copy.qualityChecked : copy.categoriesLabel}</span>
           </div>
         </section>
 
-        <section className="shopNewsletter">
+        {kind === "fashion" ? <section className="shopNewsletter">
           <div>
             <p className="shopEyebrow">{copy.stayInLoop}</p>
-            <h2>{kind === "fashion" ? copy.newsletterFashion : copy.newsletterHardware}</h2>
+            <h2>{copy.newsletterFashion}</h2>
           </div>
           <form onSubmit={(event) => event.preventDefault()}>
             <label className="srOnly" htmlFor="commerce-newsletter">
@@ -1311,10 +1409,22 @@ export function EcommerceStorefront({
               <Icon name="arrow" />
             </button>
           </form>
-        </section>
+        </section> : (
+          <section className="shopNewsletter shopContactCTA">
+            <div>
+              <p className="shopEyebrow">{copy.expertTitle}</p>
+              <h2>{kind === "pc" ? copy.pcContactPrompt : copy.hardwareContactPrompt}</h2>
+            </div>
+            <a className="shopPrimaryButton" href={buildWhatsAppContactUrl(store.contactPhone) ?? "#products"}>
+              {buildWhatsAppContactUrl(store.contactPhone) ? copy.contactUs : copy.exploreCategories}
+              <Icon name="arrow" />
+            </a>
+          </section>
+        )}
       </main>
       <StoreFooter
         copy={copy}
+        categoryHref={(id) => storefrontHref("", "#products", { category: id })}
         homeHref={storefrontHref()}
         productsHref={storefrontHref("", "#products")}
         store={store}
@@ -1354,6 +1464,8 @@ function ProductCard({
   add,
   addedProductId,
   copy,
+  isSaved,
+  onToggleSaved,
   rtl,
   index,
   kind,
@@ -1364,6 +1476,8 @@ function ProductCard({
   readonly add: (product: StorefrontProduct) => void;
   readonly addedProductId: string | null;
   readonly copy: ReturnType<typeof commerceCopy>;
+  readonly isSaved: boolean;
+  readonly onToggleSaved: () => void;
   readonly rtl: boolean;
   readonly index: number;
   readonly kind: StorefrontKind;
@@ -1396,7 +1510,13 @@ function ProductCard({
         <ProductVisual index={index} kind={kind} product={product} store={store} />
         {badge ? <span className="shopProductBadge">{badge}</span> : null}
       </a>
-      <button aria-label={`${copy.save}: ${product.name}`} className="shopWishlist" type="button">
+      <button
+        aria-label={`${isSaved ? copy.unsave : copy.save}: ${product.name}`}
+        aria-pressed={isSaved}
+        className={isSaved ? "shopWishlist isSaved" : "shopWishlist"}
+        onClick={onToggleSaved}
+        type="button"
+      >
         <Icon name="heart" />
       </button>
       <div className="shopProductCardBody">
@@ -1502,17 +1622,21 @@ function Price({
   compact = false,
   product,
   store,
+  variant,
 }: {
   readonly compact?: boolean;
   readonly product: StorefrontProduct;
   readonly store: EcommerceStorefrontData;
+  readonly variant?: StorefrontProduct["variants"][number] | undefined;
 }) {
-  const price = product.salePriceMinor ?? product.priceMinor;
+  const regularPrice = variant?.priceMinor ?? product.priceMinor;
+  const salePrice = variant?.salePriceMinor ?? product.salePriceMinor;
+  const price = salePrice ?? regularPrice;
   return (
     <div className={compact ? "shopPrice isCompact" : "shopPrice"}>
       <strong>{formatMoney(price, product.currency, store.locale)}</strong>
-      {product.salePriceMinor !== null ? (
-        <del>{formatMoney(product.priceMinor, product.currency, store.locale)}</del>
+      {salePrice !== null && salePrice < regularPrice ? (
+        <del>{formatMoney(regularPrice, product.currency, store.locale)}</del>
       ) : null}
     </div>
   );
@@ -1573,12 +1697,14 @@ function Benefit({
 
 function StoreFooter({
   copy,
+  categoryHref,
   homeHref,
   productsHref,
   showFooter,
   store,
 }: {
   readonly copy: ReturnType<typeof commerceCopy>;
+  readonly categoryHref: (id: string) => string;
   readonly homeHref: string;
   readonly productsHref: string;
   readonly store: EcommerceStorefrontData;
@@ -1649,7 +1775,7 @@ function StoreFooter({
             <strong>{copy.shop}</strong>
             <a href={productsHref}>{copy.newAndFeatured}</a>
             {store.categories.slice(0, 4).map((item) => (
-              <a href={productsHref} key={item.id}>
+              <a href={categoryHref(item.id)} key={item.id}>
                 {item.name}
               </a>
             ))}
@@ -1973,6 +2099,7 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     rating: "Rating",
     verifiedReviews: "verified reviews",
     color: "Color",
+    model: "Choose option",
     inStock: "In stock",
     readyToShip: "Ready to ship",
     outOfStock: "Out of stock",
@@ -2071,12 +2198,17 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     resetFilters: "Reset filters",
     showResults: "Show results",
     results: "products",
+    categoriesLabel: "categories",
+    pcContactPrompt: "Need help choosing compatible parts?",
+    hardwareContactPrompt: "Need the right tool for your project?",
     forSearch: "matching",
     noProducts: "Nothing matches yet",
     noProductsHelp: "Try removing a filter or searching for a broader term.",
     upTo: "Up to",
     new: "New",
     save: "Save product",
+    unsave: "Remove saved product",
+    savedProducts: "Saved",
     signatureCollection: "Everyday collection",
     availableColors: "Available colors",
     quickAdd: "Quick add",
@@ -2224,6 +2356,7 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     rating: "التقييم",
     verifiedReviews: "تقييماً موثقاً",
     color: "اللون",
+    model: "اختر المواصفة",
     inStock: "متوفر",
     readyToShip: "جاهز للشحن",
     outOfStock: "غير متوفر",
@@ -2318,12 +2451,17 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     resetFilters: "إعادة ضبط",
     showResults: "عرض النتائج",
     results: "منتجات",
+    categoriesLabel: "أقسام",
+    pcContactPrompt: "تحتاج مساعدة لاختيار قطع متوافقة؟",
+    hardwareContactPrompt: "تحتاج الأداة المناسبة لمشروعك؟",
     forSearch: "تطابق",
     noProducts: "لا توجد نتائج مطابقة",
     noProductsHelp: "جرّب إزالة فلتر أو استخدام كلمة بحث أوسع.",
     upTo: "حتى",
     new: "جديد",
     save: "حفظ المنتج",
+    unsave: "إزالة المنتج من المحفوظات",
+    savedProducts: "المحفوظات",
     signatureCollection: "مجموعة كل يوم",
     availableColors: "الألوان المتاحة",
     quickAdd: "إضافة سريعة",

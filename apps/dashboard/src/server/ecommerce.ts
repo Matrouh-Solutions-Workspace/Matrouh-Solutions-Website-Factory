@@ -4,6 +4,7 @@ import { dashboardDatabase } from "./database";
 
 interface EcommerceStoreOverviewRow {
   id: string;
+  websiteId: string;
   name: string;
   status: "draft" | "active" | "paused" | "archived";
   ownerDisplayName: string | null;
@@ -74,6 +75,7 @@ export async function loadEcommerceStores() {
       const rows = await transaction.$queryRaw<EcommerceStoreOverviewRow[]>`
         SELECT
           store.id,
+          store.website_id AS "websiteId",
           store.name,
           store.status::text AS status,
           owner.display_name AS "ownerDisplayName",
@@ -126,6 +128,7 @@ export async function loadEcommerceStores() {
       `;
       return rows.map((row) => ({
         id: row.id,
+        websiteId: row.websiteId,
         name: row.name,
         status: row.status,
         owner:

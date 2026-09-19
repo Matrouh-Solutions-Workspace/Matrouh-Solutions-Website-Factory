@@ -8115,6 +8115,14 @@ input[type="file"] {
 .appShell .workspaceGrid {
   margin-top: 20px;
 }
+.appShell .overviewWorkspace {
+  grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
+  align-items: start;
+}
+.appShell .overviewWorkspace > .overviewPortfolioPanel,
+.appShell .overviewWorkspace > .createPanel {
+  grid-column: 1 / -1;
+}
 .appShell .websiteSummary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -8163,15 +8171,99 @@ input[type="file"] {
 }
 .appShell .websiteInventoryPanel {
   grid-area: inventory;
+  scroll-margin-top: 80px;
 }
 .appShell .publishJobsPanel {
   grid-area: jobs;
+  scroll-margin-top: 80px;
 }
 .appShell .websitesWorkspace > .createPanel {
   position: sticky;
   top: 82px;
   grid-area: create;
   grid-column: auto;
+}
+.appShell .websitesWorkspace > .websiteCreationSwitcher {
+  position: sticky;
+  top: 82px;
+  grid-area: create;
+  min-width: 0;
+}
+.appShell .websiteCreationSwitcher > [hidden] {
+  display: none;
+}
+.appShell .websiteCreationChoices,
+.appShell .websiteInventoryTypeButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.appShell .websiteCreationChoices {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--surface);
+}
+.appShell .websiteCreationChoices button,
+.appShell .websiteInventoryTypeButtons button {
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 750;
+  cursor: pointer;
+}
+.appShell .websiteCreationChoices button.isActive,
+.appShell .websiteInventoryTypeButtons button.isActive {
+  border-color: var(--ink);
+  background: var(--primary);
+  color: var(--ink);
+}
+.appShell .websiteInventoryTypeButtons {
+  padding-top: 12px;
+}
+.appShell .websiteInventoryCount {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.appShell .paginationSummary {
+  margin: 18px 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.appShell .numberedPagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding-top: 6px;
+}
+.appShell .numberedPagination button {
+  min-width: 36px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 800;
+  cursor: pointer;
+}
+.appShell .numberedPagination button.isActive {
+  border-color: var(--ink);
+  background: var(--primary);
+}
+.appShell .numberedPagination button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.appShell .numberedPagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.appShell .websiteInventoryFilters .websiteToolbar {
+  grid-template-columns: minmax(170px, 1fr) minmax(105px, 140px) minmax(120px, 180px) auto;
 }
 .appShell .workspaceGrid > .panel {
   position: relative;
@@ -8249,6 +8341,199 @@ input[type="file"] {
 .appShell .websiteDomain:hover {
   text-decoration: underline;
 }
+.appShell .overviewWebsiteRow {
+  grid-template-columns: auto minmax(190px, 1fr) auto minmax(390px, auto);
+  align-items: center;
+  gap: 14px;
+  margin-top: 0;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.appShell .overviewWebsiteRow:last-child {
+  border-bottom: 0;
+}
+.appShell .overviewWebsiteIdentity {
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  gap: 3px;
+}
+.appShell .overviewWebsiteIdentity strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.appShell .overviewTypeBadge {
+  width: max-content;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.appShell .overviewTypeBadge.isCommerce {
+  border-color: var(--primary-dark);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+.appShell .overviewWebsiteRow .rowActions {
+  flex-wrap: wrap;
+}
+.appShell .overviewWebsiteRow .overviewEditAction {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #fff;
+  font-weight: 850;
+}
+.appShell .overviewWebsiteRow .overviewEditAction:hover {
+  background: var(--primary);
+  color: var(--ink);
+}
+.appShell .overviewPaginatedRows {
+  min-width: 0;
+}
+.appShell .overviewPaginationFooter {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.appShell .overviewPaginationFooter .paginationSummary {
+  margin: 0;
+}
+@media (max-width: 1100px) {
+  .appShell .overviewWorkspace {
+    grid-template-columns: 1fr;
+  }
+  .appShell .overviewWorkspace > .panel,
+  .appShell .overviewWorkspace > .createPanel {
+    grid-column: 1;
+  }
+  .appShell .overviewWebsiteRow {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .appShell .overviewWebsiteRow .rowActions {
+    grid-column: 2 / -1;
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 700px) {
+  .appShell .overviewWebsiteRow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .appShell .overviewWebsiteRow .statusStack,
+  .appShell .overviewWebsiteRow .rowActions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+  .appShell .overviewWebsiteRow .statusStack {
+    justify-items: start;
+  }
+  .appShell .overviewWebsiteRow .rowActions small {
+    flex-basis: 100%;
+    text-align: start;
+  }
+  .appShell .overviewPaginationFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+.appShell .unifiedSystemGroup {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 2px solid var(--ink);
+}
+.appShell .unifiedSystemGroupHead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.appShell .unifiedSystemGroupHead h3 {
+  margin: 2px 0 0;
+  font-size: 16px;
+}
+.appShell .unifiedSystemGroupHead > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+.appShell .unifiedCommerceRows {
+  display: grid;
+  gap: 10px;
+}
+.appShell .unifiedCommerceRow {
+  display: grid;
+  grid-template-columns: auto minmax(150px, 1fr) auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.appShell .unifiedCommerceRow:hover {
+  border-color: var(--ink);
+  background: var(--primary-soft);
+}
+.appShell .unifiedCommerceMetrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.appShell .unifiedCommerceMetrics b {
+  color: var(--ink);
+  font-size: 13px;
+}
+.appShell .unifiedStoreOwner {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.appShell .unifiedCommerceRow .rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+.appShell .unifiedCommerceRow .websiteEditAction,
+.appShell .unifiedCommerceRow .commerceStoreDeleteForm button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 11px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 850;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.appShell .unifiedCommerceRow .commerceStoreDeleteForm button {
+  border-color: var(--danger);
+  background: var(--surface);
+  color: var(--danger);
+}
+@media (max-width: 1100px) {
+  .appShell .unifiedCommerceRow {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .appShell .unifiedCommerceMetrics {
+    grid-column: 2 / -1;
+  }
+  .appShell .unifiedCommerceRow .rowActions {
+    grid-column: 2 / -1;
+  }
+}
 .appShell .websiteInventoryPanel .statusStack {
   align-self: start;
 }
@@ -8320,7 +8605,7 @@ input[type="file"] {
       "create"
       "jobs";
   }
-  .appShell .websitesWorkspace > .createPanel {
+  .appShell .websitesWorkspace > .websiteCreationSwitcher {
     position: static;
   }
   .appShell .websiteInventoryPanel .websiteActions {
@@ -8329,6 +8614,28 @@ input[type="file"] {
   }
   .appShell .websiteSecondaryActions {
     justify-content: flex-start;
+  }
+}
+@media (max-width: 700px) {
+  .appShell .websiteInventoryFilters .websiteToolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .appShell .websiteInventoryFilters .websiteToolbar label:first-child {
+    grid-column: 1 / -1;
+  }
+  .appShell .websiteCreationChoices button {
+    flex: 1 1 145px;
+  }
+}
+@media (max-width: 460px) {
+  .appShell .websiteInventoryFilters .websiteToolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .appShell .websiteInventoryFilters .websiteToolbar label:first-child {
+    grid-column: auto;
+  }
+  .appShell .websiteInventoryTypeButtons button {
+    flex: 1 1 auto;
   }
 }
 @media (max-width: 560px) {
@@ -10005,6 +10312,643 @@ input[type="file"] {
   }
 }
 
+/* Admin editor: keep the account-editor structure, but give administrators a
+   clearer command bar and a stable three-part workspace on wide screens. */
+.appShell .editorStudioAdmin {
+  gap: 18px;
+}
+.appShell .editorStudioAdmin .websiteEditorHeader {
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.7fr) auto;
+  gap: 16px;
+  padding: 18px 20px;
+  border-color: var(--line);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary-soft) 65%, transparent),
+      transparent 48%
+    ),
+    var(--surface);
+  box-shadow: 0 10px 28px rgba(17, 17, 17, 0.07);
+}
+.appShell .editorStudioAdmin .websiteEditorHeader::after {
+  content: "ADMIN WORKSPACE";
+  align-self: start;
+  color: var(--muted-light);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-align: end;
+}
+.appShell .editorStudioAdmin .websiteEditorHeader h1 {
+  font-size: clamp(25px, 2.4vw, 34px);
+}
+.appShell .editorStudioAdmin .websiteEditorHeader .sub {
+  max-width: 38rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.appShell .editorStudioAdmin .websiteEditorHeader .headerActions {
+  grid-column: 2;
+  grid-row: 1;
+  justify-content: flex-start;
+  align-items: center;
+  padding-inline-start: 16px;
+  border-inline-start: 1px solid var(--line);
+}
+.appShell .editorStudioAdmin .websiteEditorHeader .headerActions button,
+.appShell .editorStudioAdmin .websiteEditorHeader .headerActions .buttonLink {
+  min-height: 36px;
+  padding-inline: 12px;
+  border-radius: 7px;
+  font-size: 10px;
+}
+.appShell .editorStudioAdmin .websiteEditorHeader .editorBackLink {
+  order: 0;
+  min-height: 32px;
+  border-inline-start: 0;
+  border-inline-end: 0;
+  color: var(--muted);
+}
+.appShell .editorStudioAdmin .editorGlobalSaveState {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+  padding: 9px 0 0;
+  border-top: 1px solid var(--line);
+  border-inline-start: 0;
+}
+.appShell .editorStudioAdmin .websiteEditorMeta {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgba(17, 17, 17, 0.04);
+}
+.appShell .editorStudioAdmin .websiteEditorMeta > div {
+  min-height: 78px;
+  padding-inline: 20px;
+  background: var(--surface);
+}
+.appShell .editorStudioAdmin .websiteEditorMeta > div::before {
+  top: 18px;
+  bottom: 18px;
+}
+.appShell .editorStudioAdmin .websiteEditorMeta span:not(.status) {
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+.appShell .editorStudioAdmin .websiteEditorMeta strong:not(.status) {
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 14px;
+}
+.appShell .editorStudioAdmin .publishJobNotice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 60px;
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--primary);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.appShell .editorStudioAdmin .publishJobNotice > div {
+  display: grid;
+  gap: 4px;
+}
+.appShell .editorStudioAdmin .publishJobNotice span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.appShell .editorStudioAdmin .editorStudioWorkspace {
+  gap: 16px;
+}
+.appShell .editorStudioAdmin .editorStudioSidebar,
+.appShell .editorStudioAdmin .editorStudioInspector > .panel,
+.appShell .editorStudioAdmin .editorStudioInspector > form.panel,
+.appShell .editorStudioAdmin .editorStudioInspector > .clientContentWorkspace {
+  border-radius: 12px;
+}
+.appShell .editorStudioAdmin .editorStudioSidebar {
+  border-color: var(--line);
+  box-shadow: 0 8px 24px rgba(17, 17, 17, 0.05);
+}
+.appShell .editorStudioAdmin .editorStudioSidebarIntro {
+  padding: 8px 8px 14px;
+}
+.appShell .editorStudioAdmin .editorStudioSidebar > nav a {
+  min-height: 46px;
+  border-radius: 8px;
+}
+.appShell .editorStudioAdmin .editorStudioInspector {
+  gap: 16px;
+}
+.appShell .editorStudioAdmin .editorStudioInspector > .panel,
+.appShell .editorStudioAdmin .editorStudioInspector > form.panel {
+  box-shadow: 0 8px 24px rgba(17, 17, 17, 0.045);
+}
+
+@media (min-width: 1400px) {
+  .appShell .editorStudioAdmin .editorStudioWorkspace {
+    grid-template-columns: 210px minmax(510px, 1.15fr) minmax(390px, 0.85fr);
+  }
+  .appShell .editorStudioAdmin .editorStudioPreview {
+    display: block;
+  }
+}
+@media (max-width: 1180px) {
+  .appShell .editorStudioAdmin .websiteEditorHeader {
+    grid-template-columns: minmax(220px, 1fr) auto;
+  }
+  .appShell .editorStudioAdmin .websiteEditorHeader .headerActions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding: 12px 0 0;
+    border-top: 1px solid var(--line);
+    border-inline-start: 0;
+  }
+  .appShell .editorStudioAdmin .websiteEditorHeader .editorGlobalSaveState {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}
+@media (max-width: 820px) {
+  .appShell .editorStudioAdmin .websiteEditorHeader::after {
+    display: none;
+  }
+  .appShell .editorStudioAdmin .websiteEditorHeader .headerActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .appShell .editorStudioAdmin .websiteEditorHeader .headerActions > *,
+  .appShell .editorStudioAdmin .websiteEditorHeader .headerActions form,
+  .appShell .editorStudioAdmin .websiteEditorHeader .headerActions button,
+  .appShell .editorStudioAdmin .websiteEditorHeader .headerActions .buttonLink {
+    width: 100%;
+  }
+  .appShell .editorStudioAdmin .publishJobNotice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+@media (max-width: 520px) {
+  .appShell .editorStudioAdmin .websiteEditorHeader .headerActions {
+    grid-template-columns: 1fr;
+  }
+  .appShell .editorStudioAdmin .websiteEditorMeta {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* E-commerce has its own editor route rather than using the website studio.
+   Bring it into the same dashboard visual language so switching editor types
+   does not feel like entering a different application. */
+.appShell .adminCommerceEditor {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.appShell .adminCommerceEditor > header,
+.appShell .adminEcommerceContentEditor > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  margin: 0;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary-soft) 68%, transparent),
+      transparent 52%
+    ),
+    var(--surface);
+  box-shadow: 0 10px 28px rgba(17, 17, 17, 0.07);
+}
+.appShell .adminCommerceEditor > header h1,
+.appShell .adminEcommerceContentEditor > header h1 {
+  margin-top: 3px;
+  font-size: clamp(24px, 2.8vw, 36px);
+  line-height: 1.05;
+}
+.appShell .adminCommerceEditor > header .sub,
+.appShell .adminEcommerceContentEditor > header .sub {
+  margin-top: 7px;
+  color: var(--muted);
+}
+.appShell .adminCommerceEditor > header .headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+.appShell .adminCommerceEditor > header .headerActions .buttonLink,
+.appShell .adminEcommerceContentEditor > header .buttonLink {
+  min-height: 38px;
+  border-radius: 7px;
+  padding-inline: 13px;
+  font-size: 10px;
+}
+.appShell .adminCommerceEditor > .commerceSectionNav {
+  position: sticky;
+  top: 76px;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) repeat(7, minmax(70px, 1fr));
+  gap: 6px;
+  align-items: stretch;
+  margin: 0;
+  padding: 7px;
+  border-color: var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: 0 6px 18px rgba(17, 17, 17, 0.06);
+}
+.appShell .adminCommerceEditor .commerceSectionNavIntro {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 7px 10px;
+  border-inline-end: 1px solid var(--line);
+}
+.appShell .adminCommerceEditor .commerceSectionNavIntro span {
+  color: var(--primary-dark);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.appShell .adminCommerceEditor .commerceSectionNavIntro strong {
+  font-size: 12px;
+}
+.appShell .adminCommerceEditor .commerceSectionNav a {
+  display: grid;
+  min-height: 42px;
+  place-items: center;
+  gap: 2px;
+  padding: 6px 7px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
+.appShell .adminCommerceEditor .commerceSectionNav a > span {
+  color: var(--primary-dark);
+  font-size: 9px;
+  font-weight: 900;
+}
+.appShell .adminCommerceEditor .commerceSectionNav a:hover,
+.appShell .adminCommerceEditor .commerceSectionNav a:focus-visible {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--ink);
+}
+.appShell .adminCommerceEditor > .websiteSummary {
+  margin: 0;
+}
+.appShell .adminCommerceEditor > .websiteSummary article {
+  min-height: 92px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 5px 15px rgba(17, 17, 17, 0.04);
+}
+.appShell .adminCommerceEditor > section.panel {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--primary);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(17, 17, 17, 0.045);
+}
+.appShell .adminCommerceEditor > section.panel .panelHead {
+  min-height: 0;
+  padding-bottom: 14px;
+}
+.appShell .adminCommerceEditor > section.panel .panelHead h2 {
+  font-size: 20px;
+}
+.appShell .adminCommerceEditor > #catalog,
+.appShell .adminCommerceEditor > #inventory {
+  min-width: 0;
+}
+.appShell .adminCommerceEditor > #orders,
+.appShell .adminCommerceEditor > #customers,
+.appShell .adminCommerceEditor > #discounts,
+.appShell .adminCommerceEditor > #settings {
+  min-width: 0;
+}
+.appShell .adminCommerceEditor > #orders .dataRow,
+.appShell .adminCommerceEditor > #customers .dataRow,
+.appShell .adminCommerceEditor > #discounts .dataRow {
+  border-radius: 8px;
+}
+.appShell .adminEcommerceContentEditor {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.appShell .adminEcommerceContentEditor > .ecommerceStorePreview {
+  order: 2;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(17, 17, 17, 0.06);
+}
+.appShell .adminEcommerceContentEditor > .contentLocaleLinks {
+  order: 1;
+  justify-self: end;
+  margin: 0;
+}
+.appShell .adminEcommerceContentEditor > .ecommerceContentForm {
+  order: 3;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgba(17, 17, 17, 0.045);
+}
+
+.appShell .adminWebsiteEditor .editorStudioSidebar > .adminEditorNavigation {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+.appShell .adminWebsiteEditor .adminEditorNavigation a {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 780;
+  text-decoration: none;
+}
+.appShell .adminWebsiteEditor .adminEditorNavigation a:hover,
+.appShell .adminWebsiteEditor .adminEditorNavigation a:focus-visible,
+.appShell .adminWebsiteEditor .adminEditorNavigation a[aria-current="step"] {
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--line));
+  background: var(--primary-soft);
+  color: var(--ink);
+}
+.appShell .adminWebsiteEditor .adminEditorNavigation a > span {
+  display: inline-grid;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 9px;
+}
+.appShell .adminWebsiteEditor .editorStudioInspector > .adminEditorDisclosure {
+  display: block;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--primary);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgba(17, 17, 17, 0.045);
+}
+.appShell .adminWebsiteEditor .adminEditorDisclosure > summary {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.appShell .adminWebsiteEditor .adminEditorDisclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.appShell .adminWebsiteEditor .adminEditorDisclosure > summary::before {
+  content: "+";
+  display: grid;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--primary-dark);
+  font-size: 18px;
+  font-weight: 700;
+}
+.appShell .adminWebsiteEditor .adminEditorDisclosure[open] > summary::before {
+  content: "−";
+  background: var(--primary);
+  color: var(--ink);
+}
+.appShell .adminWebsiteEditor .adminEditorDisclosure > summary > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.appShell .adminWebsiteEditor .adminEditorDisclosure > summary small {
+  color: var(--primary-dark);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+.appShell .adminWebsiteEditor .adminEditorDisclosure > summary strong {
+  font-size: 15px;
+}
+.appShell .adminWebsiteEditor .adminEditorDisclosure > summary em {
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+}
+.appShell .adminWebsiteEditor .adminEditorDisclosureBody {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  padding: 0 14px 14px;
+}
+.appShell .adminWebsiteEditor .adminEditorDisclosureBody > .panel,
+.appShell .adminWebsiteEditor .adminEditorDisclosureBody > .editorShell,
+.appShell .adminWebsiteEditor .adminEditorDisclosureBody > .workspaceGrid {
+  min-width: 0;
+  margin: 0;
+  border-radius: 9px;
+}
+@media (max-width: 820px) {
+  .appShell .adminWebsiteEditor .editorStudioSidebar > .adminEditorNavigation {
+    display: flex;
+    width: max-content;
+  }
+  .appShell .adminWebsiteEditor .adminEditorNavigation a {
+    min-height: 38px;
+  }
+}
+
+@media (max-width: 1180px) {
+  .appShell .adminCommerceEditor > .commerceSectionNav {
+    grid-template-columns: minmax(170px, 1fr) repeat(4, minmax(76px, 1fr));
+    overflow-x: auto;
+  }
+  .appShell .adminCommerceEditor .commerceSectionNav a:nth-of-type(n + 6) {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .appShell .adminCommerceEditor > header,
+  .appShell .adminEcommerceContentEditor > header {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    padding: 18px 16px;
+  }
+  .appShell .adminCommerceEditor > header .headerActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .appShell .adminCommerceEditor > header .headerActions .buttonLink,
+  .appShell .adminEcommerceContentEditor > header .buttonLink {
+    width: 100%;
+  }
+  .appShell .adminCommerceEditor > .commerceSectionNav {
+    position: static;
+    grid-template-columns: repeat(4, minmax(88px, 1fr));
+  }
+  .appShell .adminCommerceEditor .commerceSectionNavIntro {
+    grid-column: 1 / -1;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .appShell .adminCommerceEditor .commerceSectionNav a:nth-of-type(n + 6) {
+    display: grid;
+  }
+  .appShell .adminCommerceEditor > .websiteSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .appShell .adminCommerceEditor > header .headerActions {
+    grid-template-columns: 1fr;
+  }
+  .appShell .adminCommerceEditor > .commerceSectionNav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .appShell .adminCommerceEditor > .websiteSummary {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Keep the commerce section rail compact on desktop. The old equal-width
+   columns made each button expand dramatically on wide screens and pushed
+   the actual content below the fold. */
+@media (min-width: 1181px) {
+  .appShell .adminCommerceEditor > .commerceSectionNav {
+    grid-template-columns: minmax(180px, 1fr) repeat(7, minmax(58px, 84px));
+    justify-content: space-between;
+  }
+  .appShell .adminCommerceEditor .commerceSectionNav a {
+    min-width: 0;
+    padding-inline: 4px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 820px) {
+  .appShell .adminCommerceEditor > .commerceSectionNav {
+    gap: 5px;
+    padding: 6px;
+  }
+  .appShell .adminCommerceEditor > .commerceSectionNav a {
+    min-width: 0;
+    min-height: 38px;
+    padding: 5px 4px;
+    font-size: 9px;
+  }
+}
+
+/* Narrow editor workspaces must never create a second horizontal viewport.
+   This also keeps the regular website editor usable when opened from a phone
+   or a narrow embedded preview. */
+@media (max-width: 820px) {
+  .appShell .editorStudioPage,
+  .appShell .editorStudioAdmin,
+  .appShell .editorStudioClient,
+  .appShell .editorStudioWorkspace,
+  .appShell .editorStudioInspector,
+  .appShell .editorStudioInspector > *,
+  .appShell .clientContentWorkspace {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .appShell .editorStudioPage,
+  .appShell .editorStudioAdmin,
+  .appShell .editorStudioClient {
+    overflow-x: clip;
+  }
+  .appShell .editorStudioClient .editorStudioInspector > .panel,
+  .appShell .editorStudioClient .editorStudioInspector > .clientContentWorkspace,
+  .appShell .editorStudioAdmin .editorStudioInspector > .panel,
+  .appShell .editorStudioAdmin .editorStudioInspector > .clientContentWorkspace {
+    overflow-x: auto;
+  }
+  .appShell .editorStudioClient .themeStudioLayout,
+  .appShell .editorStudioAdmin .themeStudioLayout,
+  .appShell .editorStudioClient .colorTokenGrid,
+  .appShell .editorStudioAdmin .colorTokenGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .appShell .editorStudioPage .websiteEditorHeader,
+  .appShell .editorStudioAdmin .websiteEditorHeader,
+  .appShell .editorStudioClient .websiteEditorHeader {
+    width: 100%;
+    padding-inline: 12px;
+  }
+  .appShell .editorStudioPage .websiteEditorMeta,
+  .appShell .editorStudioAdmin .websiteEditorMeta,
+  .appShell .editorStudioClient .websiteEditorMeta {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+  .appShell .editorStudioPage .websiteEditorMeta > div,
+  .appShell .editorStudioAdmin .websiteEditorMeta > div,
+  .appShell .editorStudioClient .websiteEditorMeta > div {
+    min-width: 0;
+    min-height: 58px;
+    padding-inline: 16px;
+  }
+  .appShell .editorStudioPage .editorStudioInspector > *,
+  .appShell .editorStudioAdmin .editorStudioInspector > *,
+  .appShell .editorStudioClient .editorStudioInspector > * {
+    width: 100%;
+  }
+}
+
+/* The mobile dashboard menu should be a true overlay, not a narrow second
+   column that leaves the website editor squeezed beside it. */
+@media (max-width: 1100px) {
+  .appShell .sidebar {
+    width: min(86vw, 280px);
+    box-shadow: 18px 0 40px rgba(0, 0, 0, 0.22);
+  }
+  .appShell[dir="rtl"] .sidebar {
+    box-shadow: -18px 0 40px rgba(0, 0, 0, 0.22);
+  }
+  .appShell .navScrim {
+    z-index: 35;
+  }
+}
+
 /* Persistent desktop rail control. Mobile continues to use the overlay menu. */
 .appShell .sidebarCollapseButton {
   display: none;
@@ -10479,20 +11423,36 @@ input[type="file"] {
   }
 }
 @media print {
+  @page {
+    size: A5 portrait;
+    margin: 0;
+  }
+  /* Hidden dashboard content still participates in print pagination when it
+     only uses visibility:hidden. Flatten the card's ancestor chain and remove
+     every other printable box so the QR card occupies exactly one page. */
   body:has(.menuQrPrintCard) * {
+    display: none !important;
     visibility: hidden !important;
+  }
+  body:has(.menuQrPrintCard) *:has(.menuQrPrintCard) {
+    display: contents !important;
+    visibility: visible !important;
   }
   body:has(.menuQrPrintCard) .menuQrPrintCard,
   body:has(.menuQrPrintCard) .menuQrPrintCard * {
+    display: revert !important;
     visibility: visible !important;
   }
   body:has(.menuQrPrintCard) .menuQrPrintCard {
     position: fixed;
     inset: 0;
     width: 148mm !important;
-    min-height: 200mm !important;
+    height: 210mm !important;
+    min-height: 0 !important;
     margin: auto;
     padding: 15mm !important;
+    box-sizing: border-box;
+    overflow: hidden;
     border: 0;
     border-radius: 0;
     box-shadow: none;
@@ -11432,5 +12392,78 @@ input[type="file"] {
   }
   .commerceOrderTable td:last-child button {
     flex: 0 0 auto;
+  }
+}
+
+/* Final responsive guardrails for the editor/dashboard surfaces. */
+@media (min-width: 1181px) {
+  .appShell .adminCommerceEditor > .commerceSectionNav {
+    grid-template-columns: minmax(180px, 1fr) repeat(7, minmax(58px, 84px));
+    justify-content: space-between;
+  }
+  .appShell .adminCommerceEditor .commerceSectionNav a {
+    min-width: 0;
+    padding-inline: 4px;
+    font-size: 9px;
+  }
+}
+@media (max-width: 820px) {
+  .appShell .editorStudioPage,
+  .appShell .editorStudioAdmin,
+  .appShell .editorStudioClient,
+  .appShell .editorStudioWorkspace,
+  .appShell .editorStudioInspector,
+  .appShell .editorStudioInspector > *,
+  .appShell .clientContentWorkspace {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .appShell .editorStudioPage,
+  .appShell .editorStudioAdmin,
+  .appShell .editorStudioClient {
+    overflow-x: clip;
+  }
+  .appShell .editorStudioClient .editorStudioInspector > .panel,
+  .appShell .editorStudioClient .editorStudioInspector > .clientContentWorkspace,
+  .appShell .editorStudioAdmin .editorStudioInspector > .panel,
+  .appShell .editorStudioAdmin .editorStudioInspector > .clientContentWorkspace {
+    overflow-x: auto;
+  }
+  .appShell .editorStudioClient .themeStudioLayout,
+  .appShell .editorStudioAdmin .themeStudioLayout,
+  .appShell .editorStudioClient .colorTokenGrid,
+  .appShell .editorStudioAdmin .colorTokenGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .appShell .editorStudioPage .websiteEditorHeader,
+  .appShell .editorStudioAdmin .websiteEditorHeader,
+  .appShell .editorStudioClient .websiteEditorHeader,
+  .appShell .editorStudioPage .websiteEditorMeta,
+  .appShell .editorStudioAdmin .websiteEditorMeta,
+  .appShell .editorStudioClient .websiteEditorMeta {
+    width: 100%;
+  }
+  .appShell .editorStudioPage .websiteEditorMeta,
+  .appShell .editorStudioAdmin .websiteEditorMeta,
+  .appShell .editorStudioClient .websiteEditorMeta {
+    grid-template-columns: 1fr;
+  }
+  .appShell .editorStudioPage .websiteEditorMeta > div,
+  .appShell .editorStudioAdmin .websiteEditorMeta > div,
+  .appShell .editorStudioClient .websiteEditorMeta > div {
+    min-width: 0;
+    min-height: 58px;
+    padding-inline: 16px;
+  }
+}
+@media (max-width: 1100px) {
+  .appShell .sidebar {
+    width: min(86vw, 280px);
+    box-shadow: 18px 0 40px rgba(0, 0, 0, 0.22);
+  }
+  .appShell[dir="rtl"] .sidebar {
+    box-shadow: -18px 0 40px rgba(0, 0, 0, 0.22);
   }
 }

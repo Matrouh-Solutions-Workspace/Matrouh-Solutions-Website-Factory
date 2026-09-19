@@ -36,8 +36,8 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
       ? ["الجديد", "حريمي", "رجالي", "أطفال", "أحذية", "إكسسوارات"]
       : ["New arrivals", "Women", "Men", "Kids", "Shoes", "Accessories"]
     : pc
-      ? ["Graphics cards", "Processors", "Motherboards", "Memory", "Cooling", "Displays"]
-      : ["Power tools", "Hand tools", "Cutting", "Fasteners", "Paint", "Storage"];
+      ? ["Graphics cards", "Processors", "Motherboards", "Memory", "Power supplies", "Cooling"]
+      : ["Power tools", "Hand tools", "Cutting", "Measuring", "Storage"];
   const productNames = fashion
     ? locale === "ar"
       ? [
@@ -73,6 +73,11 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
           "Laser measure",
           "Modular toolbox",
         ];
+  const productSlugs = fashion
+    ? ["everyday-cotton-tee", "relaxed-fit-jeans", "printed-day-dress", "casual-overshirt", "everyday-sneakers", "kids-color-hoodie"]
+    : pc
+      ? ["rtx-5070-graphics-card", "ryzen-7-processor", "b850-gaming-motherboard", "32gb-ddr5-memory", "850w-modular-psu", "360mm-liquid-cooler"]
+      : ["18v-impact-driver", "brushless-drill-kit", "precision-hand-tool-set", "circular-saw", "laser-measure", "modular-toolbox"];
   const categories = categoryNames.map((name, index) => ({
     id: `preview-category-${index}`,
     slug: name.toLowerCase().replaceAll(" ", "-"),
@@ -88,16 +93,20 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
   }));
   const products: StorefrontProduct[] = productNames.map((name, index) => ({
     id: `preview-product-${index}`,
-    slug: name.toLowerCase().replaceAll(" ", "-"),
+    slug: productSlugs[index]!,
     name,
     shortDescription: fashion
       ? locale === "ar"
         ? "خامة مريحة وقصة سهلة للتنسيق بسعر واضح."
         : "Comfortable fabric, an easy-to-style fit, and a clear price."
       : pc
-        ? "Clear specifications and verified build compatibility."
+        ? "Compare component specifications before choosing parts for your build."
         : "Reliable performance with practical technical specifications.",
-    description: "Preview catalog product.",
+    description: fashion
+      ? "Sample item for exploring the storefront."
+      : pc
+        ? "Demo component for exploring product options and checkout. Confirm compatibility with your own build before ordering."
+        : "Demo workshop product for exploring product options and checkout.",
     priceMinor: (index + 2) * (pc ? 329900 : fashion ? 34900 : 119900),
     salePriceMinor: index === 1 ? (index + 2) * (pc ? 289900 : fashion ? 29900 : 99900) : null,
     currency: "EGP",
@@ -112,27 +121,34 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
       : pc
         ? {
             brand: ["NVIDIA", "AMD", "ASUS", "Kingston", "Corsair", "Arctic"][index],
-            socket: index === 1 ? "AM5" : undefined,
-            memory: index === 3 ? "DDR5" : undefined,
-            compatibility: "Build verified",
+            socket: index === 1 || index === 2 ? "AM5" : undefined,
+            memory: index === 0 ? "12GB" : index === 2 || index === 3 ? "DDR5" : undefined,
+            power: index === 4 ? "850W" : undefined,
           }
         : {
             brand: "Forge Pro",
             power: index < 2 ? "18V" : undefined,
-            compatibility: "Trade standard",
           },
     images: [],
     variants: [
       {
         id: `preview-variant-${index}`,
-        title: "Standard",
+        title: pc ? "Component only" : fashion ? "Standard" : "Tool only",
         sku: `PREVIEW-${index + 1}`,
         priceMinor: null,
         salePriceMinor: null,
         stockQuantity: 12 + index,
       },
+      ...(!fashion ? [{
+        id: `preview-variant-${index}-bundle`,
+        title: pc ? "Build bundle" : "Workshop bundle",
+        sku: `PREVIEW-${index + 1}-B`,
+        priceMinor: (index + 2) * (pc ? 329900 : 119900) + (pc ? 199900 : 49900),
+        salePriceMinor: null,
+        stockQuantity: 4 + index,
+      }] : []),
     ],
-    categoryIds: [categories[index]?.id ?? categories[0]!.id],
+    categoryIds: [categories[fashion || pc ? index : [0, 0, 1, 2, 3, 4][index]!]!.id],
   }));
   return {
     organizationId: "preview",
@@ -162,10 +178,10 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
     locale,
     defaultLocale: "en",
     currency: "EGP",
-    contactEmail: "hello@example.com",
-    contactPhone: "+20 100 000 0000",
+    contactEmail: null,
+    contactPhone: null,
     branding: {},
-    settings: { allowAppearanceToggle: true },
+    settings: { allowAppearanceToggle: true, whatsappEnabled: false },
     presentation: {
       defaultTheme: pc ? "dark" : "light",
       tokens: pc

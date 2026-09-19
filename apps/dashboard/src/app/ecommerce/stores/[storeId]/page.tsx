@@ -104,7 +104,13 @@ export async function EcommerceStoreDashboard({
   }));
 
   return (
-    <div className={clientView ? "commerceStorePage clientCommerceStorePage" : "commerceStorePage"}>
+    <div
+      className={
+        clientView
+          ? "commerceStorePage clientCommerceStorePage"
+          : "commerceStorePage adminCommerceEditor"
+      }
+    >
       <header>
         <div>
           <p className="eyebrow">Commerce control center</p>

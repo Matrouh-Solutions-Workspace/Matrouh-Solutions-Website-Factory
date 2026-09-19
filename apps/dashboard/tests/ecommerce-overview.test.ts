@@ -19,27 +19,31 @@ describe("commerce overview", () => {
     expect(loader).toContain("SELECT count(*)::integer");
   });
 
-  it("renders native bilingual copy and a dedicated overview layout", async () => {
-    const [page, styles] = await Promise.all([
+  it("uses one website portfolio while preserving the dedicated commerce creation flow", async () => {
+    const [page, legacyPage, createPanel, styles] = await Promise.all([
+      readFile(resolve(appRoot, "src/app/websites/page.tsx"), "utf8"),
       readFile(resolve(appRoot, "src/app/ecommerce/page.tsx"), "utf8"),
+      readFile(resolve(appRoot, "src/app/commerce-create-panel.tsx"), "utf8"),
       readFile(resolve(appRoot, "src/app/styles.css"), "utf8"),
     ]);
 
-    expect(page).toContain('title: "E-commerce"');
-    expect(page).toContain('title: "التجارة الإلكترونية"');
-    expect(page).toContain('className="commerceOverviewStats"');
-    expect(page).toContain('className="panel commerceCreatePanel"');
-    expect(page).toContain("defaultValue={text.storeNamePlaceholder}");
+    expect(page).toContain("loadEcommerceStores");
+    expect(page).toContain("CommerceCreatePanel");
+    expect(page).toContain("WebsiteCreateWizard");
+    expect(page).toContain("href={`/ecommerce/stores/${store.id}`}");
+    expect(legacyPage).toContain("redirect(`/websites?type=commerce&create=commerce${error}`)");
+    expect(page).toContain("WebsiteCreationSwitcher");
+    expect(page).toContain("WebsiteInventory");
+    expect(page).not.toContain('method="get"');
+    expect(page).not.toContain('type === "commerce"');
+    expect(createPanel).toContain('/templates#ecommerce-templates');
+    expect(createPanel).toContain('className="panel createPanel commerceCreatePanel"');
+    expect(createPanel).toContain("createEcommerceStoreAction");
     expect(page).toContain("loadHostingDomainChoices");
-    expect(page).toContain("placeholder={hostnamePlaceholder}");
-    expect(page).not.toContain("defaultValue={text.hostnamePlaceholder}");
-    expect(page).toContain("pendingLabel={text.creatingStore}");
-    expect(page).toContain("EcommerceStoreDeleteAction");
-    expect(page).toContain("deleteStoreConfirmation");
-    expect(page).toContain('className="commerceCreateError"');
-    expect(styles).toContain(".commerceOverviewGrid");
-    expect(styles).toContain(':root[data-theme="dark"] .appShell .commerceStatCard--primary');
-    expect(styles).toContain(".commerceStoreDeleteForm");
+    expect(createPanel).toContain("hostnameRoot");
+    expect(createPanel).toContain("pendingLabel=");
+    expect(createPanel).toContain('className="commerceCreateError"');
+    expect(styles).toContain(".unifiedCommerceRow");
   });
 
   it("archives stores through an administrator-only audited workflow", async () => {
@@ -65,5 +69,14 @@ describe("commerce overview", () => {
     expect(page).toContain("commerce-template-preview");
     expect(page).toContain("commerceTemplatePreview");
     expect(styles).toContain(".commerceTemplatePreview iframe");
+  });
+
+  it("includes e-commerce designs in the main template catalog", async () => {
+    const page = await readFile(resolve(appRoot, "src/app/templates/page.tsx"), "utf8");
+    expect(page).toContain("loadEcommerceTemplates");
+    expect(page).toContain("commerce-template-preview");
+    expect(page).toContain('id="ecommerce-templates"');
+    expect(page.match(/className="templateCatalogGrid"/g)).toHaveLength(1);
+    expect(page.indexOf("commerceTemplates.map")).toBeLessThan(page.indexOf("{templates.map((template) => {"));
   });
 });

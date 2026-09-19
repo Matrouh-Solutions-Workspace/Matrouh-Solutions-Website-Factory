@@ -9,7 +9,6 @@ import type { UiLocale } from "@/server/ui-locale";
 const itemDefinitions = [
   { key: "overview", href: "/", icon: "overview", group: "workspace" },
   { key: "websites", href: "/websites", icon: "websites", group: "workspace" },
-  { key: "ecommerce", href: "/ecommerce", icon: "templates", group: "commerce" },
   { key: "clients", href: "/clients", icon: "clients", group: "workspace" },
   { key: "billing", href: "/billing", icon: "settings", group: "workspace" },
   { key: "mail", href: "/mail", icon: "mail", group: "workspace" },

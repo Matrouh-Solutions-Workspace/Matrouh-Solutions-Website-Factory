@@ -12,6 +12,7 @@ interface Option {
   readonly id: string;
   readonly label: string;
   readonly value: string;
+  readonly group?: string;
 }
 
 export function WebsiteCreateWizard({
@@ -44,6 +45,14 @@ export function WebsiteCreateWizard({
     [],
   );
   const steps = useMemo(() => ["Website", "Audience", "Subscription", "Review"], []);
+  const templateGroups = useMemo(() => {
+    const groups = new Map<string, Option[]>();
+    for (const template of templates) {
+      const group = template.group || "Other";
+      groups.set(group, [...(groups.get(group) ?? []), template]);
+    }
+    return [...groups].sort(([left], [right]) => left.localeCompare(right));
+  }, [templates]);
 
   return (
     <form
@@ -104,10 +113,14 @@ export function WebsiteCreateWizard({
         <label>
           Template
           <select defaultValue={initialTemplate} name="template" required>
-            {templates.map((template) => (
-              <option key={template.id} value={template.value}>
-                {template.label}
-              </option>
+            {templateGroups.map(([group, options]) => (
+              <optgroup key={group} label={group}>
+                {options.map((template) => (
+                  <option key={template.id} value={template.value}>
+                    {template.label}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>

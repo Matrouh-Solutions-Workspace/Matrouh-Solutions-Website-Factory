@@ -101,7 +101,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     pathname === "/commerce-template-preview" ||
     pathname.startsWith("/commerce-template-preview/")
   ) {
-    return rendererProxy(request, dashboardHost);
+    return rendererProxy(request, dashboardHost, pathname);
   }
   if (
     pathname === "/commerce-storefront.css" ||
@@ -121,7 +121,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (pathname.startsWith("/api/")) return NextResponse.next();
   if (pathname.startsWith("/_next/")) {
     const referer = request.headers.get("referer") ?? "";
-    return referer.includes("/dashboard")
+    // Preview pages can be embedded by the dashboard. In that case Chromium
+    // may send the parent dashboard URL as the subresource referrer, even
+    // though the HTML came from the renderer. The preview asset marker keeps
+    // those scripts on the renderer origin so the page can hydrate normally.
+    const rendererAsset = request.nextUrl.searchParams.get("factory_renderer") === "1";
+    return referer.includes("/dashboard") && !rendererAsset
       ? NextResponse.next()
       : rendererProxy(request, dashboardHost);
   }
@@ -164,6 +169,25 @@ async function rendererProxy(
     "x-middleware-rewrite",
   ]) {
     responseHeaders.delete(header);
+  }
+  const contentType = responseHeaders.get("content-type") ?? "";
+  if (
+    pathname?.startsWith("/commerce-template-preview") &&
+    request.method === "GET" &&
+    contentType.includes("text/html")
+  ) {
+    // Mark renderer chunks in the HTML. This is required for dashboard-embedded
+    // previews, where the browser's referrer can otherwise make /_next assets
+    // look like dashboard assets to the gateway.
+    const html = await upstream.text();
+    const marked = html.replace(/(\/_next\/[^"'\s?<>]+)/g, "$1?factory_renderer=1");
+    responseHeaders.delete("content-length");
+    responseHeaders.delete("etag");
+    return new NextResponse(marked, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers: responseHeaders,
+    });
   }
   return new NextResponse(upstream.body, {
     status: upstream.status,

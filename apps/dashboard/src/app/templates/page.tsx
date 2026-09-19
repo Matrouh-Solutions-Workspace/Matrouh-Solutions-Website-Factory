@@ -3,11 +3,12 @@ import { loadTemplateCatalog } from "@/server/template-catalog";
 import { templateListingId } from "./catalog-display";
 import { TemplateCategoryForm } from "./template-category-form";
 import { TemplateImportForm } from "./template-import-form";
+import { loadEcommerceTemplates } from "@/server/ecommerce";
 
 export const dynamic = "force-dynamic";
 
 export default async function TemplatesPage() {
-  const templates = await loadTemplateCatalog();
+  const [templates, commerceTemplates] = await Promise.all([loadTemplateCatalog(), loadEcommerceTemplates()]);
   const categorySuggestions = uniqueSorted(templates.map((template) => template.catalog.category));
   const categoryArSuggestions = uniqueSorted(
     templates.map((template) => template.catalog.categoryAr),
@@ -16,10 +17,10 @@ export default async function TemplatesPage() {
     <>
       <header>
         <div>
-          <p className="eyebrow">SDK catalog</p>
+          <p className="eyebrow">Design library</p>
           <h1>Templates</h1>
           <p className="sub">
-            Preview and customize installed templates, or add a trusted template artifact.
+            Explore website, QR menu, portfolio, and e-commerce designs in one library.
           </p>
         </div>
         <div className="headerActions templatePageActions">
@@ -32,15 +33,65 @@ export default async function TemplatesPage() {
         </div>
       </header>
 
-      <section className="panel templateCatalogPanel">
+      <section className="panel templateCatalogPanel" id="ecommerce-templates">
         <div className="panelHead">
           <div>
             <p className="eyebrow">Installed</p>
             <h2>Template catalog</h2>
           </div>
-          <span>{templates.length} templates</span>
+          <span>{templates.length + commerceTemplates.length} templates</span>
         </div>
         <div className="templateCatalogGrid">
+          {commerceTemplates.map((template) => {
+            const latest = template.versions[0];
+            return (
+              <article className="templateCard" key={`commerce:${template.id}`}>
+                <div className="templateLiveVisual">
+                  {latest ? (
+                    <iframe
+                      aria-hidden="true"
+                      loading="lazy"
+                      src={`/commerce-template-preview/${encodeURIComponent(latest.rendererKey)}`}
+                      tabIndex={-1}
+                      title={`${template.name} storefront thumbnail`}
+                    />
+                  ) : (
+                    <div className="templateVisualFallback"><Icon name="templates" /></div>
+                  )}
+                </div>
+                <div className="templateCardBody">
+                  <div>
+                    <span className={`status ${template.status}`}>{template.status}</span>
+                    <span className="mutedBadge">E-commerce</span>
+                    <span className="mutedBadge">v{latest?.version ?? "—"}</span>
+                  </div>
+                  <h2>{template.name}</h2>
+                  <p>{template.description}</p>
+                  <div className="templateCardActions">
+                    <a
+                      className="buttonLink"
+                      href={latest ? `/commerce-template-preview/${encodeURIComponent(latest.rendererKey)}` : "/ecommerce/templates"}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Preview storefront
+                    </a>
+                    <span>{template.versions.length} version{template.versions.length === 1 ? "" : "s"}</span>
+                  </div>
+                </div>
+                <div className="templateCardListing">
+                  <div>
+                    <span className="templateCardListingEyebrow">E-commerce template</span>
+                    <strong>Storefront design</strong>
+                    <small>Manage storefront versions separately</small>
+                  </div>
+                  <a className="buttonLink secondaryButton" href="/ecommerce/templates">
+                    View versions
+                  </a>
+                </div>
+              </article>
+            );
+          })}
           {templates.map((template) => {
             const latest = template.versions[0];
             const detailHref = latest
@@ -113,7 +164,7 @@ export default async function TemplatesPage() {
             );
           })}
         </div>
-        {templates.length === 0 && (
+        {templates.length + commerceTemplates.length === 0 && (
           <p className="empty">
             No catalog entries yet. Import a trusted artifact below or run pnpm seed:demo.
           </p>

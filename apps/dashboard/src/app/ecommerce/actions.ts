@@ -29,7 +29,7 @@ export async function createEcommerceStoreAction(formData: FormData): Promise<vo
   try {
     slug = normalizeStoreSlug(text(formData, "slug", 120) || name);
   } catch {
-    redirect("/ecommerce?createError=invalid#new-commerce-store");
+    redirect("/websites?create=commerce&createError=invalid#new-commerce-store");
   }
   const hostnameInput = text(formData, "hostname", 253);
   const hostnameSeed =
@@ -58,7 +58,7 @@ export async function createEcommerceStoreAction(formData: FormData): Promise<vo
   const defaultLocale = text(formData, "defaultLocale", 35) === "ar" ? "ar" : "en";
   const currency = text(formData, "currency", 3).toUpperCase() || "EGP";
   if (!name || !templateVersionId || !hostname || !contactPhone || !/^[A-Z]{3}$/.test(currency)) {
-    redirect("/ecommerce?createError=invalid#new-commerce-store");
+    redirect("/websites?create=commerce&createError=invalid#new-commerce-store");
   }
 
   const websiteId = randomUUID();
@@ -198,7 +198,7 @@ export async function createEcommerceStoreAction(formData: FormData): Promise<vo
       storeId,
     });
     redirect(
-      `/ecommerce?createError=${isUniqueConstraintError(error) ? "conflict" : "failed"}#new-commerce-store`,
+      `/websites?create=commerce&createError=${isUniqueConstraintError(error) ? "conflict" : "failed"}#new-commerce-store`,
     );
   }
   redirect(`/ecommerce/stores/${storeId}`);

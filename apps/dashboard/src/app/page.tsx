@@ -4,7 +4,9 @@ import { discoverTemplates } from "@factory/template-loader";
 import { previewWebsiteAction, toggleWebsitePublicationAction } from "@/app/actions";
 import { Icon, type IconName } from "@/app/icons";
 import { PendingSubmit } from "@/app/pending-submit";
+import { PaginatedOverviewList } from "@/app/numbered-pagination";
 import { PublicationStatusRefresh } from "@/app/publication-status-refresh";
+import { loadEcommerceStores } from "@/server/ecommerce";
 import { loadDashboardOverview } from "@/server/overview";
 import { dashboardLocale } from "@/server/dashboard-locale";
 import { isActivePublicationJob } from "@/server/publication-jobs";
@@ -20,13 +22,17 @@ async function templateCatalog() {
 }
 
 export default async function Dashboard() {
-  const [templates, overview, locale] = await Promise.all([
+  const [templates, overview, locale, commerce] = await Promise.all([
     templateCatalog(),
     loadDashboardOverview(),
     dashboardLocale(),
+    loadEcommerceStores(),
   ]);
   const text = dashboardCopy(locale);
   const websites = overview.websites;
+  const commerceStoreByWebsiteId = new Map(
+    commerce.stores.map((store) => [store.websiteId, store] as const),
+  );
   const hasActivePublication = websites.some((website) =>
     isActivePublicationJob(website.latestPublishJob?.status),
   );
@@ -125,76 +131,99 @@ export default async function Dashboard() {
           </a>
         </nav>
       </section>
-      <section className="workspaceGrid">
-        <div className="panel portfolioPanel">
+      <section className="workspaceGrid overviewWorkspace">
+        <div className="panel portfolioPanel overviewPortfolioPanel" id="overview-websites">
           <div className="panelHead">
             <div>
               <p className="eyebrow">Portfolio</p>
               <h2>Recent websites</h2>
             </div>
-            <span>{Math.min(websites.length, 6)} recent</span>
+            <span>{websites.length} total</span>
           </div>
-          {websites.slice(0, 6).map((website, index) => (
-            <div className="website" key={website.id}>
-              <div className={`thumb t${index % 2}`}>{initials(website.name)}</div>
-              <div>
-                <strong>{website.name}</strong>
-                <p>
-                  {website.domains[0]?.hostname ?? "No domain"} | {website.templateVersion} |{" "}
-                  {text.pageCount(website.pages)}
-                </p>
-              </div>
-              <div className="statusStack">
-                <span className="status">{text.status(website.status)}</span>
-                {website.pendingUpdate && (
-                  <span className="jobStatus retryable">pending update</span>
-                )}
-                {website.latestPublishJob && (
-                  <span className={`jobStatus ${website.latestPublishJob.status}`}>
-                    {text.status(website.latestPublishJob.status)}
-                  </span>
-                )}
-              </div>
-              <div className="rowActions">
-                <a href={`/websites/${website.id}`}>Edit</a>
-                {website.domains[0] && (
-                  <a
-                    href={publicWebsiteUrl(website.domains[0].hostname)}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Open
-                  </a>
-                )}
-                <form action={toggleWebsitePublicationAction}>
-                  <input name="websiteId" type="hidden" value={website.id} />
-                  <PendingSubmit
-                    className="inlineButton"
-                    disabled={
-                      isActivePublicationJob(website.latestPublishJob?.status) ||
-                      (website.status === "published" && !website.pendingUpdate)
-                    }
-                    pendingLabel={website.pendingUpdate ? "Publishing update…" : "Publishing…"}
-                  >
-                    {isActivePublicationJob(website.latestPublishJob?.status)
-                      ? "Publish queued"
-                      : website.pendingUpdate
-                        ? "Publish update"
-                        : website.status === "published"
-                          ? "Published"
-                          : "Publish"}
-                  </PendingSubmit>
-                </form>
-                <form action={previewWebsiteAction}>
-                  <input name="websiteId" type="hidden" value={website.id} />
-                  <PendingSubmit className="inlineButton" pendingLabel="Preparing…">
-                    Preview
-                  </PendingSubmit>
-                </form>
-                <small>{relativeDate(website.updatedAt, locale)}</small>
-              </div>
-            </div>
-          ))}
+          <PaginatedOverviewList
+            itemLabel={locale === "ar" ? "مواقع" : "websites"}
+            items={websites.map((website, index) => {
+              const commerceStore = commerceStoreByWebsiteId.get(website.id);
+              const commerceWebsite =
+                Boolean(commerceStore) || website.templateId.startsWith("ecommerce:");
+              const editHref = commerceWebsite
+                ? commerceStore
+                  ? `/ecommerce/stores/${commerceStore.id}`
+                  : "/ecommerce"
+                : `/websites/${website.id}`;
+              return (
+                <div className="website overviewWebsiteRow" key={website.id}>
+                  <div className={`thumb t${index % 2}`}>{initials(website.name)}</div>
+                  <div className="overviewWebsiteIdentity">
+                    <span
+                      className={`overviewTypeBadge ${commerceWebsite ? "isCommerce" : "isTemplate"}`}
+                    >
+                      {commerceWebsite ? "E-commerce" : "Website"}
+                    </span>
+                    <strong>{website.name}</strong>
+                    <p>
+                      {website.domains[0]?.hostname ?? "No domain"} | {website.templateVersion} |{" "}
+                      {text.pageCount(website.pages)}
+                    </p>
+                  </div>
+                  <div className="statusStack">
+                    <span className="status">{text.status(website.status)}</span>
+                    {website.pendingUpdate && (
+                      <span className="jobStatus retryable">pending update</span>
+                    )}
+                    {website.latestPublishJob && (
+                      <span className={`jobStatus ${website.latestPublishJob.status}`}>
+                        {text.status(website.latestPublishJob.status)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="rowActions">
+                    <a className="overviewEditAction" href={editHref}>
+                      {commerceWebsite ? "Manage store" : "Edit website"}
+                    </a>
+                    {website.domains[0] && (
+                      <a
+                        href={publicWebsiteUrl(website.domains[0].hostname)}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Open
+                      </a>
+                    )}
+                    <form action={toggleWebsitePublicationAction}>
+                      <input name="websiteId" type="hidden" value={website.id} />
+                      <PendingSubmit
+                        className="inlineButton"
+                        disabled={
+                          isActivePublicationJob(website.latestPublishJob?.status) ||
+                          (website.status === "published" && !website.pendingUpdate)
+                        }
+                        pendingLabel={website.pendingUpdate ? "Publishing update…" : "Publishing…"}
+                      >
+                        {isActivePublicationJob(website.latestPublishJob?.status)
+                          ? "Publish queued"
+                          : website.pendingUpdate
+                            ? "Publish update"
+                            : website.status === "published"
+                              ? "Published"
+                              : "Publish"}
+                      </PendingSubmit>
+                    </form>
+                    <form action={previewWebsiteAction}>
+                      <input name="websiteId" type="hidden" value={website.id} />
+                      <PendingSubmit className="inlineButton" pendingLabel="Preparing…">
+                        Preview
+                      </PendingSubmit>
+                    </form>
+                    <small>{relativeDate(website.updatedAt, locale)}</small>
+                  </div>
+                </div>
+              );
+            })}
+            label={locale === "ar" ? "صفحات أحدث المواقع" : "Recent website pages"}
+            locale={locale}
+            scrollTargetId="overview-websites"
+          />
           {websites.length === 0 && (
             <div className="emptyState">
               <strong>No websites yet</strong>
@@ -202,32 +231,38 @@ export default async function Dashboard() {
             </div>
           )}
         </div>
-        <div className="panel catalogPanel">
+        <div className="panel catalogPanel" id="overview-templates">
           <div className="panelHead">
             <div>
               <p className="eyebrow">SDK catalog</p>
               <h2>Templates</h2>
             </div>
           </div>
-          {catalog.map((template) => (
-            <div className="template" key={template.templateId}>
-              <div className="templateIcon">
-                <Icon name="templates" />
+          <PaginatedOverviewList
+            itemLabel={locale === "ar" ? "قوالب" : "templates"}
+            items={catalog.map((template) => (
+              <div className="template" key={template.templateId}>
+                <div className="templateIcon">
+                  <Icon name="templates" />
+                </div>
+                <div>
+                  <strong>{template.displayName}</strong>
+                  <p>
+                    {template.latestVersion ?? "No version"} | {template.category}
+                  </p>
+                </div>
+                <span>{text.status(template.lifecycleStatus)}</span>
               </div>
-              <div>
-                <strong>{template.displayName}</strong>
-                <p>
-                  {template.latestVersion ?? "No version"} | {template.category}
-                </p>
-              </div>
-              <span>{text.status(template.lifecycleStatus)}</span>
-            </div>
-          ))}
+            ))}
+            label={locale === "ar" ? "صفحات القوالب" : "Template pages"}
+            locale={locale}
+            scrollTargetId="overview-templates"
+          />
           {catalog.length === 0 && (
             <p className="empty">Run pnpm seed:demo to populate the catalog.</p>
           )}
         </div>
-        <div className="panel operationsPanel">
+        <div className="panel operationsPanel" id="overview-publish-jobs">
           <div className="panelHead">
             <div>
               <p className="eyebrow">Operations</p>
@@ -235,17 +270,23 @@ export default async function Dashboard() {
             </div>
             <span>{overview.publishJobs.length} recent</span>
           </div>
-          {overview.publishJobs.slice(0, 6).map((job) => (
-            <div className="jobRow" key={job.id}>
-              <div>
-                <strong>{text.status(job.status)}</strong>
-                <p>
-                  {shortId(job.websiteId)} | {text.attempt(job.attemptCount, job.maxAttempts)}
-                </p>
+          <PaginatedOverviewList
+            itemLabel={locale === "ar" ? "مهام" : "jobs"}
+            items={overview.publishJobs.map((job) => (
+              <div className="jobRow" key={job.id}>
+                <div>
+                  <strong>{text.status(job.status)}</strong>
+                  <p>
+                    {shortId(job.websiteId)} | {text.attempt(job.attemptCount, job.maxAttempts)}
+                  </p>
+                </div>
+                <small>{relativeDate(job.completedAt ?? job.createdAt, locale)}</small>
               </div>
-              <small>{relativeDate(job.completedAt ?? job.createdAt, locale)}</small>
-            </div>
-          ))}
+            ))}
+            label={locale === "ar" ? "صفحات مهام النشر" : "Publish job pages"}
+            locale={locale}
+            scrollTargetId="overview-publish-jobs"
+          />
           {overview.publishJobs.length === 0 && (
             <p className="empty">Publish jobs appear here after you press Publish.</p>
           )}
