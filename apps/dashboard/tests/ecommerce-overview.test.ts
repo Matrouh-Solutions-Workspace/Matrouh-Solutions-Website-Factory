@@ -36,7 +36,7 @@ describe("commerce overview", () => {
     expect(page).toContain("WebsiteInventory");
     expect(page).not.toContain('method="get"');
     expect(page).not.toContain('type === "commerce"');
-    expect(createPanel).toContain('/templates#ecommerce-templates');
+    expect(createPanel).toContain("/templates#ecommerce-templates");
     expect(createPanel).toContain('className="panel createPanel commerceCreatePanel"');
     expect(createPanel).toContain("createEcommerceStoreAction");
     expect(page).toContain("loadHostingDomainChoices");
@@ -77,6 +77,8 @@ describe("commerce overview", () => {
     expect(page).toContain("commerce-template-preview");
     expect(page).toContain('id="ecommerce-templates"');
     expect(page.match(/className="templateCatalogGrid"/g)).toHaveLength(1);
-    expect(page.indexOf("commerceTemplates.map")).toBeLessThan(page.indexOf("{templates.map((template) => {"));
+    expect(page.indexOf("commerceTemplates.map")).toBeLessThan(
+      page.indexOf("{templates.map((template) => {"),
+    );
   });
 });

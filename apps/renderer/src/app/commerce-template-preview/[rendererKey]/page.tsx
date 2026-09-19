@@ -74,10 +74,31 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
           "Modular toolbox",
         ];
   const productSlugs = fashion
-    ? ["everyday-cotton-tee", "relaxed-fit-jeans", "printed-day-dress", "casual-overshirt", "everyday-sneakers", "kids-color-hoodie"]
+    ? [
+        "everyday-cotton-tee",
+        "relaxed-fit-jeans",
+        "printed-day-dress",
+        "casual-overshirt",
+        "everyday-sneakers",
+        "kids-color-hoodie",
+      ]
     : pc
-      ? ["rtx-5070-graphics-card", "ryzen-7-processor", "b850-gaming-motherboard", "32gb-ddr5-memory", "850w-modular-psu", "360mm-liquid-cooler"]
-      : ["18v-impact-driver", "brushless-drill-kit", "precision-hand-tool-set", "circular-saw", "laser-measure", "modular-toolbox"];
+      ? [
+          "rtx-5070-graphics-card",
+          "ryzen-7-processor",
+          "b850-gaming-motherboard",
+          "32gb-ddr5-memory",
+          "850w-modular-psu",
+          "360mm-liquid-cooler",
+        ]
+      : [
+          "18v-impact-driver",
+          "brushless-drill-kit",
+          "precision-hand-tool-set",
+          "circular-saw",
+          "laser-measure",
+          "modular-toolbox",
+        ];
   const categories = categoryNames.map((name, index) => ({
     id: `preview-category-${index}`,
     slug: name.toLowerCase().replaceAll(" ", "-"),
@@ -139,14 +160,18 @@ function previewStore(rendererKey: string, locale: "en" | "ar"): EcommerceStoref
         salePriceMinor: null,
         stockQuantity: 12 + index,
       },
-      ...(!fashion ? [{
-        id: `preview-variant-${index}-bundle`,
-        title: pc ? "Build bundle" : "Workshop bundle",
-        sku: `PREVIEW-${index + 1}-B`,
-        priceMinor: (index + 2) * (pc ? 329900 : 119900) + (pc ? 199900 : 49900),
-        salePriceMinor: null,
-        stockQuantity: 4 + index,
-      }] : []),
+      ...(!fashion
+        ? [
+            {
+              id: `preview-variant-${index}-bundle`,
+              title: pc ? "Build bundle" : "Workshop bundle",
+              sku: `PREVIEW-${index + 1}-B`,
+              priceMinor: (index + 2) * (pc ? 329900 : 119900) + (pc ? 199900 : 49900),
+              salePriceMinor: null,
+              stockQuantity: 4 + index,
+            },
+          ]
+        : []),
     ],
     categoryIds: [categories[fashion || pc ? index : [0, 0, 1, 2, 3, 4][index]!]!.id],
   }));

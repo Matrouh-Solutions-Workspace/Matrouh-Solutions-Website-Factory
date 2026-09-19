@@ -22,7 +22,12 @@ interface InventoryFilter extends InventoryFilterValues {
   visibleIds: ReadonlySet<string>;
 }
 
-const InventoryContext = createContext<InventoryFilter>({ query: "", status: "all", type: "all", visibleIds: new Set() });
+const InventoryContext = createContext<InventoryFilter>({
+  query: "",
+  status: "all",
+  type: "all",
+  visibleIds: new Set(),
+});
 
 function entryKey(entry: InventoryEntry): string {
   return `${entry.system}:${entry.id}`;
@@ -58,25 +63,49 @@ export function WebsiteInventory({
   locale?: "ar" | "en";
   children: ReactNode;
 }) {
-  const [filter, setFilter] = useState({ query: initialQuery, status: initialStatus, type: initialType });
+  const [filter, setFilter] = useState({
+    query: initialQuery,
+    status: initialStatus,
+    type: initialType,
+  });
   const [page, setPage] = useState(1);
-  const matchingEntries = useMemo(() => entries.filter((entry) => matches(entry, filter)), [entries, filter]);
+  const matchingEntries = useMemo(
+    () => entries.filter((entry) => matches(entry, filter)),
+    [entries, filter],
+  );
   const visible = matchingEntries.length;
   const pageCount = Math.ceil(visible / PAGE_SIZE);
   const safePage = Math.min(page, Math.max(pageCount, 1));
-  const visibleIds = new Set(matchingEntries.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE).map(entryKey));
+  const visibleIds = new Set(
+    matchingEntries.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE).map(entryKey),
+  );
   const context = { ...filter, visibleIds };
-  const updateFilter = (next: typeof filter) => { setFilter(next); setPage(1); };
+  const updateFilter = (next: typeof filter) => {
+    setFilter(next);
+    setPage(1);
+  };
   const changePage = (next: number) => {
     setPage(next);
-    document.getElementById("website-inventory")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById("website-inventory")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const active = filter.query !== "" || filter.status !== "all" || filter.type !== "all";
   return (
     <InventoryContext.Provider value={context}>
       <div className="websiteInventoryFilters">
-        <div className="websiteInventoryTypeButtons" role="group" aria-label="Filter websites by system">
-          {([ ["all", "All"], ["website", "Websites & menus"], ["commerce", "E-commerce"] ] as const).map(([value, label]) => (
+        <div
+          className="websiteInventoryTypeButtons"
+          role="group"
+          aria-label="Filter websites by system"
+        >
+          {(
+            [
+              ["all", "All"],
+              ["website", "Websites & menus"],
+              ["commerce", "E-commerce"],
+            ] as const
+          ).map(([value, label]) => (
             <button
               aria-pressed={filter.type === value}
               className={filter.type === value ? "isActive" : ""}
@@ -100,7 +129,10 @@ export function WebsiteInventory({
           </label>
           <label>
             <span className="srOnly">Filter by status</span>
-            <select onChange={(event) => updateFilter({ ...filter, status: event.target.value })} value={filter.status}>
+            <select
+              onChange={(event) => updateFilter({ ...filter, status: event.target.value })}
+              value={filter.status}
+            >
               <option value="all">All statuses</option>
               <option value="draft">Draft</option>
               <option value="live">Live</option>
@@ -111,29 +143,58 @@ export function WebsiteInventory({
           </label>
           <label>
             <span className="srOnly">Filter by template category</span>
-            <select onChange={(event) => updateFilter({ ...filter, type: event.target.value })} value={filter.type}>
+            <select
+              onChange={(event) => updateFilter({ ...filter, type: event.target.value })}
+              value={filter.type}
+            >
               <option value="all">All categories</option>
               <option value="website">All website types</option>
-              {categories.map((category) => <option key={category} value={`category:${category}`}>{category}</option>)}
+              {categories.map((category) => (
+                <option key={category} value={`category:${category}`}>
+                  {category}
+                </option>
+              ))}
               <option value="commerce">E-commerce</option>
             </select>
           </label>
-          {active && <button className="secondaryButton" onClick={() => updateFilter({ query: "", status: "all", type: "all" })} type="button">Clear</button>}
+          {active && (
+            <button
+              className="secondaryButton"
+              onClick={() => updateFilter({ query: "", status: "all", type: "all" })}
+              type="button"
+            >
+              Clear
+            </button>
+          )}
         </div>
-        <p className="websiteInventoryCount" aria-live="polite">{visible} of {entries.length} existing websites shown</p>
+        <p className="websiteInventoryCount" aria-live="polite">
+          {visible} of {entries.length} existing websites shown
+        </p>
       </div>
       {visible === 0 ? (
         <div className="emptyState">
           <strong>{entries.length === 0 ? "No websites yet" : "No matching websites"}</strong>
-          <p>{entries.length === 0 ? "Create your first website below." : "Try another search or clear the filters."}</p>
+          <p>
+            {entries.length === 0
+              ? "Create your first website below."
+              : "Try another search or clear the filters."}
+          </p>
         </div>
       ) : (
         <>
           {children}
           <p className="paginationSummary" aria-live="polite">
-            {locale === "ar" ? "عرض" : "Showing"} {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, visible)} {locale === "ar" ? `من ${visible} مواقع مطابقة` : `of ${visible} matching websites`}
+            {locale === "ar" ? "عرض" : "Showing"} {(safePage - 1) * PAGE_SIZE + 1}–
+            {Math.min(safePage * PAGE_SIZE, visible)}{" "}
+            {locale === "ar" ? `من ${visible} مواقع مطابقة` : `of ${visible} matching websites`}
           </p>
-          <NumberedPagination label={locale === "ar" ? "صفحات المواقع" : "Website pages"} locale={locale} onPageChange={changePage} page={safePage} pageCount={pageCount} />
+          <NumberedPagination
+            label={locale === "ar" ? "صفحات المواقع" : "Website pages"}
+            locale={locale}
+            onPageChange={changePage}
+            page={safePage}
+            pageCount={pageCount}
+          />
         </>
       )}
     </InventoryContext.Provider>
@@ -157,7 +218,10 @@ export function WebsiteInventoryGroup({
   return (
     <div className="unifiedSystemGroup">
       <div className="unifiedSystemGroupHead">
-        <div><p className="eyebrow">{label}</p><h3>{title}</h3></div>
+        <div>
+          <p className="eyebrow">{label}</p>
+          <h3>{title}</h3>
+        </div>
         <span>{count} visible</span>
       </div>
       {children}
@@ -165,7 +229,13 @@ export function WebsiteInventoryGroup({
   );
 }
 
-export function WebsiteInventoryItem({ entry, children }: { entry: InventoryEntry; children: ReactNode }) {
+export function WebsiteInventoryItem({
+  entry,
+  children,
+}: {
+  entry: InventoryEntry;
+  children: ReactNode;
+}) {
   const filter = useContext(InventoryContext);
   return filter.visibleIds.has(entryKey(entry)) ? children : null;
 }

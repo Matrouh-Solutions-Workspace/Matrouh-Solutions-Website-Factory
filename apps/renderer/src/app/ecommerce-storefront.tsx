@@ -10,7 +10,13 @@ import {
   normalizeWhatsAppNumber,
 } from "./whatsapp-order";
 import { filterCatalog, type StorefrontSortKey } from "./storefront/catalog";
-import { addCartLine, changeCartColor, isCartLine, updateCartQuantity, type CartLine } from "./storefront/cart";
+import {
+  addCartLine,
+  changeCartColor,
+  isCartLine,
+  updateCartQuantity,
+  type CartLine,
+} from "./storefront/cart";
 import { parseCheckoutResult, readCheckoutRequest } from "./storefront/checkout";
 import { WhatsAppContact } from "./whatsapp-contact";
 import {
@@ -104,9 +110,10 @@ export function EcommerceStorefront({
   const languageHref = `${previewPath}${path.length ? `/${path.join("/")}` : ""}?lang=${rtl ? "en" : "ar"}`;
   const product =
     route === "products" ? store.products.find((item) => item.slug === path[1]) : undefined;
-  const selectedVariant = product?.variants.find((variant) => variant.id === selectedVariantId)
-    ?? product?.variants.find((variant) => variant.stockQuantity > 0)
-    ?? product?.variants[0];
+  const selectedVariant =
+    product?.variants.find((variant) => variant.id === selectedVariantId) ??
+    product?.variants.find((variant) => variant.stockQuantity > 0) ??
+    product?.variants[0];
   const prices = store.products.map(productPrice);
   const maxCatalogPrice = Math.max(...prices, 1);
   const [maxPrice, setMaxPrice] = useState(maxCatalogPrice);
@@ -132,7 +139,8 @@ export function EcommerceStorefront({
     }
     try {
       const saved = JSON.parse(localStorage.getItem(savedKey) ?? "[]") as unknown;
-      if (Array.isArray(saved)) setSavedProducts(saved.filter((id): id is string => typeof id === "string"));
+      if (Array.isArray(saved))
+        setSavedProducts(saved.filter((id): id is string => typeof id === "string"));
     } catch {
       localStorage.removeItem(savedKey);
     }
@@ -237,15 +245,18 @@ export function EcommerceStorefront({
   }
 
   function updateQuantity(variantId: string, quantity: number, color?: string) {
-    const stockQuantity = store.products.flatMap((item) => item.variants)
-      .find((variant) => variant.id === variantId)?.stockQuantity ?? 0;
+    const stockQuantity =
+      store.products.flatMap((item) => item.variants).find((variant) => variant.id === variantId)
+        ?.stockQuantity ?? 0;
     setCart((current) => updateCartQuantity(current, variantId, quantity, color, stockQuantity));
   }
 
   function toggleSaved(productId: string) {
-    setSavedProducts((current) => current.includes(productId)
-      ? current.filter((id) => id !== productId)
-      : [...current, productId]);
+    setSavedProducts((current) =>
+      current.includes(productId)
+        ? current.filter((id) => id !== productId)
+        : [...current, productId],
+    );
   }
 
   function resetFilters() {
@@ -509,9 +520,13 @@ export function EcommerceStorefront({
           </span>
           <p className="shopEyebrow">{copy.thankYou}</p>
           <h1>{copy.orderReceived}</h1>
-          <p>{isPreview
-            ? (rtl ? "هذه تجربة للقالب فقط. لم يُحفظ طلب حقيقي ولم تُرسل رسالة واتساب." : "This is a template demo. No real order was saved or WhatsApp message sent.")
-            : copy.orderConfirmation}</p>
+          <p>
+            {isPreview
+              ? rtl
+                ? "هذه تجربة للقالب فقط. لم يُحفظ طلب حقيقي ولم تُرسل رسالة واتساب."
+                : "This is a template demo. No real order was saved or WhatsApp message sent."
+              : copy.orderConfirmation}
+          </p>
           <strong>{orderNumber}</strong>
           <a className="shopPrimaryButton" href={storefrontHref()}>
             {copy.continueShopping}
@@ -567,7 +582,9 @@ export function EcommerceStorefront({
                             className={line.color === color ? "isSelected" : ""}
                             key={color}
                             onClick={() =>
-                              setCart((current) => changeCartColor(current, line.variantId, line.color, color))
+                              setCart((current) =>
+                                changeCartColor(current, line.variantId, line.color, color),
+                              )
                             }
                             style={{ backgroundColor: color }}
                             type="button"
@@ -669,14 +686,20 @@ export function EcommerceStorefront({
                 type="submit"
               >
                 <Icon name="message" />
-                {checkoutPending ? copy.preparingWhatsApp : isPreview
-                  ? (rtl ? "إكمال طلب تجريبي" : "Complete demo checkout")
-                  : copy.placeOrder}
+                {checkoutPending
+                  ? copy.preparingWhatsApp
+                  : isPreview
+                    ? rtl
+                      ? "إكمال طلب تجريبي"
+                      : "Complete demo checkout"
+                    : copy.placeOrder}
               </button>
               <small className="shopSecureNote">
                 <Icon name="message" />
                 {isPreview
-                  ? (rtl ? "معاينة فقط — لن يُرسل هذا الطلب إلى أي متجر." : "Preview only — this order will not be sent to a store.")
+                  ? rtl
+                    ? "معاينة فقط — لن يُرسل هذا الطلب إلى أي متجر."
+                    : "Preview only — this order will not be sent to a store."
                   : copy.secureNote}
               </small>
             </form>
@@ -1394,29 +1417,36 @@ export function EcommerceStorefront({
           </div>
         </section>
 
-        {kind === "fashion" ? <section className="shopNewsletter">
-          <div>
-            <p className="shopEyebrow">{copy.stayInLoop}</p>
-            <h2>{copy.newsletterFashion}</h2>
-          </div>
-          <form onSubmit={(event) => event.preventDefault()}>
-            <label className="srOnly" htmlFor="commerce-newsletter">
-              {copy.email}
-            </label>
-            <input id="commerce-newsletter" placeholder={copy.emailPlaceholder} type="email" />
-            <button type="submit">
-              {copy.subscribe}
-              <Icon name="arrow" />
-            </button>
-          </form>
-        </section> : (
+        {kind === "fashion" ? (
+          <section className="shopNewsletter">
+            <div>
+              <p className="shopEyebrow">{copy.stayInLoop}</p>
+              <h2>{copy.newsletterFashion}</h2>
+            </div>
+            <form onSubmit={(event) => event.preventDefault()}>
+              <label className="srOnly" htmlFor="commerce-newsletter">
+                {copy.email}
+              </label>
+              <input id="commerce-newsletter" placeholder={copy.emailPlaceholder} type="email" />
+              <button type="submit">
+                {copy.subscribe}
+                <Icon name="arrow" />
+              </button>
+            </form>
+          </section>
+        ) : (
           <section className="shopNewsletter shopContactCTA">
             <div>
               <p className="shopEyebrow">{copy.expertTitle}</p>
               <h2>{kind === "pc" ? copy.pcContactPrompt : copy.hardwareContactPrompt}</h2>
             </div>
-            <a className="shopPrimaryButton" href={buildWhatsAppContactUrl(store.contactPhone) ?? "#products"}>
-              {buildWhatsAppContactUrl(store.contactPhone) ? copy.contactUs : copy.exploreCategories}
+            <a
+              className="shopPrimaryButton"
+              href={buildWhatsAppContactUrl(store.contactPhone) ?? "#products"}
+            >
+              {buildWhatsAppContactUrl(store.contactPhone)
+                ? copy.contactUs
+                : copy.exploreCategories}
               <Icon name="arrow" />
             </a>
           </section>

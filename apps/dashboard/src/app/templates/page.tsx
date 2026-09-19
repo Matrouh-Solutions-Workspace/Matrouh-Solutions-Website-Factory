@@ -8,7 +8,10 @@ import { loadEcommerceTemplates } from "@/server/ecommerce";
 export const dynamic = "force-dynamic";
 
 export default async function TemplatesPage() {
-  const [templates, commerceTemplates] = await Promise.all([loadTemplateCatalog(), loadEcommerceTemplates()]);
+  const [templates, commerceTemplates] = await Promise.all([
+    loadTemplateCatalog(),
+    loadEcommerceTemplates(),
+  ]);
   const categorySuggestions = uniqueSorted(templates.map((template) => template.catalog.category));
   const categoryArSuggestions = uniqueSorted(
     templates.map((template) => template.catalog.categoryAr),
@@ -56,7 +59,9 @@ export default async function TemplatesPage() {
                       title={`${template.name} storefront thumbnail`}
                     />
                   ) : (
-                    <div className="templateVisualFallback"><Icon name="templates" /></div>
+                    <div className="templateVisualFallback">
+                      <Icon name="templates" />
+                    </div>
                   )}
                 </div>
                 <div className="templateCardBody">
@@ -70,13 +75,19 @@ export default async function TemplatesPage() {
                   <div className="templateCardActions">
                     <a
                       className="buttonLink"
-                      href={latest ? `/commerce-template-preview/${encodeURIComponent(latest.rendererKey)}` : "/ecommerce/templates"}
+                      href={
+                        latest
+                          ? `/commerce-template-preview/${encodeURIComponent(latest.rendererKey)}`
+                          : "/ecommerce/templates"
+                      }
                       rel="noreferrer"
                       target="_blank"
                     >
                       Preview storefront
                     </a>
-                    <span>{template.versions.length} version{template.versions.length === 1 ? "" : "s"}</span>
+                    <span>
+                      {template.versions.length} version{template.versions.length === 1 ? "" : "s"}
+                    </span>
                   </div>
                 </div>
                 <div className="templateCardListing">
