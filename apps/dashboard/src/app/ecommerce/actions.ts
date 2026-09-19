@@ -298,6 +298,8 @@ export async function updateEcommerceStoreAction(formData: FormData): Promise<vo
   const borderColor = colorField(formData, "borderColor", "#d8d2c8");
   const successColor = colorField(formData, "successColor", "#128c4a");
   const whatsappEnabled = formData.get("whatsappEnabled") === "on";
+  const showNavbar = formData.get("showNavbar") === "on";
+  const showFooter = formData.get("showFooter") === "on";
   const whatsappButtonLabel = text(formData, "whatsappButtonLabel", 100) || null;
   if (!name) return;
   await withTenantTransaction(
@@ -332,7 +334,13 @@ export async function updateEcommerceStoreAction(formData: FormData): Promise<vo
               success: successColor,
             },
           },
-          settingsJson: { ...settings, whatsappEnabled, whatsappButtonLabel },
+          settingsJson: {
+            ...settings,
+            whatsappEnabled,
+            whatsappButtonLabel,
+            showNavbar,
+            showFooter,
+          },
           revision: { increment: 1 },
           locales: {
             updateMany: [

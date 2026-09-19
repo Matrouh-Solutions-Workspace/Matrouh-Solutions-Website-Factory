@@ -6998,8 +6998,33 @@ input[type="file"] {
   box-shadow: 3px 3px 0 var(--ink);
 }
 .appShell .clientPublicationControl {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: flex-start;
   gap: 6px;
+}
+.appShell .editorStudioPage .websiteEditorHeader .headerActions {
+  align-items: flex-start;
+}
+.appShell.clientShell .editorStudioClient .visibilitySettingsForm {
+  gap: 12px;
+  padding: 16px 18px;
+}
+.appShell.clientShell .editorStudioClient .visibilitySettingsForm .draftCommandBar {
+  justify-content: flex-start;
+  padding-top: 0;
+}
+.appShell.clientShell .editorStudioClient .visibilitySettingsForm .checkboxLine {
+  min-height: 42px;
+  margin: 0;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.appShell.clientShell .editorStudioClient .visibilitySettingsForm .formFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
 }
 .appShell .clientPublicationFeedback {
   max-width: 320px;
@@ -8547,9 +8572,20 @@ input[type="file"] {
 }
 .appShell .websiteEditorMeta > div {
   position: relative;
+  min-width: 0;
+  overflow: hidden;
   min-height: 72px;
   justify-content: center;
   padding: 14px 18px 14px 22px;
+}
+.appShell .websiteEditorMeta > div > strong {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: normal;
 }
 .appShell .websiteEditorMeta > div::before {
   content: "";
@@ -8734,6 +8770,18 @@ input[type="file"] {
   }
   .appShell .websiteEditorPage .draftSetupProgress li:not(.current) a {
     min-height: 36px;
+  }
+}
+
+@media (max-width: 360px) {
+  .appShell .websiteEditorMeta > div {
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding-inline: 18px 12px;
+  }
+  .appShell .websiteEditorMeta > div > strong {
+    font-size: 12px;
+    line-height: 1.35;
   }
 }
 

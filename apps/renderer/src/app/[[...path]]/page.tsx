@@ -93,7 +93,13 @@ export default async function SitePage({ params, searchParams }: PageProperties)
     typeof customLogo === "string"
       ? site.snapshot.media.find((item) => item.id === customLogo)?.url
       : undefined;
-  const whatsapp = whatsappContactSettings(site.snapshot, rendered.locale);
+  // Menu QR is an uploaded document/image destination, not a full storefront.
+  // Keep its public route focused on the uploaded menu and do not inject the
+  // generic site chrome (navbar, footer, or floating WhatsApp contact).
+  const isMenuQr = site.snapshot.template.id === "com.matrouh.menu-qr";
+  const whatsapp = isMenuQr ? null : whatsappContactSettings(site.snapshot, rendered.locale);
+  const showNavbar = !isMenuQr && websiteSetting(site.snapshot, "showNavbar") !== false;
+  const showFooter = !isMenuQr && websiteSetting(site.snapshot, "showFooter") !== false;
   return (
     <div
       className="siteRoot"
@@ -112,32 +118,34 @@ export default async function SitePage({ params, searchParams }: PageProperties)
       lang={rendered.locale}
       style={themeVariables(site.snapshot.theme)}
     >
-      <header className="siteHeader">
-        <a className="siteBrand" href={homeHref}>
-          <img
-            alt=""
-            className="siteBrandMark"
-            src={logoUrl ?? site.branding.faviconUrl ?? "/matrouh-logo.png"}
+      {showNavbar && (
+        <header className="siteHeader">
+          <a className="siteBrand" href={homeHref}>
+            <img
+              alt=""
+              className="siteBrandMark"
+              src={logoUrl ?? site.branding.faviconUrl ?? "/matrouh-logo.png"}
+            />
+            <strong>{site.snapshot.website.name}</strong>
+          </a>
+          <SiteNavigation
+            appearanceStorageKey={`factory:appearance:${host.toLowerCase()}`}
+            ariaLabel="Main navigation"
+            initialAppearance={appearance}
+            items={navigation}
+            locale={rendered.locale}
+            showAppearanceToggle={websiteSetting(site.snapshot, "allowAppearanceToggle") !== false}
+            localeItems={localizedRoutes.map((item) => ({
+              current: item.current,
+              direction: textDirection(item.locale),
+              href: item.href,
+              id: item.locale,
+              label: localeLabel(item.locale),
+              locale: item.locale,
+            }))}
           />
-          <strong>{site.snapshot.website.name}</strong>
-        </a>
-        <SiteNavigation
-          appearanceStorageKey={`factory:appearance:${host.toLowerCase()}`}
-          ariaLabel="Main navigation"
-          initialAppearance={appearance}
-          items={navigation}
-          locale={rendered.locale}
-          showAppearanceToggle={websiteSetting(site.snapshot, "allowAppearanceToggle") !== false}
-          localeItems={localizedRoutes.map((item) => ({
-            current: item.current,
-            direction: textDirection(item.locale),
-            href: item.href,
-            id: item.locale,
-            label: localeLabel(item.locale),
-            locale: item.locale,
-          }))}
-        />
-      </header>
+        </header>
+      )}
       <main>{rendered.node}</main>
       {whatsapp && <WhatsAppContact {...whatsapp} />}
       {structuredData.map((document, index) => (
@@ -148,23 +156,29 @@ export default async function SitePage({ params, searchParams }: PageProperties)
           type="application/ld+json"
         />
       ))}
-      <footer className="siteFooter">
-        <div>
-          <strong>{site.snapshot.website.name}</strong>
-        </div>
-        <nav aria-label="Footer navigation">
-          {navigation.map((item) => (
-            <a href={item.href} key={item.id}>
-              {item.label}
+      {showFooter && (
+        <footer className="siteFooter">
+          <div>
+            <strong>{site.snapshot.website.name}</strong>
+          </div>
+          <nav aria-label="Footer navigation">
+            {navigation.map((item) => (
+              <a href={item.href} key={item.id}>
+                {item.label}
+              </a>
+            ))}
+          </nav>
+          {!site.branding.whiteLabelEnabled && (
+            <a
+              className="factoryWatermark"
+              href={matrouhSolutionsUrl(rendered.locale)}
+              rel="author"
+            >
+              {rendered.locale === "ar" ? "موقع من مطروح سوليوشنز" : "Website by Matrouh Solutions"}
             </a>
-          ))}
-        </nav>
-        {!site.branding.whiteLabelEnabled && (
-          <a className="factoryWatermark" href={matrouhSolutionsUrl(rendered.locale)} rel="author">
-            {rendered.locale === "ar" ? "موقع من مطروح سوليوشنز" : "Website by Matrouh Solutions"}
-          </a>
-        )}
-      </footer>
+          )}
+        </footer>
+      )}
     </div>
   );
 }

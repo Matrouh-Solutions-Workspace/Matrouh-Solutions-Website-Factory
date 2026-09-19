@@ -229,6 +229,43 @@ export const whatsappContactFields: FieldMetadataMap = {
   },
 };
 
+// These controls are owned by the Factory rather than individual templates. They
+// are accepted by every website settings schema so the dashboard can persist
+// presentation-level visibility without requiring every template to duplicate the
+// same fields. They are intentionally not exposed in template authoring metadata.
+const FACTORY_VISIBILITY_KEYS = ["showNavbar", "showFooter"] as const;
+
+function withoutFactoryVisibilitySettings(input: unknown): {
+  base: unknown;
+  visibility: Record<string, boolean>;
+} {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return { base: input, visibility: {} };
+  }
+  const base = { ...(input as Record<string, unknown>) };
+  const visibility: Record<string, boolean> = {};
+  for (const key of FACTORY_VISIBILITY_KEYS) {
+    const value = base[key];
+    if (typeof value === "boolean") {
+      visibility[key] = value;
+      delete base[key];
+    }
+  }
+  return { base, visibility };
+}
+
+function withFactoryVisibilitySettings<T>(parsed: T, visibility: Record<string, boolean>): T {
+  if (
+    !Object.keys(visibility).length ||
+    !parsed ||
+    typeof parsed !== "object" ||
+    Array.isArray(parsed)
+  ) {
+    return parsed;
+  }
+  return { ...(parsed as Record<string, unknown>), ...visibility } as T;
+}
+
 export interface SchemaIssue {
   readonly code: string;
   readonly path: string;
@@ -307,11 +344,19 @@ export function contentSchema<T>(options: {
     version: options.version,
     schema: options.schema,
     fields,
-    parse: (input: unknown) => options.schema.parse(input),
+    parse: (input: unknown) => {
+      const { base, visibility } = withoutFactoryVisibilitySettings(input);
+      return withFactoryVisibilitySettings(options.schema.parse(base), visibility);
+    },
     safeParse: (input: unknown) => {
-      const result = options.schema.safeParse(input);
+      const { base, visibility } = withoutFactoryVisibilitySettings(input);
+      const result = options.schema.safeParse(base);
       if (result.success)
-        return { success: true as const, value: result.data, issues: [] as const };
+        return {
+          success: true as const,
+          value: withFactoryVisibilitySettings(result.data, visibility),
+          issues: [] as const,
+        };
       return {
         success: false as const,
         issues: result.error.issues.map((issue) => ({

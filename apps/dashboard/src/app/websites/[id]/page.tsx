@@ -23,6 +23,7 @@ import {
   updateThemeDraftAction,
   updateWebsiteIdentityAction,
   updateWebsiteBrandingAction,
+  updateWebsiteChromeSettingsAction,
   updateWebsiteLogoAction,
   updateWebsiteDefaultLocaleAction,
   updateWebsiteSettingsDraftAction,
@@ -70,7 +71,12 @@ export default async function WebsiteEditorPage({
   if (!editor) notFound();
   const setupStep = draftSetupStep(requestedSetupStep);
   const publishPending = isActivePublicationJob(editor.latestPublishJob?.status);
-  const qrMenu = editor.templateFeatures.includes("qr-code");
+  // Only the dedicated upload-based Menu QR template gets the QR-specific
+  // editor. Other templates may expose QR-related capabilities without being
+  // the simple uploaded-menu experience.
+  const qrMenu =
+    editor.website.templateId === "com.matrouh.menu-qr" ||
+    editor.templateFeatures.includes("qr-menu");
   const qrPublicUrl =
     qrMenu && editor.website.status === "published" && editor.website.hostname
       ? websitePublicUrl(editor.website.hostname)
@@ -133,7 +139,7 @@ export default async function WebsiteEditorPage({
       className="websiteEditorPage editorStudioPage editorStudioAdmin"
       data-editor-step={setupStep}
     >
-      <PublicationStatusRefresh active={publishPending && setupStep === "review"} />
+      <PublicationStatusRefresh active={publishPending} />
       <CustomDomainStatusRefresh
         active={editor.customDomains.some((domain) =>
           ["verifying", "verified", "connecting"].includes(domain.status),
@@ -544,7 +550,7 @@ export default async function WebsiteEditorPage({
           )}
 
           <section className="workspaceGrid editorConfiguration" hidden={setupStep !== "design"}>
-            {editor.settings && (
+            {!qrMenu && editor.settings && (
               <form
                 action={updateWebsiteSettingsDraftAction}
                 className="panel editForm codeEditorPanel"
@@ -581,7 +587,52 @@ export default async function WebsiteEditorPage({
                 </div>
               </form>
             )}
-            {editor.settings && (
+            {!qrMenu && editor.settings && (
+              <DraftEditorForm
+                action={updateWebsiteChromeSettingsAction}
+                className="panel editForm"
+              >
+                <div className="panelHead">
+                  <div>
+                    <p className="eyebrow">Website display</p>
+                    <h2>Show and hide sections</h2>
+                  </div>
+                  <span>All pages</span>
+                </div>
+                <input name="websiteId" type="hidden" value={editor.website.id} />
+                <input name="draftId" type="hidden" value={editor.settings.id} />
+                <input name="expectedRevision" type="hidden" value={editor.settings.revision} />
+                <input
+                  name="websiteDraftRevision"
+                  type="hidden"
+                  value={editor.website.draftRevision}
+                />
+                <label className="checkLabel">
+                  <input
+                    defaultChecked={settingsBoolean(editor.settings.content, "showNavbar", true)}
+                    name="showNavbar"
+                    type="checkbox"
+                    value="yes"
+                  />
+                  Show the navigation bar
+                </label>
+                <label className="checkLabel">
+                  <input
+                    defaultChecked={settingsBoolean(editor.settings.content, "showFooter", true)}
+                    name="showFooter"
+                    type="checkbox"
+                    value="yes"
+                  />
+                  Show the footer
+                </label>
+                <div className="formFooter">
+                  <PendingSubmit pendingLabel="Saving display settings...">
+                    Save display settings
+                  </PendingSubmit>
+                </div>
+              </DraftEditorForm>
+            )}
+            {!qrMenu && editor.settings && (
               <DraftEditorForm
                 action={updateWebsiteWhatsAppSettingsAction}
                 className="panel editForm"

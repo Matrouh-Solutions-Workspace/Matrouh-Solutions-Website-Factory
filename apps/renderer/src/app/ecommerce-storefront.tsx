@@ -47,6 +47,8 @@ export function EcommerceStorefront({
       ? (store.branding.tokens as Record<string, unknown>)
       : {};
   const commerceMedia = store.settings as Record<string, unknown>;
+  const showNavbar = commerceMedia.showNavbar !== false;
+  const showFooter = commerceMedia.showFooter !== false;
   const logoImageFilename =
     typeof commerceMedia.logoImageFilename === "string" ? commerceMedia.logoImageFilename : null;
   const heroImageFilename =
@@ -317,7 +319,7 @@ export function EcommerceStorefront({
     }).catch(() => undefined);
   }
 
-  const header = (
+  const header = showNavbar ? (
     <>
       <div className="shopAnnouncement">
         <span>{kind === "fashion" ? copy.announcementFashion : copy.announcementHardware}</span>
@@ -428,7 +430,7 @@ export function EcommerceStorefront({
         </nav>
       </header>
     </>
-  );
+  ) : null;
 
   if (orderNumber) {
     return (
@@ -455,9 +457,9 @@ export function EcommerceStorefront({
         <StoreFooter
           copy={copy}
           homeHref={storefrontHref()}
-          kind={kind}
           productsHref={storefrontHref("", "#products")}
           store={store}
+          showFooter={showFooter}
         />
       </div>
     );
@@ -621,9 +623,9 @@ export function EcommerceStorefront({
         <StoreFooter
           copy={copy}
           homeHref={storefrontHref()}
-          kind={kind}
           productsHref={storefrontHref("", "#products")}
           store={store}
+          showFooter={showFooter}
         />
       </div>
     );
@@ -728,9 +730,9 @@ export function EcommerceStorefront({
         <StoreFooter
           copy={copy}
           homeHref={storefrontHref()}
-          kind={kind}
           productsHref={storefrontHref("", "#products")}
           store={store}
+          showFooter={showFooter}
         />
       </div>
     );
@@ -1314,9 +1316,9 @@ export function EcommerceStorefront({
       <StoreFooter
         copy={copy}
         homeHref={storefrontHref()}
-        kind={kind}
         productsHref={storefrontHref("", "#products")}
         store={store}
+        showFooter={showFooter}
       />
       {filtersOpen ? (
         <button
@@ -1572,15 +1574,15 @@ function Benefit({
 function StoreFooter({
   copy,
   homeHref,
-  kind,
   productsHref,
+  showFooter,
   store,
 }: {
   readonly copy: ReturnType<typeof commerceCopy>;
   readonly homeHref: string;
-  readonly kind: StorefrontKind;
   readonly productsHref: string;
   readonly store: EcommerceStorefrontData;
+  readonly showFooter: boolean;
 }) {
   const whatsappUrl = buildWhatsAppContactUrl(store.contactPhone);
   const settings =
@@ -1623,69 +1625,46 @@ function StoreFooter({
     ) : null;
   return (
     <>
-      <footer className="commercePublicFooter">
-        <div className="shopFooterLead">
-          <a className="shopBrand" href={homeHref}>
-            <span className="shopBrandMark">
-              <img
-                alt=""
-                src={
-                  logoImageFilename
-                    ? mediaUrl(store.organizationId, logoImageFilename)
-                    : "/matrouh-logo.png"
-                }
-              />
-            </span>
-            <span>
-              <strong>{store.name}</strong>
-              <small>{kind === "fashion" ? copy.fashionDescriptor : copy.hardwareDescriptor}</small>
-            </span>
-          </a>
-          <p>{store.footerText || store.description}</p>
-          <div className="shopSocials">
-            <a aria-label="Instagram" href="#">
-              <Icon name="instagram" />
+      {showFooter && (
+        <footer className="commercePublicFooter">
+          <div className="shopFooterLead">
+            <a className="shopBrand" href={homeHref}>
+              <span className="shopBrandMark">
+                <img
+                  alt=""
+                  src={
+                    logoImageFilename
+                      ? mediaUrl(store.organizationId, logoImageFilename)
+                      : "/matrouh-logo.png"
+                  }
+                />
+              </span>
+              <span>
+                <strong>{store.name}</strong>
+              </span>
             </a>
-            <a aria-label="Facebook" href="#">
-              <Icon name="facebook" />
-            </a>
+            <p>{store.footerText || store.description}</p>
           </div>
-        </div>
-        <div>
-          <strong>{copy.shop}</strong>
-          <a href={productsHref}>{copy.newAndFeatured}</a>
-          {store.categories.slice(0, 4).map((item) => (
-            <a href={productsHref} key={item.id}>
-              {item.name}
-            </a>
-          ))}
-        </div>
-        <div>
-          <strong>{copy.help}</strong>
-          <a href="#services">{copy.deliveryAndReturns}</a>
-          <a href="#services">{copy.orderTracking}</a>
-          <a href="#services">{kind === "fashion" ? copy.sizeGuide : copy.buyingGuides}</a>
-          <a href="#services">{copy.contactUs}</a>
-        </div>
-        <div>
-          <strong>{copy.contact}</strong>
-          {store.contactEmail ? (
-            <a href={`mailto:${store.contactEmail}`}>{store.contactEmail}</a>
-          ) : null}
-          {store.contactPhone ? (
-            <a href={`tel:${store.contactPhone}`}>{store.contactPhone}</a>
-          ) : null}
-          <span>{copy.cairoEgypt}</span>
-          <small>{copy.hours}</small>
-        </div>
-        <div className="shopFooterBottom">
-          <span>© 2026 {store.name}</span>
-          <span>
-            {copy.privacy} · {copy.terms}
-          </span>
-          <small>{copy.commerceBy}</small>
-        </div>
-      </footer>
+          <div>
+            <strong>{copy.shop}</strong>
+            <a href={productsHref}>{copy.newAndFeatured}</a>
+            {store.categories.slice(0, 4).map((item) => (
+              <a href={productsHref} key={item.id}>
+                {item.name}
+              </a>
+            ))}
+          </div>
+          <div>
+            <strong>{copy.contact}</strong>
+            {store.contactEmail ? (
+              <a href={`mailto:${store.contactEmail}`}>{store.contactEmail}</a>
+            ) : null}
+            {store.contactPhone ? (
+              <a href={`tel:${store.contactPhone}`}>{store.contactPhone}</a>
+            ) : null}
+          </div>
+        </footer>
+      )}
       {whatsappContact}
     </>
   );

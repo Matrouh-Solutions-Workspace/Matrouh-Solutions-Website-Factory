@@ -2790,6 +2790,83 @@ export async function updateWebsiteWhatsAppSettingsAction(formData: FormData): P
   revalidateWebsiteEditor(websiteId);
 }
 
+/** Update Factory-owned visibility controls without exposing template internals. */
+export async function updateWebsiteChromeSettingsAction(formData: FormData): Promise<void> {
+  const websiteId = cleanText(formData.get("websiteId"), 80);
+  const draftId = cleanText(formData.get("draftId"), 80);
+  const expectedRevision = parseRevision(formData.get("expectedRevision"));
+  const websiteDraftRevision = parseRevision(formData.get("websiteDraftRevision"));
+  if (!websiteId || !draftId || !expectedRevision || !websiteDraftRevision) return;
+
+  const context = await requireWebsiteMutationContext(websiteId, "website.edit");
+  const prepared = await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `prepare-website-chrome:${websiteId}`),
+    (transaction) =>
+      transaction.website.findUnique({
+        where: { organizationId_id: { organizationId: context.organization.id, id: websiteId } },
+        select: {
+          templateId: true,
+          templateVersion: true,
+          settingsDrafts: {
+            where: { id: draftId, revision: expectedRevision },
+            select: { contentJson: true },
+            take: 1,
+          },
+        },
+      }),
+  );
+  const current = prepared?.settingsDrafts[0]?.contentJson;
+  if (!prepared || !current || typeof current !== "object" || Array.isArray(current)) return;
+
+  const content = {
+    ...current,
+    showNavbar: formData.get("showNavbar") === "yes",
+    showFooter: formData.get("showFooter") === "yes",
+  };
+  const template = await loadExactWebsiteTemplate(prepared.templateId, prepared.templateVersion);
+  const validated = template?.websiteSchema.safeParse(content);
+  if (!validated?.success) throw new Error("WEBSITE_SETTINGS_INVALID");
+
+  await withTenantTransaction(
+    dashboardDatabase(),
+    tenantActionContext(context, `update-website-chrome:${draftId}`),
+    async (transaction) => {
+      const updated = await transaction.websiteSettingsDraft.updateMany({
+        where: {
+          id: draftId,
+          organizationId: context.organization.id,
+          websiteId,
+          revision: expectedRevision,
+        },
+        data: {
+          contentJson: jsonInput(validated.value),
+          contentSizeBytes: Buffer.byteLength(JSON.stringify(validated.value)),
+          revision: { increment: 1 },
+        },
+      });
+      if (updated.count !== 1) throw new Error("DRAFT_REVISION_CONFLICT");
+      await advanceWebsiteDraft(
+        transaction,
+        context.organization.id,
+        websiteId,
+        websiteDraftRevision,
+      );
+      await writeDraftAudit(
+        transaction,
+        context.organization.id,
+        context.actor.id,
+        "website.chrome_settings_updated",
+        "website_settings",
+        draftId,
+        websiteId,
+        { showNavbar: content.showNavbar, showFooter: content.showFooter },
+      );
+    },
+  );
+  revalidateWebsiteEditor(websiteId);
+}
+
 export async function updateThemeDraftAction(formData: FormData): Promise<void> {
   const websiteId = cleanText(formData.get("websiteId"), 80);
   const themeId = cleanText(formData.get("themeId"), 80);
@@ -4184,12 +4261,16 @@ function collectMediaReferences(
 ): { readonly id: string; readonly kind: "document" | "image" }[] {
   if (Array.isArray(value)) return value.flatMap(collectMediaReferences);
   if (!value || typeof value !== "object") return [];
-  return Object.entries(value).flatMap(([key, child]) => [
-    ...(key.endsWith("MediaId") && typeof child === "string" && child
+  const record = value as Record<string, unknown>;
+  return Object.entries(record).flatMap(([key, child]) => [
+    ...((key === "mediaId" || key.endsWith("MediaId")) && typeof child === "string" && child
       ? [
           {
             id: child,
-            kind: key.toLowerCase().includes("pdf") ? ("document" as const) : ("image" as const),
+            kind:
+              record.mediaKind === "document" || key.toLowerCase().includes("pdf")
+                ? ("document" as const)
+                : ("image" as const),
           },
         ]
       : []),

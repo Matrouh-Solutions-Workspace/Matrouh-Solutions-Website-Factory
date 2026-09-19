@@ -2134,7 +2134,7 @@
 .commercePublicFooter {
   margin-top: clamp(1.5rem, 4vw, 4rem);
   display: grid;
-  grid-template-columns: 1.55fr repeat(3, 1fr);
+  grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr));
   gap: clamp(2rem, 5vw, 5rem);
   padding: clamp(4rem, 7vw, 7rem) clamp(1rem, 5vw, 5rem) 2rem;
   color: #f5f3ed;
@@ -2270,7 +2270,7 @@
     grid-template-columns: 1.5fr 1fr 1fr;
   }
   .commercePublicFooter {
-    grid-template-columns: 1.3fr repeat(3, 1fr);
+    grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(0, 1fr));
     gap: 2rem;
   }
 }
@@ -4076,9 +4076,19 @@ section.hero::before {
    heading's usable measure inside scaled previews and intermediate screens. */
 .shopTheme--hardware .shopStoryGrid {
   grid-template-columns: minmax(22rem, 2fr) repeat(2, minmax(12rem, 1fr));
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* Let the tracks shrink with the actual storefront instead of letting a
+     metric's intrinsic text width expand the whole grid past the viewport. */
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
 }
 .shopTheme--hardware .shopStoryGrid > div {
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   padding: clamp(2rem, 3.5vw, 4.5rem);
 }
 .shopTheme--hardware .shopStoryGrid h2 {
@@ -4090,6 +4100,23 @@ section.hero::before {
   word-break: normal;
   hyphens: none;
   text-wrap: pretty;
+}
+.shopTheme--hardware .shopStoryGrid .shopMetric {
+  min-width: 0;
+  /* The large desktop padding left too little inline space for the Arabic
+     metrics, causing values such as 48H and 100% to wrap character by
+     character. Keep metric cells comfortable while preserving the spacious
+     story copy column. */
+  padding-inline: clamp(1rem, 2.2vw, 2.5rem);
+}
+.shopTheme--hardware .shopStoryGrid .shopMetric strong,
+.shopTheme--hardware .shopStoryGrid .shopMetric span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.shopTheme--hardware .shopStoryGrid .shopMetric strong {
+  white-space: nowrap;
+  font-size: clamp(3rem, 6vw, 6.5rem);
 }
 @media (max-width: 960px) {
   .shopTheme--hardware .shopHero {

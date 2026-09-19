@@ -700,6 +700,22 @@ export async function EcommerceStoreDashboard({
               />
               Show floating WhatsApp button
             </label>
+            <label className="checkboxLabel">
+              <input
+                defaultChecked={whatsappSettings.showNavbar !== false}
+                name="showNavbar"
+                type="checkbox"
+              />
+              Show storefront navigation
+            </label>
+            <label className="checkboxLabel">
+              <input
+                defaultChecked={whatsappSettings.showFooter !== false}
+                name="showFooter"
+                type="checkbox"
+              />
+              Show storefront footer
+            </label>
             <label>
               WhatsApp button label
               <input

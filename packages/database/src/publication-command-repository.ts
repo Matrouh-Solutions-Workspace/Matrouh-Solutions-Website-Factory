@@ -65,6 +65,28 @@ export class PrismaPublicationCommandRepository implements PublicationCommandRep
       if (record.requestHash !== requestHash) throw new Error("IDEMPOTENCY_REQUEST_CONFLICT");
       if (record.id !== idempotencyId) {
         if (!record.resourceId) throw new Error("IDEMPOTENCY_RESOURCE_MISSING");
+        // A failed publication for this exact draft revision is safe to retry
+        // from the Publish button. Previously idempotency returned the old
+        // failed job unchanged, making subsequent publish attempts appear to
+        // do nothing unless the separate Retry action was discovered.
+        const existingJob = await transaction.job.findUnique({
+          where: { id: record.resourceId },
+          select: { status: true },
+        });
+        if (existingJob && ["failed", "dead_letter"].includes(existingJob.status)) {
+          await transaction.job.update({
+            where: { id: record.resourceId },
+            data: {
+              status: "queued",
+              availableAt: new Date(),
+              attemptCount: 0,
+              completedAt: null,
+              lockedAt: null,
+              lockOwner: null,
+              lockExpiresAt: null,
+            },
+          });
+        }
         return { jobId: record.resourceId, created: false, draftRevision: revision };
       }
 

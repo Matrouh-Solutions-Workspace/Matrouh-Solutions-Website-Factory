@@ -59,7 +59,12 @@ export default async function PreviewPage({ params, searchParams }: PreviewPrope
     typeof logoId === "string"
       ? site.snapshot.media.find((item) => item.id === logoId)?.url
       : undefined;
-  const whatsapp = whatsappContactSettings(site.snapshot, rendered.locale);
+  // Menu QR previews should mirror the public upload destination and remain
+  // document-focused rather than rendering generic website chrome.
+  const isMenuQr = site.snapshot.template.id === "com.matrouh.menu-qr";
+  const whatsapp = isMenuQr ? null : whatsappContactSettings(site.snapshot, rendered.locale);
+  const showNavbar = !isMenuQr && websiteSetting(site.snapshot, "showNavbar") !== false;
+  const showFooter = !isMenuQr && websiteSetting(site.snapshot, "showFooter") !== false;
   return (
     <div
       className="siteRoot"
@@ -79,53 +84,57 @@ export default async function PreviewPage({ params, searchParams }: PreviewPrope
       style={themeVariables(site.snapshot.theme)}
     >
       <aside className="previewBanner">Private preview · expires automatically</aside>
-      <header className="siteHeader">
-        <a className="siteBrand" href={previewRoute(homeHref, token)}>
-          <img
-            alt=""
-            className="siteBrandMark"
-            src={logoUrl ?? site.branding.faviconUrl ?? "/matrouh-logo.png"}
+      {showNavbar && (
+        <header className="siteHeader">
+          <a className="siteBrand" href={previewRoute(homeHref, token)}>
+            <img
+              alt=""
+              className="siteBrandMark"
+              src={logoUrl ?? site.branding.faviconUrl ?? "/matrouh-logo.png"}
+            />
+            <strong>{site.snapshot.website.name}</strong>
+          </a>
+          <SiteNavigation
+            appearanceStorageKey={`factory:appearance:preview:${site.organizationId}:${site.snapshot.websiteId}`}
+            ariaLabel={rendered.locale === "ar" ? "تنقل المعاينة" : "Preview navigation"}
+            initialAppearance={appearance}
+            items={navigation.map((item) => ({
+              ...item,
+              href: previewRoute(item.href, token),
+            }))}
+            locale={rendered.locale}
+            localeItems={localizedRoutes.map((item) => ({
+              current: item.current,
+              direction: textDirection(item.locale),
+              href: previewRoute(item.href, token),
+              id: item.locale,
+              label: localeLabel(item.locale),
+              locale: item.locale,
+            }))}
+            showAppearanceToggle={websiteSetting(site.snapshot, "allowAppearanceToggle") !== false}
           />
-          <strong>{site.snapshot.website.name}</strong>
-        </a>
-        <SiteNavigation
-          appearanceStorageKey={`factory:appearance:preview:${site.organizationId}:${site.snapshot.websiteId}`}
-          ariaLabel={rendered.locale === "ar" ? "تنقل المعاينة" : "Preview navigation"}
-          initialAppearance={appearance}
-          items={navigation.map((item) => ({
-            ...item,
-            href: previewRoute(item.href, token),
-          }))}
-          locale={rendered.locale}
-          localeItems={localizedRoutes.map((item) => ({
-            current: item.current,
-            direction: textDirection(item.locale),
-            href: previewRoute(item.href, token),
-            id: item.locale,
-            label: localeLabel(item.locale),
-            locale: item.locale,
-          }))}
-          showAppearanceToggle={websiteSetting(site.snapshot, "allowAppearanceToggle") !== false}
-        />
-      </header>
+        </header>
+      )}
       <main>{rendered.node}</main>
       {whatsapp && <WhatsAppContact {...whatsapp} />}
-      <footer className="siteFooter">
-        <div>
-          <strong>{site.snapshot.website.name}</strong>
-        </div>
-        <nav
-          aria-label={
-            rendered.locale === "ar" ? "تنقل تذييل المعاينة" : "Preview footer navigation"
-          }
-        >
-          {navigation.map((item) => (
-            <a href={previewRoute(item.href, token)} key={item.id}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
-      </footer>
+      {showFooter && (
+        <footer className="siteFooter">
+          <div>
+            <strong>{site.snapshot.website.name}</strong>
+          </div>
+          <nav
+            aria-label={
+              rendered.locale === "ar" ? "تنقل تذييل المعاينة" : "Preview footer navigation"
+            }
+          >
+            {navigation.map((item) => (
+              <a href={previewRoute(item.href, token)} key={item.id}>
+                {item.label}
+              </a>
+            ))}
+          </nav>
+        </footer>
+      )}
     </div>
   );
 }

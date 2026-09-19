@@ -1326,6 +1326,44 @@ async function processPublishJob(job: ClaimedJob, signal: AbortSignal): Promise<
         },
         include: { asset: { include: { variants: true } } },
       });
+      // Older drafts (including Menu QR uploads created before section media
+      // references were recorded) can still contain a mediaId in section
+      // content without a corresponding MediaReference row. Include those
+      // ready assets during compilation so publishing does not fail with a
+      // misleading "not ready or pinned" error.
+      const referencedIds = new Set<string>();
+      for (const page of website.pages) {
+        for (const section of page.sections) {
+          collectMediaIds(section.contentJson, referencedIds);
+        }
+      }
+      const linkedIds = new Set(mediaReferences.map(({ asset }) => asset.id));
+      const missingIds = [...referencedIds].filter((id) => !linkedIds.has(id));
+      if (missingIds.length > 0) {
+        const recoveredAssets = await transaction.mediaAsset.findMany({
+          where: {
+            organizationId: job.organizationId,
+            id: { in: missingIds },
+            status: "ready",
+          },
+          include: { variants: true },
+        });
+        mediaReferences.push(
+          ...recoveredAssets.map((asset) => ({
+            id: `recovered:${asset.id}`,
+            createdAt: new Date(0),
+            organizationId: job.organizationId,
+            websiteId: payload.websiteId,
+            mediaAssetId: asset.id,
+            pageId: null,
+            sectionId: null,
+            publicationId: null,
+            referenceKind: "recovered",
+            jsonPointer: null,
+            asset,
+          })),
+        );
+      }
       return { ...website, mediaReferences };
     },
   );
@@ -1707,6 +1745,20 @@ function eventTenantContext(event: ClaimedOutboxEvent) {
     actorId,
     correlationId: event.correlationId,
   };
+}
+
+function collectMediaIds(value: unknown, ids: Set<string>): void {
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectMediaIds(item, ids));
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  for (const [key, child] of Object.entries(value)) {
+    if ((key === "mediaId" || key.endsWith("MediaId")) && typeof child === "string" && child) {
+      ids.add(child);
+    }
+    collectMediaIds(child, ids);
+  }
 }
 
 function errorDetails(error: unknown): { code: string; message: string } {
