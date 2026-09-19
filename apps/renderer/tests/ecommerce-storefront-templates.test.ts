@@ -95,7 +95,8 @@ describe("commerce storefront templates", () => {
     expect(source).toContain("/commerce-heroes/fashion-everyday-v2.jpg");
     expect(source).toContain('className="shopFashionQuickLinks"');
     expect(source).toContain("Wear what feels like you.");
-    expect(source).toContain("البس ما يشبهك.");
+    expect(source).toContain("إطلالة تشبهك.");
+    expect(source).toContain("ستايل يليق بكل يوم.");
     expect(source).toContain("basics stores, streetwear shops, and family retailers");
     expect(preview).toContain('["الجديد", "حريمي", "رجالي", "أطفال", "أحذية", "إكسسوارات"]');
     expect(preview).toContain("Everyday cotton tee");
@@ -105,6 +106,20 @@ describe("commerce storefront templates", () => {
     );
     expect(styles).toContain(".shopFashionHeroPills");
     expect(styles).toContain(".shopFashionQuickLinks");
+    expect(styles).toMatch(
+      /\.commercePublicRoot\[dir="rtl"\]\.shopTheme--fashion \.shopHeroVisual::before\s*\{\s*background:\s*linear-gradient\(\s*270deg,/s,
+    );
+  });
+
+  it("does not expose favorites in any shared commerce storefront", async () => {
+    const source = await readFile(
+      resolve(process.cwd(), "src/app/ecommerce-storefront.tsx"),
+      "utf8",
+    );
+    const styles = await readFile(resolve(process.cwd(), "public/commerce-storefront.css"), "utf8");
+
+    expect(source).not.toMatch(/savedProducts|savedOnly|toggleSaved|shopWishlist|shopSavedFilter/);
+    expect(styles).not.toMatch(/\.shopWishlist|\.shopSavedFilter/);
   });
 
   it("uses one WhatsApp order flow without advertising an online gateway", async () => {

@@ -71,14 +71,11 @@ export function EcommerceStorefront({
     },
   });
   const storageKey = `factory:commerce-cart:${store.storeId}`;
-  const savedKey = `factory:commerce-saved:${store.storeId}`;
   const isPreview = store.storeId.startsWith("preview-");
   const themeStorageKey = `factory:commerce-theme:${store.storeId}`;
   const defaultTheme = store.presentation.defaultTheme === "dark" ? "dark" : "light";
   const [cart, setCart] = useState<readonly CartLine[]>([]);
   const [cartLoaded, setCartLoaded] = useState(false);
-  const [savedProducts, setSavedProducts] = useState<readonly string[]>([]);
-  const [savedOnly, setSavedOnly] = useState(false);
   const [theme, setTheme] = useState<Theme>(defaultTheme);
   const [menuOpen, setMenuOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -137,15 +134,8 @@ export function EcommerceStorefront({
     } catch {
       localStorage.removeItem(storageKey);
     }
-    try {
-      const saved = JSON.parse(localStorage.getItem(savedKey) ?? "[]") as unknown;
-      if (Array.isArray(saved))
-        setSavedProducts(saved.filter((id): id is string => typeof id === "string"));
-    } catch {
-      localStorage.removeItem(savedKey);
-    }
     setCartLoaded(true);
-  }, [savedKey, storageKey, themeStorageKey]);
+  }, [storageKey, themeStorageKey]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -165,10 +155,6 @@ export function EcommerceStorefront({
   useEffect(() => {
     if (cartLoaded) localStorage.setItem(storageKey, JSON.stringify(cart));
   }, [cart, cartLoaded, storageKey]);
-
-  useEffect(() => {
-    if (cartLoaded) localStorage.setItem(savedKey, JSON.stringify(savedProducts));
-  }, [cartLoaded, savedKey, savedProducts]);
 
   const lines = useMemo(
     () =>
@@ -196,7 +182,7 @@ export function EcommerceStorefront({
         inStockOnly,
         saleOnly,
         sort,
-      }).filter((item) => !savedOnly || savedProducts.includes(item.id)),
+      }),
     [
       brand,
       category,
@@ -204,8 +190,6 @@ export function EcommerceStorefront({
       maxPrice,
       normalizedQuery,
       saleOnly,
-      savedOnly,
-      savedProducts,
       sort,
       store.locale,
       store.products,
@@ -216,7 +200,6 @@ export function EcommerceStorefront({
     brand || null,
     inStockOnly ? copy.inStock : null,
     saleOnly ? copy.onSale : null,
-    savedOnly ? copy.savedProducts : null,
     maxPrice < maxCatalogPrice
       ? `${copy.upTo} ${formatMoney(maxPrice, store.currency, store.locale)}`
       : null,
@@ -251,21 +234,12 @@ export function EcommerceStorefront({
     setCart((current) => updateCartQuantity(current, variantId, quantity, color, stockQuantity));
   }
 
-  function toggleSaved(productId: string) {
-    setSavedProducts((current) =>
-      current.includes(productId)
-        ? current.filter((id) => id !== productId)
-        : [...current, productId],
-    );
-  }
-
   function resetFilters() {
     setCategory("");
     setBrand("");
     setQuery("");
     setInStockOnly(false);
     setSaleOnly(false);
-    setSavedOnly(false);
     setMaxPrice(maxCatalogPrice);
   }
 
@@ -1150,8 +1124,6 @@ export function EcommerceStorefront({
                 add={add}
                 addedProductId={addedProductId}
                 copy={copy}
-                isSaved={savedProducts.includes(item.id)}
-                onToggleSaved={() => toggleSaved(item.id)}
                 rtl={rtl}
                 index={index}
                 key={item.id}
@@ -1172,14 +1144,6 @@ export function EcommerceStorefront({
               text={kind === "fashion" ? copy.catalogFashionText : copy.catalogHardwareText}
             />
             <div className="commerceCatalogActions">
-              <button
-                aria-pressed={savedOnly}
-                className={savedOnly ? "shopSavedFilter isActive" : "shopSavedFilter"}
-                onClick={() => setSavedOnly((value) => !value)}
-                type="button"
-              >
-                <Icon name="heart" /> {copy.savedProducts} ({savedProducts.length})
-              </button>
               <button
                 className="shopFilterToggle"
                 onClick={() => setFiltersOpen((value) => !value)}
@@ -1233,7 +1197,6 @@ export function EcommerceStorefront({
                     if (filter === brand) setBrand("");
                     else if (filter === copy.inStock) setInStockOnly(false);
                     else if (filter === copy.onSale) setSaleOnly(false);
-                    else if (filter === copy.savedProducts) setSavedOnly(false);
                     else if (filter.startsWith(copy.upTo)) setMaxPrice(maxCatalogPrice);
                     else setCategory("");
                   }}
@@ -1366,8 +1329,6 @@ export function EcommerceStorefront({
                       add={add}
                       addedProductId={addedProductId}
                       copy={copy}
-                      isSaved={savedProducts.includes(item.id)}
-                      onToggleSaved={() => toggleSaved(item.id)}
                       rtl={rtl}
                       index={index}
                       key={item.id}
@@ -1494,8 +1455,6 @@ function ProductCard({
   add,
   addedProductId,
   copy,
-  isSaved,
-  onToggleSaved,
   rtl,
   index,
   kind,
@@ -1506,8 +1465,6 @@ function ProductCard({
   readonly add: (product: StorefrontProduct) => void;
   readonly addedProductId: string | null;
   readonly copy: ReturnType<typeof commerceCopy>;
-  readonly isSaved: boolean;
-  readonly onToggleSaved: () => void;
   readonly rtl: boolean;
   readonly index: number;
   readonly kind: StorefrontKind;
@@ -1540,15 +1497,6 @@ function ProductCard({
         <ProductVisual index={index} kind={kind} product={product} store={store} />
         {badge ? <span className="shopProductBadge">{badge}</span> : null}
       </a>
-      <button
-        aria-label={`${isSaved ? copy.unsave : copy.save}: ${product.name}`}
-        aria-pressed={isSaved}
-        className={isSaved ? "shopWishlist isSaved" : "shopWishlist"}
-        onClick={onToggleSaved}
-        type="button"
-      >
-        <Icon name="heart" />
-      </button>
       <div className="shopProductCardBody">
         <div className="shopProductMeta">
           <span>
@@ -1852,7 +1800,6 @@ type IconName =
   | "hammer"
   | "hanger"
   | "headset"
-  | "heart"
   | "instagram"
   | "lock"
   | "memory"
@@ -1943,9 +1890,6 @@ function Icon({ name }: { readonly name: IconName }) {
         <path d="M4 14v-2a8 8 0 0 1 16 0v2" />
         <path d="M4 14h4v6H6a2 2 0 0 1-2-2v-4Zm16 0h-4v6h2a2 2 0 0 0 2-2v-4Z" />
       </>
-    ),
-    heart: (
-      <path d="M20.8 5.7a5.5 5.5 0 0 0-7.8 0L12 6.8l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 22l8.8-8.5a5.5 5.5 0 0 0 0-7.8Z" />
     ),
     instagram: (
       <>
@@ -2044,7 +1988,7 @@ function Icon({ name }: { readonly name: IconName }) {
 }
 
 function categoryFashionIcon(index: number): IconName {
-  return ["hanger", "spark", "bag", "heart", "hanger", "spark"][index % 6] as IconName;
+  return ["hanger", "spark", "bag", "hanger", "spark", "bag"][index % 6] as IconName;
 }
 function categoryHardwareIcon(index: number): IconName {
   return ["drill", "wrench", "hammer", "saw", "paint", "toolbox"][index % 6] as IconName;
@@ -2236,9 +2180,6 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     noProductsHelp: "Try removing a filter or searching for a broader term.",
     upTo: "Up to",
     new: "New",
-    save: "Save product",
-    unsave: "Remove saved product",
-    savedProducts: "Saved",
     signatureCollection: "Everyday collection",
     availableColors: "Available colors",
     quickAdd: "Quick add",
@@ -2395,11 +2336,11 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     securePayment: "دفع آمن",
     featuredPromotions: "العروض المميزة",
     fashionHeroEyebrow: "ستايلات جديدة · أسعار مناسبة · مقاسات أسهل",
-    fashionHeroTitle: "البس ما يشبهك.",
+    fashionHeroTitle: "إطلالة تشبهك.",
     fashionHeroBody:
       "متجر مرن للأساسيات اليومية والترندات والملابس المحتشمة وملابس العمل والأطفال وكل ما بينها.",
     fashionHeroEyebrow2: "جديد كل أسبوع",
-    fashionHeroTitle2: "ملابس مصممة للحياة اليومية.",
+    fashionHeroTitle2: "ستايل يليق بكل يوم.",
     fashionHeroBody2:
       "تسوق سهل وأسعار واضحة وإرشادات مفيدة للمقاسات وإطلالات يختارها كل عميل بطريقته.",
     storeStrengths: "مميزات المتجر",
@@ -2489,9 +2430,6 @@ function commerceCopy(locale: "en" | "ar", kind: StorefrontKind) {
     noProductsHelp: "جرّب إزالة فلتر أو استخدام كلمة بحث أوسع.",
     upTo: "حتى",
     new: "جديد",
-    save: "حفظ المنتج",
-    unsave: "إزالة المنتج من المحفوظات",
-    savedProducts: "المحفوظات",
     signatureCollection: "مجموعة كل يوم",
     availableColors: "الألوان المتاحة",
     quickAdd: "إضافة سريعة",

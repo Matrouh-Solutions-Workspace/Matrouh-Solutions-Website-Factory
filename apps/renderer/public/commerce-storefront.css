@@ -1136,27 +1136,6 @@
   flex-wrap: wrap;
   gap: 0.7rem;
 }
-.shopSavedFilter {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-height: 2.9rem;
-  padding: 0.65rem 0.85rem;
-  border: 1px solid var(--shop-border);
-  border-radius: 999px;
-  color: var(--shop-ink);
-  background: var(--shop-surface);
-  font: inherit;
-  cursor: pointer;
-}
-.shopSavedFilter.isActive {
-  border-color: var(--shop-accent);
-  color: var(--shop-accent);
-}
-.shopSavedFilter svg {
-  width: 1rem;
-  height: 1rem;
-}
 .shopContactCTA > a {
   display: inline-flex;
   align-items: center;
@@ -1466,29 +1445,6 @@
   border-radius: 3px;
   color: #171717;
   background: var(--shop-accent);
-}
-.shopWishlist {
-  position: absolute;
-  inset-inline-end: 0.7rem;
-  top: 0.7rem;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  width: 2.45rem;
-  height: 2.45rem;
-  border: 0;
-  border-radius: 50%;
-  color: #24211d;
-  background: rgba(255, 255, 255, 0.84);
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-}
-.shopWishlist.isSaved {
-  color: #fff;
-  background: var(--shop-accent);
-}
-.shopWishlist.isSaved svg {
-  fill: currentColor;
 }
 .shopProductCardBody {
   padding: 1rem;
@@ -5301,5 +5257,32 @@ p {
   .commercePublicRoot.shopTheme--fashion .commerceCheckoutForm {
     width: 100%;
     max-width: none;
+  }
+}
+
+/* Mirror the fashion photo's reading fade with the RTL content column. */
+@media (min-width: 761px) {
+  .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroVisual::before {
+    background: linear-gradient(
+      270deg,
+      rgba(248, 242, 234, 0.98) 0%,
+      rgba(248, 242, 234, 0.9) 31%,
+      rgba(248, 242, 234, 0.18) 57%,
+      transparent 72%
+    );
+  }
+  .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy h1 {
+    max-width: 14ch;
+    font-size: clamp(3rem, 4.4vw, 4.8rem) !important;
+    line-height: 1.16;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 760px) {
+  .commercePublicRoot[dir="rtl"].shopTheme--fashion .shopHeroCopy h1 {
+    max-width: 14ch;
+    font-size: clamp(2.4rem, 10vw, 3.6rem) !important;
+    line-height: 1.15;
   }
 }
