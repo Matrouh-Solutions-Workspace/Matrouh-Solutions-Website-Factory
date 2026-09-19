@@ -25,7 +25,8 @@ describe("commerce preview parity", () => {
     );
 
     expect(storefront).toContain(': "/matrouh-logo.png"');
-    expect(storefront).toContain('src="/matrouh-logo.png"');
+    expect(storefront).toContain("logoImageFilename");
+    expect(storefront).toContain("mediaUrl(store.organizationId, logoImageFilename)");
     expect(storefront).toContain('className="shopHeroPhoto"');
     expect(storefront).toContain('kind === "pc" ? "pc-retail" : kind');
     expect(storefront).toContain('className="shopPcQuickLinks"');

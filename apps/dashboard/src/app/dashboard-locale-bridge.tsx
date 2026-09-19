@@ -807,6 +807,9 @@ export const dashboardArabicCopy: Readonly<Record<string, string>> = {
   "WhatsApp contact": "تواصل عبر واتساب",
   "Arabic, English &amp; light/dark controls are available inside the preview.":
     "تتوفر عناصر التحكم بالعربية والإنجليزية والوضع الفاتح والداكن داخل المعاينة.",
+  "Menu PDF or image": "ملف القائمة بصيغة PDF أو صورة",
+  "Upload one PDF or image. Customers will see this file when they scan the menu QR code.":
+    "ارفع ملف PDF أو صورة واحدة. سيشاهد العملاء هذا الملف عند مسح رمز QR للقائمة.",
 };
 
 export function translateDashboardArabicText(value: string): string {
